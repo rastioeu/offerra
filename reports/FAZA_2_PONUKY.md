@@ -1,6 +1,6 @@
 # FÁZA 2 — OTVORENÉ PSEUDONYMNÉ PONUKY, DOPYTY, PROFIL
 
-**Verzia:** 1.3.2
+**Verzia:** 1.3.3
 **Dátum:** 7.8.2026
 **Stav:** ⏸️ **čakám na jednu vec od teba** — otestovať to na telefóne
 
@@ -164,6 +164,31 @@ trigger nerozbil bežné používanie.
 
 ---
 
+## 🔴 Druhé kolo — päť ďalších dier
+
+Prešiel som aj zvyšné tabuľky. Namerané pred opravou:
+
+```
+🔴 ponuku sa dalo podať AJ PO uplynutí uzávierky
+🔴 majiteľ si vedel nafúknuť počítadlo zobrazení        → 99 999
+🔴 majiteľ si vedel označiť inzerát ako „UKÁŽKA"
+🔴 majiteľ vedel spätne datovať inzerát                 → 2000-01-01
+🔴 nájomca vedel prepísať dotazník PO prijatí ponuky    2 000 → 9 000 €
+```
+
+**Najhoršia je prvá.** Detail píše „Ponuky do 28. augusta · ostáva 21 dní"
+a ponuku po termíne pokojne prijal. **Appka klamala** — časovač bol len
+ozdoba. To je presne to, čo máme v pravidlách zakázané.
+
+Spätné datovanie nie je kozmetika: katalóg radí podľa dátumu pridania,
+takže sa ním dalo preskočiť dopredu pred ostatných.
+
+Po oprave **6/6 ošetrených, 0 dier**. V appke sa navyše tlačidlo „Podať
+ponuku" po uzávierke vôbec nezobrazí — namiesto neho je dôvod. Server má
+posledné slovo, ale ty nemáš vidieť chybu z databázy.
+
+---
+
 ## 🔁 Ďalšie dve veci, ktoré som pri tom dorobil
 
 **Obrazovky sa neobnovovali po návrate.** Tá istá trieda chyby ako profil:
@@ -188,6 +213,27 @@ dopyte. Je to medzikrok, nie hotová vec, a v registri je to tak napísané.
 **Prepínač upozornení v Nastaveniach je len predvoľba.** Uloží sa, ale
 nateraz nič neposiela — a priamo pod ním to tak aj píše. Nechcel som tam
 dať prepínač, ktorý sa tvári, že niečo robí.
+
+---
+
+## ✅ Stav všetkých testov
+
+```
+rls_test.py      15/15    RLS Fáza 1
+flow_test.py     10/10    reťazec formulára
+rls_test_f2.py   25/25    otvorené pseudonymné ponuky
+fn_test.py         5/5    my_profile / delete_my_account
+hole_test.py       5/5    oprávnenia na ponukách
+hole_test2.py      6/6    uzávierka a integrita
+                 ──────
+                 66/66
+```
+
+Pri regresii mi spadli dve staré sady z Fázy 1. **Nebola to nová chyba** —
+tie testy vytvárali inzerát pre používateľa bez prezývky, čo Fáza 2
+zakázala. Testy boli zastarané voči schéme a ja som ich po tej zmene
+nepustil znova. Opravené — a je to zároveň dôkaz, že pravidlo „bez
+prezývky sa nedá inzerovať" naozaj drží.
 
 ---
 

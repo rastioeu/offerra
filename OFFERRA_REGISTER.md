@@ -1069,6 +1069,65 @@ ANONYM pozerá   →   1
 ANONYM znova    →   2
 ```
 
+### 2.15 Druhé kolo auditu — päť ďalších dier — ✅ OPRAVENÉ
+
+Po 2.12 som prešiel aj zvyšné tabuľky. Namerané pred opravou:
+
+```
+🔴 ponuku sa dalo podať AJ PO uplynutí uzávierky            HTTP 201
+🔴 majiteľ si vedel nafúknuť view_count                     → 99 999
+🔴 majiteľ si vedel označiť inzerát ako ukážkový (is_seed)  → true
+🔴 majiteľ vedel spätne datovať created_at                  → 2000-01-01
+🔴 nájomca vedel prepísať dotazník PO prijatí ponuky        2 000 → 9 000 €
+```
+
+**Najhoršia je prvá.** Detail inzerátu píše „Ponuky do 28. augusta ·
+ostáva 21 dní" a ponuku po termíne pokojne prijal — appka klamala, čo je
+presne to, čo `CLAUDE.md` §2 zakazuje. Časovač bol dovtedy len ozdoba.
+
+Spätné datovanie nie je kozmetika: katalóg radí podľa `created_at`, takže
+sa ním dalo preskočiť dopredu. A `is_seed` riadi odznak „UKÁŽKA" — dal sa
+teda sfalšovať oboma smermi.
+
+Riešenie — tri rôzne nástroje na tri rôzne otázky:
+
+| Diera | Nástroj |
+|---|---|
+| uzávierka pri podaní | podmienka v `offer_insert_own` policy |
+| uzávierka pri zvýšení ponuky | `guard_offer_update()` trigger |
+| `view_count`, `is_seed`, `created_at` | **stĺpcové granty** na `property` |
+| dotazník po prijatí | `guard_tenant_profile()` trigger |
+
+Rovnaké obmedzenie zápisu dostal aj `buyer_request` a `media`.
+
+Po oprave **6/6 ošetrených, 0 dier**. V appke sa navyše tlačidlo „Podať
+ponuku" po uzávierke vôbec nezobrazí a namiesto neho je dôvod — server má
+posledné slovo, ale používateľ nemá vidieť chybu z databázy.
+
+### 2.16 Regresia v starých testoch — ✅ VYRIEŠENÉ
+
+Pri regresii spadli sady z Fázy 1 (`rls_test` 13/15, `flow_test` 3/10).
+**Nebola to dnešná chyba** — tie testy vytvárajú inzerát pre používateľa
+bez profilu, čo Fáza 2 zakázala presmerovaním `property.owner_id` na
+`offerra.profile`. Testy boli teda zastarané voči schéme a ja som ich po
+tej zmene nepustil znova.
+
+Opravené (testovací používateľ dostane profil) — a je to zároveň dôkaz, že
+požiadavka „bez prezývky sa nedá inzerovať" naozaj drží na úrovni databázy.
+
+**Stav všetkých sád:**
+
+```
+rls_test.py      15/15    RLS Fáza 1
+flow_test.py     10/10    reťazec formulára
+rls_test_f2.py   25/25    otvorené pseudonymné ponuky
+fn_test.py         5/5    my_profile / delete_my_account
+hole_test.py       5/5    oprávnenia na ponukách
+hole_test2.py      6/6    uzávierka a integrita
+                 ──────
+                 66/66
+```
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

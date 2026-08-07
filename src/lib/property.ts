@@ -105,6 +105,11 @@ export function formatDate(iso: string): string {
   }).format(new Date(iso));
 }
 
+/** Uplynula uzávierka? Bez časovača nikdy. Vynucuje to aj RLS v DB. */
+export function isDeadlinePassed(iso: string | null): boolean {
+  return iso != null && new Date(iso).getTime() <= Date.now();
+}
+
 /** Ostávajúci čas do uzávierky ponúk. `null` = bez časovača alebo už po ňom. */
 export function deadlineLabel(iso: string | null): string | null {
   if (!iso) return null;

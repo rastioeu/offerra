@@ -25,6 +25,7 @@ import {
   formatArea,
   formatDate,
   formatPrice,
+  isDeadlinePassed,
   PROPERTY_LABEL,
   TRANSACTION_LABEL,
 } from '@/lib/property';
@@ -57,6 +58,7 @@ export default function PropertyDetailScreen() {
   const myId = session?.user.id;
   const isOwner = Boolean(myId && item && item.owner_id === myId);
   const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
+  const closed = isDeadlinePassed(item?.offer_deadline ?? null);
 
   const price = item ? formatPrice(item.asking_price_hint, item.transaction_type) : null;
   const deadline = item ? deadlineLabel(item.offer_deadline) : null;
@@ -176,6 +178,10 @@ export default function PropertyDetailScreen() {
                   title="Spravovať ponuky"
                   onPress={() => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } })}
                 />
+              ) : closed ? (
+                <Text style={[styles.soon, { color: palette.warning }]}>
+                  Príjem ponúk sa uzavrel — nové ponuky už podať nemožno.
+                </Text>
               ) : myId ? (
                 <Button
                   title={myOffer ? 'Upraviť moju ponuku' : 'Podať ponuku'}

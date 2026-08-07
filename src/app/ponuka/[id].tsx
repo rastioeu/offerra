@@ -19,7 +19,7 @@ import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { EMPLOYMENT_OPTIONS, formatAmount } from '@/lib/offers';
-import { db, formatPrice } from '@/lib/property';
+import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 function num(text: string): number | null {
@@ -73,6 +73,9 @@ export default function OfferFormScreen() {
 
   const isRent = item?.transaction_type === 'RENT';
   const highest = offers?.find((o) => o.status === 'PENDING');
+  // Uzávierku drží aj databáza; tu je preto, aby používateľ videl DÔVOD,
+  // nie chybovú hlášku zo servera.
+  const closed = isDeadlinePassed(item?.offer_deadline ?? null);
 
   async function submit() {
     if (!item || !myId || busy) return;
@@ -191,6 +194,13 @@ export default function OfferFormScreen() {
                 </Text>
               ) : null}
 
+              {closed ? (
+                <Text style={[styles.closed, { color: palette.warning }]}>
+                  Uzávierka ponúk už uplynula. Túto ponuku sa nedá podať ani zmeniť —
+                  stiahnuť ju však môžeš.
+                </Text>
+              ) : null}
+
               <Field
                 label="Moja ponuka (€)"
                 hint={
@@ -267,11 +277,13 @@ export default function OfferFormScreen() {
               <ErrorNote error={error} />
 
               <View style={styles.actions}>
-                <Button
-                  title={busy ? 'Odosielam…' : mine ? 'Uložiť zmeny' : 'Podať ponuku'}
-                  onPress={submit}
-                  disabled={busy}
-                />
+                {!closed ? (
+                  <Button
+                    title={busy ? 'Odosielam…' : mine ? 'Uložiť zmeny' : 'Podať ponuku'}
+                    onPress={submit}
+                    disabled={busy}
+                  />
+                ) : null}
                 {mine ? (
                   <Button title="Stiahnuť ponuku" onPress={withdraw} variant="danger" disabled={busy} />
                 ) : null}
@@ -294,4 +306,5 @@ const styles = StyleSheet.create({
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   note: { ...Type.caption, marginTop: -Spacing.sm },
   actions: { gap: Spacing.sm },
+  closed: { ...Type.bodyMd, fontWeight: Weight.medium },
 });
