@@ -86,15 +86,15 @@ Priebežný záznam stavu. Statusy podľa `CLAUDE.md` §1 (Definition of Done):
 - MUTARK je na `57.0.7`, Offerra na `57.0.11` — zámerne **nezosúladené**
   (zadanie bod 3); zjednotenie až keď bude Offerra funkčná appka.
 
-### 0.4 Bundle identifier `com.offerra.app` — 🟡 ČAKÁ OVERENIE
+### 0.4 Bundle identifier `com.offerra.app` — ✅ OVERENÉ RUNTIME
 
 - Zapísaný v `app.json` (`ios.bundleIdentifier` aj `android.package`).
-- Verejná kontrola kolízie: iTunes Lookup API pre `com.offerra.app` →
-  `resultCount: 0` (žiadna appka v App Store toto ID nepoužíva).
-- **🟡 Toto nie je dôkaz dostupnosti v Apple Developer portáli** — registráciu
-  identifikátora robí Apple a overí sa až pri prvom `eas build`, ktorý
-  identifikátor automaticky zaregistruje. Ak vtedy koliduje, hlásim a
-  navrhujem alternatívu (nerozhodujem sám).
+- Verejná kontrola kolízie: iTunes Lookup API → `resultCount: 0`.
+- **Registrovaný v Apple Developer portáli** — potvrdené pri prvom pokuse
+  o `eas build` (7.8.2026). Dotaz na EAS vracia medzi Apple app identifiers
+  účtu `rastio_eu`:
+  `com.joinfamiglia.app, com.mutark.app, com.offerra.app, com.rastioeu.famiglia`
+- **Nekoliduje** — identifikátor je náš, alternatívu netreba.
 
 ### 0.5 EAS projekt — ✅ OVERENÉ RUNTIME
 
@@ -211,11 +211,76 @@ sa nezapisovalo, len čítalo.
 
 ---
 
+### 0.13 EAS Environment Variables — ✅ OVERENÉ RUNTIME
+
+Bez nich by build prešiel, ale appka by po štarte spadla na guard
+v `src/lib/supabase.ts` — `.env` je gitignorovaný a na build server sa
+nedostane. Rovnaký vzor ako MUTARK (kľúče cez EAS env, nie v repe).
+
+- Vytvorené pre `production`, `preview` aj `development`:
+  `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY`
+  (visibility `plaintext` — `EXPO_PUBLIC_*` sa aj tak zapekajú do klientskeho
+  bundlu, „secret" by tu bol falošný pocit bezpečia).
+- **Dôkaz:** `eas env:list production` ich vypisuje s očakávanými hodnotami
+  a build log ich potvrdil:
+  `Environment variables … loaded from the "production" environment on EAS:
+  EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SUPABASE_URL`
+
+### 0.14 `eas build --platform ios` — 🔴 NEDOKONČENÉ (chýba Apple login)
+
+Spustené 7.8.2026 po Rastiovom „OK build", profil `production`,
+`--non-interactive`.
+
+Prešlo: načítanie env premenných, `✔ Using remote iOS credentials (Expo server)`.
+Zlyhalo na kredenciáloch:
+
+```
+Distribution Certificate is not validated for non-interactive builds.
+Failed to set up credentials.
+Credentials are not set up. Run this command again in interactive mode.
+```
+
+**Príčina** — zistená dotazom na EAS, nie odhadom:
+
+| Vec | Stav |
+|---|---|
+| Apple Team `TC4V762X67` | ✅ |
+| ASC API kľúč `ZTQ53HT6PX`, rola **ADMIN** | ✅ |
+| Distribučný certifikát (do 2027-07-09) | ✅ |
+| App identifier `com.offerra.app` | ✅ registrovaný |
+| **Provisioning profile pre `com.offerra.app`** | 🔴 **neexistuje** |
+
+Profily existujú len pre `com.mutark.app` a `com.joinfamiglia.app`.
+Vytvorenie nového vyžaduje prihlásenie do Apple účtu — overené spustením
+`eas credentials:configure-build -p ios -e production` v PTY (bez odoslania
+odpovede), ktoré sa pýta:
+
+```
+? Do you want to log in to your Apple account? › (Y/n)
+```
+
+Apple ID nie je uložené nikde na stroji — `.mutark-secrets` má len
+Sign-in-with-Apple kľúče (`APPLE_KEY_ID`, `APPLE_SERVICES_ID`,
+`APPLE_CLIENT_SECRET_JWT`), tie na Developer portál neslúžia.
+
+**Potrebné:** `EXPO_APPLE_ID` + app-specific password
+(`EXPO_APPLE_APP_SPECIFIC_PASSWORD`), alebo jednorazové interaktívne
+prihlásenie Rastiom. Je to **jednorazová vec pre tento bundle id** —
+MUTARK aj Famiglia si tým kedysi prešli tiež.
+
+---
+
 ## Čo blokuje postup
 
-1. **⏸️ „OK build" od Rastia** — podľa `CLAUDE.md` §3 sa `eas build`
-   nespúšťa bez výslovného súhlasu. Toto je jediná otvorená prekážka
-   Fázy 0; všetko ostatné je hotové a pushnuté.
+1. **🔴 Prihlásenie do Apple účtu** pre vytvorenie provisioning profilu
+   `com.offerra.app` (viď 0.14). Bez neho `eas build` neprejde.
+
+### Otvorené, nie blokujúce
+
+- `eas.json` má vo všetkých profiloch `"channel"`, ale **`expo-updates` nie je
+  nainštalované** — build to hlási ako varovanie a kanál je nefunkčný
+  (žiadne OTA aktualizácie). MUTARK `expo-updates` má. Rozhodnúť **pred**
+  prvým buildom, nech sa nerobí druhý zbytočne.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
