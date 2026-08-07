@@ -161,6 +161,46 @@ dokazuje, že zdieľaný Auth projekt akceptuje session z novej appky.
 ⚠️ Testovací skript **zámerne nie je v repe** — obsahuje heslo demo účtu a
 `rastioeu/offerra` je verejný repozitár.
 
+### 0.16 Prihlasovacia obrazovka — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Doplnené 7.8.2026 na Rastiovu žiadosť — **rozšírenie rozsahu Fázy 0**.
+Dôvod: bez prihlasovacej obrazovky sa nedal splniť bod 7 zadania
+(„prihlásenie zdieľaným účtom overené znovu v TestFlight builde").
+
+- `src/lib/auth.ts` — `signInWithEmail`, `signOut`. Žiadny tichý catch:
+  chyba sa vracia volajúcemu ako text **a** loguje sa.
+- `src/hooks/use-session.ts` — jediný zdroj pravdy o prihlásení
+  (`getSession` pri štarte + `onAuthStateChange`).
+- `src/app/login.tsx` — e-mail + heslo, chybová hláška viditeľná
+  používateľovi, stav `busy`.
+- `src/app/_layout.tsx` — brána: bez session → `/login`, so session →
+  `/(tabs)`.
+- `src/app/(tabs)/profil.tsx` — **dôkazová obrazovka**: zobrazuje
+  `user.email`, `user.id` a expiráciu tokenu priamo na displeji, aby
+  screenshot z TestFlightu sám o sebe stačil ako dôkaz.
+
+**Zámerne len e-mail/heslo.** Apple aj Google potrebujú v zdieľanom Supabase
+Auth projekte zaregistrovať redirect pre schému `offerra` a bundle id
+`com.offerra.app` — to je zásah do konfigurácie, ktorú používa aj MUTARK,
+a patrí do Fázy 1 s rozmyslom, nie do setupu.
+
+Overené runtime: `npx tsc --noEmit` → **exit 0**; produkčný iOS bundle
+(`dev=false`) `HTTP 200`, **7 438 875 B**, 67 s, bez chýb.
+
+### 0.17 Chyba nájdená pred buildom: splash screen navždy — ✅ OPRAVENÉ
+
+`src/app/_layout.tsx` volal `SplashScreen.preventAutoHideAsync()`, ale
+**`hideAsync()` nikdy**. Appka by ostala navždy na splash screene.
+
+Podstatné na tom je, že **žiadna dovtedajšia kontrola by to nezachytila** —
+`tsc` prejde, Metro bundle sa zostaví, veľkosť sedí. Prejavilo by sa to až
+na zariadení ako „appka sa nespustí", teda po ~25 minútach buildu a podaní
+do TestFlightu. Presne tá trieda chyby, kvôli ktorej `CLAUDE.md` §1 zakazuje
+dávať ✅ bez behu na zariadení.
+
+Opravené: `hideAsync()` sa volá až keď je stav session známy (nie
+`undefined`), aby nepreblikla nesprávna obrazovka.
+
 ### 0.9 Skeleton — 4 taby — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
 
 - `src/app/(tabs)/_layout.tsx` — klasické `Tabs` (ako MUTARK), 4 obrazovky:
