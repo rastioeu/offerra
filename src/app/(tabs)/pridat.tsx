@@ -15,6 +15,7 @@ import { Badge, Button, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
+import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { db, formatDate, PROPERTY_LABEL, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -57,6 +58,7 @@ export default function PridatScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+      <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: palette.textPrimary }]}>Pridať</Text>
 

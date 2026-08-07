@@ -130,6 +130,7 @@ function RootLayoutInner() {
           <Stack.Screen name="dopyt/novy" />
           <Stack.Screen name="dopyt/[id]" />
           <Stack.Screen name="nastavenia" />
+          <Stack.Screen name="ako-funguje" />
           <Stack.Screen name="novinky" />
           <Stack.Screen name="oznamenia" />
         </Stack>

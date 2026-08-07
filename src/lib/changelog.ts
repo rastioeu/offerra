@@ -21,6 +21,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.1.0',
     date: '7. augusta 2026',
+    title: 'Nový vzhľad a vysvetlenie, ako to funguje',
+    items: [
+      'Offerra dostala teplejší vzhľad — papierové pozadie a terakotové ceny namiesto studenej modro-bielej.',
+      'Ceny sú teraz vo vlastnom písme a väčšie, aby si ich našiel na prvý pohľad.',
+      'Logo je hore na každej hlavnej obrazovke.',
+      'Nová karta „Ako funguje Offerra" na hlavnej obrazovke aj v Nastaveniach — vysvetľuje otvorené ponuky, prezývky aj odkrytie kontaktu.',
+      'Tmavý režim dostal teplé uhlie namiesto modrej noci.',
+    ],
+  },
+  {
+    version: '1.1.0',
+    date: '7. augusta 2026',
     title: 'Zvonček, živé obnovenie a časová os',
     items: [
       'Opravené: obrazovka „Ako ťa máme volať?" už nenaskakuje pri každom otvorení appky.',

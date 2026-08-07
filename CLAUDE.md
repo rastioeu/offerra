@@ -113,6 +113,25 @@ Ku každej zmene navyše v registri označ, či:
 - **VYŽADUJE NOVÝ BUILD** — pribudol natívny modul, alebo sa mení app
   ikona, splash, `app.json` natívna časť či verzia.
 
+---
+
+## 📖 8. „AKO FUNGUJE OFFERRA" — STANDING RULE
+
+`src/lib/how-it-works.ts` vysvetľuje používateľovi princíp appky.
+
+**Pravidlo (Rastio, 7.8.2026): keď sa zmení AKÁKOĽVEK mechanika appky,
+tento text sa upraví v TOM ISTOM kroku — nie dodatočne.**
+
+Text, ktorý klame o tom, ako appka funguje, je horší než žiadny. Príklad,
+prečo to pravidlo vzniklo: zmena zo slepých na otvorené ponuky by inak
+nechala v appke vysvetlenie, ktoré tvrdí opak.
+
+Karta je na hlavnej obrazovke aj v Nastaveniach.
+
+---
+
+## ⚙️ 9. VERZIE A OTA
+
 > ⚠️ `runtimeVersion` má politiku `appVersion`. Zvýšenie `version`
 > v `app.json` preto **odstrihne existujúci TestFlight build od OTA**,
 > kým sa nespraví nový build. Verzia sa teda dvíha len spolu s buildom —

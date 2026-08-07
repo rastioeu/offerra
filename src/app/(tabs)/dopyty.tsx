@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, ErrorNote } from '@/components/ui';
 import { useRequests } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
 import { formatArea, formatDate, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
@@ -31,6 +32,7 @@ export default function DopytyScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+      <AppHeader />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.primary} />}>

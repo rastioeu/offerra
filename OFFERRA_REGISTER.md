@@ -1583,6 +1583,85 @@ je. Že sa onboarding po force-quite naozaj neukáže, potvrdí až Rastio.
 
 ---
 
+## Fáza 6 — Redizajn „Dôveryhodne teplá" (7.8.2026)
+
+**IDE OTA.** Mockup: https://claude.ai/code/artifact/2ec74706-fb36-4c67-8270-2ecbfe02bb19
+
+### 6.1 Paleta — a prečo NIE presne tá, ktorú Rastio napísal
+
+Zadanie navrhlo teplý akcent v rozsahu `#C9703B`–`#D4923D`. **Premeral som
+ho a ako bežný text ani ako tlačidlo s bielym textom neprejde:**
+
+```
+#D4923D   na pozadí 2.47:1   biely text 2.63:1   🔴 nikde
+#C9703B   na pozadí 3.36:1   biely text 3.58:1   🟡 len veľký text
+#A85526   na pozadí 4.93:1   biely text 5.26:1   ✅ text aj tlačidlo
+```
+
+Riešené rovnako, ako paleta už rieši azúrovú (`secondary` vs `link`) —
+**dva odtiene, každý na svoju úlohu**:
+
+| Token | Odtieň | Kde |
+|---|---|---|
+| `accent` | `#C9703B` | VEĽKÉ ceny a sumy, dekoratívne výplne |
+| `accentDeep` | `#A85526` | CTA tlačidlá, malý teplý text |
+
+Pozadie je teplý off-white `#FBF7F2` — papier, nie tabuľka.
+**Tmavá téma je teplé uhlie** `#161311`, nie modrá noc; tým sa zároveň
+rozišla s MUTARKom (`#0B1020`).
+
+**Premeranie: 0 zlyhaní v oboch témach** (9 textových tokenov × 2 podklady,
++ veľké ceny na prah 3:1, + biely text na výplniach, + obrysy polí).
+
+### 6.2 Typografia — dva rezy
+
+Peniaze majú vlastný **pätkový** rez (`Money` v tokenoch, Georgia), aby oko
+našlo číslo bez čítania. Georgia je na iOS vždy — netreba nič baliť do
+appky. Apple „New York" je krajšie, ale jeho dostupnosť v React Native
+treba najprv overiť na zariadení.
+
+### 6.3 Logo hore — 🟡 KÓD HOTOVÝ
+
+`AppHeader` s wordmarkom na všetkých štyroch taboch. Wordmark
+prekreslený s **teplým akcentom** namiesto azúrovej linky.
+
+### 6.4 „Ako funguje Offerra" (bod 14A) — 🟡 KÓD HOTOVÝ
+
+Karta na hlavnej obrazovke + celá obrazovka dostupná aj z Nastavení.
+Text zohľadňuje **všetky doterajšie rozhodnutia**: otvorené pseudonymné
+ponuky, povinná prezývka, odkrytie kontaktu až po akceptácii, dopyty,
+uzávierka a moderovanie.
+
+**Standing rule zapísaná do `CLAUDE.md` §8**, nie len sľúbená.
+
+### 6.5 Zavreté tipy sa pamätajú v DB — 🟡 KÓD HOTOVÝ
+
+`offerra.dismissed_hint`. Rastio výslovne upozornil, aby to nebol lokálny
+stav, ktorý sa resetuje — je to tá istá chyba ako pri onboardingu
+prezývky. `useHints` preto rozlišuje „ešte nevieme" od „nič nie je
+zavreté" a tip radšej neukáže, než aby preblikol.
+
+### 6.6 Čo z redizajnu ešte NIE JE hotové — 🔴
+
+Základ je položený (paleta, typografia peňazí, hlavička, tiene), ale
+**prekreslenie jednotlivých obrazoviek podľa mockupu ešte prebieha**:
+karta katalógu s fotkou na 60 %, hero galéria s bodkami, mriežka
+parametrov 2×2, prilepené spodné tlačidlo, spodný panel pri ponuke
+a náhľad po podržaní.
+
+### 6.7 Body, ktoré VYŽADUJÚ nový build — 🔴
+
+| Bod | Modul | Prečo |
+|---|---|---|
+| 13F mapa | `react-native-maps` | v projekte **nie je** |
+| 12 rozmazané pozadie | `expo-blur` | v projekte **nie je** (kozmetika — dovtedy stmavenie) |
+| 10B kartička 9:16 | `react-native-view-shot` | ✅ **je** v builde #3, kód ešte nie |
+
+Podržanie prstu samotné **nový build nepotrebuje** — MUTARK naň nepoužíva
+žiadnu knižnicu, len `Modal` a `Animated`. Haptika aj ikony sú v builde #3.
+
+---
+
 ## Fáza 5 — Zvonček, realtime, časová os (7.8.2026)
 
 **IDE OTA** — ale až do buildu #3 (rt `6e77233e…`), nie do starého.

@@ -21,6 +21,7 @@ import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
+import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
@@ -130,6 +131,7 @@ export default function ProfilScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+      <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
         <View style={styles.topRow}>
           <Text style={[styles.title, { color: palette.textPrimary }]}>Profil</Text>

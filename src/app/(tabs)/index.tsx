@@ -9,10 +9,12 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PropertyCard } from '@/components/property-card';
-import { NotificationBell } from '@/components/notification-bell';
+import { AppHeader } from '@/components/app-header';
+import { HowItWorksCard } from '@/components/how-it-works-card';
 import { SearchBar } from '@/components/search-bar';
 import { ErrorNote, PropertyCardSkeleton } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
+import { useHints } from '@/hooks/use-hints';
 import { useSession } from '@/hooks/use-session';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -27,6 +29,7 @@ export default function NehnutelnostiScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const { session } = useSession();
   const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
+  const { shouldShow, dismiss } = useHints(session?.user.id);
   useRefreshOnFocus(reload);
 
   const onRefresh = useCallback(async () => {
@@ -37,13 +40,17 @@ export default function NehnutelnostiScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+      <AppHeader />
       <ScrollView
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.primary} />}>
+        {shouldShow('HOW_IT_WORKS') ? (
+          <HowItWorksCard onDismiss={() => dismiss('HOW_IT_WORKS')} />
+        ) : null}
+
         <View style={styles.head}>
           <View style={styles.headRow}>
             <Text style={[styles.title, { color: palette.textPrimary }]}>Nehnuteľnosti</Text>
-            <NotificationBell />
           </View>
           {items ? (
             <Text style={[styles.count, { color: palette.textMuted }]}>

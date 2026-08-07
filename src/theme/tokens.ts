@@ -25,12 +25,22 @@ export type Palette = {
   textSecondary: string;
   textMuted: string;
 
-  /** Značková navy — hlavná akcia, nadpisy, aktívny tab. */
+  /** Značková navy — kotva: nadpisy, aktívny tab, sekundárne akcie. */
   primary: string;
-  /** Značková azúrová — VÝPLNE a grafika (ikona, akcentová linka). */
+  /** Značková azúrová — grafika loga a app ikony. */
   secondary: string;
   /** Azúrová ako TEXT. Odlíšená od `secondary`, viď poznámka o WCAG nižšie. */
   link: string;
+  /**
+   * TEPLÁ AKCENTOVÁ — terakota. Len na VEĽKÉ čísla (ceny, sumy ponúk)
+   * a dekoratívne výplne. Na bežný text nestačí, viď `accentDeep`.
+   */
+  accent: string;
+  /**
+   * Tmavšia terakota — CTA tlačidlá (biely text na nej) a malý teplý text.
+   * Opticky tá istá farba, len prejde kontrastom.
+   */
+  accentDeep: string;
   /** Text NA vyplnenom `primary`/`secondary` povrchu (tlačidlo, badge). */
   onPrimary: string;
 
@@ -63,48 +73,55 @@ export type Palette = {
  */
 export const Colors: { light: Palette; dark: Palette } = {
   light: {
-    background: '#F5F7FA',
-    surface: '#FFFFFF',
-    surfacePressed: '#E8EDF4',
-    border: '#DCE3EC',
-    borderStrong: '#888E98',
+    // Teplý off-white, nie studená šedá — pozadie má pôsobiť ako papier,
+    // nie ako tabuľka.
+    background: '#FBF7F2',
+    surface: '#FFFDFB',
+    surfacePressed: '#F3EAE0',
+    border: '#EFE6DC',
+    borderStrong: '#8C8279',
 
-    textPrimary: '#101828',
-    textSecondary: '#445068',
-    textMuted: '#5A6780',
+    textPrimary: '#1C1815',
+    textSecondary: '#5C534B',
+    textMuted: '#7A7068',
 
     primary: '#103A6B',
     secondary: '#1B73D4',
     link: '#1B71D0',
+    accent: '#C9703B',
+    accentDeep: '#A85526',
     onPrimary: '#FFFFFF',
 
-    success: '#1D8058',
-    warning: '#99651A',
-    danger: '#B4342A',
+    success: '#1D6B4A',
+    warning: '#8A5A12',
+    danger: '#A33528',
   },
   dark: {
-    // POZOR (vedomé rozhodnutie, 7.8.2026): MUTARK má dark pozadie
-    // `#0B1020`, Offerra `#0D1520` — sú si blízko. Offerra je light-first,
-    // takže dark je doplnková téma, nie hlavná tvár appky; ak sa neskôr
-    // ukáže, že sa appky vizuálne mýlia, mení sa TENTO token, nie MUTARK.
-    background: '#0D1520',
-    surface: '#16202E',
-    surfacePressed: '#1F2B3C',
-    border: '#2A3749',
-    borderStrong: '#6B7A93',
+    // Tmavá je TEPLÉ uhlie, nie modrá noc — aby sedela k terakote
+    // a nepôsobila ako iná appka. Zároveň sa tým rozišla s MUTARKom,
+    // ktorý má studené `#0B1020`.
+    background: '#161311',
+    surface: '#211D1A',
+    surfacePressed: '#2C2724',
+    border: '#38322D',
+    borderStrong: '#7E736A',
 
-    textPrimary: '#FFFFFF',
-    textSecondary: '#A8B6CA',
-    textMuted: '#90A0B8',
+    textPrimary: '#F7F3EF',
+    textSecondary: '#C4B8AE',
+    textMuted: '#A2968C',
 
-    primary: '#5AA0EE',
-    secondary: '#4E9AF0',
-    link: '#4E9AF0',
-    onPrimary: '#0D1520',
+    primary: '#7FB3F0',
+    secondary: '#7FB3F0',
+    link: '#7FB3F0',
+    // V tmavej je terakota dosť svetlá na text aj na výplň, takže
+    // rozdvojenie netreba — obe smerujú na ten istý odtieň.
+    accent: '#E39A5E',
+    accentDeep: '#E39A5E',
+    onPrimary: '#161311',
 
-    success: '#3BB07E',
-    warning: '#D9A441',
-    danger: '#E8695D',
+    success: '#5CC08E',
+    warning: '#E0A94A',
+    danger: '#EE7A6A',
   },
 };
 
@@ -140,6 +157,20 @@ export const Type = {
   hero: { fontSize: 24, lineHeight: 30 },
 } as const;
 
+/**
+ * Peniaze majú VLASTNÝ rez — pätkový, aby oko našlo číslo bez čítania.
+ * Georgia je na iOS vždy prítomná, takže netreba nič baliť do appky.
+ * (Apple „New York" je krajšie, ale jeho dostupnosť v React Native treba
+ * najprv overiť na zariadení — dovtedy istota.)
+ */
+export const Money = {
+  fontFamily: 'Georgia',
+  hero: { fontSize: 27, lineHeight: 30 },
+  large: { fontSize: 22, lineHeight: 25 },
+  medium: { fontSize: 18, lineHeight: 21 },
+  small: { fontSize: 15, lineHeight: 18 },
+} as const;
+
 export const Weight = {
   regular: '400',
   medium: '500',
@@ -150,17 +181,25 @@ export const Weight = {
 export const Shadow = {
   /** Vyplnené tlačidlo — jemné zdvihnutie, aby vyzeralo stlačiteľne. */
   button: {
-    shadowColor: '#103A6B',
+    shadowColor: '#A85526',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.24,
     shadowRadius: 6,
     elevation: 3,
   },
   card: {
-    shadowColor: '#000',
+    shadowColor: '#1C1815',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 12,
+    shadowOpacity: 0.09,
+    shadowRadius: 14,
     elevation: 2,
+  },
+  /** Prilepená spodná lišta — tieň smeruje NAHOR, oddeľuje ju od obsahu. */
+  bar: {
+    shadowColor: '#1C1815',
+    shadowOffset: { width: 0, height: -3 },
+    shadowOpacity: 0.1,
+    shadowRadius: 12,
+    elevation: 8,
   },
 } as const;
