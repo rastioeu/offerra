@@ -711,12 +711,38 @@ Zmazanie: `delete from offerra.property where is_seed;`
 Overené runtime: `npx tsc --noEmit` → **exit 0**; produkčný iOS bundle
 `expo export` → **1 669 modulov, 4 352 285 B, bez chýb**.
 
-### 1.12 Čo NIE JE dokázané — 🔴 ČAKÁ NA RASTIA
+### 1.12 OTA do TestFlightu — ✅ OVERENÉ RUNTIME (update publikovaný)
 
-Nič z bodu 1.11 nie je overené na zariadení. **Aktuálny TestFlight build je
-z commitu `7ed7fcf` a Fázu 1 neobsahuje.** Nový natívny modul nepribudol
-(`expo-image-picker` aj `expo-image` už v builde sú), takže **stačí OTA
-cez `eas update`** — nie nový build. Čaká sa na Rastiovo „OK update".
+Nový build nebol potrebný — žiadny nový natívny modul nepribudol
+(`expo-image-picker` aj `expo-image` už v builde `9fdf26af` sú, dátumový
+picker je zámerne v JS). Spustené po Rastiovom **„OK update"**.
+
+```
+Branch             production
+Runtime version    1.0.0
+Update group ID    749e32b3-ac42-49f8-99e7-8a67cf70b9e9
+Commit             95264ad
+Message            Fáza 1 — inzeráty, katalóg, identita Navy & Azure
+```
+
+**Kontrola, že to appka v TestFlighte naozaj chytí** — OTA sa doručí len
+pri zhode kanála aj runtime verzie, preto overené proti reálnemu buildu:
+
+| | Build `9fdf26af` (v TestFlighte) | OTA update |
+|---|---|---|
+| Channel / branch | `production` | `production` |
+| Runtime Version | `1.0.0` | `1.0.0` |
+
+> Hranica dôkazu: dokázané je, že **update je publikovaný na správnom
+> kanáli a runtime**. Nedokazuje, že sa na telefón stiahol ani že
+> obrazovky vyzerajú správne — to je 1.13.
+
+### 1.13 Overenie Fázy 1 na zariadení — 🔴 NEDOKONČENÉ
+
+Čaká na Rastia. Appku treba **zavrieť a znova otvoriť** (OTA sa natiahne
+pri štarte). Zoznam, čo presne otestovať, je v `reports/FAZA_1_INZERATY.md`.
+Kým to Rastio menovite nepotvrdí, body **1.3** (assety identity) a **1.11**
+(obrazovky) ostávajú 🟡.
 
 ---
 
@@ -735,9 +761,10 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Fáza 1 je hotová v kóde aj v databáze. Blokuje **jediná vec: dostať ju na
-telefón a pozrieť sa na ňu** — `eas update` (OTA) čaká na „OK update",
-viď 1.12. Zoznam, čo otestovať, je v `reports/FAZA_1_INZERATY.md`.
+Fáza 1 je hotová v kóde, v databáze aj publikovaná cez OTA.
+Blokuje **jediná vec: pozrieť sa na ňu na telefóne** (1.13) — appku treba
+zavrieť a znova otvoriť. Zoznam, čo otestovať, je
+v `reports/FAZA_1_INZERATY.md`.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.

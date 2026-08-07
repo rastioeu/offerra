@@ -2,7 +2,7 @@
 
 **Verzia:** 1.2.0
 **Dátum:** 7.8.2026
-**Stav:** ⏸️ **čakám na jednu vec od teba** — „OK update"
+**Stav:** ⏸️ **čakám na jednu vec od teba** — otestovať to na telefóne
 
 ---
 
@@ -16,20 +16,40 @@ to je posledný krok a potrebuje tvoje slovo.
 
 ---
 
-## ⛔ Čo od teba potrebujem
+## ✅ OTA je vonku — appku stačí zavrieť a znova otvoriť
 
-### „OK update" pre `eas update`
-
-Aktuálny TestFlight build je z commitu `7ed7fcf` a Fázu 1 neobsahuje.
-**Nový build ale netreba** — `expo-image-picker` aj `expo-image` už
-v builde sú a žiadny nový natívny modul nepribudol. Preto stačí OTA
-aktualizácia cez `eas update`, ktorá sa do appky natiahne pri ďalšom
-spustení.
-
-Presne kvôli tomuto sme vo Fáze 0 pridávali `expo-updates`.
+Po tvojom „OK update" som Fázu 1 publikoval. **Nový build ani nové podanie
+do TestFlightu nebolo treba** — `expo-image-picker` aj `expo-image` už
+v builde sú a žiadny nový natívny modul nepribudol. Presne kvôli tomuto sme
+vo Fáze 0 pridávali `expo-updates`.
 
 *(Dátumový picker som zámerne napísal v JS namiesto natívneho modulu —
-inak by bol potrebný nový build a nové podanie do TestFlightu.)*
+inak by nový build potrebný bol.)*
+
+```
+Branch             production
+Runtime version    1.0.0
+Update group ID    749e32b3-ac42-49f8-99e7-8a67cf70b9e9
+Commit             95264ad
+```
+
+OTA sa doručí len pri zhode kanála **aj** runtime verzie, tak som to overil
+proti reálnemu buildu v TestFlighte:
+
+| | Build `9fdf26af` (v TestFlighte) | OTA update |
+|---|---|---|
+| Channel / branch | `production` | `production` |
+| Runtime Version | `1.0.0` | `1.0.0` |
+
+> Hranica dôkazu: dokázané je, že update je publikovaný na správnom kanáli
+> a runtime. **Nedokazuje**, že sa už stiahol na tvoj telefón.
+
+---
+
+## ⛔ Čo od teba potrebujem
+
+**Zavri appku úplne a znova ju otvor** (OTA sa ťahá pri štarte), potom prejdi
+zoznam nižšie. Kým to menovite nepotvrdíš, identita aj obrazovky ostávajú 🟡.
 
 ---
 
