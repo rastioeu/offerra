@@ -20,6 +20,20 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 type Section = 'REPORTS' | 'PROPERTIES' | 'USERS';
 
+/**
+ * Prah upozornenia (schválil Rastio 7.8.2026): TRAJA RÔZNI nahlasovatelia
+ * na tú istú vec — jeden nahnevaný konkurent nestačí. Výnimka: dôvod
+ * PODVOD upozorní už pri PRVOM nahlásení, lebo pri nehnuteľnostiach ide
+ * o peniaze a čas hrá proti obeti. Prah spúšťa UPOZORNENIE, nie akciu.
+ */
+type Alert_ = {
+  target_type: string;
+  target_id: string;
+  nahlaseni: number;
+  dovody: string;
+  naliehave: boolean;
+};
+
 type AdminProperty = {
   id: string;
   title: string;
@@ -36,6 +50,7 @@ export default function AdminScreen() {
   const [section, setSection] = useState<Section>('REPORTS');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [reports, setReports] = useState<ReportRow[]>([]);
+  const [alerts, setAlerts] = useState<Alert_[]>([]);
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,21 +59,24 @@ export default function AdminScreen() {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, p, u] = await Promise.all([
+      const [s, r, p, u, a] = await Promise.all([
         db().rpc('admin_stats'),
         db().from('report').select('*').order('created_at', { ascending: false }).limit(200),
         db().from('property').select('id,title,status,city,created_at,rejection_reason')
           .order('created_at', { ascending: false }).limit(200),
         db().rpc('admin_users'),
+        db().rpc('admin_alerts'),
       ]);
       if (s.error) throw s.error;
       if (r.error) throw r.error;
       if (p.error) throw p.error;
       if (u.error) throw u.error;
+      if (a.error) throw a.error;
       setStats(((s.data ?? []) as AdminStats[])[0] ?? null);
       setReports((r.data ?? []) as ReportRow[]);
       setProperties((p.data ?? []) as AdminProperty[]);
       setUsers((u.data ?? []) as AdminUser[]);
+      setAlerts((a.data ?? []) as Alert_[]);
     } catch (e: unknown) {
       const m = e instanceof Error ? e.message : String(e);
       console.log(`[ADMIN] Načítanie zlyhalo: ${m}`);
@@ -154,6 +172,33 @@ export default function AdminScreen() {
               <Stat label="Zablokovaní" value={stats.zablokovani} />
               <Stat label="Otvorené nahlásenia" value={stats.nahlasenia_otvorene} highlight />
             </View>
+          </Card>
+        ) : null}
+
+        {alerts.length > 0 ? (
+          <Card>
+            <Text style={[styles.section, { color: palette.danger }]}>
+              VYŽADUJE POZORNOSŤ ({alerts.length})
+            </Text>
+            <Text style={[styles.meta, { color: palette.textMuted }]}>
+              Traja rôzni ľudia nahlásili to isté — alebo niekto nahlásil podvod.
+            </Text>
+            {alerts.map((a) => (
+              <View
+                key={`${a.target_type}-${a.target_id}`}
+                style={[styles.alert, { borderColor: a.naliehave ? palette.danger : palette.warning }]}>
+                <View style={styles.rowHead}>
+                  <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
+                    {a.target_type === 'PROPERTY' ? 'Inzerát' : a.target_type === 'USER' ? 'Používateľ' : 'Ponuka'}{' '}
+                    {a.target_id.slice(0, 8)}
+                  </Text>
+                  {a.naliehave ? <Badge text="PODVOD" tone="warning" /> : null}
+                </View>
+                <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                  {a.nahlaseni}× · {a.dovody}
+                </Text>
+              </View>
+            ))}
           </Card>
         ) : null}
 
@@ -318,4 +363,5 @@ const styles = StyleSheet.create({
   meta: { ...Type.caption },
   note: { ...Type.bodyMd },
   actions: { gap: Spacing.sm },
+  alert: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, gap: 4 },
 });

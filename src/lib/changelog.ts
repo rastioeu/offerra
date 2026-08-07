@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.0.0',
     date: '7. augusta 2026',
+    title: 'Nahlasovanie, moderovanie a správa',
+    items: [
+      'Nevhodný inzerát, ponuku alebo používateľa môžeš nahlásiť priamo tam, kde ich vidíš.',
+      'Nahlásenie nikoho automaticky nezmaže — pozrie si ho človek.',
+      'Správca vie inzerát skryť z katalógu alebo zmazať, a používateľa zablokovať.',
+      'Skrytý inzerát zmizne z ponuky, ale majiteľ ho vidí aj s dôvodom.',
+      'Zablokovaný používateľ sa nevie prihlásiť ani nič pridať; jeho doterajšie dáta ostávajú.',
+      'Správca dostane upozornenie, keď to isté nahlásia traja rôzni ľudia — alebo hneď, keď niekto nahlási podvod.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '7. augusta 2026',
     title: 'Nahlasovanie a verzný riadok',
     items: [
       'Nevhodný inzerát, používateľa alebo ponuku môžeš nahlásiť — tlačidlom priamo tam, kde ich vidíš.',
