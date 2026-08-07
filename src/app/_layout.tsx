@@ -2,11 +2,13 @@ import { DarkTheme, DefaultTheme, ThemeProvider, Stack, useRouter, useSegments }
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
+import { decideRoute } from '@/lib/gate';
 import { Colors } from '@/theme/tokens';
 
 SplashScreen.preventAutoHideAsync();
@@ -40,6 +42,10 @@ function RootLayoutInner() {
   const router = useRouter();
   const segments = useSegments();
 
+  // FÁZA 2 — brána má dva stupne: session, a potom prezývka.
+  // Musí byť deklarované PRED efektmi, ktoré ho čítajú.
+  const { profile, error: profileError, reload: reloadProfile } = useProfile();
+
   // Splash sa smie skryť až keď vieme, kam patríme — inak by na okamih
   // preblikla nesprávna obrazovka.
   //
@@ -49,35 +55,29 @@ function RootLayoutInner() {
   // rovnako. Prejavilo by sa to až na zariadení ako „appka sa nespustí".
   useEffect(() => {
     if (session === undefined) return;
+    // Pri prihlásenom čakáme aj na profil — inak by preblikla nesprávna
+    // obrazovka. Ak profil zlyhal (`profileError`), splash SA MUSÍ skryť
+    // tiež, inak by appka ostala visieť — tá istá trieda chyby ako 0.17.
+    if (session && profile === undefined && !profileError) return;
     SplashScreen.hideAsync().catch((e: unknown) => {
       console.log(`[APP] Skrytie splash screenu zlyhalo: ${String(e)}`);
     });
-  }, [session]);
+  }, [session, profile, profileError]);
 
   // FÁZA 2 — brána má teraz dva stupne: session, a potom prezývka.
   // Bez prezývky sa nedá inzerovať ani ponúkať (v DB to drží cudzí kľúč na
   // `offerra.profile`), takže je to podmienka vstupu, nie odporúčanie.
-  const { profile } = useProfile();
-
   useEffect(() => {
-    if (session === undefined) return; // ešte nevieme
-    if (session && profile === undefined) return; // profil sa ešte načítava
-
-    // Zámerne sa pýtame „sme na logine?", nie „sme v taboch?". Pri
-    // skupinovej route `(tabs)` nie je zaručené, ako presne vyzerá
-    // `segments[0]` pre úvodnú obrazovku — `login` je jednoznačné a
-    // nemôže z toho vzniknúť cyklus presmerovaní.
-    const onLogin = segments[0] === 'login';
-    const onNickname = segments[0] === 'prezyvka';
-
-    if (!session) {
-      if (!onLogin) router.replace('/login');
-    } else if (!profile) {
-      if (!onNickname) router.replace('/prezyvka');
-    } else if (onLogin || onNickname) {
-      router.replace('/(tabs)');
-    }
-  }, [session, profile, segments, router]);
+    // Rozhodovanie je v `@/lib/gate` ako čistá funkcia — pokryté testom,
+    // lebo práve táto logika nás už trikrát stála chybu na zariadení.
+    const target = decideRoute({
+      session,
+      profile,
+      segment: segments[0],
+      profileError: Boolean(profileError),
+    });
+    if (target) router.replace(target);
+  }, [session, profile, profileError, segments, router]);
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -90,6 +90,30 @@ function RootLayoutInner() {
       primary: palette.primary,
     },
   };
+
+  // Profil sa nepodarilo načítať a používateľ je prihlásený — nesmie
+  // skončiť na onboardingu ani na prázdnej obrazovke.
+  if (session && profile === undefined && profileError) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ThemeProvider value={navTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <View style={{ flex: 1, backgroundColor: palette.background, padding: 24, justifyContent: 'center', gap: 12 }}>
+            <Text style={{ color: palette.textPrimary, fontSize: 20, fontWeight: '700' }}>
+              Nepodarilo sa načítať profil
+            </Text>
+            <Text style={{ color: palette.textSecondary, fontSize: 14 }}>{profileError}</Text>
+            <Pressable
+              onPress={() => void reloadProfile()}
+              accessibilityRole="button"
+              style={{ backgroundColor: palette.primary, borderRadius: 12, padding: 16, alignItems: 'center' }}>
+              <Text style={{ color: palette.onPrimary, fontSize: 16, fontWeight: '600' }}>Skúsiť znova</Text>
+            </Pressable>
+          </View>
+        </ThemeProvider>
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -107,6 +131,7 @@ function RootLayoutInner() {
           <Stack.Screen name="dopyt/[id]" />
           <Stack.Screen name="nastavenia" />
           <Stack.Screen name="novinky" />
+          <Stack.Screen name="oznamenia" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

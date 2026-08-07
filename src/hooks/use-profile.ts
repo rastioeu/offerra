@@ -28,7 +28,13 @@ export type MyProfile = {
 };
 
 type ProfileState = {
-  /** `undefined` = ešte nevieme, `null` = prihlásený bez prezývky. */
+  /**
+   * `undefined` = ešte NEVIEME (načítava sa, alebo sa nepodarilo načítať)
+   * `null`      = server ODPOVEDAL a profil naozaj neexistuje
+   *
+   * Ten rozdiel je podstatný: `null` posiela používateľa na obrazovku
+   * prezývky. Preto sa `null` smie nastaviť LEN po úspešnej odpovedi.
+   */
   profile: MyProfile | null | undefined;
   error: string | null;
   reload: () => Promise<void>;
@@ -46,8 +52,20 @@ export function ProfileProvider({ userId, children }: { userId: string | undefin
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
+    // CHYBA, KTORÚ TO OPRAVUJE (nahlásil Rastio 7.8.2026 so screenshotom):
+    // obrazovka „Ako ťa máme volať?" naskakovala pri KAŽDOM otvorení appky.
+    //
+    // Pôvodne sa tu pri chýbajúcom `userId` nastavovalo `null`. Lenže
+    // `null` znamená „prihlásený, ale BEZ prezývky" — a presne to posiela
+    // na onboarding. Pri štarte appky session ešte nie je načítaná, takže
+    // `userId` je `undefined` → profil sa nastavil na `null` → brána
+    // poslala používateľa na prezývku, hoci ju v DB dávno má.
+    //
+    // Zhoršoval to poriadok efektov: `RootLayoutInner` je DIEŤA
+    // `ProfileProvider`, a v Reacte bežia efekty dieťaťa SKÔR než rodiča.
+    // Brána teda stihla prečítať staré `null` prv, než ho rodič prepísal.
     if (!userId) {
-      setProfile(null);
+      setProfile(undefined); // NEVIEME, nie „bez prezývky"
       return;
     }
     setError(null);
@@ -55,12 +73,15 @@ export function ProfileProvider({ userId, children }: { userId: string | undefin
       const { data, error: e } = await db().rpc('my_profile');
       if (e) throw e;
       const rows = (data ?? []) as MyProfile[];
+      // `null` až TERAZ — server odpovedal a riadok naozaj nie je.
       setProfile(rows[0] ?? null);
     } catch (e: unknown) {
       const m = message(e);
       console.log(`[PROFIL] Načítanie zlyhalo: ${m}`);
       setError(m);
-      setProfile(null);
+      // ZÁMERNE NIE `null`: výpadok siete pri štarte by inak vyzeral ako
+      // „nemáš prezývku" a poslal by na onboarding niekoho, kto ju má.
+      setProfile(undefined);
     }
   }, [userId]);
 

@@ -9,6 +9,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PropertyCard } from '@/components/property-card';
+import { NotificationBell } from '@/components/notification-bell';
 import { SearchBar } from '@/components/search-bar';
 import { ErrorNote, PropertyCardSkeleton } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
@@ -40,7 +41,10 @@ export default function NehnutelnostiScreen() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.primary} />}>
         <View style={styles.head}>
-          <Text style={[styles.title, { color: palette.textPrimary }]}>Nehnuteľnosti</Text>
+          <View style={styles.headRow}>
+            <Text style={[styles.title, { color: palette.textPrimary }]}>Nehnuteľnosti</Text>
+            <NotificationBell />
+          </View>
           {items ? (
             <Text style={[styles.count, { color: palette.textMuted }]}>
               {items.length === 0
@@ -87,6 +91,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
   head: { gap: 2 },
+  headRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { ...Type.hero, fontWeight: Weight.bold },
   count: { ...Type.bodyMd },
   spinner: { marginTop: Spacing.xxl },

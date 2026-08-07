@@ -13,7 +13,8 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Badge, Button, Card, ErrorNote, Field } from '@/components/ui';
+import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
+import { Badge, Button, Card, ErrorNote, Field, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
@@ -99,6 +100,32 @@ export default function ProfilScreen() {
 
   const missingContact = profile && !profile.full_name && !profile.phone;
   const build = readBuildInfo();
+
+  // Časová os — udalosti z rôznych zdrojov zlúčené a zoradené podľa času.
+  // Práve to zlúčenie robí z plochých zoznamov príbeh.
+  const timeline: ActivityEvent[] = [
+    ...(properties ?? []).map((p) => ({
+      id: p.id,
+      at: p.created_at,
+      kind: 'INZERAT' as const,
+      title: p.title || 'Bez názvu',
+      detail: [p.city, STATUS_LABEL[p.status]].filter(Boolean).join(' · '),
+    })),
+    ...(offers ?? []).map((o) => ({
+      id: o.id,
+      at: o.created_at,
+      kind: 'PONUKA_ODOSLANA' as const,
+      title: o.property?.title || 'Inzerát',
+      detail: `${formatAmount(o.amount, o.property?.transaction_type ?? 'SALE')} · ${OFFER_STATUS_LABEL[o.status]}`,
+    })),
+    ...(requests ?? []).map((r) => ({
+      id: r.id,
+      at: r.created_at,
+      kind: 'DOPYT' as const,
+      title: r.description?.slice(0, 60) || 'Dopyt',
+      detail: formatBudget(r.budget_min, r.budget_max),
+    })),
+  ].sort((a, b) => (a.at < b.at ? 1 : -1));
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
@@ -188,6 +215,11 @@ export default function ProfilScreen() {
                 onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
               }))}
             />
+
+            <Card>
+              <SectionLabel>ČASOVÁ OS</SectionLabel>
+              <ActivityTimeline events={timeline.slice(0, 25)} />
+            </Card>
 
             <SectionList
               label={`OBĽÚBENÉ (${favorites?.length ?? 0})`}

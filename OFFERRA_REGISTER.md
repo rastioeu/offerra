@@ -1514,6 +1514,148 @@ Do kartičky pôjde **len verejné info z katalógu** — žiadny kontakt ani
 presná adresa. To je pravidlo, nie poznámka: kontakt je chránený stĺpcovým
 grantom a do obrázka sa nesmie dostať zadnými dverami.
 
+---
+
+## BUG 0 — onboarding naskakoval pri každom otvorení — ✅ OPRAVENÉ
+
+Rastio 7.8.2026 so screenshotom: obrazovka „Ako ťa máme volať?" sa
+zobrazovala pri **každom** spustení appky, hoci prezývku v DB má.
+
+### Príčina — presne to, čo Rastio tipoval
+
+`ProfileProvider.reload()` pri chýbajúcom `userId` nastavoval profil na
+**`null`**. Lenže `null` v jazyku brány znamená „prihlásený, ale BEZ
+prezývky" — a to posiela na onboarding.
+
+Pri štarte appky session ešte nie je načítaná, takže `userId` je
+`undefined` → profil sa nastavil na `null` → brána poslala na prezývku.
+
+**Zhoršoval to poriadok efektov:** `RootLayoutInner` je DIEŤA
+`ProfileProvider` a v Reacte bežia efekty dieťaťa **skôr** než rodiča.
+Brána teda stihla prečítať staré `null` prv, než ho rodič prepísal.
+
+### Tretia chyba tej istej triedy — a druhá, horšia
+
+Pri oprave sa ukázalo, že `null` sa nastavovalo **aj v `catch`**. Výpadok
+siete pri štarte teda vyzeral ako „nemáš prezývku" a poslal na onboarding
+niekoho, kto ju má. To je horšie než pôvodná chyba, lebo je občasné.
+
+Zavedený jasný rozdiel:
+
+| Hodnota | Význam |
+|---|---|
+| `undefined` | ešte NEVIEME (načítava sa, alebo zlyhalo) |
+| `null` | server ODPOVEDAL a profil naozaj neexistuje |
+
+`null` sa smie nastaviť **len po úspešnej odpovedi**.
+
+### Aby to nebola štvrtá chyba tej istej triedy
+
+Rozhodovanie brány je vytiahnuté do čistej funkcie `src/lib/gate.ts`
+a **pokryté testom** — vrátane presnej postupnosti, ktorá chybu
+spôsobovala. Tá istá trieda („rozhodlo sa skôr, než dorazili dáta")
+nás už stála splash screen (0.17) aj neobnovenú bránu (2.11b).
+
+```
+✅ štart: nevieme nič                                    → null
+✅ ŠTART S ULOŽENOU SESSION, profil ešte nedorazil       → null   ← chyba bola TU
+✅ …a keď dorazí a prezývku MÁ                           → null
+✅ REGRESIA: session je, profil undefined, sme na taboch → null
+✅ neprihlásený → login                                  → /login
+✅ prihlásený BEZ profilu → prezývka                     → /prezyvka
+✅ po uložení prezývky → taby                            → /(tabs)
+✅ CHYBA načítania profilu → NIE onboarding              → null
+                                                          11/11
+```
+
+Navyše: pri zlyhaní načítania profilu sa **skryje splash** a ukáže sa
+obrazovka s dôvodom a tlačidlom „Skúsiť znova" — inak by appka visela,
+čo je presne chyba 0.17.
+
+**Stav v DB (dôkaz, že podmienka je splnená):**
+`rastioeu@protonmail.com · nickname „Rastio" · vyplnená = true`
+
+### Čo NIE JE dokázané
+
+Rastio žiada overiť **3× reštartom appky**. To spraviť neviem — nemám
+zariadenie. Dokázané je: logika brány (11/11) a že prezývka v DB naozaj
+je. Že sa onboarding po force-quite naozaj neukáže, potvrdí až Rastio.
+
+---
+
+## Fáza 5 — Zvonček, realtime, časová os (7.8.2026)
+
+**IDE OTA** — ale až do buildu #3 (rt `6e77233e…`), nie do starého.
+
+### 5.1 Oznámenia zakladá DATABÁZA, nie klient — ✅ OVERENÉ RUNTIME (7/7)
+
+`offerra.notification` + triggery. Klient na tabuľku **nemá `INSERT` grant
+vôbec** — oznámenie sa nedá podvrhnúť a vznikne aj vtedy, keď appka
+odosielateľa medzitým spadne.
+
+```
+✅ nová ponuka → oznámenie MAJITEĽOVI
+     „z_zauj ponúka 190 000 € za „Zvonček test""
+✅ cudzí cudzie oznámenia NEVIDÍ                         []
+✅ klient NEVIE oznámenie podvrhnúť                      403
+✅ prijatie ponuky → oznámenie ZÁUJEMCOVI
+✅ VYPNUTÝ typ sa ani NEZALOŽÍ (nie je len skrytý)
+✅ nový dopyt sediaci na inzerát → oznámenie majiteľovi
+✅ označenie prečítaných funguje
+```
+
+Piaty bod je podstatný: preferencia sa uplatní **pri vzniku**, nie pri
+zobrazení. Je rozdiel medzi „nedostal som to" a „appka mi to zamlčala".
+
+Pri tom teste sa našla drobná chyba: `to_char(…,'G')` bral oddeľovač
+z locale databázy a vypisoval **„190,000 €"**. Slovenčina používa medzeru
+— opravené.
+
+### 5.2 Živé obnovenie (Realtime) — 🟡 KÓD HOTOVÝ
+
+Supabase Realtime na `offerra.notification`, tabuľka pridaná do publikácie
+`supabase_realtime` (bez toho by sa udalosti neposielali — overené
+spätným SELECTom z `pg_publication_tables`).
+
+Keď na môj inzerát príde ponuka, zvonček sa rozsvieti **bez ťahania dole**.
+Ak sa kanál neotvorí, appka funguje ďalej (obnovuje sa pri návrate na
+obrazovku) a výpadok sa **loguje**, nie ignoruje.
+
+> Že to na zariadení naozaj pribehne v reálnom čase, sa dá overiť len
+> na zariadení.
+
+### 5.3 Zvonček a časová os — 🟡 KÓD HOTOVÝ
+
+Zvonček s počtom neprečítaných je v hlavičke katalógu (vzor MUTARK
+`app-header.tsx`). Obrazovka „Oznámenia" hovorí nahlas, že Offerra
+**neposiela upozornenia na zamknutú obrazovku** — sľubovať pípnutie,
+ktoré nepríde, je horšie než nesľúbiť nič.
+
+Časová os v Profile zlučuje inzeráty, moje ponuky a dopyty do jednej
+postupnosti zoradenej podľa času, so zvislou osou a dennými predelmi.
+Práve to zlúčenie robí z troch plochých zoznamov príbeh.
+
+### 5.4 Build #3 — ✅ OVERENÉ RUNTIME
+
+```
+Build ID     f4c872c7-7e88-4ea5-ba93-cd9e0637d125
+Status       finished           Version 1.1.0, buildNumber 3
+Runtime      6e77233eb0e1bd196e49196a1af1ed351862cd67   ← fingerprint
+IPA          HTTP/2 200, 21 221 744 B
+Submission   d9b3ddb6 → „successfully uploaded to App Store Connect"
+```
+
+Obsahuje app ikonu, splash, `expo-haptics` a `react-native-view-shot`.
+
+> ⚠️ Starý build (rt `1.0.0`) už ďalšie OTA **nedostane**. Kým si Rastio
+> nenainštaluje build #3 z TestFlightu, ostáva na tom, čo mal.
+
+### 5.5 Čo build #3 odblokoval, ale ešte nie je napísané — 🔴
+
+- **Haptika** — modul je v builde, volania v kóde zatiaľ nie sú.
+  Odhad: hodina (jemné chvenie pri podaní ponuky, prijatí, srdiečku).
+- **Kartička 9:16** — modul je v builde, kartička nie. Odhad 2–3 hodiny.
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

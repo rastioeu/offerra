@@ -19,6 +19,20 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.1.0',
+    date: '7. augusta 2026',
+    title: 'Zvonček, živé obnovenie a časová os',
+    items: [
+      'Opravené: obrazovka „Ako ťa máme volať?" už nenaskakuje pri každom otvorení appky.',
+      'Zvonček v Nehnuteľnostiach ukazuje, čo je nové — ponuka na tvoj inzerát, prijatie tvojej ponuky, dopyt, ktorý sedí na to, čo ponúkaš.',
+      'Keď príde ponuka, zvonček sa rozsvieti sám, bez ťahania dole.',
+      'V Profile je časová os — inzeráty, ponuky a dopyty pekne za sebou, ako sa diali.',
+      'Vypnutý druh upozornenia sa naozaj nezaloží; nie je len skrytý.',
+      'Offerra stále neposiela upozornenia na zamknutú obrazovku — nájdeš ich v appke pod zvončekom.',
+      'Táto verzia je nový build: má správnu ikonu a splash.',
+    ],
+  },
+  {
     version: '1.0.0',
     date: '7. augusta 2026',
     title: 'Nastavenia upozornení',
