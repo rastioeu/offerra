@@ -1,0 +1,68 @@
+{
+  "expo": {
+    "name": "Offerra",
+    "slug": "offerra",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "scheme": "offerra",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "com.offerra.app",
+      "appleTeamId": "TC4V762X67",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "usesAppleSignIn": true,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
+    },
+    "android": {
+      "package": "com.offerra.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#F5F7FA",
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+        "backgroundImage": "./assets/images/android-icon-background.png",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/images/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-apple-authentication",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F5F7FA",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 76
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Offerra použije tvoje fotky na pridanie obrázkov k inzerátu nehnuteľnosti."
+        }
+      ],
+      "expo-web-browser"
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    },
+    "owner": "rastio_eu",
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "31b8063a-d351-4e3c-bfc4-5c384e432b61"
+      }
+    }
+  }
+}
