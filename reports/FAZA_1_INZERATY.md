@@ -11,8 +11,8 @@
 Vybral si identitu **A — Navy & Azure** a **vlastnú tabuľku miest**; oboje
 je zapracované. Databáza, RLS, storage aj seed dáta sú hotové a overené
 skutočnými dotazmi — **25 automatických kontrol, všetky prešli**. Kód
-obrazoviek je hotový a bundlí sa, ale **na tvojom telefóne zatiaľ nie je** —
-to je posledný krok a potrebuje tvoje slovo.
+obrazoviek je hotový, zbundlený a po tvojom „OK update" **publikovaný cez
+OTA** — zostáva jediné: zavrieť appku, otvoriť ju a pozrieť sa na ňu.
 
 ---
 
@@ -189,7 +189,7 @@ Zmazať sa dajú jedným príkazom: `delete from offerra.property where is_seed;
 
 ---
 
-## Čo budeš testovať na telefóne (po „OK update")
+## Čo budeš testovať na telefóne
 
 1. **Ikona a splash** — na ploche musí byť navy štvorec s bielym kruhom
    a modrým domom. Splash je svetlý s tou istou značkou.
