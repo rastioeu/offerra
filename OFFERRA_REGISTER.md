@@ -278,7 +278,7 @@ Opravené: `hideAsync()` sa volá až keď je stav session známy (nie
 | Apple Developer Team ID | ✅ `TC4V762X67` — „Rastislav Janek (Individual)", potvrdené aj v EAS (`appleTeams`) |
 | App Store Connect API kľúč | ✅ na EAS účte: `ZTQ53HT6PX` („[Expo] EAS Submit"), issuer `7cc9c1f2-…` |
 | iOS distribučný certifikát | ✅ na EAS účte, platný do **2027-07-09** |
-| App Store Connect app record pre `com.offerra.app` | 🔴 **neexistuje** — vytvorí ho `eas submit` pri prvom podaní (MUTARK má `ascAppId 6791256971`, Offerra zatiaľ žiadne) |
+| App Store Connect app record pre `com.offerra.app` | ✅ **vytvorený** pri prvom `eas submit` — `ascAppId 6799028421` (viď 0.19) |
 
 ### 0.12 MUTARK a Famiglia nezmenené — ✅ OVERENÉ RUNTIME
 
@@ -310,11 +310,42 @@ nedostane. Rovnaký vzor ako MUTARK (kľúče cez EAS env, nie v repe).
   `Environment variables … loaded from the "production" environment on EAS:
   EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SUPABASE_URL`
 
-### 0.14 `eas build --platform ios` — 🟡 BEŽÍ
+### 0.14 `eas build --platform ios` — ✅ OVERENÉ RUNTIME (IPA existuje)
 
-**Build ID:** `1ec9874e-79f1-4abd-bedf-c42a6db8d46c`
-**Logy:** https://expo.dev/accounts/rastio_eu/projects/offerra/builds/1ec9874e-79f1-4abd-bedf-c42a6db8d46c
-Profil `production`, spustený 7.8.2026 08:01 UTC, stav `IN_PROGRESS`.
+**Build ID:** `9fdf26af-b3ea-406d-bae4-40cad5de4a9f`
+**Logy:** https://expo.dev/accounts/rastio_eu/projects/offerra/builds/9fdf26af-b3ea-406d-bae4-40cad5de4a9f
+Profil `production`, commit `7ed7fcf`, 7.8.2026 08:28 → 08:33 UTC (5 min 45 s),
+stav `finished`, verzia `1.0.0`, build number `1`.
+
+**Dôkaz — IPA sa dá stiahnuť, nie len „build hlási finished":**
+
+```
+Application Archive URL
+  https://expo.dev/artifacts/eas/Nfn5Ysec6SK2mnBhAGZx36RZ1z5i4V8kX9p91ZTGgRc.ipa
+
+curl -sIL → HTTP/2 200
+            content-type: application/octet-stream
+            content-length: 21999010          (21,99 MB)
+```
+
+> Hranica dôkazu: toto dokazuje **existenciu a stiahnuteľnosť súboru**.
+> Nedokazuje, že sa appka spustí ani že prihlásenie funguje — to je 0.19.
+
+**Build obsahuje prihlasovaciu obrazovku aj Apple/Google** — beží na commite
+`7ed7fcf`, teda za `5ba8371` (login screen) aj `0d50497` (Apple/Google).
+Rozdiel od `HEAD` (`b83ac52`) je **len `eas.json`**, čo je konfigurácia
+podania, nie súčasť binárky — build teda nie je zastaraný.
+
+#### Dva zrušené buildy — pre záznam
+
+| Build | Commit | Stav | Prečo |
+|---|---|---|---|
+| `1ec9874e` | `9a3beb3` | canceled | commit ešte **bez** prihlasovacej obrazovky |
+| `337dcd8e` | `5ba8371` | canceled | commit ešte **bez** Apple/Google |
+| `9fdf26af` | `7ed7fcf` | ✅ finished | obsahuje všetko |
+
+Zrušenie bolo správne: build bez prihlásenia by neumožnil overiť bod 7
+zadania a minul by build number 1 nadarmo.
 
 Kredenciály pred spustením overené (nie predpokladané):
 
@@ -379,6 +410,68 @@ TestFlight build už vedel OTA a drobné opravy nevyžadovali nový build.
 - `app.json` → `runtimeVersion` policy `appVersion`
 - `npx tsc --noEmit` → **exit 0**
 
+### 0.19 `eas submit` → TestFlight — ✅ OVERENÉ RUNTIME (binárka nahraná)
+
+Spustené 7.8.2026 08:47 UTC po Rastiovom **„ok submit"**.
+
+```
+Submission ID       11a0c65e-ceb4-4cd4-b56c-aa839db586b6
+Status              finished
+ASC App ID          6799028421
+Build ID            9fdf26af-b3ea-406d-bae4-40cad5de4a9f
+App Version         1.0.0     Build number  1
+Commit              7ed7fcf
+
+Your binary has been successfully uploaded to App Store Connect!
+```
+
+Stav overený **spätne** cez `eas submit:list`, nie len podľa výstupu príkazu.
+
+**Čo prvé podanie zároveň vytvorilo** (predtým nič z toho neexistovalo):
+
+- App identifier `com.offerra.app` nalinkovaný v ASC
+- **App Store Connect záznam appky „Offerra"** → `ascAppId 6799028421`
+- **TestFlight skupina `Team (Expo)`**, prístup pre `rastioeu@protonmail.com`
+- ASC API kľúč `ZTQ53HT6PX` priradený projektu `offerra` pre EAS Submit
+
+`ascAppId` doplnené do `eas.json` → ďalšie podania už nepotrebujú Apple login
+ani interaktívny režim.
+
+#### Apple login sa nakoniec nevyžiadal — prečo
+
+`--non-interactive` zlyhalo na:
+
+```
+Set ascAppId in the submit profile (eas.json) or re-run this command in interactive mode.
+```
+
+Interaktívny režim si vypýtal Apple ID, ale **heslo ani 2FA nie** — použil
+uloženú session:
+
+```
+› Restoring session /root/.app-store/auth/rastioeu@protonmail.com/cookie
+› Provider Rastislav Janek (129142627)
+✔ Logged in  Local session
+```
+
+Je to tá istá session, ktorú Rastio vytvoril pri provisioning profile (0.14).
+Preto nebolo treba znova otravovať — ale **je to session, nie trvalý
+kredenciál**: po jej expirácii si Apple login vypýta znova. Vďaka `ascAppId`
+v `eas.json` už ho ďalšie podania nepotrebujú.
+
+> Hranica dôkazu: dokázané je, že **binárka je nahraná v App Store Connect**.
+> Nedokazuje to, že Apple processing prejde, že sa appka spustí ani že
+> prihlásenie funguje. To je 0.20 — a to overuje Rastio na telefóne.
+
+### 0.20 Overenie v TestFlighte na zariadení — 🔴 NEDOKONČENÉ
+
+Čaká na Apple processing (5–10 min, príde e-mail) a potom na Rastia.
+Zoznam, čo presne otestovať, je v `reports/FAZA_0_SUBMIT.md`.
+Kým to Rastio nepotvrdí menovite, body **0.9** (4 taby) a **0.16**
+(prihlasovacia obrazovka) ostávajú 🟡.
+
+TestFlight: https://appstoreconnect.apple.com/apps/6799028421/testflight/ios
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
@@ -396,8 +489,9 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Nič blokujúce. Beží iOS build s Apple/Google prihlásením;
-po ňom nasleduje `eas submit` do TestFlightu a overenie na zariadení.
+Build aj submit sú hotové — binárka je v App Store Connect.
+Blokuje **jediná vec: overenie na telefóne v TestFlighte** (0.20).
+Zoznam, čo otestovať, je v `reports/FAZA_0_SUBMIT.md`.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
