@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
+import { Icon } from '@/components/icon';
 import { Badge, Button, Card, ErrorNote, Field, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
@@ -137,7 +138,7 @@ export default function ProfilScreen() {
             accessibilityRole="button"
             accessibilityLabel="Nastavenia"
             hitSlop={12}>
-            <Text style={[styles.gear, { color: palette.textSecondary }]}>⚙︎</Text>
+            <Icon name="gearshape" size={24} color={palette.textSecondary} />
           </Pressable>
         </View>
 

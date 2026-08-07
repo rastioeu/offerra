@@ -1,9 +1,10 @@
 import { Image } from 'expo-image';
 import { Link } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount } from '@/lib/offers';
+import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
   deadlineLabel,
   formatArea,
@@ -17,6 +18,7 @@ import {
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { FavoriteHeart } from './favorite-heart';
+import { Icon } from './icon';
 import { Badge } from './ui';
 
 export function PropertyCard({
@@ -30,8 +32,28 @@ export function PropertyCard({
 }) {
   const palette = useTheme();
   const cover = item.media[0]?.url;
-  const price = formatPrice(item.asking_price_hint, item.transaction_type);
   const deadline = deadlineLabel(item.offer_deadline);
+  // Text sa počíta zo ŽIVÉHO počtu ponúk, nie z toho, či je vyplnená cena.
+  const pd = priceDisplay(item.asking_price_hint, item.top_offer ?? null, item.offer_count ?? 0);
+
+  /** Rovnaká logika ako v detaile — len spúšťacie miesto navyše (bod 11A). */
+  async function shareItem() {
+    try {
+      await Share.share({
+        title: item.title,
+        message: [
+          item.title,
+          [item.city, formatArea(item.area_m2)].filter(Boolean).join(' · '),
+          `offerra://nehnutelnost/${item.id}`,
+        ]
+          .filter(Boolean)
+          .join('\n'),
+      });
+    } catch (e: unknown) {
+      console.log(`[ZDIEĽANIE] Zlyhalo: ${String(e)}`);
+    }
+  }
+  const price = formatPrice(pd.asking, item.transaction_type);
 
   const facts = [
     item.city,
@@ -58,11 +80,18 @@ export function PropertyCard({
             <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
             <Badge text={PROPERTY_LABEL[item.property_type]} />
           </View>
-          {onToggleFavorite ? (
-            <View style={styles.heart}>
+          <View style={styles.actions}>
+            <Pressable
+              onPress={shareItem}
+              hitSlop={10}
+              accessibilityRole="button"
+              accessibilityLabel="Zdieľať inzerát">
+              <Icon name="square.and.arrow.up" size={22} color={palette.surface} weight="semibold" />
+            </Pressable>
+            {onToggleFavorite ? (
               <FavoriteHeart active={Boolean(favorite)} onToggle={onToggleFavorite} />
-            </View>
-          ) : null}
+            ) : null}
+          </View>
         </View>
 
         <View style={styles.body}>
@@ -74,31 +103,34 @@ export function PropertyCard({
           ) : null}
 
           <View style={styles.priceRow}>
-            {price ? (
+            {pd.headline === 'ASKING' && price ? (
               <>
                 <Text style={[styles.price, { color: palette.primary }]}>{price}</Text>
-                <Text style={[styles.priceNote, { color: palette.textMuted }]}>orientačne</Text>
+                <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd.note}</Text>
+              </>
+            ) : pd.headline === 'TOP_OFFER' && pd.topOffer != null ? (
+              <>
+                <Text style={[styles.price, { color: palette.link }]}>
+                  {formatAmount(pd.topOffer, item.transaction_type)}
+                </Text>
+                <Text style={[styles.priceNote, { color: palette.textMuted }]}>najvyššia ponuka</Text>
               </>
             ) : (
-              <Text style={[styles.priceNote, { color: palette.textMuted }]}>Cena neuvedená — čaká na ponuky</Text>
+              <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd.note}</Text>
             )}
           </View>
 
-          {/* Najvyššia ponuka — pri otvorenom modeli je to najdôležitejšie
-              číslo na karte, dôležitejšie než orientačná cena. */}
-          {item.top_offer != null ? (
+          {/* Najvyššiu ponuku pridávame ako druhý riadok len vtedy, keď
+              hlavné číslo je orientačná cena — inak by tam bola dvakrát. */}
+          {pd.headline === 'ASKING' && pd.topOffer != null ? (
             <View style={[styles.topOffer, { borderTopColor: palette.border }]}>
               <Text style={[styles.topOfferLabel, { color: palette.textSecondary }]}>
                 Najvyššia ponuka
               </Text>
               <Text style={[styles.topOfferValue, { color: palette.link }]}>
-                {formatAmount(item.top_offer, item.transaction_type)}
+                {formatAmount(pd.topOffer, item.transaction_type)}
               </Text>
             </View>
-          ) : item.offer_count === 0 ? (
-            <Text style={[styles.noOffers, { color: palette.textMuted }]}>
-              Zatiaľ bez ponúk
-            </Text>
           ) : null}
 
           {deadline ? (
@@ -114,7 +146,7 @@ export function PropertyCard({
           <Text style={[styles.added, { color: palette.textMuted }]}>
             Pridané {formatDate(item.created_at)} · {item.view_count}{' '}
             {item.view_count === 1 ? 'zobrazenie' : item.view_count < 5 ? 'zobrazenia' : 'zobrazení'}
-            {item.offer_count ? ` · ${item.offer_count} ${item.offer_count === 1 ? 'ponuka' : item.offer_count < 5 ? 'ponuky' : 'ponúk'}` : ''}
+            {offerCountLabel(pd.offerCount) ? ` · ${offerCountLabel(pd.offerCount)}` : ''}
           </Text>
         </View>
       </Pressable>
@@ -126,7 +158,20 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, overflow: 'hidden' },
   photo: { height: 190, justifyContent: 'center', alignItems: 'center' },
   noPhoto: { ...Type.caption },
-  heart: { position: 'absolute', top: Spacing.sm, right: Spacing.sm },
+  actions: {
+    position: 'absolute',
+    top: Spacing.sm,
+    right: Spacing.sm,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.md,
+  },
+  shareGlyph: {
+    fontSize: 22,
+    textShadowColor: 'rgba(0,0,0,0.45)',
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
   badges: { position: 'absolute', top: Spacing.sm, left: Spacing.sm, flexDirection: 'row', gap: Spacing.xs },
   body: { padding: Spacing.md, gap: Spacing.xs },
   title: { ...Type.subtitle, fontWeight: Weight.semibold },

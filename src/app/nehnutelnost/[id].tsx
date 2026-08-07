@@ -33,6 +33,8 @@ import {
   PROPERTY_LABEL,
   TRANSACTION_LABEL,
 } from '@/lib/property';
+import { formatAmount } from '@/lib/offers';
+import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 const PHOTO_W = Dimensions.get('window').width - Spacing.lg * 2;
@@ -87,7 +89,12 @@ export default function PropertyDetailScreen() {
     }
   }
 
-  const price = item ? formatPrice(item.asking_price_hint, item.transaction_type) : null;
+  // Živé ponuky = tie, ktoré ešte stoja. Stiahnutá ani odmietnutá ponuka
+  // nie je „ponuka na inzeráte".
+  const live = (offers ?? []).filter((o) => o.status === 'PENDING' || o.status === 'ACCEPTED');
+  const topOffer = live.length > 0 ? Math.max(...live.map((o) => o.amount)) : null;
+  const pd = item ? priceDisplay(item.asking_price_hint, topOffer, live.length) : null;
+  const price = pd ? formatPrice(pd.asking, item!.transaction_type) : null;
   const deadline = item ? deadlineLabel(item.offer_deadline) : null;
 
   return (
@@ -146,19 +153,37 @@ export default function PropertyDetailScreen() {
 
             <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
 
-            {price ? (
+            {pd?.headline === 'ASKING' && price ? (
               <View style={styles.priceRow}>
                 <Text style={[styles.price, { color: palette.primary }]}>{price}</Text>
-                <Text style={[styles.priceNote, { color: palette.textMuted }]}>orientačne</Text>
+                <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd.note}</Text>
+              </View>
+            ) : pd?.headline === 'TOP_OFFER' && pd.topOffer != null ? (
+              <View style={styles.priceRow}>
+                <Text style={[styles.price, { color: palette.link }]}>
+                  {formatAmount(pd.topOffer, item.transaction_type)}
+                </Text>
+                <Text style={[styles.priceNote, { color: palette.textMuted }]}>
+                  najvyššia ponuka · {pd.note}
+                </Text>
               </View>
             ) : (
-              <Text style={[styles.priceNote, { color: palette.textMuted }]}>
-                Cena neuvedená — predávajúci čaká na ponuky.
-              </Text>
+              <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd?.note}</Text>
             )}
+
+            {/* Keď je hlavné číslo orientačná cena, najvyššiu ponuku pridáme
+                pod ňu — aby bolo vidieť oboje a nesplynulo to. */}
+            {pd?.headline === 'ASKING' && pd.topOffer != null ? (
+              <Text style={[styles.deadline, { color: palette.link }]}>
+                Najvyššia ponuka {formatAmount(pd.topOffer, item.transaction_type)}
+                {offerCountLabel(pd.offerCount) ? ` · ${offerCountLabel(pd.offerCount)}` : ''}
+              </Text>
+            ) : null}
 
             {deadline ? <Text style={[styles.deadline, { color: palette.link }]}>{deadline}</Text> : null}
 
+            {/* Tri prvky v jednom neurastúcom riadku pretekali cez okraj.
+                Teraz: srdiečko + Zdieľať v riadku, nahlásenie na vlastnom. */}
             <View style={styles.toolRow}>
               {myId ? (
                 <FavoriteHeart
@@ -167,11 +192,14 @@ export default function PropertyDetailScreen() {
                   size={30}
                 />
               ) : null}
+              <View style={styles.toolSpacer} />
               <Button title="Zdieľať" onPress={share} variant="outline" />
-              {!isOwner ? (
-                <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
-              ) : null}
             </View>
+            {!isOwner ? (
+              <View style={styles.reportRow}>
+                <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
+              </View>
+            ) : null}
 
             <Card>
               <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PARAMETRE</Text>
@@ -275,5 +303,7 @@ const styles = StyleSheet.create({
   hidden: { ...Type.caption },
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
-  toolRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.md },
+  toolRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
+  toolSpacer: { flex: 1 },
+  reportRow: { alignItems: 'flex-end' },
 });

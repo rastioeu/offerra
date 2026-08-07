@@ -4,9 +4,11 @@
  * a používateľ dostane hlášku.
  */
 import { useRef } from 'react';
-import { Alert, Animated, Pressable, StyleSheet, Text } from 'react-native';
+import { Alert, Animated, Pressable, StyleSheet } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+
+import { Icon } from './icon';
 
 export function FavoriteHeart({
   active,
@@ -39,20 +41,24 @@ export function FavoriteHeart({
       accessibilityRole="button"
       accessibilityLabel={active ? 'Odobrať z obľúbených' : 'Pridať do obľúbených'}
       accessibilityState={{ selected: active }}>
-      <Animated.View style={{ transform: [{ scale }] }}>
-        {/* Biele prázdne srdce na fotke potrebuje obrys, inak zanikne. */}
-        <Text style={[styles.heart, { fontSize: size, color: active ? palette.danger : palette.surface }]}>
-          {active ? '♥' : '♡'}
-        </Text>
+      <Animated.View style={[styles.heart, { transform: [{ scale }] }]}>
+        <Icon
+          name={active ? 'heart.fill' : 'heart'}
+          size={size}
+          color={active ? palette.danger : palette.surface}
+          weight="semibold"
+        />
       </Animated.View>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
+  // Biele srdce na fotke potrebuje obrys, inak zanikne.
   heart: {
-    textShadowColor: 'rgba(0,0,0,0.45)',
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.45,
+    shadowRadius: 3,
   },
 });

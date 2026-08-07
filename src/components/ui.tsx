@@ -312,7 +312,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,
+    // CHÝBALO — bez vodorovného odsadenia bolo tlačidlo v riadku nalepené
+    // na text a spolu s ďalšími prvkami pretieklo cez okraj obrazovky
+    // (Rastio, screenshot 7.8.2026). MUTARK má rovnakú hodnotu.
+    paddingHorizontal: Spacing.xl,
+    minHeight: 50,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: { ...Type.button, fontWeight: Weight.semibold },
   badge: { borderRadius: Radius.sm, paddingHorizontal: Spacing.sm, paddingVertical: 3 },

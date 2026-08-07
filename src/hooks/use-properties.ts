@@ -48,11 +48,15 @@ async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWith
     .in('property_id', rows.map((r) => r.id));
   if (error) throw error;
 
+  // ŽIVÁ ponuka = tá, ktorá ešte stojí. Stiahnutá ani odmietnutá sa
+  // nepočíta — inak by karta hlásila „2 ponuky" pri inzeráte, kde obe
+  // dávno padli. Rovnaká definícia ako v detaile (`price-display`).
   const best = new Map<string, { top: number | null; count: number }>();
   for (const o of (data ?? []) as { property_id: string; amount: number; status: string }[]) {
+    if (o.status !== 'PENDING' && o.status !== 'ACCEPTED') continue;
     const cur = best.get(o.property_id) ?? { top: null, count: 0 };
     cur.count += 1;
-    if (o.status === 'PENDING' && (cur.top == null || o.amount > cur.top)) cur.top = o.amount;
+    if (cur.top == null || o.amount > cur.top) cur.top = o.amount;
     best.set(o.property_id, cur);
   }
   return rows.map((r) => ({

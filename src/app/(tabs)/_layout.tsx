@@ -1,6 +1,7 @@
 import { Tabs } from 'expo-router/tabs';
-import { Text, type ColorValue } from 'react-native';
+import { type ColorValue } from 'react-native';
 
+import { Icon, type IconName } from '@/components/icon';
 import { useIsAdmin } from '@/hooks/use-is-admin';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -36,28 +37,28 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Nehnuteľnosti',
-          tabBarIcon: ({ color }) => <TabGlyph glyph="⌂" color={color} />,
+          tabBarIcon: ({ color }) => <TabGlyph name="house" color={color} />,
         }}
       />
       <Tabs.Screen
         name="dopyty"
         options={{
           title: 'Dopyty',
-          tabBarIcon: ({ color }) => <TabGlyph glyph="✉" color={color} />,
+          tabBarIcon: ({ color }) => <TabGlyph name="envelope" color={color} />,
         }}
       />
       <Tabs.Screen
         name="pridat"
         options={{
           title: 'Pridať',
-          tabBarIcon: ({ color }) => <TabGlyph glyph="＋" color={color} />,
+          tabBarIcon: ({ color }) => <TabGlyph name="plus.circle" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profil"
         options={{
           title: 'Profil',
-          tabBarIcon: ({ color }) => <TabGlyph glyph="☺" color={color} />,
+          tabBarIcon: ({ color }) => <TabGlyph name="person.circle" color={color} />,
         }}
       />
       {/* `href: null` tab úplne ODSTRÁNI, nielen zamkne jeho obsah —
@@ -68,7 +69,7 @@ export default function TabsLayout() {
         options={{
           title: 'Správa',
           href: isAdmin ? undefined : null,
-          tabBarIcon: ({ color }) => <TabGlyph glyph="⚑" color={color} />,
+          tabBarIcon: ({ color }) => <TabGlyph name="checkmark.seal" color={color} />,
         }}
       />
     </Tabs>
@@ -76,7 +77,8 @@ export default function TabsLayout() {
 }
 
 // `tabBarIcon` dodáva `ColorValue` (nie `string`) — natívne platformy vedia
-// posielať aj nepriehľadné handle-y, nie len hex.
-function TabGlyph({ glyph, color }: { glyph: string; color: ColorValue }) {
-  return <Text style={{ color, fontSize: 20, lineHeight: 24 }}>{glyph}</Text>;
+// posielať aj nepriehľadné handle-y, nie len hex. `Icon` chce `string`,
+// takže sa berie len keď to hex naozaj je.
+function TabGlyph({ name, color }: { name: IconName; color: ColorValue }) {
+  return <Icon name={name} size={24} color={typeof color === 'string' ? color : undefined} />;
 }
