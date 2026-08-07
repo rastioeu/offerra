@@ -1,6 +1,6 @@
 # FÁZA 2 — OTVORENÉ PSEUDONYMNÉ PONUKY, DOPYTY, PROFIL
 
-**Verzia:** 1.3.0
+**Verzia:** 1.3.2
 **Dátum:** 7.8.2026
 **Stav:** ⏸️ **čakám na jednu vec od teba** — otestovať to na telefóne
 
@@ -121,6 +121,60 @@ unikátny index v DB.
 `delete-account` ako edge funkciu. U nás to robí
 `offerra.delete_my_account()` — nepotrebuje samostatný deploy a testuje sa
 rovnako ako zvyšok schémy. Overené: `auth.users 1→0`, `profile → 0`.
+
+---
+
+## 🔴 Štyri diery, ktoré som našiel sám — a opravil
+
+Po dokončení Fázy 2 som si prešiel oprávnenia na ponukách a našiel štyri
+diery. **Nenahlásil si ich ty, našiel som ich vlastnou kontrolou** — píšem
+to sem, lebo dve z nich boli vážne.
+
+RLS pustila úpravu ponuky obom stranám, ale nikde nebolo povedané, **kto
+smie meniť ktorý stĺpec**. Riadková politika to ani vyjadriť nevie.
+
+Namerané PRED opravou:
+
+```
+🔴 záujemca si vedel SÁM akceptovať vlastnú ponuku
+🔴 a tým si vytiahnuť tvoje meno a telefón
+🔴 majiteľ vedel prepísať SUMU cudzej ponuky (190 000 → 1)
+🔴 majiteľ vedel prepísať SPRÁVU záujemcu
+```
+
+Prvé dve rušia celé pravidlo, na ktorom Fáza 2 stojí — že kontakt sa
+odkryje až vtedy, keď ponuku prijme majiteľ.
+
+Opravené triggerom v databáze:
+
+| Kto | Smie zmeniť |
+|---|---|
+| majiteľ | **len** stav, a len z „čaká" na „prijatá/odmietnutá" |
+| záujemca | svoju sumu a správu, alebo ponuku stiahnuť |
+| nikto | ponuku presunúť na iný inzerát či iného človeka |
+| nikto | už uzavretú ponuku |
+
+Po oprave **5/5 ošetrených, 0 dier**, a plný test Fázy 2 naďalej **25/25** —
+trigger nerozbil bežné používanie.
+
+> Kde je hranica: RLS odpovedá na „smieš siahnuť na tento RIADOK".
+> Stĺpcový grant na „smieš čítať tento STĹPEC". A na „smieš ho zmeniť NA
+> TÚTO hodnotu" už odpovedá len trigger. Fáza 2 mala prvé dve, tretie
+> chýbalo.
+
+---
+
+## 🔁 Ďalšie dve veci, ktoré som pri tom dorobil
+
+**Obrazovky sa neobnovovali po návrate.** Tá istá trieda chyby ako profil:
+podal si ponuku, vrátil sa na detail a videl starý zoznam. To isté po
+zverejnení inzerátu a po vytvorení dopytu. Obrazovky sa teraz obnovia, keď
+sa na ne vrátiš.
+
+**Počítadlo zobrazení.** `view_count` bol v modeli od Fázy 1, ale nemal ho
+kto zvyšovať — úpravu cudzieho inzerátu RLS nepustí, a práve cudzí ho aj
+pozerá. Teraz sa počíta (vlastné pozeranie sa nepočíta) a vidno ho
+v parametroch inzerátu.
 
 ---
 
