@@ -35,7 +35,10 @@
   "submit": {
     "production": {
       "ios": {
-        "appleTeamId": "TC4V762X67"
+        "appleTeamId": "TC4V762X67",
+        "companyName": "Rastislav Janek",
+        "language": "sk",
+        "sku": "com.offerra.app"
       }
     }
   }
