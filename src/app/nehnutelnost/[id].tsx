@@ -1,16 +1,21 @@
 /**
- * Detail inzerátu — galéria, popis, parametre.
+ * Detail inzerátu — galéria, popis, parametre a VEREJNÝ zoznam ponúk.
  *
- * „Ponuky" sú zámerne placeholder: modul ponúk je Fáza 2. Radšej čestné
- * „čoskoro" než vymyslené číslo.
+ * Zoznam ponúk sa načítava bez ohľadu na prihlásenie: suma, prezývka, stav
+ * a dátum sú verejné (rozhodnutie Rastia 7.8.2026 — otvorené pseudonymné
+ * ponuky). Dotazník nájomcu sa sem NEDOSTANE ani omylom — je neverejný
+ * a cudziemu ho nevydá ani databáza.
  */
 import { Image } from 'expo-image';
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, Card, ErrorNote } from '@/components/ui';
+import { OfferList } from '@/components/offer-list';
+import { Badge, Button, Card, ErrorNote } from '@/components/ui';
+import { useOffers } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
+import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import {
   deadlineLabel,
@@ -26,8 +31,15 @@ const PHOTO_W = Dimensions.get('window').width - Spacing.lg * 2;
 
 export default function PropertyDetailScreen() {
   const palette = useTheme();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, error } = useProperty(id);
+  const { offers, error: offersError } = useOffers(id);
+  const { session } = useSession();
+
+  const myId = session?.user.id;
+  const isOwner = Boolean(myId && item && item.owner_id === myId);
+  const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
 
   const price = item ? formatPrice(item.asking_price_hint, item.transaction_type) : null;
   const deadline = item ? deadlineLabel(item.offer_deadline) : null;
@@ -124,10 +136,31 @@ export default function PropertyDetailScreen() {
             ) : null}
 
             <Card>
-              <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PONUKY</Text>
-              <Text style={[styles.soon, { color: palette.textMuted }]}>
-                Ponuky: čoskoro — modul predkladania ponúk pripravujeme.
+              <Text style={[styles.cardLabel, { color: palette.textMuted }]}>
+                PONUKY ({offers?.length ?? 0})
               </Text>
+              <Text style={[styles.soon, { color: palette.textMuted }]}>
+                Ponuky sú verejné — sumu vidí každý. Kto za prezývkou stojí,
+                sa dozvie až ten, koho ponuku predávajúci prijme.
+              </Text>
+              <ErrorNote error={offersError} />
+              <OfferList
+                offers={offers ?? []}
+                transaction={item.transaction_type}
+                highlightBidderId={myId}
+              />
+
+              {isOwner ? (
+                <Button
+                  title="Spravovať ponuky"
+                  onPress={() => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } })}
+                />
+              ) : myId ? (
+                <Button
+                  title={myOffer ? 'Upraviť moju ponuku' : 'Podať ponuku'}
+                  onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
+                />
+              ) : null}
             </Card>
           </>
         ) : null}

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { Colors } from '@/theme/tokens';
 
@@ -41,21 +42,30 @@ export default function RootLayout() {
     });
   }, [session]);
 
+  // FÁZA 2 — brána má teraz dva stupne: session, a potom prezývka.
+  // Bez prezývky sa nedá inzerovať ani ponúkať (v DB to drží cudzí kľúč na
+  // `offerra.profile`), takže je to podmienka vstupu, nie odporúčanie.
+  const { profile } = useProfile(session?.user.id);
+
   useEffect(() => {
     if (session === undefined) return; // ešte nevieme
+    if (session && profile === undefined) return; // profil sa ešte načítava
 
     // Zámerne sa pýtame „sme na logine?", nie „sme v taboch?". Pri
     // skupinovej route `(tabs)` nie je zaručené, ako presne vyzerá
     // `segments[0]` pre úvodnú obrazovku — `login` je jednoznačné a
     // nemôže z toho vzniknúť cyklus presmerovaní.
     const onLogin = segments[0] === 'login';
+    const onNickname = segments[0] === 'prezyvka';
 
-    if (!session && !onLogin) {
-      router.replace('/login');
-    } else if (session && onLogin) {
+    if (!session) {
+      if (!onLogin) router.replace('/login');
+    } else if (!profile) {
+      if (!onNickname) router.replace('/prezyvka');
+    } else if (onLogin || onNickname) {
       router.replace('/(tabs)');
     }
-  }, [session, segments, router]);
+  }, [session, profile, segments, router]);
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
@@ -75,9 +85,15 @@ export default function RootLayout() {
         <StatusBar style={isDark ? 'light' : 'dark'} />
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" />
+          <Stack.Screen name="prezyvka" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="nehnutelnost/[id]" />
           <Stack.Screen name="inzerat/[id]" />
+          <Stack.Screen name="ponuka/[id]" />
+          <Stack.Screen name="ponuky/[id]" />
+          <Stack.Screen name="dopyt/novy" />
+          <Stack.Screen name="dopyt/[id]" />
+          <Stack.Screen name="nastavenia" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

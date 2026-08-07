@@ -775,6 +775,167 @@ Build sa spustí až po Rastiovom „OK build" (CLAUDE.md §3).
 
 ---
 
+## Fáza 2 — Ponuky, dopyty, profil (7.8.2026)
+
+### 2.0 ZMENA ROZHODNUTIA — slepé → otvorené pseudonymné ponuky
+
+Pôvodný smer bol **slepé ponuky** (sumu vidí len vlastník). Rastio ho
+7.8.2026 zmenil na **otvorené pseudonymné**:
+
+- **suma, prezývka, stav a dátum sú VEREJNÉ** — vidí ich aj neprihlásený;
+  vytvára to dražobnú dynamiku,
+- **kto za prezývkou stojí, verejné NIE JE** — vzor MUTARK „posol",
+- **reálne meno a telefón sa odkryjú AŽ akceptáciou**, a to OBOM stranám.
+
+Na slepej verzii sa **nezačalo pracovať** — bola len predložená ako otázka,
+takže nebolo čo prepisovať.
+
+> Dôsledok, ktorý stojí za zapamätanie: pri slepých ponukách by stačila
+> riadková RLS. Pri otvorených nie — riadok profilu **musí** byť verejný
+> kvôli prezývke, takže meno a telefón v tom istom riadku chráni až
+> **stĺpcový grant** (viď 2.2).
+
+### 2.1 Prezývka ako podmienka vstupu — ✅ OVERENÉ RUNTIME
+
+Fáza 0 nickname nezbierala vôbec. Doplnené ako samostatná obrazovka po
+prihlásení (`src/app/prezyvka.tsx`), vzor MUTARK `setup.tsx`
+(LOGIN → NICKNAME → appka). Brána v `_layout.tsx` má teraz dva stupne.
+
+**Nie je to však len UI pravidlo.** `property.owner_id` aj
+`property_offer.bidder_id` mieria cudzím kľúčom na `offerra.profile`,
+kde je `nickname NOT NULL`. Bez prezývky teda inzerát ani ponuka
+**neprejdú cez databázu**, nech by klient robil čokoľvek.
+
+FK na `property.owner_id` bol kvôli tomu presmerovaný z `auth.users` na
+`offerra.profile`. Mazanie ďalej kaskáduje: `auth.users → profile → property`.
+
+### 2.2 Ochrana kontaktu — stĺpcové granty — ✅ OVERENÉ RUNTIME
+
+Kľúčové miesto celej fázy. RLS je **riadková** a tu by nestačila: riadok
+profilu musí byť čitateľný, aby sa dala zobraziť prezývka. Preto:
+
+```
+grant select (id, nickname, avatar_url, created_at) on offerra.profile
+  to anon, authenticated;
+```
+
+`full_name` a `phone` **v grantoch nie sú vôbec**. Nedá sa ich vypýtať ani
+omylom, ani úmyselne — PostgREST vráti `42501`.
+
+Čítajú sa výhradne cez dve `SECURITY DEFINER` funkcie s pevným
+`search_path`:
+
+| Funkcia | Komu vydá čo |
+|---|---|
+| `offerra.my_profile()` | volajúcemu jeho VLASTNÉ meno a telefón |
+| `offerra.offer_contact(offer_id)` | protistranu — a to **len pri stave ACCEPTED** |
+| `offerra.delete_my_account()` | zmaže `auth.users` riadok volajúceho |
+
+Všetky tri majú `execute` len pre `authenticated`, nie pre `anon`.
+
+### 2.3 Tabuľky — ✅ OVERENÉ RUNTIME
+
+| Tabuľka | Poznámka |
+|---|---|
+| `offerra.profile` | nickname (3–20 znakov, unikátny bez ohľadu na veľkosť písmen), full_name, phone, avatar_url |
+| `offerra.property_offer` | amount, message, status, + čiastočný unikátny index: **jedna ŽIVÁ ponuka na záujemcu a inzerát** |
+| `offerra.tenant_profile` | 1:1 k ponuke, len pri prenájme; **neverejná** |
+| `offerra.buyer_request` | dopyty, RLS verejné pre `ACTIVE` |
+| `offerra.request_outreach` | oslovenie autora dopytu majiteľom |
+
+`profile` nebol v zadaní, ale bez neho sa nedá splniť ani prezývka, ani
+odkrytie kontaktu — je to nutný nosič oboch.
+
+Zvýšenie ponuky je **úprava tej istej ponuky**, nie nová. Bez toho by sa
+verejný zoznam dal zaplaviť.
+
+### 2.4 Dôkazy RLS — ✅ OVERENÉ RUNTIME (25/25)
+
+Tri role: anonym, cudzí prihlásený, obe strany ponuky.
+
+```
+PODANIE      ✅ záujemca vie podať ponuku aj dotazník nájomcu
+             ✅ vlastník NEVIE ponúkať na vlastný inzerát        403
+             ✅ nikto NEVIE ponúkať V MENE iného                 403
+             ✅ ponuka sa NEDÁ podať rovno ako ACCEPTED          403
+
+VEREJNÉ      ✅ ANONYM vidí sumu + prezývku + stav + dátum
+                {"amount":720,"status":"PENDING","bidder":{"nickname":"t_zaujemca"}}
+             ✅ cudzí prihlásený vidí to isté
+
+SKRYTÉ       ✅ anonym nedostane full_name/phone ani keď si ich vypýta   401
+             ✅ cudzí prihlásený tiež nie (stĺpcový grant)               403
+             ✅ dotazník nájomcu nevidí anonym ani cudzí prihlásený      []
+             ✅ vlastník inzerátu dotazník VIDÍ
+
+KONTAKT      ✅ PRED akceptáciou ho nedostane ani vlastník, ani záujemca []
+             ✅ cudzí NEVIE akceptovať ponuku                            0 riadkov
+             ✅ vlastníkovi sa odkryl kontakt na ZÁUJEMCU
+                BIDDER: Záujemca Skutočný / +421 900 333 444
+             ✅ záujemcovi sa odkryl kontakt na VLASTNÍKA
+                OWNER: Vlastník Skutočný / +421 900 111 222
+             ✅ cudzí kontakt NEDOSTANE ani po akceptácii                []
+
+DOPYTY       ✅ anonym vidí ACTIVE dopyt
+             ✅ vlastník inzerátu vie osloviť autora dopytu
+             ✅ kto nevlastní inzerát, osloviť NEVIE                     403
+             ✅ adresát oslovenie vidí, cudzí nie
+```
+
+### 2.5 Funkcie — ✅ OVERENÉ RUNTIME (5/5)
+
+```
+✅ appka vie vytvoriť profil s prezývkou               HTTP 201
+✅ my_profile() vráti VLASTNÉ meno a telefón           Testovací Človek / +421 900 777 888
+✅ tá istá informácia cez TABUĽKU nejde                HTTP 403 (42501)
+✅ zmena telefónu sa uloží a prečíta späť              204 → +421 911 000 111
+✅ delete_my_account() zmaže účet AJ profil            auth.users 1→0, profile → 0
+```
+
+### 2.6 Obrazovky — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+- `prezyvka.tsx` — povinný krok po logine.
+- `nehnutelnost/[id].tsx` — placeholder „Ponuky: čoskoro" **nahradený**
+  verejným zoznamom (prezývka + suma + dátum, zoradený podľa sumy).
+- `ponuka/[id].tsx` — podanie/úprava ponuky, pri prenájme dotazník nájomcu.
+- `ponuky/[id].tsx` — pohľad majiteľa: dotazník, Prijať/Odmietnuť,
+  po prijatí odkrytý kontakt.
+- `(tabs)/dopyty.tsx` — zoznam ACTIVE dopytov (bol prázdny stub).
+- `dopyt/[id].tsx` — detail + „Osloviť so svojím inzerátom".
+- `dopyt/novy.tsx` — formulár dopytu; v tabe Pridať pribudlo druhé tlačidlo.
+- `(tabs)/profil.tsx` — **debug obrazovka z Fázy 0 nahradená** skutočným
+  profilom: prezývka, fotka, moje inzeráty/ponuky/dopyty.
+- `nastavenia.tsx` — samostatná obrazovka za ozubeným kolieskom.
+
+Overené runtime: `npx tsc --noEmit` → **exit 0**; produkčný iOS bundle
+**1 678 modulov, 4 437 536 B**, bez chýb.
+
+### 2.7 Oslovenie bez notifikácií — vedomý medzikrok
+
+Notifikačný systém v Offerre **neexistuje** (overené: v `package.json`
+nie je `expo-notifications`, v DB žiadny push token). „Osloviť" preto
+zatiaľ nie je push ani DM, ale **záznam**, ktorý adresát vidí vo svojom
+dopyte. Nič sa tým nestratí — keď notifikácie pribudnú, budú mať z čoho
+posielať.
+
+### 2.8 Seed — ✅ OVERENÉ RUNTIME
+
+6 pseudonymných záujemcov (`severan`, `tichy_kupec`, `byt_hladac`,
+`zahrada2026`, `presspor`, `kamenar`), **13 ponúk, 8 dotazníkov nájomcu,
+6 dopytov**. Jeden inzerát je zámerne bez ponúk, aby bolo vidieť aj
+prázdny stav.
+
+Mená a telefóny seed záujemcov sú vyplnené — inak by sa nedalo ukázať
+odkrytie kontaktu. Zmazanie: `delete from offerra.profile where is_seed;`
+
+### 2.9 Overenie na zariadení — 🔴 NEDOKONČENÉ
+
+Čaká na Rastia. Fáza 2 **nepridala žiadny natívny modul**
+(`AsyncStorage`, `expo-image-picker` aj `expo-image` už v builde sú,
+`Switch` je súčasť React Native), takže stačí OTA.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
@@ -790,11 +951,13 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Fáza 1 je hotová, publikovaná a Rastiom potvrdená (1.13).
+Fáza 2 je hotová v kóde aj v databáze, 30 automatických kontrol prešlo.
+Blokuje **overenie na telefóne** (2.9) — nový natívny modul nepribudol,
+takže stačí `eas update` a čaká sa na „OK update".
 
-Otvorené: **ikona a splash sa dajú vymeniť len novým buildom** (1.14) —
-`buildNumber` je zvýšené na 2 a čaká sa na „OK build". Nie je to blokujúce
-pre ďalšiu prácu, appka funguje.
+Ďalej otvorené: **ikona a splash sa dajú vymeniť len novým buildom** (1.14).
+`buildNumber` je pripravené na 2, Rastio sa rozhodol build odložiť, kým sa
+nazbiera viac zmien. Nie je to blokujúce — appka funguje.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
@@ -815,7 +978,8 @@ Nové otvorené body:
 - **Verejný bucket a DRAFT fotky** — fotka rozrobeného inzerátu je pri
   znalosti UUID cesty dostupná. Ak má vadiť, riešením sú podpísané URL (1.7).
 - **`view_count` sa zatiaľ nikde nezvyšuje** — stĺpec existuje, počítanie
-  zobrazení príde s modulom ponúk.
-- **Tab „Dopyty"** je stále prázdny placeholder — je to Fáza 2+.
+  zobrazení zatiaľ nemá kto spustiť.
+- **Notifikácie** — Offerra ich nemá vôbec. „Osloviť" je zatiaľ záznam
+  v appke, nie push (2.7).
 - **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.
 - **Moderovanie inzerátov** (`PENDING_APPROVAL`) — Fáza 7, zámerne preskočené.

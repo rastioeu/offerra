@@ -58,10 +58,20 @@ export default function PridatScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: palette.textPrimary }]}>Pridať</Text>
 
+        <Text style={[styles.lead, { color: palette.textSecondary }]}>
+          Ponúkaš nehnuteľnosť, alebo naopak niečo hľadáš? Offerra vie oboje.
+        </Text>
+
         <Button
-          title={creating ? 'Zakladám…' : '+ Nový inzerát'}
+          title={creating ? 'Zakladám…' : '+ Pridať nehnuteľnosť'}
           onPress={createDraft}
           disabled={creating || !userId}
+        />
+        <Button
+          title="+ Pridať dopyt"
+          onPress={() => router.push('/dopyt/novy')}
+          variant="outline"
+          disabled={!userId}
         />
 
         <ErrorNote error={error} />
@@ -115,6 +125,7 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   title: { ...Type.hero, fontWeight: Weight.bold },
+  lead: { ...Type.bodyMd },
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1, marginTop: Spacing.sm },
   empty: { ...Type.body },
   row: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.xs },

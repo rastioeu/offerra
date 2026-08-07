@@ -1,0 +1,176 @@
+/**
+ * Nový dopyt — „hľadám, nie ponúkam".
+ *
+ * Dopyt je verejný hneď (`status='ACTIVE'`), na rozdiel od inzerátu žiadny
+ * DRAFT nemá: nemá fotky ani nič, čo by sa dalo rozrobiť, a jeho jediný
+ * zmysel je, aby ho videli majitelia.
+ */
+import { Stack, useRouter } from 'expo-router';
+import { useState } from 'react';
+import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { CityPicker } from '@/components/city-picker';
+import { Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
+import { useSession } from '@/hooks/use-session';
+import { useTheme } from '@/hooks/use-theme';
+import { db, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType, type TransactionType } from '@/lib/property';
+import { Spacing, Type, Weight } from '@/theme/tokens';
+
+type AnyType = PropertyType | 'ANY';
+
+function num(text: string): number | null {
+  const c = text.replace(',', '.').trim();
+  if (c === '') return null;
+  const n = Number(c);
+  return Number.isFinite(n) ? n : null;
+}
+
+export default function NewRequestScreen() {
+  const palette = useTheme();
+  const router = useRouter();
+  const { session } = useSession();
+  const myId = session?.user.id;
+
+  const [transaction, setTransaction] = useState<TransactionType>('SALE');
+  const [type, setType] = useState<AnyType>('ANY');
+  const [city, setCity] = useState<string | null>(null);
+  const [district, setDistrict] = useState<string | null>(null);
+  const [budgetMin, setBudgetMin] = useState('');
+  const [budgetMax, setBudgetMax] = useState('');
+  const [rooms, setRooms] = useState('');
+  const [area, setArea] = useState('');
+  const [description, setDescription] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!myId || busy) return;
+    const min = num(budgetMin);
+    const max = num(budgetMax);
+    if (min != null && max != null && max < min) {
+      setError('Horná hranica rozpočtu nemôže byť nižšia než dolná.');
+      return;
+    }
+    if (!description.trim()) {
+      setError('Napíš aspoň krátko, čo hľadáš — inak dopytu nikto nerozumie.');
+      return;
+    }
+    setBusy(true);
+    setError(null);
+    try {
+      const { error: e } = await db().from('buyer_request').insert({
+        user_id: myId,
+        transaction_type: transaction,
+        property_type: type === 'ANY' ? null : type,
+        city,
+        district,
+        budget_min: min,
+        budget_max: max,
+        rooms_min: num(rooms),
+        area_min: num(area),
+        description: description.trim(),
+        status: 'ACTIVE',
+      });
+      if (e) throw e;
+      router.back();
+    } catch (e: unknown) {
+      const m = e instanceof Error ? e.message : String(e);
+      console.log(`[DOPYT] Vytvorenie zlyhalo: ${m}`);
+      setError(m);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right', 'bottom']}>
+      <Stack.Screen
+        options={{
+          headerShown: true,
+          title: 'Nový dopyt',
+          headerTintColor: palette.primary,
+          headerStyle: { backgroundColor: palette.surface },
+        }}
+      />
+      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <Text style={[styles.lead, { color: palette.textSecondary }]}>
+            Dopyt je verejný pod tvojou prezývkou. Majitelia ťa naň môžu osloviť
+            svojím inzerátom.
+          </Text>
+
+          <ChoiceRow<TransactionType>
+            label="Chcem"
+            options={(['SALE', 'RENT'] as TransactionType[]).map((v) => ({
+              value: v,
+              label: v === 'SALE' ? 'Kúpiť' : 'Prenajať si',
+            }))}
+            value={transaction}
+            onChange={setTransaction}
+          />
+
+          <ChoiceRow<AnyType>
+            label="Typ nehnuteľnosti"
+            options={[
+              { value: 'ANY', label: 'Akýkoľvek' },
+              ...(['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL', 'OTHER'] as PropertyType[]).map((v) => ({
+                value: v as AnyType,
+                label: PROPERTY_LABEL[v],
+              })),
+            ]}
+            value={type}
+            onChange={setType}
+          />
+
+          <CityPicker
+            city={city}
+            district={district}
+            onPick={(c, d) => {
+              setCity(c);
+              setDistrict(d);
+            }}
+          />
+
+          <Field
+            label={transaction === 'RENT' ? 'Nájom od (€/mesiac)' : 'Rozpočet od (€)'}
+            value={budgetMin}
+            onChangeText={setBudgetMin}
+            keyboardType="decimal-pad"
+            placeholder={transaction === 'RENT' ? '400' : '120000'}
+          />
+          <Field
+            label={transaction === 'RENT' ? 'Nájom do (€/mesiac)' : 'Rozpočet do (€)'}
+            value={budgetMax}
+            onChangeText={setBudgetMax}
+            keyboardType="decimal-pad"
+            placeholder={transaction === 'RENT' ? '650' : '200000'}
+          />
+
+          <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="2" />
+          <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="55" />
+
+          <Field
+            label="Čo hľadáš"
+            hint="Toto je jediné povinné pole — podľa neho sa majiteľ rozhodne, či ťa osloví."
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            placeholder="napr. 3-izbový byt pre rodinu, ideálne s balkónom a parkovaním"
+          />
+
+          <ErrorNote error={error} />
+
+          <Button title={busy ? 'Ukladám…' : 'Zverejniť dopyt'} onPress={submit} disabled={busy} />
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  safe: { flex: 1 },
+  flex: { flex: 1 },
+  scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
+  lead: { ...Type.bodyMd },
+});
