@@ -9,15 +9,18 @@ import { ActivityIndicator, RefreshControl, ScrollView, StyleSheet, Text, View }
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PropertyCard } from '@/components/property-card';
+import { SearchBar } from '@/components/search-bar';
 import { ErrorNote } from '@/components/ui';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
+import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function NehnutelnostiScreen() {
   const palette = useTheme();
-  const { items, error, reload } = useProperties();
+  const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
+  const { items, error, reload } = useProperties(filter);
   const [refreshing, setRefreshing] = useState(false);
   useRefreshOnFocus(reload);
 
@@ -43,13 +46,17 @@ export default function NehnutelnostiScreen() {
           ) : null}
         </View>
 
+        <SearchBar filter={filter} onChange={setFilter} />
+
         <ErrorNote error={error} />
 
         {items === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
 
         {items?.length === 0 && !error ? (
           <Text style={[styles.empty, { color: palette.textMuted }]}>
-            Žiadne zverejnené inzeráty. Pridaj prvý cez tab „Pridať".
+            {isFilterEmpty(filter)
+              ? 'Žiadne zverejnené inzeráty. Pridaj prvý cez tab „Pridať".'
+              : 'Tomuto hľadaniu nič nezodpovedá. Skús ubrať niektorý filter.'}
           </Text>
         ) : null}
 

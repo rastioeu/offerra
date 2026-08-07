@@ -72,6 +72,8 @@ export type OfferContact = {
   nickname: string;
   full_name: string | null;
   phone: string | null;
+  /** Z `auth.users`, nie z profilu — tam je vždy aktuálny. */
+  email: string | null;
 };
 
 export const OFFER_STATUS_LABEL: Record<OfferStatus, string> = {

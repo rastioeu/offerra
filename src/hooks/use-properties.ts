@@ -9,6 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
+import type { CatalogFilter } from '@/lib/search';
 import { db, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 
 function message(e: unknown): string {
@@ -35,28 +36,68 @@ async function attachMedia(rows: Property[]): Promise<PropertyWithMedia[]> {
   return rows.map((r) => ({ ...r, media: byProperty.get(r.id) ?? [] }));
 }
 
-export function useProperties() {
+/**
+ * Súhrn ponúk pre karty v katalógu — najvyššia ŽIVÁ ponuka a ich počet.
+ * Jeden dotaz na celú stránku, nie jeden na kartu.
+ */
+async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWithMedia[]> {
+  if (rows.length === 0) return rows;
+  const { data, error } = await db()
+    .from('property_offer')
+    .select('property_id, amount, status')
+    .in('property_id', rows.map((r) => r.id));
+  if (error) throw error;
+
+  const best = new Map<string, { top: number | null; count: number }>();
+  for (const o of (data ?? []) as { property_id: string; amount: number; status: string }[]) {
+    const cur = best.get(o.property_id) ?? { top: null, count: 0 };
+    cur.count += 1;
+    if (o.status === 'PENDING' && (cur.top == null || o.amount > cur.top)) cur.top = o.amount;
+    best.set(o.property_id, cur);
+  }
+  return rows.map((r) => ({
+    ...r,
+    top_offer: best.get(r.id)?.top ?? null,
+    offer_count: best.get(r.id)?.count ?? 0,
+  }));
+}
+
+export function useProperties(filter?: CatalogFilter) {
   const [items, setItems] = useState<PropertyWithMedia[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  // Filter je objekt — bez tohto by sa `reload` menil pri každom rendere.
+  const key = JSON.stringify(filter ?? null);
 
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const { data, error: e } = await db()
-        .from('property')
-        .select('*')
-        .eq('status', 'ACTIVE')
-        .order('created_at', { ascending: false })
-        .limit(200);
+      const f = (JSON.parse(key) ?? null) as CatalogFilter | null;
+      let q = db().from('property').select('*').eq('status', 'ACTIVE');
+
+      if (f?.transaction) q = q.eq('transaction_type', f.transaction);
+      if (f?.propertyType) q = q.eq('property_type', f.propertyType);
+      if (f?.city) q = q.eq('city', f.city);
+      if (f?.roomsMin != null) q = q.gte('rooms', f.roomsMin);
+      if (f?.areaMin != null) q = q.gte('area_m2', f.areaMin);
+      // Inzerát BEZ ceny sa cenovým filtrom nesmie stratiť — je to celá
+      // pointa Offerry, že cena je nepovinná. Preto `or` s `is null`.
+      if (f?.priceMax != null) q = q.or(`asking_price_hint.lte.${f.priceMax},asking_price_hint.is.null`);
+      if (f?.priceMin != null) q = q.or(`asking_price_hint.gte.${f.priceMin},asking_price_hint.is.null`);
+      if (f?.text) {
+        const t = f.text.replace(/[%,()]/g, ' ').trim();
+        if (t) q = q.or(`title.ilike.*${t}*,description.ilike.*${t}*,city.ilike.*${t}*`);
+      }
+
+      const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);
       if (e) throw e;
-      setItems(await attachMedia((data ?? []) as Property[]));
+      setItems(await attachOfferStats(await attachMedia((data ?? []) as Property[])));
     } catch (e: unknown) {
       const m = message(e);
       console.log(`[KATALÓG] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);
     }
-  }, []);
+  }, [key]);
 
   useEffect(() => {
     void reload();

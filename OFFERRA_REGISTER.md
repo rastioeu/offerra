@@ -1128,6 +1128,114 @@ hole_test2.py      6/6    uzávierka a integrita
                  66/66
 ```
 
+### 2.17 Nášľapná mína, ktorú som vyrobil ja — ✅ ODSTRÁNENÁ
+
+Pri uvoľňovaní prezývky (2.11a) som Rastiovmu **Apple** profilu nastavil
+`is_seed = true` — vtedy používal Google účet a ten profil bol ukážkový.
+Odvtedy prešiel na Apple, doplnil si tam **skutočné meno a telefón** a
+vlastní na ňom 8 inzerátov a 13 ponúk.
+
+`delete from offerra.profile where is_seed;` — príkaz, ktorý je napísaný
+v reporte Fázy 2 ako spôsob upratania seed dát — **by mu zmazal účet aj
+všetky dáta.** Nikto ho nespustil, ale bol to čas do výbuchu.
+
+Opravené: `is_seed = false` na jeho profile. Inzeráty ostávajú označené
+ako ukážkové (naozaj sú), takže sa dajú mazať podľa `property.is_seed`,
+nie kaskádou z profilu.
+
+> Poučenie: seed príznak nikdy nepatrí na riadok, ktorý medzitým prevzal
+> skutočný používateľ.
+
+### 2.18 E-mail v odkrytom kontakte — ✅ OVERENÉ RUNTIME
+
+Na Rastiovu žiadosť. E-mail sa **neukladá do profilu** — býva v
+`auth.users` a tam je vždy aktuálny; duplikovať ho by znamenalo
+synchronizovať dve pravdy. `offer_contact()` ho teda číta joinom.
+
+```
+vlastník vidí záujemcu : Meno em_zauj  | +421 900 2ad | em-bid-…@offerra.test
+záujemca vidí vlastníka: Meno em_vlast | +421 900 29a | em-own-…@offerra.test
+```
+
+Ochrana ostala rovnaká — mimo stavu ACCEPTED nevráti nič a cudziemu nikdy
+(overené v rámci 25/25).
+
+### 2.19 Karta v katalógu — najvyššia ponuka, uzávierka, zobrazenia — 🟡
+
+Na Rastiovu žiadosť pribudlo na kartu:
+
+- **najvyššia živá ponuka** — pri otvorenom modeli je to dôležitejšie
+  číslo než orientačná cena, preto má vlastný riadok a akcentovú farbu;
+  bez ponúk sa píše „Zatiaľ bez ponúk",
+- **uzávierka** — s odpočtom, po termíne zošedne,
+- **počet zobrazení a ponúk** v pätičke.
+
+Ponuky sa doťahujú **jedným dotazom pre celú stránku**, nie jedným na kartu.
+
+### 2.20 Vyhľadávanie a filtre — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Nad katalógom je lišta, kde sa dá napísať veta. Appka z nej vytiahne
+filtre a **ukáže, čomu rozumela** — nie čierna skrinka, ale štítky, ktoré
+vidno a dajú sa zrušiť.
+
+**Bez jazykového modelu, a je to vedomé rozhodnutie:** `rastioeu/offerra`
+je verejný repozitár a `EXPO_PUBLIC_*` premenné sa zapekajú do klientskeho
+bundlu — API kľúč by sa nedal ukryť ani v jednom. Skutočný model by
+potreboval serverovú medzivrstvu, ktorú Offerra nemá. Doména je pritom
+úzka (obchod, typ, izby, cena, výmera, obec) a dá sa rozobrať presne.
+
+**Dôkaz rozboru** (skript nad skompilovaným `search.ts`):
+
+```
+3-izbový byt v Petržalke do 250 tisíc → APARTMENT 3izb do 250000  | obec: petrzalke
+prenájom bytu Košice do 600           → RENT APARTMENT do 600     | obec: kosice
+dom so záhradou Selce                 → HOUSE                     | obec: …/selce
+trojizbový byt Nitra od 60 m2         → APARTMENT 3izb >=60m2     | obec: nitra
+dom do 1,2 mil                        → HOUSE do 1200000
+byt Petrzalka 250 000                 → APARTMENT do 250000       | obec: petrzalka
+```
+
+**Dve chyby, ktoré ten test odhalil** (a bez neho by sa dostali k Rastiovi):
+
+1. Lenivý kvantifikátor `{0,9}?` v regexe na číslo bral **len prvú
+   číslicu** — „do 600" vychádzalo ako 6, „do 250 tisíc" ako 2.
+2. Zvyšné slovo pred názvom obce zabilo hľadanie mesta — „dom so záhradou
+   Selce" nenašlo Selce. Teraz sa skúšajú kandidáti po jednom.
+
+**Filtre overené proti DB** (nie len poskladané):
+
+```
+transaction_type=eq.RENT                       → 2
+property_type=eq.HOUSE                         → 2
+city=eq.Petržalka                              → 1
+rooms=gte.3                                    → 4
+or(asking_price_hint.lte.150000, is.null)      → 5  ← inzerát BEZ ceny sa NESTRATIL
+or(title/description/city ilike *byt*)         → 2
+```
+
+Že sa inzerát bez ceny cenovým filtrom nestratí, je zámer — nepovinná cena
+je celá pointa Offerry.
+
+### 2.21 Audit doterajších ✅ — čo je naozaj dokázané a čo nie
+
+Rastio žiadal prejsť aj veci označené ✅ bez runtime dôkazu.
+
+| Kategória | Stav |
+|---|---|
+| DB, RLS, granty, funkcie, Storage | ✅ **dokázané** — 66 automatických kontrol reálnymi HTTP volaniami a SELECT-mi |
+| EAS build, submit, OTA publikovanie | ✅ **dokázané** — ID buildov, veľkosti IPA, spätné dotazy na EAS |
+| **Všetko, čo je vidieť na displeji** | 🟡 **nedokázané mnou a ani dokázať neviem** |
+
+**Nemám fyzické zariadenie.** Simulátor ani `expo export` nedokazujú, že sa
+obrazovka správne vykreslí, že sa dá ťuknúť tam, kam treba, ani že natívny
+modul odpovie. Presne to je dôvod, prečo `CLAUDE.md` §1 zakazuje dávať ✅
+čomukoľvek, čo vyžaduje vizuálne overenie.
+
+Jediné „✅ POTVRDENÉ POUŽÍVATEĽOM" (1.13) bolo **súhrnné** („ostatné vyzerá
+ok"), nie bod po bode — a už vtedy to bolo v registri takto napísané.
+Tri chyby, ktoré Rastio potom nahlásil (2.11), aj štyri + päť dier, ktoré
+som našiel sám (2.12, 2.15), ukazujú, že súhrnné potvrdenie nestačí.
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

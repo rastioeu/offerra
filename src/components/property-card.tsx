@@ -3,10 +3,13 @@ import { Link } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { formatAmount } from '@/lib/offers';
 import {
+  deadlineLabel,
   formatArea,
   formatDate,
   formatPrice,
+  isDeadlinePassed,
   PROPERTY_LABEL,
   TRANSACTION_LABEL,
   type PropertyWithMedia,
@@ -19,6 +22,7 @@ export function PropertyCard({ item }: { item: PropertyWithMedia }) {
   const palette = useTheme();
   const cover = item.media[0]?.url;
   const price = formatPrice(item.asking_price_hint, item.transaction_type);
+  const deadline = deadlineLabel(item.offer_deadline);
 
   const facts = [
     item.city,
@@ -66,8 +70,37 @@ export function PropertyCard({ item }: { item: PropertyWithMedia }) {
             )}
           </View>
 
+          {/* Najvyššia ponuka — pri otvorenom modeli je to najdôležitejšie
+              číslo na karte, dôležitejšie než orientačná cena. */}
+          {item.top_offer != null ? (
+            <View style={[styles.topOffer, { borderTopColor: palette.border }]}>
+              <Text style={[styles.topOfferLabel, { color: palette.textSecondary }]}>
+                Najvyššia ponuka
+              </Text>
+              <Text style={[styles.topOfferValue, { color: palette.link }]}>
+                {formatAmount(item.top_offer, item.transaction_type)}
+              </Text>
+            </View>
+          ) : item.offer_count === 0 ? (
+            <Text style={[styles.noOffers, { color: palette.textMuted }]}>
+              Zatiaľ bez ponúk
+            </Text>
+          ) : null}
+
+          {deadline ? (
+            <Text
+              style={[
+                styles.deadline,
+                { color: isDeadlinePassed(item.offer_deadline) ? palette.textMuted : palette.warning },
+              ]}>
+              {deadline}
+            </Text>
+          ) : null}
+
           <Text style={[styles.added, { color: palette.textMuted }]}>
-            Pridané {formatDate(item.created_at)}
+            Pridané {formatDate(item.created_at)} · {item.view_count}{' '}
+            {item.view_count === 1 ? 'zobrazenie' : item.view_count < 5 ? 'zobrazenia' : 'zobrazení'}
+            {item.offer_count ? ` · ${item.offer_count} ${item.offer_count === 1 ? 'ponuka' : item.offer_count < 5 ? 'ponuky' : 'ponúk'}` : ''}
           </Text>
         </View>
       </Pressable>
@@ -87,4 +120,17 @@ const styles = StyleSheet.create({
   price: { ...Type.title, fontWeight: Weight.bold },
   priceNote: { ...Type.caption },
   added: { ...Type.caption, marginTop: 2 },
+  topOffer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingTop: Spacing.sm,
+    marginTop: Spacing.xs,
+  },
+  topOfferLabel: { ...Type.caption, fontWeight: Weight.medium },
+  topOfferValue: { ...Type.subtitle, fontWeight: Weight.bold },
+  noOffers: { ...Type.caption, marginTop: Spacing.xs },
+  deadline: { ...Type.caption, fontWeight: Weight.medium },
 });

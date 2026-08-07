@@ -47,7 +47,12 @@ export type Media = {
   created_at: string;
 };
 
-export type PropertyWithMedia = Property & { media: Media[] };
+export type PropertyWithMedia = Property & {
+  media: Media[];
+  /** Najvyššia ŽIVÁ ponuka. Dopĺňa katalóg, v detaile sa počíta zo zoznamu. */
+  top_offer?: number | null;
+  offer_count?: number;
+};
 
 export type City = {
   id: number;

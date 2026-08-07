@@ -51,8 +51,8 @@ export default function ManageOffersScreen() {
         setContacts((prev) => ({ ...prev, [offerId]: c }));
         Alert.alert(
           'Ponuka prijatá',
-          c?.full_name || c?.phone
-            ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone].filter(Boolean).join(' · ')}`
+          c?.full_name || c?.phone || c?.email
+            ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone, c.email].filter(Boolean).join('\n')}`
             : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
         );
       }
@@ -174,6 +174,7 @@ export default function ManageOffersScreen() {
                       <>
                         <Row label="Meno" value={contact.full_name ?? 'nevyplnené'} />
                         <Row label="Telefón" value={contact.phone ?? 'nevyplnený'} />
+                        <Row label="E-mail" value={contact.email ?? 'nedostupný'} />
                       </>
                     ) : (
                       <Button title="Zobraziť kontakt" onPress={() => revealContact(o.id)} variant="outline" />
