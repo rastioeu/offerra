@@ -18,6 +18,7 @@ import { CityPicker } from '@/components/city-picker';
 import { DeadlinePicker } from '@/components/deadline-picker';
 import { Badge, Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { usePhotoUpload } from '@/hooks/use-photo-upload';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -56,6 +57,7 @@ export default function PropertyEditorScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const { uploading, addPhoto, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
+  useRefreshOnFocus(reload);
 
   // Server je zdroj pravdy; lokálny stav sa napĺňa až keď dorazí.
   useEffect(() => {

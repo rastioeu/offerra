@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PropertyCard } from '@/components/property-card';
 import { ErrorNote } from '@/components/ui';
 import { useProperties } from '@/hooks/use-properties';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -18,6 +19,7 @@ export default function NehnutelnostiScreen() {
   const palette = useTheme();
   const { items, error, reload } = useProperties();
   const [refreshing, setRefreshing] = useState(false);
+  useRefreshOnFocus(reload);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

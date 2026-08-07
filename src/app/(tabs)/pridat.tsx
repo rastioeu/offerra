@@ -12,6 +12,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, ErrorNote } from '@/components/ui';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -25,6 +26,7 @@ export default function PridatScreen() {
   const userId = session?.user.id;
   const { items, error, reload } = useMyProperties(userId);
   const [creating, setCreating] = useState(false);
+  useRefreshOnFocus(reload);
 
   async function createDraft() {
     if (!userId || creating) return;

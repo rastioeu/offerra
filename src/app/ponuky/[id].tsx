@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -37,6 +38,7 @@ export default function ManageOffersScreen() {
 
   const [contacts, setContacts] = useState<Record<string, OfferContact | null>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  useRefreshOnFocus(reload);
 
   async function decide(offerId: string, status: 'ACCEPTED' | 'REJECTED') {
     setBusy(offerId);

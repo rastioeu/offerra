@@ -8,16 +8,19 @@
  */
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OfferList } from '@/components/offer-list';
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
 import { useOffers } from '@/hooks/use-offers';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import {
+  db,
   deadlineLabel,
   formatArea,
   formatDate,
@@ -34,7 +37,21 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, error } = useProperty(id);
-  const { offers, error: offersError } = useOffers(id);
+  const { offers, error: offersError, reload: reloadOffers } = useOffers(id);
+  useRefreshOnFocus(reloadOffers);
+
+  // `view_count` je v modeli od Fázy 1, ale nemal ho kto zvyšovať — UPDATE
+  // na cudzom inzeráte RLS nepustí. Rieši to `bump_view()` (SECURITY
+  // DEFINER), ktorá vlastné pozeranie nepočíta. Raz za otvorenie, nie pri
+  // každom prekreslení.
+  useEffect(() => {
+    if (!id) return;
+    void db()
+      .rpc('bump_view', { p_property_id: id })
+      .then(({ error: e }) => {
+        if (e) console.log(`[DETAIL] Počítadlo zobrazení zlyhalo: ${e.message}`);
+      });
+  }, [id]);
   const { session } = useSession();
 
   const myId = session?.user.id;
@@ -121,6 +138,10 @@ export default function PropertyDetailScreen() {
               <Row label="Izby" value={item.rooms != null ? String(item.rooms) : '—'} />
               <Row label="Výmera" value={formatArea(item.area_m2) ?? '—'} />
               <Row label="Pridané" value={formatDate(item.created_at)} />
+              <Row
+                label="Zobrazení"
+                value={String(item.view_count)}
+              />
               {item.address_hidden ? (
                 <Text style={[styles.hidden, { color: palette.textMuted }]}>
                   Presná adresa je skrytá — zobrazí sa až po dohode s predávajúcim.

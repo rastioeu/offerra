@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, ErrorNote } from '@/components/ui';
 import { useRequests } from '@/hooks/use-offers';
+import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
 import { formatArea, formatDate, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
@@ -20,6 +21,7 @@ export default function DopytyScreen() {
   const palette = useTheme();
   const { items, error, reload } = useRequests();
   const [refreshing, setRefreshing] = useState(false);
+  useRefreshOnFocus(reload);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

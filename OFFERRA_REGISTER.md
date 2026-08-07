@@ -1008,6 +1008,67 @@ chybovou hláškou, ktorá povie, na ktorom kroku to padlo.
 
 Publikované OTA `a21664da-3c76-408e-8556-eafc55737477` (commit `2d90a70`).
 
+### 2.12 Štyri diery v oprávneniach na ponukách — ✅ OPRAVENÉ
+
+Nájdené vlastnou kontrolou (nie hlásením) po dokončení Fázy 2. RLS na
+`property_offer` pustila UPDATE obom stranám, ale **nikde nebolo povedané,
+kto smie meniť KTORÝ stĺpec** — riadková politika to ani vyjadriť nevie.
+
+Namerané pred opravou:
+
+```
+🔴 záujemca si vedel SÁM akceptovať vlastnú ponuku          HTTP 200, ACCEPTED
+🔴 a tým si vytiahnuť kontakt majiteľa cez offer_contact()  Vlastník Tajný / +421 900 111 000
+🔴 majiteľ vedel prepísať SUMU cudzej ponuky                190 000 → 1
+🔴 majiteľ vedel prepísať SPRÁVU záujemcu                   „Podvrhnutá správa"
+✅ ponuku sa nedalo prepísať na iného človeka
+```
+
+Prvé dve rušia pravidlo, na ktorom celá Fáza 2 stojí — že kontakt sa
+odkryje **až keď ponuku prijme majiteľ**.
+
+Riešené triggerom `offerra.guard_offer_update()`:
+
+| Kto | Smie zmeniť |
+|---|---|
+| majiteľ inzerátu | **len** `status`, a to len `PENDING → ACCEPTED/REJECTED` |
+| záujemca | svoju `amount`/`message`, alebo `PENDING → WITHDRAWN` |
+| ktokoľvek | `property_id`, `bidder_id`, `created_at` **nikdy** |
+| ktokoľvek | uzavretú ponuku (nie PENDING) **už vôbec** |
+
+Po oprave: **5/5 ošetrených, 0 dier**, a plný test Fázy 2 naďalej **25/25** —
+trigger nerozbil legitímne cesty.
+
+> Poučenie: RLS odpovedá na otázku „smieš siahnuť na tento RIADOK".
+> Na otázku „smieš zmeniť tento STĹPEC" odpovedá stĺpcový grant (2.2),
+> a na „smieš ho zmeniť NA TÚTO hodnotu" už len trigger.
+
+### 2.13 Obrazovky sa neobnovovali po návrate — ✅ OPRAVENÉ
+
+Tá istá trieda chyby ako profil v 2.11(b), len na inom mieste: každá
+obrazovka má vlastnú inštanciu svojho hooku. Formulár ponuky si po odoslaní
+obnovil SVOJ zoznam, ale detail, z ktorého sa naň prišlo, o zmene nevedel.
+To isté po zverejnení inzerátu (katalóg), po vytvorení dopytu (tab Dopyty)
+a po prijatí ponuky.
+
+Riešené hookom `useRefreshOnFocus` — obnova pri návrate na obrazovku.
+Kontext by tu nepomohol: zoznamov je veľa a líšia sa parametrom.
+Nasadené na katalóg, Dopyty, Pridať, detail inzerátu, editor a správu ponúk.
+
+### 2.14 `view_count` — ✅ OVERENÉ RUNTIME
+
+Otvorený bod od Fázy 1: stĺpec existoval, ale nemal ho kto zvyšovať —
+UPDATE na cudzom inzeráte RLS nepustí, a práve cudzí ho aj pozerá.
+Rieši `offerra.bump_view()` (SECURITY DEFINER), ktorá **vlastné pozeranie
+nepočíta**. Zobrazuje sa v parametroch inzerátu.
+
+```
+začiatok            0
+VLASTNÍK pozerá →   0   (nerástlo, správne)
+ANONYM pozerá   →   1
+ANONYM znova    →   2
+```
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si
@@ -1057,8 +1118,6 @@ Nové otvorené body:
   nový natívny modul → nový EAS build. Zvážiť pri najbližšom builde (1.7).
 - **Verejný bucket a DRAFT fotky** — fotka rozrobeného inzerátu je pri
   znalosti UUID cesty dostupná. Ak má vadiť, riešením sú podpísané URL (1.7).
-- **`view_count` sa zatiaľ nikde nezvyšuje** — stĺpec existuje, počítanie
-  zobrazení zatiaľ nemá kto spustiť.
 - **Notifikácie** — Offerra ich nemá vôbec. „Osloviť" je zatiaľ záznam
   v appke, nie push (2.7).
 - **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.
