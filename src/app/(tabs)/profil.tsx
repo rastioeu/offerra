@@ -13,9 +13,6 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-// eslint-disable-next-line @typescript-eslint/consistent-type-imports
-import type * as ImagePickerType from 'expo-image-picker';
-
 import { Badge, Button, Card, ErrorNote, Field } from '@/components/ui';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
@@ -23,18 +20,9 @@ import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
+import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
 import { formatDate, STATUS_LABEL } from '@/lib/property';
-import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
-
-const BUCKET = 'offerra-media';
-
-function decodeBase64(base64: string): Uint8Array {
-  const bin = atob(base64);
-  const bytes = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes;
-}
 
 export default function ProfilScreen() {
   const palette = useTheme();
@@ -42,7 +30,7 @@ export default function ProfilScreen() {
   const { session } = useSession();
   const userId = session?.user.id;
 
-  const { profile, error, reload } = useProfile(userId);
+  const { profile, error, reload } = useProfile();
   const { items: properties } = useMyProperties(userId);
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
@@ -81,47 +69,26 @@ export default function ProfilScreen() {
 
   async function changePhoto() {
     if (!userId || busy) return;
-    let ImagePicker: typeof ImagePickerType;
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-var-requires
-      ImagePicker = require('expo-image-picker');
-    } catch {
-      Alert.alert('Fotku sa nedá zmeniť', 'Táto verzia appky nemá modul na výber fotiek.');
-      return;
-    }
     setBusy(true);
     try {
-      const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permission.granted) {
-        Alert.alert('Chýba prístup k fotkám', 'Povoľ ho v Nastaveniach telefónu.');
-        return;
-      }
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.7,
-        base64: true,
-      });
-      if (result.canceled) return;
-      const asset = result.assets[0];
-      if (!asset.base64) throw new Error('Fotku sa nepodarilo načítať.');
+      const photo = await pickPhoto([1, 1]);
+      if (!photo) return; // zrušené používateľom
 
-      const path = `${userId}/avatar.jpg`;
-      const { error: upErr } = await supabase.storage
-        .from(BUCKET)
-        .upload(path, decodeBase64(asset.base64), { contentType: 'image/jpeg', upsert: true });
-      if (upErr) throw upErr;
+      // Vždy tá istá cesta + `upsert` — profilovka má byť jedna, nie
+      // hromada starých súborov.
+      const url = await uploadPhoto(`${userId}/avatar.jpg`, photo, true);
 
-      const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      // Cache-bust — `upsert` prepíše ten istý súbor, `expo-image` cachuje podľa URI.
-      const problem = await saveProfile(userId, { avatar_url: `${pub.publicUrl}?t=${Date.now()}` }, false);
+      // Cache-bust: `upsert` prepíše ten istý súbor a `expo-image` cachuje
+      // podľa URI, takže bez tohto by ostala visieť stará fotka.
+      const problem = await saveProfile(userId, { avatar_url: `${url}?t=${Date.now()}` }, false);
       if (problem) throw new Error(problem);
+
+      console.log('[FOTKA] 7 HOTOVO (profilovka)');
       await reload();
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = photoErrorMessage(e);
       console.log(`[PROFIL] Zmena fotky zlyhala: ${m}`);
-      Alert.alert('Zmena fotky zlyhala', m);
+      Alert.alert('Fotku sa nepodarilo zmeniť', m);
     } finally {
       setBusy(false);
     }

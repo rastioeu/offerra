@@ -22,7 +22,7 @@ export default function PrezyvkaScreen() {
   const palette = useTheme();
   const { session } = useSession();
   const userId = session?.user.id;
-  const { reload } = useProfile(userId);
+  const { reload } = useProfile();
 
   const [nickname, setNickname] = useState('');
   const [fullName, setFullName] = useState('');

@@ -1,15 +1,21 @@
 /**
- * Vlastný profil používateľa.
+ * Vlastný profil používateľa — JEDEN zdieľaný stav pre celú appku.
+ *
+ * CHYBA, KTORÚ TO OPRAVUJE (7.8.2026, nahlásil Rastio): pôvodne volal
+ * `useProfile()` každý, kto profil potreboval — brána v `_layout.tsx`,
+ * obrazovka prezývky aj Profil. Boli to TRI nezávislé stavy. Keď si
+ * používateľ uložil prezývku, obnovila sa len tá inštancia na obrazovke
+ * prezývky; brána o novom profile nevedela a držala ho tam ďalej. Ďalšie
+ * ťuknutie na „Pokračovať" poslalo druhý INSERT → „Túto prezývku už niekto
+ * má" na vlastnú prezývku, a všetko vyplnené (vrátane telefónu) sa stratilo.
+ *
+ * Preto je profil teraz v kontexte: jeden `reload()` vidia všetci.
  *
  * `full_name` a `phone` sa NEDAJÚ prečítať cez tabuľku — rola
  * `authenticated` na tie stĺpce nemá SELECT (stĺpcový grant v DB).
- * Preto sa načítavajú cez `offerra.my_profile()`. Zápis naopak cez
- * tabuľku ide, `UPDATE` na tie stĺpce grant má.
- *
- * `profile === null` znamená „prihlásený, ale ešte bez prezývky" — na to
- * sa vieže brána v `_layout.tsx`.
+ * Preto sa načítavajú cez `offerra.my_profile()`. Zápis cez tabuľku ide.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { db } from '@/lib/property';
 
@@ -21,12 +27,21 @@ export type MyProfile = {
   avatar_url: string | null;
 };
 
+type ProfileState = {
+  /** `undefined` = ešte nevieme, `null` = prihlásený bez prezývky. */
+  profile: MyProfile | null | undefined;
+  error: string | null;
+  reload: () => Promise<void>;
+};
+
 function message(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
   return e instanceof Error ? e.message : String(e);
 }
 
-export function useProfile(userId: string | undefined) {
+const ProfileContext = createContext<ProfileState | null>(null);
+
+export function ProfileProvider({ userId, children }: { userId: string | undefined; children: ReactNode }) {
   const [profile, setProfile] = useState<MyProfile | null | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
 
@@ -50,10 +65,18 @@ export function useProfile(userId: string | undefined) {
   }, [userId]);
 
   useEffect(() => {
+    setProfile(undefined);
     void reload();
   }, [reload]);
 
-  return { profile, error, reload };
+  const value = useMemo(() => ({ profile, error, reload }), [profile, error, reload]);
+  return createElement(ProfileContext.Provider, { value }, children);
+}
+
+export function useProfile(): ProfileState {
+  const ctx = useContext(ProfileContext);
+  if (!ctx) throw new Error('useProfile sa dá volať len vnútri <ProfileProvider>.');
+  return ctx;
 }
 
 /** Vracia chybovú hlášku, alebo `null` pri úspechu. */
@@ -71,8 +94,12 @@ export async function saveProfile(
   } catch (e: unknown) {
     const m = message(e);
     console.log(`[PROFIL] Uloženie zlyhalo: ${m}`);
-    // Jediné obmedzenie, ktoré používateľ reálne trafí, je obsadená prezývka.
-    if (/duplicate key|profile_nickname_key/i.test(m)) {
+    // Kolízia na primárnom kľúči = profil už existuje (dvojité odoslanie).
+    // Nie je to chyba používateľa a nesmie vyzerať ako obsadená prezývka.
+    if (/profile_pkey|duplicate key.*pkey/i.test(m)) {
+      return null;
+    }
+    if (/profile_nickname_key|duplicate key/i.test(m)) {
       return 'Túto prezývku už niekto má. Skús inú.';
     }
     if (/check constraint|nickname_check/i.test(m)) {

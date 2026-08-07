@@ -55,7 +55,7 @@ export default function PropertyEditorScreen() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { uploading, addPhotos, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
+  const { uploading, addPhoto, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
 
   // Server je zdroj pravdy; lokálny stav sa napĺňa až keď dorazí.
   useEffect(() => {
@@ -202,7 +202,7 @@ export default function PropertyEditorScreen() {
               FOTKY ({photos.length})
             </Text>
             <Text style={[styles.sectionHint, { color: palette.textMuted }]}>
-              Aspoň jedna je povinná. Viac fotiek = viac ponúk — prvá sa použije ako titulná.
+              Aspoň jedna je povinná. Pridávajú sa po jednej — prvá sa použije ako titulná.
             </Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
@@ -229,7 +229,7 @@ export default function PropertyEditorScreen() {
               ))}
 
               <Pressable
-                onPress={() => addPhotos(photos.length)}
+                onPress={() => addPhoto(photos.length)}
                 disabled={uploading}
                 accessibilityRole="button"
                 style={({ pressed }) => [
@@ -240,7 +240,7 @@ export default function PropertyEditorScreen() {
                 {uploading ? (
                   <ActivityIndicator color={palette.primary} />
                 ) : (
-                  <Text style={[styles.addPhotoText, { color: palette.link }]}>+ Fotky</Text>
+                  <Text style={[styles.addPhotoText, { color: palette.link }]}>+ Fotka</Text>
                 )}
               </Pressable>
             </ScrollView>

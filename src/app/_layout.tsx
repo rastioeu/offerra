@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useProfile } from '@/hooks/use-profile';
+import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { Colors } from '@/theme/tokens';
 
@@ -20,6 +20,18 @@ SplashScreen.preventAutoHideAsync();
  * Offerry (zadanie, bod 7).
  */
 export default function RootLayout() {
+  const { session } = useSession();
+
+  // Profil musí byť JEDEN zdieľaný stav — inak sa brána nedozvie, že si
+  // používateľ práve uložil prezývku (chyba nahlásená 7.8.2026).
+  return (
+    <ProfileProvider userId={session?.user.id}>
+      <RootLayoutInner />
+    </ProfileProvider>
+  );
+}
+
+function RootLayoutInner() {
   const scheme = useColorScheme();
   const isDark = scheme === 'dark';
   const palette = Colors[isDark ? 'dark' : 'light'];
@@ -45,7 +57,7 @@ export default function RootLayout() {
   // FÁZA 2 — brána má teraz dva stupne: session, a potom prezývka.
   // Bez prezývky sa nedá inzerovať ani ponúkať (v DB to drží cudzí kľúč na
   // `offerra.profile`), takže je to podmienka vstupu, nie odporúčanie.
-  const { profile } = useProfile(session?.user.id);
+  const { profile } = useProfile();
 
   useEffect(() => {
     if (session === undefined) return; // ešte nevieme
