@@ -16,9 +16,18 @@ import {
 } from '@/lib/property';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
+import { FavoriteHeart } from './favorite-heart';
 import { Badge } from './ui';
 
-export function PropertyCard({ item }: { item: PropertyWithMedia }) {
+export function PropertyCard({
+  item,
+  favorite,
+  onToggleFavorite,
+}: {
+  item: PropertyWithMedia;
+  favorite?: boolean;
+  onToggleFavorite?: () => Promise<boolean | null>;
+}) {
   const palette = useTheme();
   const cover = item.media[0]?.url;
   const price = formatPrice(item.asking_price_hint, item.transaction_type);
@@ -49,6 +58,11 @@ export function PropertyCard({ item }: { item: PropertyWithMedia }) {
             <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
             <Badge text={PROPERTY_LABEL[item.property_type]} />
           </View>
+          {onToggleFavorite ? (
+            <View style={styles.heart}>
+              <FavoriteHeart active={Boolean(favorite)} onToggle={onToggleFavorite} />
+            </View>
+          ) : null}
         </View>
 
         <View style={styles.body}>
@@ -112,6 +126,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, overflow: 'hidden' },
   photo: { height: 190, justifyContent: 'center', alignItems: 'center' },
   noPhoto: { ...Type.caption },
+  heart: { position: 'absolute', top: Spacing.sm, right: Spacing.sm },
   badges: { position: 'absolute', top: Spacing.sm, left: Spacing.sm, flexDirection: 'row', gap: Spacing.xs },
   body: { padding: Spacing.md, gap: Spacing.xs },
   title: { ...Type.subtitle, fontWeight: Weight.semibold },

@@ -10,7 +10,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PropertyCard } from '@/components/property-card';
 import { SearchBar } from '@/components/search-bar';
-import { ErrorNote } from '@/components/ui';
+import { ErrorNote, PropertyCardSkeleton } from '@/components/ui';
+import { useFavoriteIds } from '@/hooks/use-favorites';
+import { useSession } from '@/hooks/use-session';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
@@ -22,6 +24,8 @@ export default function NehnutelnostiScreen() {
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
   const { items, error, reload } = useProperties(filter);
   const [refreshing, setRefreshing] = useState(false);
+  const { session } = useSession();
+  const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
   useRefreshOnFocus(reload);
 
   const onRefresh = useCallback(async () => {
@@ -50,7 +54,13 @@ export default function NehnutelnostiScreen() {
 
         <ErrorNote error={error} />
 
-        {items === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
+        {/* Kostry namiesto krúžku — používateľ vidí, ČO sa načítava. */}
+        {items === undefined ? (
+          <>
+            <PropertyCardSkeleton />
+            <PropertyCardSkeleton />
+          </>
+        ) : null}
 
         {items?.length === 0 && !error ? (
           <Text style={[styles.empty, { color: palette.textMuted }]}>
@@ -61,7 +71,12 @@ export default function NehnutelnostiScreen() {
         ) : null}
 
         {items?.map((item) => (
-          <PropertyCard key={item.id} item={item} />
+          <PropertyCard
+            key={item.id}
+            item={item}
+            favorite={favorites.has(item.id)}
+            onToggleFavorite={session ? () => toggle(item.id) : undefined}
+          />
         ))}
       </ScrollView>
     </SafeAreaView>

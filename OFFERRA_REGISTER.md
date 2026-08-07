@@ -1337,6 +1337,124 @@ Verzia sa preto dvíha **len spolu s novým buildom**. Zapísané do
 `runtimeVersion` na politiku `fingerprint` — tá sa mení len keď sa mení
 natívna časť, takže verzia sa potom bude dať dvíhať slobodne.
 
+---
+
+## Bug-fix 2026-08-07
+
+Zoznam VŠETKÉHO, čo sa doteraz našlo ako pokazené — nahlásené Rastiom aj
+nájdené vlastnou kontrolou. Statusy podľa §1.
+
+| # | Chyba | Kto našiel | Stav |
+|---|---|---|---|
+| 1 | Splash screen bez `hideAsync` — appka by ostala navždy na splash | ja, pred buildom | ✅ opravené (0.17) |
+| 2 | Ikona na ploche ostala šablónová po OTA | Rastio | ✅ príčina zistená (1.14) — **🔴 oprava čaká na build** |
+| 3 | Prezývka hlásila „už existuje" na vlastnú prezývku | Rastio | ✅ opravené (2.11a) — príčinou bol môj seed |
+| 4 | Telefón sa neuložil na prvý pokus | Rastio | ✅ opravené (2.11b) |
+| 5 | Tri nezávislé inštancie `useProfile` — brána nevidela nový profil | ja | ✅ opravené (2.11b) |
+| 6 | Fotka sa nedala nahrať (0 súborov v Storage) | Rastio | ✅ opravené (2.11c) |
+| 7 | Záujemca si vedel SÁM akceptovať ponuku | ja | ✅ opravené (2.12) |
+| 8 | …a tým si vytiahnuť telefón majiteľa | ja | ✅ opravené (2.12) |
+| 9 | Majiteľ vedel prepísať sumu cudzej ponuky | ja | ✅ opravené (2.12) |
+| 10 | Majiteľ vedel prepísať správu záujemcu | ja | ✅ opravené (2.12) |
+| 11 | Obrazovky sa neobnovovali po návrate | ja | ✅ opravené (2.13) |
+| 12 | Uzávierka ponúk bola len ozdoba — dalo sa ponúkať po termíne | ja | ✅ opravené (2.15) |
+| 13 | Majiteľ si vedel nafúknuť `view_count` | ja | ✅ opravené (2.15) |
+| 14 | Majiteľ si vedel nastaviť odznak „UKÁŽKA" | ja | ✅ opravené (2.15) |
+| 15 | Majiteľ vedel spätne datovať inzerát a preskočiť v katalógu | ja | ✅ opravené (2.15) |
+| 16 | Nájomca vedel prepísať dotazník PO prijatí ponuky | ja | ✅ opravené (2.15) |
+| 17 | Dve testovacie sady boli zastarané voči schéme | ja | ✅ opravené (2.16) |
+| 18 | Parser ceny bral len prvú číslicu („do 600" → 6) | ja | ✅ opravené (2.20) |
+| 19 | Slovo pred názvom obce zabilo hľadanie mesta | ja | ✅ opravené (2.20) |
+| 20 | **Rastiov živý profil mal `is_seed = true`** — mazanie seed dát by mu zmazalo účet | ja | ✅ odstránené (2.17) |
+| 21 | `Card` nemal tieň — plochý vzhľad | Rastio (bod 6B) | ✅ opravené (4.2) |
+| 22 | Žiadne loading skeletony, len holý krúžok | Rastio (bod 6B) | ✅ opravené (4.2) |
+| 23 | Tlačidlo pri práci len menilo text, bez spinnera | Rastio (bod 6B) | ✅ opravené (4.2) |
+| 24 | `Row` a nadpis sekcie rozkopírované v 8 súboroch | ja pri 6B | ✅ zjednotené (4.2) |
+
+### Čo v tomto zozname CHÝBA a chýbať bude
+
+**Nemám fyzické zariadenie.** Body 1–24 sú nájdené čítaním kódu, meraním
+proti databáze a automatickými testami. Chyby, ktoré sa prejavia LEN na
+displeji — preklep v rozložení, nedostupné tlačidlo, klávesnica cez pole,
+pomalé vykreslenie — v tomto zozname nie sú a ja ich tam doplniť neviem.
+Prechod na zariadení je **🔴 NEDOKONČENÝ** a môže ho spraviť len Rastio.
+
+---
+
+## Fáza 4 — Dorobenosť a realitné funkcie (7.8.2026)
+
+**IDE OTA** — žiadny natívny modul nepribudol.
+
+### 4.1 Porovnanie s MUTARKom — priznanie
+
+Rastio: „appka pôsobí slabšie ako MUTARK" a „skontroluj, či si z MUTARK
+reálne prevzal referenciu, alebo si robil vlastné jednoduchšie verzie".
+
+**Mal pravdu. Robil som vlastné jednoduchšie verzie.**
+
+Prevzal som *správanie* (ImagePicker cez `require()`, auth flow, klasické
+Tabs, štruktúru tokenov). **Neprevzal som UI vrstvu** — MUTARK má
+`src/ui/` so 17 komponentmi, Offerra mala `ui.tsx` so šiestimi a zvyšok
+rozkopírovaný po obrazovkách.
+
+| Čo | MUTARK | Offerra pred | Offerra teraz |
+|---|---|---|---|
+| UI kit | 17 komponentov v `src/ui/` | 6 v jednom súbore | 11, zjednotené |
+| Loading stav | `Skeleton` (pulzujúci tvar obsahu) | holý `ActivityIndicator` | ✅ `Skeleton` + `PropertyCardSkeleton` |
+| Tlačidlo pri práci | spinner v tlačidle (`loading`) | len zmena textu | ✅ spinner |
+| `Card` | `Shadow.card` | **bez tieňa** | ✅ tieň |
+| Odozva na stlačenie | — | len `opacity` | ✅ pruženie mierky |
+| `Row`, nadpis sekcie | `Row`, `SectionLabel` | 4× a 8× skopírované | ✅ jeden zdroj |
+| Haptika | `expo-haptics` cez `require()` | žiadna | 🔴 **vyžaduje nový build** |
+
+**Haptika je jediná položka, ktorá sa OTA vyriešiť nedá** —
+`expo-haptics` je natívny modul. MUTARKov vlastný komentár hovorí to isté:
+čakal na najbližší `eas build`. U nás sa pridá spolu s ikonou.
+
+Čo Offerra **zámerne nepreberá**: glow efekty a neón. Realitná appka má
+pôsobiť vecne, nie herne — to bolo v zadaní Fázy 0 a platí ďalej. Rozdiel
+mal byť v štýle, nie v dorobenosti; dorobenosť sa dorovnáva.
+
+### 4.2 Dorobenosť komponentov — 🟡 KÓD HOTOVÝ
+
+Pribudlo: `Skeleton`, `PropertyCardSkeleton`, `Pressable3D` (pruženie),
+`loading` na tlačidle, `Shadow.button`, tieň na `Card`, zdieľané `Row`
+a `SectionLabel`.
+
+Všetko cez `Animated` z React Native — **žiadny nový natívny modul**.
+
+### 4.3 Obľúbené — ✅ OVERENÉ RUNTIME (5/5)
+
+Tabuľka `offerra.favorite`. Obľúbené sú **súkromné** — nikto nemá vidieť,
+čo si niekto iný odložil; pri nehnuteľnostiach to prezrádza zámery
+aj rozpočet.
+
+```
+✅ A si uložil obľúbený                        201
+✅ A ho vidí                                   1 riadok
+✅ B NEVIDÍ obľúbené používateľa A             []
+✅ B NEVIE uložiť v mene A                     403
+✅ A si ho odobral                             []
+```
+
+Srdiečko reaguje **optimisticky** — čakať na sieť pri takom drobnom geste
+vyzerá rozbito. Pri zlyhaní sa stav vráti zo servera a používateľ dostane
+hlášku.
+
+### 4.4 Kalkulačka splátok — 🟡 KÓD HOTOVÝ
+
+V detaile pri PREDAJI a keď je uvedená cena. Anuitný vzorec, ošetrené
+delenie nulou pri nulovej sadzbe.
+
+Pod výsledkom je **napísané, čo neráta** — poplatky, poistenie, daň, ani
+či úver banka schváli. Bez toho by z orientačného čísla spravila sľub.
+
+### 4.5 Zdieľanie — 🟡 KÓD HOTOVÝ
+
+Systémový share sheet cez `Share` z React Native (**nie nový modul**),
+s hlbokým odkazom `offerra://nehnutelnost/{id}` — ten istý scheme, aký
+už používa prihlásenie cez Google.
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

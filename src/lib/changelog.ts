@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.0.0',
     date: '7. augusta 2026',
+    title: 'Obľúbené, kalkulačka, zdieľanie a hlbší vzhľad',
+    items: [
+      'Srdiečko na karte aj v detaile — obľúbené nájdeš v Profile. Vidíš ich len ty.',
+      'Pri predaji je v detaile odhad mesačnej splátky. Vieš si pohrať s vlastnými zdrojmi, sadzbou aj dobou splácania.',
+      'Inzerát sa dá zdieľať cez systémové zdieľanie, vrátane odkazu priamo naň.',
+      'Kým sa načítavajú inzeráty, vidíš ich obrysy namiesto točiaceho sa krúžku.',
+      'Tlačidlá sa pri stlačení jemne zatlačia a pri práci ukazujú spinner priamo v sebe.',
+      'Karty a panely dostali tieň — appka už nepôsobí plocho.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '7. augusta 2026',
     title: 'Nahlasovanie, moderovanie a správa',
     items: [
       'Nevhodný inzerát, ponuku alebo používateľa môžeš nahlásiť priamo tam, kde ich vidíš.',

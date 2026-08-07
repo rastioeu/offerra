@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, Button, Card, ErrorNote, Field } from '@/components/ui';
+import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
@@ -22,7 +23,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
-import { formatDate, STATUS_LABEL } from '@/lib/property';
+import { formatArea, formatDate, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ProfilScreen() {
@@ -35,6 +36,7 @@ export default function ProfilScreen() {
   const { items: properties } = useMyProperties(userId);
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
+  const { items: favorites } = useFavoriteProperties(userId);
 
   const [nickname, setNickname] = useState('');
   const [fullName, setFullName] = useState('');
@@ -184,6 +186,18 @@ export default function ProfilScreen() {
                 meta: `${[p.city, `${p.media.length} fotiek`].filter(Boolean).join(' · ')}`,
                 badge: STATUS_LABEL[p.status],
                 onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
+              }))}
+            />
+
+            <SectionList
+              label={`OBĽÚBENÉ (${favorites?.length ?? 0})`}
+              empty="Zatiaľ nič. Ťukni na srdiečko pri inzeráte."
+              rows={(favorites ?? []).map((p) => ({
+                key: p.id,
+                title: p.title || 'Bez názvu',
+                meta: [p.city, formatArea(p.area_m2)].filter(Boolean).join(' · ') || '—',
+                badge: TRANSACTION_LABEL[p.transaction_type],
+                onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: p.id } }),
               }))}
             />
 

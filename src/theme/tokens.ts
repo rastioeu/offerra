@@ -148,6 +148,14 @@ export const Weight = {
 } as const;
 
 export const Shadow = {
+  /** Vyplnené tlačidlo — jemné zdvihnutie, aby vyzeralo stlačiteľne. */
+  button: {
+    shadowColor: '#103A6B',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.24,
+    shadowRadius: 6,
+    elevation: 3,
+  },
   card: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },

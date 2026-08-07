@@ -9,12 +9,15 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FavoriteHeart } from '@/components/favorite-heart';
+import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
 import { ReportButton } from '@/components/report-button';
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
+import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
@@ -60,6 +63,29 @@ export default function PropertyDetailScreen() {
   const isOwner = Boolean(myId && item && item.owner_id === myId);
   const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
   const closed = isDeadlinePassed(item?.offer_deadline ?? null);
+  const { ids: favorites, toggle } = useFavoriteIds(myId);
+
+  /**
+   * Zdieľanie cez systémový share sheet. `Share` je súčasť React Native —
+   * žiadny nový natívny modul. Odkaz je hlboký (`offerra://`), ten istý
+   * scheme, aký už používa prihlásenie cez Google.
+   */
+  async function share() {
+    if (!item) return;
+    try {
+      await Share.share({
+        title: item.title,
+        message: [
+          item.title,
+          [item.city, formatArea(item.area_m2)].filter(Boolean).join(' · '),
+          price ? `Orientačne ${price}` : 'Cena neuvedená — čaká na ponuky',
+          `offerra://nehnutelnost/${item.id}`,
+        ].join('\n'),
+      });
+    } catch (e: unknown) {
+      console.log(`[ZDIEĽANIE] Zlyhalo: ${String(e)}`);
+    }
+  }
 
   const price = item ? formatPrice(item.asking_price_hint, item.transaction_type) : null;
   const deadline = item ? deadlineLabel(item.offer_deadline) : null;
@@ -133,11 +159,19 @@ export default function PropertyDetailScreen() {
 
             {deadline ? <Text style={[styles.deadline, { color: palette.link }]}>{deadline}</Text> : null}
 
-            {!isOwner ? (
-              <View style={styles.reportRow}>
+            <View style={styles.toolRow}>
+              {myId ? (
+                <FavoriteHeart
+                  active={favorites.has(item.id)}
+                  onToggle={() => toggle(item.id)}
+                  size={30}
+                />
+              ) : null}
+              <Button title="Zdieľať" onPress={share} variant="outline" />
+              {!isOwner ? (
                 <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
-              </View>
-            ) : null}
+              ) : null}
+            </View>
 
             <Card>
               <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PARAMETRE</Text>
@@ -157,6 +191,11 @@ export default function PropertyDetailScreen() {
                 </Text>
               ) : null}
             </Card>
+
+            {/* Kalkulačka dáva zmysel len pri PREDAJI a keď je uvedená cena. */}
+            {item.transaction_type === 'SALE' && item.asking_price_hint ? (
+              <MortgageCalculator price={item.asking_price_hint} />
+            ) : null}
 
             {item.description ? (
               <Card>
@@ -236,5 +275,5 @@ const styles = StyleSheet.create({
   hidden: { ...Type.caption },
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
-  reportRow: { alignItems: 'flex-end' },
+  toolRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: Spacing.md },
 });
