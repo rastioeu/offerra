@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.offerra.app",
       "appleTeamId": "TC4V762X67",
-      "buildNumber": "1",
+      "buildNumber": "2",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "infoPlist": {

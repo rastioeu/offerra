@@ -737,12 +737,41 @@ pri zhode kanála aj runtime verzie, preto overené proti reálnemu buildu:
 > kanáli a runtime**. Nedokazuje, že sa na telefón stiahol ani že
 > obrazovky vyzerajú správne — to je 1.13.
 
-### 1.13 Overenie Fázy 1 na zariadení — 🔴 NEDOKONČENÉ
+### 1.13 Overenie Fázy 1 na zariadení — ✅ POTVRDENÉ POUŽÍVATEĽOM (okrem ikony)
 
-Čaká na Rastia. Appku treba **zavrieť a znova otvoriť** (OTA sa natiahne
-pri štarte). Zoznam, čo presne otestovať, je v `reports/FAZA_1_INZERATY.md`.
-Kým to Rastio menovite nepotvrdí, body **1.3** (assety identity) a **1.11**
-(obrazovky) ostávajú 🟡.
+Rastio 7.8.2026 po OTA: **„ostatné vyzerá ok"**, ikona na ploche nie.
+
+> Poznámka k presnosti: Rastio potvrdil stav **súhrnne**, nie bod po bode.
+> Body 1.3 a 1.11 sú teda ✅ ako celok; jednotlivé obrazovky (napr. že
+> „Selce" vráti tri okresy) menovite potvrdené neboli.
+
+### 1.14 Ikona na ploche sa nezmenila — ✅ PRÍČINA ZISTENÁ, oprava čaká na build
+
+**Nie je to chyba, je to hranica OTA.** App ikona a splash sú **natívne
+assety skompilované do binárky** (iOS `Assets.car`), nie JS. `eas update`
+posiela len JS a assety, ktoré si JS vyžiada cez `require()` — ikonu
+z `app.json` medzi ne nepatrí.
+
+**Dôkaz — vytiahnutá ikona z commitu, z ktorého je TestFlight build:**
+
+```
+git show 7ed7fcf:assets/images/icon.png
+  → 1024×1024 RGBA — pôvodná Expo šablónová ikona (svetlomodrá so šípkou)
+
+assets/images/icon.png (dnes, commit 95264ad)
+  → 1024×1024 RGB — Offerra navy so značkou
+```
+
+Na ploche teda musí byť šablónová ikona — presne to Rastio aj vidí.
+To isté platí pre **splash screen**.
+
+Naopak wordmark na prihlasovacej obrazovke sa zmeniť **musel** — ten sa
+načítava `require()`-om z JS, takže OTA ho niesla (`Uploaded 1 asset`).
+
+**Oprava:** vyžaduje nový `eas build` + `eas submit`. Pripravené:
+`ios.buildNumber` zvýšené `1 → 2`, `version` ostáva `1.0.0` zámerne —
+tým sa `runtimeVersion` nemení a **doterajšia OTA platí aj pre nový build**.
+Build sa spustí až po Rastiovom „OK build" (CLAUDE.md §3).
 
 ---
 
@@ -761,10 +790,11 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Fáza 1 je hotová v kóde, v databáze aj publikovaná cez OTA.
-Blokuje **jediná vec: pozrieť sa na ňu na telefóne** (1.13) — appku treba
-zavrieť a znova otvoriť. Zoznam, čo otestovať, je
-v `reports/FAZA_1_INZERATY.md`.
+Fáza 1 je hotová, publikovaná a Rastiom potvrdená (1.13).
+
+Otvorené: **ikona a splash sa dajú vymeniť len novým buildom** (1.14) —
+`buildNumber` je zvýšené na 2 a čaká sa na „OK build". Nie je to blokujúce
+pre ďalšiu prácu, appka funguje.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
