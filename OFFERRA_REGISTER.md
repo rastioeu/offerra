@@ -944,6 +944,70 @@ Commit             f122d0f
 Zhoda s buildom `9fdf26af` (channel `production`, runtime `1.0.0`) platí
 rovnako ako pri Fáze 1 — bez nej by sa update nedoručil.
 
+### 2.11 Tri chyby z prvého testu na zariadení — ✅ OPRAVENÉ
+
+Rastio 7.8.2026: „fotka nejde nahrať a prezývku mi dalo že existuje aj keď
+som bol prvý a telefón nezadalo na prvý krát".
+
+#### a) Prezývka „už existuje" — chyba bola MOJA, nie v kóde
+
+Pri migrácii (2.1) som pre Rastiov **Apple** účet založil profil
+s prezývkou `rastio`, aby sedel cudzí kľúč pre 8 seed inzerátov. Rastio sa
+prihlásil cez **Google** — to je iný `auth.users` riadok — napísal `rastio`
+a narazil na môj vlastný riadok. **Obsadil som mu jeho meno bez toho, aby
+o tom vedel.**
+
+Dôkaz (dva rôzne účty, obe jeho):
+
+```
+rastio     33fadff3…  rastioeu@protonmail.com  apple    8 inzerátov
+Rastioeu   99c3f891…  rastioeu@gmail.com       google   1 inzerát
+```
+
+Riešené: seed profil premenovaný na `ukazka_predajca`, dostal
+`is_seed = true` a kontaktné údaje (aby sa dalo testovať odkrytie po
+akceptácii). Prezývka `rastio` je voľná.
+
+> Poučenie do ďalších fáz: seed dáta nesmú zaberať mená, ktoré si môže
+> chcieť vziať skutočný používateľ.
+
+#### b) Telefón sa neuložil na prvý krát — dôsledok (a) + samostatná chyba
+
+`useProfile()` volali **tri miesta nezávisle** — brána v `_layout.tsx`,
+obrazovka prezývky aj Profil. Boli to tri oddelené stavy. Po úspešnom
+uložení sa obnovila len inštancia na obrazovke prezývky; brána o novom
+profile nevedela a držala používateľa tam ďalej. Ďalšie ťuknutie na
+„Pokračovať" poslalo **druhý INSERT** → „prezývku už niekto má" na vlastnú
+prezývku, a všetko vyplnené vrátane telefónu sa stratilo.
+
+Riešené: profil je v kontexte (`ProfileProvider` v `_layout.tsx`), jeden
+`reload()` vidia všetci. Kolízia na primárnom kľúči sa navyše už nehlási
+ako obsadená prezývka.
+
+> Je to tá istá trieda chyby ako splash screen v 0.17: `tsc` prejde, bundle
+> sa zostaví, a prejaví sa to až na zariadení.
+
+#### c) Fotka sa nedá nahrať
+
+**Meranie prv, oprava potom.** V `storage.objects` bolo pre jeho účet
+**0 súborov** — upload z telefónu vôbec neodišiel, padalo to pred
+odoslaním.
+
+Server bol v poriadku, overené osobitne (8/8): upload do vlastnej zložky,
+`upsert` na tú istú cestu, PNG, HEIC, odmietnutý GIF, verejné stiahnutie.
+
+Príčina: výber fotiek používal `allowsMultipleSelection: true` spolu
+s `base64: true`. Pri viacnásobnom výbere `expo-image-picker` base64
+nevracia spoľahlivo — kód dostal `undefined` a fotku **ticho preskočil**.
+
+Riešené podľa Rastiovej požiadavky „daj to ako v mutark": jedna fotka,
+`allowsEditing`, `aspect`, `quality`, `base64` — teda presne overený
+MUTARK vzor. Výber aj upload sú teraz v spoločnom `src/lib/photo.ts` pre
+inzeráty aj profilovku, s **krokovým logovaním** (1 štart … 7 hotovo) a
+chybovou hláškou, ktorá povie, na ktorom kroku to padlo.
+
+Publikované OTA `a21664da-3c76-408e-8556-eafc55737477` (commit `2d90a70`).
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si
