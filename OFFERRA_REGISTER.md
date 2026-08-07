@@ -25,20 +25,34 @@ Priebežný záznam stavu. Statusy podľa `CLAUDE.md` §1 (Definition of Done):
 | upload fotiek | `/root/mutark/src/hooks/use-avatar-upload.ts` | vzor: `require('expo-image-picker')` **vnútri handlera** (nie statický import) — starší build bez natívneho modulu nesmie zhodiť obrazovku; base64 → `Uint8Array` → `storage.from().upload()` |
 | Famiglia — galéria/upload | `/root/famiglia/src/app/(main)/(tabs)/profile.tsx`, `famiglie/[id].tsx` | rovnaký ImagePicker vzor; Famiglia používa route-groups `(auth)`/`(main)` — Offerra zatiaľ nepotrebuje |
 
-### 0.2 GitHub repo — 🔴 NEDOKONČENÉ
+### 0.2 GitHub repo — 🔴 NEDOKONČENÉ (push blokovaný právami tokenu)
 
 - Repo `https://github.com/rastioeu/offerra` **existuje** — ✅ overené
   (GitHub API `200`, `visibility: public`, vytvorené 7.8.2026 06:27 UTC,
   branch `main`, jediný commit `6a889d6 Initial commit` s 9-bajtovým
   `README.md`).
 - Lokálny klon v `/root/offerra` je na tomto `main`.
-- **🔴 Token pre `rastioeu/offerra` NEEXISTUJE.** Prehľadané: `/root/.git-credentials`
-  (2 záznamy — patria mutark/famiglia), `/root/.famiglia-secrets`
-  (`GITHUB_TOKEN` = Famiglia), `/root/.mutark-secrets` (žiadny GitHub token),
-  `$GITHUB_TOKEN` v prostredí (nenastavený), `/root/.bash_history`.
-  Podľa zadania sa **nepokračuje** s MUTARK ani Famiglia tokenom.
-- **Dôsledok:** priebežné commity prebiehajú **lokálne**, `git push` je
-  zablokovaný do dodania tokenu.
+- **Token dodaný Rastiom 7.8.2026** (fine-grained PAT, expirácia
+  `2026-11-05`). Uložený v `/root/.offerra-secrets` (`chmod 600`), **mimo
+  repozitára**; git ho číta cez repo-local credential helper
+  `/root/.offerra-git-credential.sh`. V `.git/config` token nie je.
+- Token je správne **obmedzený len na offerra** — `GET /repos/rastioeu/mutark`
+  vracia `404`, takže sa nedá použiť na iné projekty. ✅ zodpovedá pravidlu
+  „každý projekt vlastný token".
+- **🔴 Token však nemá právo zápisu.** Overené tromi spôsobmi:
+
+  | Test | Výsledok |
+  |---|---|
+  | `git fetch origin` | ✅ exit 0 — čítanie funguje |
+  | `git push origin main` | 🔴 `403 Permission to rastioeu/offerra.git denied` |
+  | Hlavička `x-accepted-github-permissions` | `metadata=read` — **chýba `contents=write`** |
+  | `PUT /repos/.../contents/.permcheck` | 🔴 `403 Resource not accessible by personal access token` |
+
+- Príčina: fine-grained PAT má predvolene „Public repositories (read-only)".
+  Repo je verejné, preto čítanie prejde a zápis nie.
+- **Čaká sa na úpravu práv tokenu** (Repository access → `rastioeu/offerra`,
+  Contents → Read and write). Hodnota tokenu sa pri úprave práv nemení.
+- Commit `34260c7` je pripravený lokálne, `main` je **ahead 1**.
 
 ### 0.3 Expo projekt, SDK 57 — ✅ OVERENÉ RUNTIME
 
@@ -180,8 +194,10 @@ sa nezapisovalo, len čítalo.
 
 ## Čo blokuje postup
 
-1. **🔴 GitHub token pre `rastioeu/offerra`** — bez neho sa nedá splniť
-   „commituj a pushuj priebežne". Commity sú lokálne a čakajú.
+1. **🔴 Právo zápisu pre GitHub token** — token je dodaný a funguje na
+   čítanie, ale má len `metadata=read`. Treba doplniť **Contents: Read and
+   write** a prístup k repozitáru `rastioeu/offerra` (viď 0.2). Do vtedy
+   sú commity len lokálne.
 2. **⏸️ „OK build" od Rastia** — podľa `CLAUDE.md` §3 sa `eas build`
    nespúšťa bez výslovného súhlasu.
 
