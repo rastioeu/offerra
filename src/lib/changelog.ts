@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.0.0',
     date: '7. augusta 2026',
+    title: 'Nastavenia upozornení',
+    items: [
+      'V Nastaveniach si vyberáš, o čom chceš vedieť — každý druh upozornenia zvlášť.',
+      'Systémové a bezpečnostné upozornenia sa vypnúť nedajú; musia doraziť vždy.',
+      'Denný a týždenný súhrn sú zatiaľ označené „čoskoro" — potrebujú serverovú časť, ktorú ešte nemáme.',
+      'Offerra zatiaľ žiadne upozornenia neposiela. Toto je predvoľba na potom, a hovorí to o sebe nahlas.',
+    ],
+  },
+  {
+    version: '1.0.0',
+    date: '7. augusta 2026',
     title: 'Obľúbené, kalkulačka, zdieľanie a hlbší vzhľad',
     items: [
       'Srdiečko na karte aj v detaile — obľúbené nájdeš v Profile. Vidíš ich len ty.',

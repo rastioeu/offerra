@@ -1455,6 +1455,65 @@ Systémový share sheet cez `Share` z React Native (**nie nový modul**),
 s hlbokým odkazom `offerra://nehnutelnost/{id}` — ten istý scheme, aký
 už používa prihlásenie cez Google.
 
+### 4.6 Granulárne notifikácie — ✅ OVERENÉ RUNTIME (9/9)
+
+`offerra.notification_preference` — per typ, s frekvenciou.
+
+**Offerra zatiaľ nemá čím notifikáciu poslať** (žiadne
+`expo-notifications`). Preferencie preto nie sú hotová funkcia, ale
+**brána, ktorou bude musieť prejsť každý budúci odosielateľ** —
+`offerra.should_notify()`. To sa dá otestovať už teraz, a otestované to je:
+
+```
+✅ bez nastavenia je typ ZAPNUTÝ (default)              true
+✅ po VYPNUTÍ brána notifikáciu ZASTAVÍ                 false
+✅ iný typ ostal zapnutý (vypnutie je PER TYP)          true
+✅ SYSTÉMOVÉ sa nedajú vypnúť ani priamym zápisom do DB check constraint
+✅ SYSTÉMOVÉ vždy prejdú                                true
+✅ B NEVIDÍ preferencie používateľa A                   []
+✅ B NEVIE nastaviť preferencie za A                    403
+✅ zablokovanému sa bežné neposielajú, systémové áno    false / true
+✅ frekvencia má default IHNED
+```
+
+Výnimka pre systémové je vynútená **`check` obmedzením v tabuľke**, nie
+skrytým prepínačom v UI — schované tlačidlo nie je pravidlo.
+
+### 4.7 Denný a týždenný súhrn — 🟡 ZÁMERNE NEDOKONČENÉ
+
+Uloženie frekvencie funguje, ale **nič ju nečíta**. Súhrn potrebuje
+plánovanú úlohu na serveri (pg_cron alebo Supabase Scheduled Function),
+ktorá udalosti nazbiera, zoskupí a odošle jednou správou.
+
+Odhad: **pol dňa práce**, ale až po tom, čo bude existovať samotné
+odosielanie notifikácií. Bez neho nie je čo zoskupovať.
+
+V Nastaveniach sú preto tlačidlá „Denný súhrn" a „Týždenný súhrn"
+označené **„(čoskoro)"** a po ťuknutí vysvetlia prečo — namiesto toho,
+aby ticho uložili predvoľbu, ktorú nikto nečíta.
+
+### 4.8 Zdieľanie — A hotové, B čaká na build
+
+**A) Systémový share sheet — 🟡 KÓD HOTOVÝ.** `Share` z React Native,
+obsah: názov, mesto, výmera, orientačná cena a hlboký odkaz
+`offerra://nehnutelnost/{id}`.
+
+> Deep link **NEOVERUJEM ako funkčný**. Scheme `offerra` je v `app.json`,
+> route `app/nehnutelnost/[id].tsx` existuje a expo-router má takéto
+> odkazy mapovať automaticky — ale či sa appka po ťuknutí na odkaz naozaj
+> otvorí na správnom detaile, sa dá zistiť **len na zariadení**.
+
+**B) Vizuálna kartička 9:16 — 🔴 VYŽADUJE NOVÝ BUILD.**
+Potrebuje `react-native-view-shot` (ten istý modul, aký na to používa
+MUTARK) — je to **natívny modul**, OTA ho nedoručí.
+
+Odhad po builde: **2–3 hodiny** (rozloženie kartičky, vykreslenie mimo
+obrazovky, uloženie do dočasného súboru, odoslanie do share sheetu).
+
+Do kartičky pôjde **len verejné info z katalógu** — žiadny kontakt ani
+presná adresa. To je pravidlo, nie poznámka: kontakt je chránený stĺpcovým
+grantom a do obrázka sa nesmie dostať zadnými dverami.
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

@@ -8,43 +8,31 @@
  * a testuje sa rovnako ako zvyšok schémy. Kaskády zmažú profil, inzeráty,
  * fotky, ponuky aj dopyty.
  */
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Stack, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card } from '@/components/ui';
+import { Button, Card, ErrorNote, SectionLabel } from '@/components/ui';
+import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
+import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import {
+  FREQUENCY_LABEL,
+  NOTIFICATION_TYPES,
+  type NotificationFrequency,
+} from '@/lib/notifications';
 import { signOut } from '@/lib/auth';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
-import { Spacing, Type, Weight } from '@/theme/tokens';
-
-const NOTIF_KEY = 'offerra.notifications';
+import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function NastaveniaScreen() {
   const palette = useTheme();
   const router = useRouter();
-  const [notifications, setNotifications] = useState(true);
+  const { session } = useSession();
+  const { prefs, error: prefError, save } = useNotificationPrefs(session?.user.id);
   const [busy, setBusy] = useState(false);
-
-  useEffect(() => {
-    AsyncStorage.getItem(NOTIF_KEY)
-      .then((v) => setNotifications(v !== 'off'))
-      .catch((e: unknown) => console.log(`[NASTAVENIA] Načítanie zlyhalo: ${String(e)}`));
-  }, []);
-
-  async function toggleNotifications(next: boolean) {
-    setNotifications(next);
-    try {
-      await AsyncStorage.setItem(NOTIF_KEY, next ? 'on' : 'off');
-    } catch (e: unknown) {
-      console.log(`[NASTAVENIA] Uloženie zlyhalo: ${String(e)}`);
-      Alert.alert('Nastavenie sa neuložilo', String(e));
-      setNotifications(!next);
-    }
-  }
 
   async function handleSignOut() {
     if (busy) return;
@@ -109,21 +97,80 @@ export default function NastaveniaScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>UPOZORNENIA</Text>
-          <View style={styles.switchRow}>
-            <View style={styles.switchText}>
-              <Text style={[styles.label, { color: palette.textPrimary }]}>Upozornenia na ponuky</Text>
-              <Text style={[styles.hint, { color: palette.textMuted }]}>
-                Zatiaľ len predvoľba — Offerra ešte push upozornenia neposiela.
-                Keď pribudnú, bude platiť toto nastavenie.
-              </Text>
-            </View>
-            <Switch
-              value={notifications}
-              onValueChange={toggleNotifications}
-              trackColor={{ true: palette.secondary, false: palette.border }}
-            />
-          </View>
+          <SectionLabel>UPOZORNENIA</SectionLabel>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Offerra zatiaľ push upozornenia NEPOSIELA. Toto je predvoľba, ktorú
+            bude musieť rešpektovať každé budúce odosielanie — nastav si ju už
+            teraz.
+          </Text>
+          <ErrorNote error={prefError} />
+
+          {NOTIFICATION_TYPES.map((t) => {
+            const pref = prefs[t.type];
+            const enabled = t.system ? true : (pref?.enabled ?? true);
+            const frequency = (pref?.frequency ?? 'IHNED') as NotificationFrequency;
+            return (
+              <View key={t.type} style={[styles.notifRow, { borderTopColor: palette.border }]}>
+                <View style={styles.switchRow}>
+                  <View style={styles.switchText}>
+                    <Text style={[styles.label, { color: palette.textPrimary }]}>{t.label}</Text>
+                    {t.hint ? (
+                      <Text style={[styles.hint, { color: palette.textMuted }]}>{t.hint}</Text>
+                    ) : null}
+                  </View>
+                  <Switch
+                    value={enabled}
+                    disabled={t.system}
+                    onValueChange={(v) => save(t.type, { enabled: v })}
+                    trackColor={{ true: palette.secondary, false: palette.border }}
+                  />
+                </View>
+
+                {/* Frekvencia dáva zmysel len pri zapnutom type. */}
+                {enabled && !t.system ? (
+                  <View style={styles.freqRow}>
+                    {(['IHNED', 'DENNY_SUHRN', 'TYZDENNY_SUHRN'] as NotificationFrequency[]).map((f) => {
+                      const active = frequency === f;
+                      const ready = f === 'IHNED';
+                      return (
+                        <Pressable
+                          key={f}
+                          onPress={() =>
+                            ready
+                              ? save(t.type, { frequency: f })
+                              : Alert.alert(
+                                  'Súhrny zatiaľ nefungujú',
+                                  'Denný a týždenný súhrn potrebuje plánovanú úlohu na serveri, ' +
+                                    'ktorú Offerra ešte nemá. Nastavenie by sa uložilo, ale nič by ho nečítalo — ' +
+                                    'preto ho zatiaľ nepúšťam.'
+                                )
+                          }
+                          accessibilityRole="button"
+                          accessibilityState={{ selected: active, disabled: !ready }}
+                          style={[
+                            styles.freq,
+                            {
+                              backgroundColor: active ? palette.primary : palette.surface,
+                              borderColor: active ? palette.primary : palette.border,
+                              opacity: ready ? 1 : 0.45,
+                            },
+                          ]}>
+                          <Text
+                            style={[
+                              styles.freqText,
+                              { color: active ? palette.onPrimary : palette.textSecondary },
+                            ]}>
+                            {FREQUENCY_LABEL[f]}
+                            {ready ? '' : ' (čoskoro)'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
+              </View>
+            );
+          })}
         </Card>
 
         <Card>
@@ -166,6 +213,10 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
+  notifRow: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.md, gap: Spacing.sm },
+  freqRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
+  freq: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 5 },
+  freqText: { ...Type.caption, fontWeight: Weight.semibold },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   switchText: { flexShrink: 1, gap: 2 },
   label: { ...Type.bodyLg, fontWeight: Weight.medium },
