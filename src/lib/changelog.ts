@@ -29,15 +29,6 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Skrytý inzerát zmizne z ponuky, ale majiteľ ho vidí aj s dôvodom.',
       'Zablokovaný používateľ sa nevie prihlásiť ani nič pridať; jeho doterajšie dáta ostávajú.',
       'Správca dostane upozornenie, keď to isté nahlásia traja rôzni ľudia — alebo hneď, keď niekto nahlási podvod.',
-    ],
-  },
-  {
-    version: '1.0.0',
-    date: '7. augusta 2026',
-    title: 'Nahlasovanie a verzný riadok',
-    items: [
-      'Nevhodný inzerát, používateľa alebo ponuku môžeš nahlásiť — tlačidlom priamo tam, kde ich vidíš.',
-      'Nahlásenie appka nikoho automaticky nezmaže; ide na posúdenie.',
       'V Profile je dole verzný riadok. Podľa neho spoznáš, či ti dorazila najnovšia aktualizácia.',
       'Táto obrazovka — „Čo je nové" — vznikla a je doplnená spätne za všetky fázy.',
     ],
