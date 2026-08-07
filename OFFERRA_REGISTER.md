@@ -928,11 +928,27 @@ prázdny stav.
 Mená a telefóny seed záujemcov sú vyplnené — inak by sa nedalo ukázať
 odkrytie kontaktu. Zmazanie: `delete from offerra.profile where is_seed;`
 
-### 2.9 Overenie na zariadení — 🔴 NEDOKONČENÉ
+### 2.9 OTA publikovaná — ✅ OVERENÉ RUNTIME
 
-Čaká na Rastia. Fáza 2 **nepridala žiadny natívny modul**
-(`AsyncStorage`, `expo-image-picker` aj `expo-image` už v builde sú,
-`Switch` je súčasť React Native), takže stačí OTA.
+Fáza 2 **nepridala žiadny natívny modul** (`AsyncStorage`,
+`expo-image-picker` aj `expo-image` už v builde sú, `Switch` je súčasť
+React Native), takže build nebol potrebný. Spustené po „OK update".
+
+```
+Branch             production
+Runtime version    1.0.0
+Update group ID    883e0fda-6f77-4591-830c-84aa3370a154
+Commit             f122d0f
+```
+
+Zhoda s buildom `9fdf26af` (channel `production`, runtime `1.0.0`) platí
+rovnako ako pri Fáze 1 — bez nej by sa update nedoručil.
+
+### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
+
+Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si
+vypýta **prezývku**. Zoznam, čo otestovať, je v `reports/FAZA_2_PONUKY.md`.
+Kým to menovite nepotvrdí, bod **2.6** (obrazovky) ostáva 🟡.
 
 ---
 
@@ -951,9 +967,9 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Fáza 2 je hotová v kóde aj v databáze, 30 automatických kontrol prešlo.
-Blokuje **overenie na telefóne** (2.9) — nový natívny modul nepribudol,
-takže stačí `eas update` a čaká sa na „OK update".
+Fáza 2 je hotová, publikovaná cez OTA a 30 automatických kontrol prešlo.
+Blokuje **overenie na telefóne** (2.10) — appku treba zavrieť a znova
+otvoriť, vypýta si prezývku.
 
 Ďalej otvorené: **ikona a splash sa dajú vymeniť len novým buildom** (1.14).
 `buildNumber` je pripravené na 2, Rastio sa rozhodol build odložiť, kým sa

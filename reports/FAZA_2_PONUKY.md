@@ -2,7 +2,7 @@
 
 **Verzia:** 1.3.0
 **Dátum:** 7.8.2026
-**Stav:** ⏸️ **čakám na jednu vec od teba** — „OK update"
+**Stav:** ⏸️ **čakám na jednu vec od teba** — otestovať to na telefóne
 
 ---
 
@@ -12,7 +12,7 @@ Zmena rozhodnutia zo slepých na otvorené pseudonymné ponuky je zapracovaná �
 **na slepej verzii som nič nezačal, takže nebolo čo prepisovať**. Suma
 a prezývka sú verejné, reálne meno a telefón chráni stĺpcový grant
 v databáze a odkryjú sa až akceptáciou, obom stranám. **30 automatických
-kontrol, všetky prešli**; na tvojom telefóne to zatiaľ nie je.
+kontrol, všetky prešli**, a Fáza 2 je publikovaná cez OTA.
 
 ---
 
@@ -31,13 +31,21 @@ build odložiť; `buildNumber` je pripravené na 2 a čaká.
 
 ---
 
-## ⛔ Čo od teba potrebujem
-
-### „OK update" pre `eas update`
+## ✅ OTA je vonku
 
 Fáza 2 **nepridala žiadny natívny modul** — `AsyncStorage`,
 `expo-image-picker` aj `expo-image` už v builde sú a prepínač v Nastaveniach
-je súčasť React Native. Nový build teda netreba.
+je súčasť React Native. Nový build teda nebol potrebný.
+
+```
+Branch             production
+Runtime version    1.0.0
+Update group ID    883e0fda-6f77-4591-830c-84aa3370a154
+Commit             f122d0f
+```
+
+**Zavri appku úplne a znova ju otvor.** Pri prvom spustení si od teba
+vypýta prezývku — bez nej sa ďalej nedostaneš, a je to zámer.
 
 ---
 
