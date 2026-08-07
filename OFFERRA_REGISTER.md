@@ -179,13 +179,40 @@ Dôvod: bez prihlasovacej obrazovky sa nedal splniť bod 7 zadania
   `user.email`, `user.id` a expiráciu tokenu priamo na displeji, aby
   screenshot z TestFlightu sám o sebe stačil ako dôkaz.
 
-**Zámerne len e-mail/heslo.** Apple aj Google potrebujú v zdieľanom Supabase
-Auth projekte zaregistrovať redirect pre schému `offerra` a bundle id
-`com.offerra.app` — to je zásah do konfigurácie, ktorú používa aj MUTARK,
-a patrí do Fázy 1 s rozmyslom, nie do setupu.
+**Apple + Google doplnené 7.8.2026** (Rastio: „apple alebo google je kvôli
+overeniu"). Nie sú tam kvôli pohodliu — pri nehnuteľnostiach má za inzerátom
+stáť overený človek. Preto sú to **jediné dve viditeľné cesty**;
+e-mail/heslo je **skryté za 5 ťuknutí na logo**, rovnaký vzor ako MUTARK
+(K12 — App Store recenzenti nemajú na review zariadení Apple/Google účet).
 
-Overené runtime: `npx tsc --noEmit` → **exit 0**; produkčný iOS bundle
-(`dev=false`) `HTTP 200`, **7 438 875 B**, 67 s, bez chýb.
+- `signInWithApple()` — natívny Sign in with Apple → `signInWithIdToken`.
+  `expo-apple-authentication` sa načítava `require()`-om **v handleri**, nie
+  statickým importom (build bez natívneho modulu by inak zhodil obrazovku pri
+  otvorení — poistka prevzatá z MUTARKovho `use-avatar-upload.ts`).
+  Zrušenie používateľom (`ERR_REQUEST_CANCELED`) sa **netvári ako chyba**.
+- `signInWithGoogle()` — browserový OAuth cez `offerra://` redirect,
+  vzor z MUTARKovho `src/lib/auth.ts`. **Nepotrebuje vlastný Google client
+  id** — použije sa ten istý Supabase Google client ako pri MUTARKu.
+
+Overené runtime: `tsc --noEmit` → **exit 0**; produkčný iOS bundle
+(`dev=false`) `HTTP 200`, **7 438 875 B**, bez chýb.
+
+### 0.18 Supabase Auth — redirect + Apple client pre Offerru — 🔴 NEDOKONČENÉ
+
+Apple ani Google login **nebudú fungovať**, kým sa do zdieľaného Auth
+projektu nedoplnia dve hodnoty. Zmena je čisto **prídavná** — MUTARKove
+hodnoty ostávajú:
+
+| Pole | Teraz | Po zmene |
+|---|---|---|
+| `uri_allow_list` | `mutark://*,mutark://**,mutark://` | `…,offerra://*,offerra://**,offerra://` |
+| `external_apple_client_id` | `com.mutark.app.signin,com.mutark.app` | `…,com.offerra.app` |
+
+Google nepotrebuje nový client id — stačí povolený redirect.
+
+**Stav:** `PATCH /v1/projects/{ref}/config/auth` zablokoval bezpečnostný
+filter prostredia. Konfigurácia je **nezmenená** (overené spätným GET).
+Skript je pripravený, čaká na spustenie Rastiom alebo na povolenie.
 
 ### 0.17 Chyba nájdená pred buildom: splash screen navždy — ✅ OPRAVENÉ
 
@@ -337,10 +364,26 @@ TestFlight build už vedel OTA a drobné opravy nevyžadovali nový build.
 
 ---
 
+## Rozsah appky — upresnenie (7.8.2026)
+
+Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
+**predaj aj prenájom**, teda aj prenajímatelia, aj kupujúci, aj predávajúci.
+Nie je to všeobecný bazár.
+
+Dôsledok: zvolený **smer C (Mapa)** ostáva v platnosti — pri nehnuteľnostiach
+je poloha prvý filter. Do dátového modelu (Fáza 1) však pribúda rozlíšenie
+**predaj / prenájom** ako plnohodnotná os, nie ako príznak: prenájom má cenu
+za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
+
+---
+
 ## Čo blokuje postup
 
-Nič blokujúce. Beží iOS build (0.14); po ňom nasleduje `eas submit`
-do TestFlightu a overenie prihlásenia na fyzickom zariadení.
+1. **🔴 Supabase Auth konfigurácia** (0.18) — bez nej Apple ani Google login
+   nefungujú. Zablokované bezpečnostným filtrom, čaká na Rastia.
+
+Build sa nespúšťa, kým to nie je vyriešené — inak by v TestFlighte skončil
+build, v ktorom sa nedá prihlásiť.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
