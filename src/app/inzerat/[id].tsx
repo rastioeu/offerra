@@ -319,7 +319,13 @@ export default function PropertyEditorScreen() {
             <View style={styles.actions}>
               <Button title={saving ? 'Ukladám…' : 'Uložiť koncept'} onPress={() => save()} variant="outline" disabled={saving} />
 
-              {draft.status === 'ACTIVE' ? (
+              {draft.status === 'REJECTED' ? (
+                <Text style={[styles.statusNote, { color: palette.danger }]}>
+                  Inzerát skryl správca
+                  {draft.rejection_reason ? `: ${draft.rejection_reason}` : ''}. Zverejniť
+                  ho môže znovu len on — uprav, čo je potrebné, a ozvi sa.
+                </Text>
+              ) : draft.status === 'ACTIVE' ? (
                 <Button title="Stiahnuť z katalógu" onPress={unpublish} variant="outline" disabled={saving} />
               ) : (
                 <Button title="Zverejniť" onPress={publish} disabled={saving} />

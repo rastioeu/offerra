@@ -1,6 +1,8 @@
 import { Tabs } from 'expo-router/tabs';
 import { Text, type ColorValue } from 'react-native';
 
+import { useIsAdmin } from '@/hooks/use-is-admin';
+import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { Type, Weight } from '@/theme/tokens';
 
@@ -18,6 +20,8 @@ import { Type, Weight } from '@/theme/tokens';
  */
 export default function TabsLayout() {
   const palette = useTheme();
+  const { session } = useSession();
+  const isAdmin = useIsAdmin(session?.user.id);
 
   return (
     <Tabs
@@ -54,6 +58,17 @@ export default function TabsLayout() {
         options={{
           title: 'Profil',
           tabBarIcon: ({ color }) => <TabGlyph glyph="☺" color={color} />,
+        }}
+      />
+      {/* `href: null` tab úplne ODSTRÁNI, nielen zamkne jeho obsah —
+          bežný používateľ o ňom nemá ako vedieť. Server ho aj tak
+          nepustí ďalej: každá admin funkcia sa pýta na rolu. */}
+      <Tabs.Screen
+        name="admin"
+        options={{
+          title: 'Správa',
+          href: isAdmin ? undefined : null,
+          tabBarIcon: ({ color }) => <TabGlyph glyph="⚑" color={color} />,
         }}
       />
     </Tabs>

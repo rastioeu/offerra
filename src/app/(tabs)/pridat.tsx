@@ -106,7 +106,7 @@ export default function PridatScreen() {
               </Text>
               <Badge
                 text={STATUS_LABEL[p.status]}
-                tone={p.status === 'ACTIVE' ? 'accent' : p.status === 'DRAFT' ? 'warning' : 'neutral'}
+                tone={p.status === 'ACTIVE' ? 'accent' : p.status === 'REJECTED' ? 'warning' : p.status === 'DRAFT' ? 'warning' : 'neutral'}
               />
             </View>
             <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
@@ -116,6 +116,11 @@ export default function PridatScreen() {
             <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
               Upravené {formatDate(p.updated_at)}
             </Text>
+            {p.status === 'REJECTED' ? (
+              <Text style={[styles.rowMeta, { color: palette.danger }]}>
+                Skryté správcom{p.rejection_reason ? `: ${p.rejection_reason}` : ''}
+              </Text>
+            ) : null}
           </Pressable>
         ))}
       </ScrollView>

@@ -91,3 +91,29 @@ natívny build cez `eas build --platform ios` + `eas submit` do TestFlight.
 `OFFERRA_REGISTER.md` je priebežný záznam stavu — každá fáza má vlastnú
 sekciu a každý bod v nej status podľa §1. Register sa dopĺňa priebežne, nie
 spätne na konci.
+
+---
+
+## 📣 7. CHANGELOG — STANDING RULE
+
+`src/lib/changelog.ts` je „Čo je nové" **pre Rastia ako používateľa appky**,
+nie pracovný denník. Register a changelog nie sú to isté:
+
+| | Pre koho | Čo obsahuje |
+|---|---|---|
+| `OFFERRA_REGISTER.md` | pre nás | statusy, dôkazy, HTTP kódy, názvy tabuliek |
+| `src/lib/changelog.ts` | pre používateľa | čo sa zmenilo a čo mu to dá |
+
+**Pravidlo (Rastio, 7.8.2026): každý dokončený blok práce = nový záznam
+v changelogu.** Nie len v registri. Bez pripomínania.
+
+Ku každej zmene navyše v registri označ, či:
+
+- **IDE OTA** — len JS/assety vyžiadané z JS → stačí `eas update`,
+- **VYŽADUJE NOVÝ BUILD** — pribudol natívny modul, alebo sa mení app
+  ikona, splash, `app.json` natívna časť či verzia.
+
+> ⚠️ `runtimeVersion` má politiku `appVersion`. Zvýšenie `version`
+> v `app.json` preto **odstrihne existujúci TestFlight build od OTA**,
+> kým sa nespraví nový build. Verzia sa teda dvíha len spolu s buildom —
+> nie pri každej OTA.

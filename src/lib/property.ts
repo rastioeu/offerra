@@ -14,7 +14,7 @@ export const db = () => supabase.schema('offerra');
 
 export type TransactionType = 'SALE' | 'RENT';
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'LAND' | 'COMMERCIAL' | 'OTHER';
-export type PropertyStatus = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+export type PropertyStatus = 'DRAFT' | 'ACTIVE' | 'REJECTED' | 'ARCHIVED';
 
 export type Property = {
   id: string;
@@ -35,6 +35,8 @@ export type Property = {
   offer_deadline: string | null;
   view_count: number;
   is_seed: boolean;
+  /** Vyplnené, len keď inzerát skryl správca — vlastník to musí vidieť. */
+  rejection_reason?: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -78,6 +80,7 @@ export const PROPERTY_LABEL: Record<PropertyType, string> = {
 export const STATUS_LABEL: Record<PropertyStatus, string> = {
   DRAFT: 'Rozpracované',
   ACTIVE: 'Zverejnené',
+  REJECTED: 'Skryté správcom',
   ARCHIVED: 'Archivované',
 };
 

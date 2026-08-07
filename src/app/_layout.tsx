@@ -106,6 +106,7 @@ function RootLayoutInner() {
           <Stack.Screen name="dopyt/novy" />
           <Stack.Screen name="dopyt/[id]" />
           <Stack.Screen name="nastavenia" />
+          <Stack.Screen name="novinky" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

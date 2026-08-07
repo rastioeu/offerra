@@ -11,16 +11,20 @@ import { formatAmount, OFFER_STATUS_LABEL, type Offer } from '@/lib/offers';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
+import { ReportButton } from './report-button';
 import { Badge } from './ui';
 
 export function OfferList({
   offers,
   transaction,
   highlightBidderId,
+  allowReport,
 }: {
   offers: Offer[];
   transaction: 'SALE' | 'RENT';
   highlightBidderId?: string;
+  /** Nahlásiť sa dá len cudzia ponuka, nie vlastná. */
+  allowReport?: boolean;
 }) {
   const palette = useTheme();
 
@@ -55,6 +59,12 @@ export function OfferList({
               <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
               {o.message ? (
                 <Text style={[styles.message, { color: palette.textSecondary }]}>{o.message}</Text>
+              ) : null}
+              {allowReport && !mine ? (
+                <View style={styles.reports}>
+                  <ReportButton targetType="OFFER" targetId={o.id} label="Nahlásiť ponuku" compact />
+                  <ReportButton targetType="USER" targetId={o.bidder_id} label="Nahlásiť používateľa" compact />
+                </View>
               ) : null}
             </View>
             <View style={styles.right}>
@@ -96,4 +106,5 @@ const styles = StyleSheet.create({
   message: { ...Type.caption, marginTop: 2 },
   amount: { ...Type.subtitle, fontWeight: Weight.bold },
   best: { ...Type.caption, fontWeight: Weight.semibold },
+  reports: { flexDirection: 'row', gap: Spacing.md, marginTop: 4 },
 });

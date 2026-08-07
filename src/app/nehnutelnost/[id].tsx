@@ -13,6 +13,7 @@ import { ActivityIndicator, Dimensions, ScrollView, StyleSheet, Text, View } fro
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { OfferList } from '@/components/offer-list';
+import { ReportButton } from '@/components/report-button';
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -132,6 +133,12 @@ export default function PropertyDetailScreen() {
 
             {deadline ? <Text style={[styles.deadline, { color: palette.link }]}>{deadline}</Text> : null}
 
+            {!isOwner ? (
+              <View style={styles.reportRow}>
+                <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
+              </View>
+            ) : null}
+
             <Card>
               <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PARAMETRE</Text>
               <Row label="Poloha" value={[item.city, item.district].filter(Boolean).join(' · ') || '—'} />
@@ -171,6 +178,7 @@ export default function PropertyDetailScreen() {
                 offers={offers ?? []}
                 transaction={item.transaction_type}
                 highlightBidderId={myId}
+                allowReport
               />
 
               {isOwner ? (
@@ -228,4 +236,5 @@ const styles = StyleSheet.create({
   hidden: { ...Type.caption },
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
+  reportRow: { alignItems: 'flex-end' },
 });

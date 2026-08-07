@@ -20,6 +20,7 @@ import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
+import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
 import { formatDate, STATUS_LABEL } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -95,6 +96,7 @@ export default function ProfilScreen() {
   }
 
   const missingContact = profile && !profile.full_name && !profile.phone;
+  const build = readBuildInfo();
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
@@ -209,6 +211,14 @@ export default function ProfilScreen() {
                 onPress: () => router.push({ pathname: '/dopyt/[id]', params: { id: r.id } }),
               }))}
             />
+            {/* Verzný riadok — podľa `ota` spoznáš, či ti dorazila
+                najnovšia aktualizácia. Porovnaj s „Update group ID". */}
+            <View style={styles.buildRow}>
+              <Text style={[styles.build, { color: palette.textMuted }]}>{buildInfoLine(build)}</Text>
+              {build.problem ? (
+                <Text style={[styles.hint, { color: palette.warning }]}>{build.problem}</Text>
+              ) : null}
+            </View>
           </>
         ) : null}
       </ScrollView>
@@ -291,4 +301,6 @@ const styles = StyleSheet.create({
   },
   listText: { flexShrink: 1, gap: 2 },
   listTitle: { ...Type.bodyLg, fontWeight: Weight.medium },
+  buildRow: { alignItems: 'center', gap: 2, marginTop: Spacing.sm },
+  build: { ...Type.caption, fontFamily: 'Courier' },
 });

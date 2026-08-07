@@ -1236,6 +1236,107 @@ ok"), nie bod po bode — a už vtedy to bolo v registri takto napísané.
 Tri chyby, ktoré Rastio potom nahlásil (2.11), aj štyri + päť dier, ktoré
 som našiel sám (2.12, 2.15), ukazujú, že súhrnné potvrdenie nestačí.
 
+---
+
+## Fáza 3 — Nahlasovanie, moderovanie, admin, changelog (7.8.2026)
+
+**IDE OTA** — žiadny natívny modul nepribudol.
+
+### 3.1 Vecná oprava zadania: `User.role` neexistoval
+
+Zadanie hovorí „`User.role` už existuje v modeli". **Neexistoval** — bol
+len v Prisma návrhu, do DB sa nikdy nedostal. Vytvorený teraz ako
+`offerra.profile.role` (`USER`/`ADMIN`). Rastio je prvý admin, nastavené
+ručne cez DB podľa zadania.
+
+Rola je verejne čitateľná, ale **zámerne nie je v `grant update`** —
+používateľ si ju nesmie nastaviť sám.
+
+### 3.2 Nahlasovanie — ✅ OVERENÉ RUNTIME
+
+`offerra.report` (reporter, typ cieľa, cieľ, dôvod, poznámka, stav).
+Unikátny index `(reporter, typ, cieľ)` — ten istý človek nemá tú istú vec
+hlásiť dookola, inak by opakovaním falošne nafúkol počet a skreslil prah.
+
+Tlačidlo „Nahlásiť" je na detaile inzerátu, pri každej cudzej ponuke
+a pri prezývke v zozname ponúk. **Appka nikoho automaticky neodstráni** —
+vytvorí sa záznam a používateľ dostane potvrdenie.
+
+### 3.3 Moderovanie a blokovanie — ✅ OVERENÉ RUNTIME
+
+Admin akcie idú cez `SECURITY DEFINER` funkcie, **nie cez rozšírené
+stĺpcové granty**. Keby `authenticated` dostal `update (is_blocked)`,
+nastavil by si ho sám na svojom riadku — riadková politika
+`id = auth.uid()` to nezachytí. Funkcia sa pýta na rolu.
+
+Blokovanie mieri aj do `auth.users.banned_until`, takže zablokovaný sa
+**naozaj nevie prihlásiť**, nielen že nemôže nič pridať.
+
+### 3.4 Stav REJECTED — ✅ OVERENÉ RUNTIME
+
+Verejný SELECT sa nemenil (je viazaný na `ACTIVE`), takže skrytý inzerát
+zmizne z katalógu, ale ostáva v DB, vlastníkovi **s dôvodom** a adminovi.
+Trigger navyše bráni vlastníkovi prepnúť si zamietnutie späť.
+
+### 3.5 Admin tab — ✅ OVERENÉ RUNTIME
+
+Tab „Správa" je pre bežný účet **úplne skrytý** (`href: null`), nielen
+zamknutý. Skrytie je však pohodlie, nie ochrana — skutočná ochrana je
+v DB a je zmeraná (bežný účet dostane z `admin_stats` prázdno).
+
+Sekcie: štatistika, nahlásenia, inzeráty, používatelia.
+
+### 3.6 Dôkazy — ✅ 24/24
+
+```
+NAHLASOVANIE   ✅ prihlásený vie nahlásiť inzerát                  201
+               ✅ NEVIE nahlásiť v mene iného                      403
+               ✅ NAHLÁSENÝ svoje nahlásenie NEVIDÍ                []
+               ✅ autor svoje vidí, admin vidí
+ADMIN LEN PRE  ✅ bežný účet is_admin() = false, admin = true
+ADMINA         ✅ bežný účet NEDOSTANE štatistiku ani zoznam ľudí   []
+MODEROVANIE    ✅ bežný účet NEVIE zamietnuť                  „Len pre správcu."
+               ✅ admin zamietol → zmizlo z katalógu               []
+               ✅ vlastník vidí dôvod „Duplicitné fotky"
+               ✅ vlastník si to NEVIE prepnúť späť na ACTIVE
+BLOKOVANIE     ✅ zablokovaný NEVIE pridať inzerát ani dopyt        403
+               ✅ zablokovanému je zakázané aj PRIHLÁSENIE
+               ✅ admin NEVIE zablokovať sám seba
+```
+
+Regresia po zmenách: **66/66** v šiestich starších sadách.
+Spolu **90/90**.
+
+### 3.7 Verzný riadok — 🟡 KÓD HOTOVÝ
+
+`v{version} · rt{runtimeVersion} · {ota}` dole v Profile, cez `require()`
+v try/catch (natívny modul by pri statickom importe zhodil obrazovku už
+pri otvorení).
+
+**Poučenie z MUTARKu:** jeho `build-info.ts` si sám zapísal, že ručne
+udržiavaná konštanta `GIT_COMMIT` ostala neaktualizovaná naprieč
+desiatkami OTA — Rastio sa cez ňu teda nemohol presvedčiť, či mu OTA
+dorazila. Offerra preto stavia na `Updates.updateId`, ktorý generuje
+`expo-updates` sám a **nemá ako zostarnúť**. Porovnáva sa s „Update
+group ID" z `eas update`.
+
+### 3.8 „Čo je nové" — 🟡 KÓD HOTOVÝ
+
+Obrazovka `novinky.tsx` dostupná z Nastavení, spätne naplnená za Fázu 0,
+1 aj 2. Standing rule zapísaná do **`CLAUDE.md` §7**, nie len sľúbená.
+
+### 3.9 Verzia sa ZATIAĽ nedvíha — a je na to dôvod
+
+Zadanie žiada zvýšiť `version` pri každej zmene. **Urobiť to teraz by
+odstrihlo tvoj TestFlight build od OTA.** `runtimeVersion` má politiku
+`appVersion`; build v TestFlighte má runtime `1.0.0` a update s iným
+runtime sa mu nedoručí.
+
+Verzia sa preto dvíha **len spolu s novým buildom**. Zapísané do
+`CLAUDE.md` §7. Pri najbližšom builde (ikona) odporúčam prepnúť
+`runtimeVersion` na politiku `fingerprint` — tá sa mení len keď sa mení
+natívna časť, takže verzia sa potom bude dať dvíhať slobodne.
+
 ### 2.10 Overenie Fázy 2 na zariadení — 🔴 NEDOKONČENÉ
 
 Čaká na Rastia. Appku zavrieť a znova otvoriť; pri prvom spustení si

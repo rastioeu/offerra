@@ -135,6 +135,14 @@ export default function NastaveniaScreen() {
         </Card>
 
         <Card>
+          <Text style={[styles.section, { color: palette.textMuted }]}>O APPKE</Text>
+          <Button title="Čo je nové" onPress={() => router.push('/novinky')} variant="outline" />
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Zoznam zmien podľa verzií — podľa neho spoznáš, čo ti už dorazilo.
+          </Text>
+        </Card>
+
+        <Card>
           <Text style={[styles.section, { color: palette.textMuted }]}>ÚČET</Text>
           <Button
             title={busy ? 'Pracujem…' : 'Odhlásiť sa'}
