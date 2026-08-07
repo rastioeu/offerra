@@ -1,53 +1,72 @@
 # FÁZA 0 — SETUP (Offerra)
 
-**Verzia:** 1.0.0 (prvý report projektu)
+**Verzia:** 1.1.0
 **Dátum:** 7.8.2026
-**Stav:** ⏸️ **ZASTAVENÉ — čakám na 2 veci od teba** (GitHub token + „OK build")
+**Stav:** ⏸️ **čakám na jednu vec od teba** — „OK build"
+
+> **Zmena oproti 1.0.0:** GitHub token dodaný, push do `rastioeu/offerra`
+> prebehol a je overený nezávisle cez GitHub API. Prvý token nemal právo
+> zápisu, druhý áno. Token nezostal nikde v repe — overené.
 
 ---
 
 ## Zhrnutie v troch vetách
 
-Projekt v `/root/offerra` stojí, beží na SDK 57 a Supabase časť je hotová a
-overená spätnými SELECT-mi. Prihlásenie zdieľaným účtom z Offerra klienta
-funguje — mám na to reálny log, nie domnienku. **Nemám GitHub token pre
-`rastioeu/offerra`, takže nič nie je pushnuté**, a podľa dohody sa
-nespúšťa `eas build` bez tvojho výslovného „OK build".
+Projekt v `/root/offerra` stojí, beží na SDK 57, Supabase časť je hotová a
+overená spätnými SELECT-mi a **všetko je na GitHube**. Prihlásenie zdieľaným
+účtom z Offerra klienta funguje — mám na to reálny log, nie domnienku.
+Zostáva jediné: podľa dohody nespúšťam `eas build` bez tvojho „OK build".
 
 ---
 
 ## ⛔ Čo od teba potrebujem
 
-### 1. GitHub token pre `rastioeu/offerra` — BLOKUJE PUSH
+### „OK build" pre `eas build --platform ios`
 
-Prehľadal som všetko, čo na stroji je:
+Všetko pre build je pripravené (viď nižšie) — Apple Team ID, ASC API kľúč aj
+distribučný certifikát sú na EAS účte. Build **nespúšťam**, kým nenapíšeš
+„OK build", lebo spotrebúva EAS kredit a čas.
 
-| Kde | Čo tam je |
+---
+
+## ✅ GitHub — vyriešené
+
+Token je uložený v `/root/.offerra-secrets` (`chmod 600`), **mimo
+repozitára**. Git ho číta cez repo-local credential helper, takže MUTARK
+a Famiglia ďalej používajú svoje vlastné tokeny — token je navyše
+obmedzený len na offerra (`GET /repos/rastioeu/mutark` → `404`).
+
+Push overený **nezávisle cez GitHub API**, nie len podľa výstupu gitu:
+
+```
+git push origin main → 6a889d6..8547d4c  main -> main  (exit 0)
+
+GET /repos/rastioeu/offerra/commits:
+  8547d4c | 2026-08-07T07:36:41Z | docs(register): token dodaný…
+  34260c7 | 2026-08-07T07:14:09Z | feat(faza-0): setup Offerra…
+  6a889d6 | 2026-08-07T06:46:18Z | Initial commit
+```
+
+**Kontrola úniku do verejného repa** (offerra je public, mutark je private —
+preto je toto dôležité):
+
+| Kontrola | Výsledok |
 |---|---|
-| `/root/.git-credentials` | 2 záznamy — patria mutark/famiglia |
-| `/root/.famiglia-secrets` | `GITHUB_TOKEN` → **Famiglia** |
-| `/root/.mutark-secrets` | Supabase, Apple, Expo — **žiadny GitHub token** |
-| `$GITHUB_TOKEN` v prostredí | nenastavený |
-| `/root/.bash_history` | jediná zmienka je `cd offerra`, žiadny token |
+| `.env` na GitHube | `404` — nie je tam |
+| Úplný JWT v ktoromkoľvek commite | žiadna zhoda |
+| `github_pat_` / `ghp_` v histórii | len zástupný text v návode |
 
-Podľa tvojho zadania som **nepoužil** MUTARK ani Famiglia token.
+Dve poznámky, ktoré si zaslúžia zmienku:
 
-**Potrebujem:** GitHub Personal Access Token s právom `repo` (alebo
-fine-grained token s `Contents: read and write`) pre repozitár
-`rastioeu/offerra`.
-
-Najbezpečnejšie mi ho podaj tak, že si ho uložíš sám — napr.:
-
-```
-! echo 'GITHUB_TOKEN=ghp_…' > /root/.offerra-secrets && chmod 600 /root/.offerra-secrets
-```
-
-(prefix `!` spustí príkaz priamo v tejto relácii)
-
-### 2. „OK build" pre `eas build --platform ios`
-
-Všetko pre build je pripravené (viď nižšie). Build **nespúšťam**, kým
-nenapíšeš „OK build" — spotrebúva EAS kredit a čas.
+- **Prvý token nemal právo zápisu.** `git fetch` prešiel, `git push` vrátil
+  `403`. Fine-grained tokeny majú predvolene „Public repositories
+  (read-only)" — pri verejnom repe to vyzerá, že token funguje, kým sa
+  neskúsi zapisovať.
+- **Musel som resetovať reťaz credential helperov.** Globálny helper
+  z `~/.gitconfig` sa spúšťal prvý a vracal prázdne heslo. Vyriešené
+  lokálne, bez zásahu do globálnej konfigurácie.
+- Token expiruje **6.9.2026** — potom stačí prepísať hodnotu v
+  `/root/.offerra-secrets`.
 
 ---
 
@@ -180,7 +199,6 @@ Ani jeden riadok zmeny. Len čítanie.
 
 | Bod | Status | Prečo |
 |---|---|---|
-| Push do `rastioeu/offerra` | 🔴 | chýba token (viď vyššie) |
 | `eas build --platform ios` | ⏸️ | čaká na „OK build" |
 | `eas submit` do TestFlight | ⏸️ | nadväzuje na build |
 | Appka spustená z TestFlightu | 🔴 | nadväzuje na submit |
@@ -192,8 +210,8 @@ Ani jeden riadok zmeny. Len čítanie.
 
 ## Kontrolný zoznam zo zadania
 
-- [x] Repo `rastioeu/offerra` existuje — ✅ (public, `main`, 1 commit)
-- [ ] Vlastný token funguje, priebežné commity — 🔴 **token chýba**, commity zatiaľ lokálne
+- [x] Repo `rastioeu/offerra` existuje — ✅ (public, `main`)
+- [x] Vlastný token funguje, commity pushnuté — ✅ overené cez GitHub API
 - [x] SDK 57 potvrdená ako funkčná baseline — ✅ bundle 8,48 MB
 - [x] `app.json` má bundle id + EAS project — ✅
 - [x] Supabase schéma `offerra` — ✅
