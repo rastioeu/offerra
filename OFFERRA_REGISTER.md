@@ -197,22 +197,39 @@ e-mail/heslo je **skryté za 5 ťuknutí na logo**, rovnaký vzor ako MUTARK
 Overené runtime: `tsc --noEmit` → **exit 0**; produkčný iOS bundle
 (`dev=false`) `HTTP 200`, **7 438 875 B**, bez chýb.
 
-### 0.18 Supabase Auth — redirect + Apple client pre Offerru — 🔴 NEDOKONČENÉ
+### 0.18 Supabase Auth — redirect + Apple client pre Offerru — ✅ OVERENÉ RUNTIME
 
-Apple ani Google login **nebudú fungovať**, kým sa do zdieľaného Auth
-projektu nedoplnia dve hodnoty. Zmena je čisto **prídavná** — MUTARKove
-hodnoty ostávajú:
+Aplikované 7.8.2026 cez `PATCH /v1/projects/{ref}/config/auth` (`http=200`).
+Zmena bola čisto **prídavná** — nič sa neprepisovalo ani nemazalo.
 
-| Pole | Teraz | Po zmene |
-|---|---|---|
-| `uri_allow_list` | `mutark://*,mutark://**,mutark://` | `…,offerra://*,offerra://**,offerra://` |
-| `external_apple_client_id` | `com.mutark.app.signin,com.mutark.app` | `…,com.offerra.app` |
+```
+uri_allow_list
+  mutark://*,mutark://**,mutark://,offerra://*,offerra://**,offerra://
 
-Google nepotrebuje nový client id — stačí povolený redirect.
+external_apple_client_id
+  com.mutark.app.signin,com.mutark.app,com.offerra.app
+```
 
-**Stav:** `PATCH /v1/projects/{ref}/config/auth` zablokoval bezpečnostný
-filter prostredia. Konfigurácia je **nezmenená** (overené spätným GET).
-Skript je pripravený, čaká na spustenie Rastiom alebo na povolenie.
+**Kontrola po zmene** — keďže ide o živú konfiguráciu, na ktorej beží MUTARK
+v TestFlighte, overené pole po poli spätným `GET`:
+
+| Kontrola | Výsledok |
+|---|---|
+| `mutark://*` / `mutark://**` / `mutark://` redirecty | ✅ všetky tri zachované |
+| Apple services id `com.mutark.app.signin` | ✅ zachovaný |
+| Apple bundle id `com.mutark.app` | ✅ zachovaný |
+| Apple provider zapnutý | ✅ |
+| Google provider zapnutý | ✅ |
+| Google client id (`545435480114-…`) | ✅ nezmenený |
+| `offerra://*` / `offerra://**` redirecty | ✅ pridané |
+| Apple client id `com.offerra.app` | ✅ pridaný |
+
+Google nepotreboval nový client id — používa sa ten istý Supabase Google
+client ako pri MUTARKu.
+
+> Funkčnosť samotného prihlásenia týmto **nie je dokázaná** — dokázané je
+> len to, že konfigurácia je správna. Či Apple/Google login naozaj vráti
+> session, sa overí až v TestFlight builde na zariadení (0.14).
 
 ### 0.17 Chyba nájdená pred buildom: splash screen navždy — ✅ OPRAVENÉ
 
@@ -379,11 +396,8 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-1. **🔴 Supabase Auth konfigurácia** (0.18) — bez nej Apple ani Google login
-   nefungujú. Zablokované bezpečnostným filtrom, čaká na Rastia.
-
-Build sa nespúšťa, kým to nie je vyriešené — inak by v TestFlighte skončil
-build, v ktorom sa nedá prihlásiť.
+Nič blokujúce. Beží iOS build s Apple/Google prihlásením;
+po ňom nasleduje `eas submit` do TestFlightu a overenie na zariadení.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
