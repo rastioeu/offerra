@@ -20,16 +20,14 @@
     "android": {
       "package": "com.offerra.app",
       "adaptiveIcon": {
-        "backgroundColor": "#F5F7FA",
+        "backgroundColor": "#103A6B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "permissions": [
-        "android.permission.RECORD_AUDIO",
-        "android.permission.RECORD_AUDIO"
-      ]
+      "permissions": [],
+      "blockedPermissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",

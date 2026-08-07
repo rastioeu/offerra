@@ -474,6 +474,252 @@ TestFlight: https://appstoreconnect.apple.com/apps/6799028421/testflight/ios
 
 ---
 
+## Fáza 1 — Inzeráty + vizuálna identita (7.8.2026)
+
+### 1.1 Vizuálna identita — ✅ SCHVÁLENÉ RASTIOM
+
+Predložené **tri hotové** návrhy (wordmark + paleta + app ikona 1024×1024),
+nie moodboardy — vrátane mocku karty nehnuteľnosti v každej palete:
+
+| | Návrh | Charakter |
+|---|---|---|
+| A | **Navy & Azure** | vlastná kreslená geometrická abeceda, obe „f" zdieľajú prečiarknutie; ikona = O ako pečať a v ňom dom |
+| B | Ink & Copper | serifové verzálky, aukčná klasika, svetlá „papierová" ikona |
+| C | Forest & Sand | tiché minusky „offerra.", ikona = to isté „o" z loga |
+
+**Rastio vybral A** (7.8.2026). Nadväzuje na paletu schválenú vo Fáze 0,
+takže farby sa nemenili — dotiahli sa do loga a ikony.
+
+Kontrola voči sesterským appkám (čítané reálne súbory, nič sa nemenilo):
+
+| Appka | Čo má | Offerra |
+|---|---|---|
+| MUTARK | verzálky, neón na takmer čiernej, herné | ✅ light-first, bez neónu |
+| Famiglia | slab serif + červené bodky na čiernej | ✅ geometrický bezpätkový, navy |
+
+Wordmark je **kreslený v SVG krivkách, nie vysadený fontom** — logo tak
+nezávisí od toho, aké fonty má zariadenie.
+
+### 1.2 `src/theme/tokens.ts` + premeranie WCAG — ✅ OVERENÉ RUNTIME
+
+Premeranie sľúbené v registri Fázy 0 (bod 0.10) je hotové. **Tri tokeny
+v light téme neprešli AA 4.5:1** pre bežný text a boli opravené:
+
+```
+success   #1F8A5F → #1D8058   (bolo 4.03:1 → 4.57:1)
+warning   #B7791F → #99651A   (bolo 3.39:1 → 4.62:1, najhoršie)
+```
+
+Značková azúrová `secondary` #1B73D4 má na pozadí len 4.40:1. **Zámerne sa
+NEMENILA** — je to farba loga a ikony. Namiesto toho pribudol token
+`link` #1B71D0 (opticky tá istá, 4.53:1). Pravidlo: **`secondary` = výplň
+a grafika, `link` = text.**
+
+Pribudol aj `borderStrong` #888E98 pre obrysy polí formulára (WCAG 1.4.11
+žiada 3:1 pre ovládacie prvky; dekoratívny `border` #DCE3EC to spĺňať nemusí).
+
+**Dôkaz:** kontrolný skript prechádza všetkých 8 textových tokenov × 2 podklady
+× 2 témy + text na výplniach + obrysy → **zlyhaní 0**. Dark téma prešla bez
+zásahu (najnižšia hodnota 5.16:1).
+
+### 1.3 Assety identity — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Vygenerované z tej istej geometrie ako predložený návrh:
+`icon.png` 1024×1024 **RGB bez alfy** (Apple priehľadnosť v app ikone
+odmieta), android adaptive foreground/background/monochrome, `splash-icon.png`,
+`favicon.png` a `wordmark.png` (na prihlasovaciu obrazovku namiesto
+dočasného textu „OFFERRA").
+
+Čitateľnosť ikony overená vykreslením v **120 px, 60 px a 40 px** — v návrhu
+sú všetky tri veľkosti vidieť. Že ju vidno na ploche telefónu, potvrdzuje Rastio.
+
+Pri tejto príležitosti vyriešený otvorený bod Fázy 0: `RECORD_AUDIO` bol
+v `android.permissions` **dvakrát** (pridal ho `expo-image-picker`).
+Nahradené prázdnym zoznamom + `blockedPermissions`.
+
+### 1.4 DB migrácia — schéma `offerra` — ✅ OVERENÉ RUNTIME
+
+Cez Management API (`database/query`), nie psql — postup ako MUTARK.
+
+**`offerra.property`** — všetky polia z Prisma návrhu.
+**`offerra.media`** — `property_id`, `url`, `sort_order`, `created_at`.
+
+Dve vedomé odchýlky od zadania, obe technické:
+
+| Zadanie | Skutočnosť | Prečo |
+|---|---|---|
+| `transactionType` (camelCase) | `transaction_type` | PostgREST mapuje stĺpce 1:1 (nemáme Prisma `@map`); MUTARK aj Famiglia sú snake_case |
+| `order` | `sort_order` | `order` je v PostgREST **vyhradený query parameter** (`?order=`) — kolidoval by s radením |
+
+Navyše `is_seed boolean` — aby sa ukážkové dáta dali zmazať jedným príkazom.
+
+Indexy: `(status, created_at desc)`, `(owner_id, created_at desc)`,
+`media(property_id, sort_order)`, `city(district, name)`.
+`updated_at` drží trigger, nie klient.
+
+### 1.5 `offerra.city` — vlastný číselník — ✅ OVERENÉ RUNTIME
+
+Rastio vybral **vlastnú tabuľku** (nie MUTARK `public.cities`). Meranie,
+ktoré k tomu viedlo:
+
+| Kontrola MUTARK `cities` | Hodnota |
+|---|---|
+| riadkov celkovo | 68 823 |
+| z toho slovenských | **147** |
+| najmenšia SK obec | nad 5 000 obyvateľov |
+| stĺpec „okres" | **neexistuje vôbec** |
+
+**Dôkaz naplnenia:** `{"obci":2925,"okresov":81,"krajov":8}`
+
+Zdroj obcí: **Wikidata SPARQL** (P31 = obec na Slovensku, P131 = okres),
+2 884 obcí s okresom, krajom aj počtom obyvateľov. Mestské časti Bratislavy
+a Košíc Wikidata modeluje nekonzistentne (dotaz vracal kostoly a paláce),
+preto sú doplnené ako kurátorovaný zoznam — **17 bratislavských a 22
+košických**. 81 hodnôt „okres" = **79 skutočných okresov + Bratislava
+a Košice ako celok** (predávajúci často povie len „Bratislava").
+
+Že okres naozaj treba, ukazuje jediný SELECT — **„Selce" existuje v troch
+rôznych okresoch** (Banská Bystrica, Poltár, Krupina).
+
+### 1.6 Vystavenie schémy cez PostgREST — ✅ OVERENÉ RUNTIME
+
+Otvorený bod Fázy 0. `db_schema` je **zdieľané nastavenie s MUTARKom**,
+takže zmena bola čisto prídavná a meraná pred aj po:
+
+```
+pred:  public,graphql_public
+po:    public,graphql_public,offerra
+```
+
+| Kontrola | Pred | Po |
+|---|---|---|
+| MUTARK `public.cities` (anon) | HTTP 200 | **HTTP 200** |
+| MUTARK `public.profiles` (anon) | HTTP 200 | **HTTP 200** |
+| MUTARK predvolená schéma stále `public` | — | ✅ vracia dáta bez hlavičky |
+| `offerra.property` (Accept-Profile) | HTTP 406 | **HTTP 200** |
+
+### 1.7 Storage `offerra-media` — ✅ OVERENÉ RUNTIME
+
+- Bucket prepnutý na `public = true` — fotky inzerátov musí vidieť aj
+  neprihlásený návštevník katalógu.
+- Zápis ostáva len vlastníkovi a len do `{ownerId}/{propertyId}/…`
+  (prvý segment cesty = `auth.uid()`).
+- Pôvodná `select_own` policy zmazaná ako nadbytočná.
+
+> ⚠️ **Vedomý dôsledok:** verejný bucket znamená, že fotka rozrobeného
+> (DRAFT) inzerátu je pri znalosti URL dostupná. Cesty sú UUID, takže sa
+> nedajú uhádnuť, ale nie je to kryptografická ochrana. Ak by to malo
+> vadiť, riešením sú podpísané URL — je to zmena na jednom mieste.
+
+**Kompresia:** `quality: 0.6` pri výbere fotky (vzor MUTARKu) + tvrdá
+poistka na 8 MB s hláškou. Skutočné **zmenšenie rozmerov** by vyžadovalo
+`expo-image-manipulator` = nový natívny modul = nový build; preto zatiaľ nie.
+
+### 1.8 RLS — dôkaz, nie tvrdenie — ✅ OVERENÉ RUNTIME (15/15)
+
+Testované **dve role**, nielen anonym — `authenticated` má viac grantov,
+takže je to prísnejší test.
+
+```
+══ ANON ══
+✅ vidí len ACTIVE (8 riadkov, statusy={'ACTIVE'})
+✅ cudzí DRAFT nevidí ani pri cielenom dotaze na jeho id   → []
+✅ fotky cudzieho DRAFTu nevidí                            → []
+✅ nevie vytvoriť inzerát                                  → HTTP 401
+✅ nevie prepísať cudzí ACTIVE                             → HTTP 401
+✅ nevie zverejniť cudzí DRAFT                             → HTTP 401
+✅ nevie zmazať cudzí inzerát                              → HTTP 401
+
+══ CUDZÍ PRIHLÁSENÝ POUŽÍVATEĽ ══
+✅ cudzí DRAFT nevidí ani prihlásený                       → []
+✅ fotky cudzieho DRAFTu nevidí                            → []
+✅ nevie prepísať cudzí ACTIVE                             → 0 riadkov
+✅ nevie zmazať cudzí inzerát                              → 0 riadkov
+✅ nevie vytvoriť inzerát V MENE niekoho iného             → HTTP 403
+✅ nevie vytvoriť inzerát rovno ako ACTIVE (musí byť DRAFT)→ HTTP 403
+✅ SVOJ vlastný DRAFT vytvoriť VIE                         → HTTP 201
+✅ vo svojich DRAFT-och vidí len svoje                     → 1 riadok
+```
+
+Posledné dva testy sú tam zámerne: bez nich by „všetko zakázané" vyzeralo
+ako úspech. Testovací používateľ aj dáta boli na konci zmazané.
+
+### 1.9 Reťazec formulára cez REST — ✅ OVERENÉ RUNTIME (10/10)
+
+Prihláseným používateľom a jeho JWT, teda **rovnakými RLS pravidlami ako
+telefón** — nie cez service role.
+
+```
+ 1. ✅ vytvorenie konceptu (DRAFT)                      HTTP 201
+ 2. ✅ rozrobený koncept je pre anonyma neviditeľný     []
+ 3. ✅ úprava polí sa uložila     title/rooms=2/area=61.5/cena=149000
+ 4. ✅ nahratie fotky do VLASTNEJ zložky                HTTP 200
+ 5. ✅ nahratie do CUDZEJ zložky zamietnuté             HTTP 400
+ 6. ✅ media riadok vytvorený                           HTTP 201
+ 7. ✅ „Zverejniť" preplo DRAFT → ACTIVE                status=ACTIVE
+ 8. ✅ po zverejnení to anonym VIDÍ                     1 riadok
+ 9. ✅ fotku zverejneného inzerátu anonym VIDÍ          1 fotka
+10. ✅ fotka sa stiahne bez prihlásenia a je to JPEG    200 image/jpeg
+                                          531 493 B → dekódované JPEG 1600×1200
+```
+
+> Hranica dôkazu: toto dokazuje, že **dátová cesta funguje celá**.
+> Nedokazuje, že formulár na telefóne vyzerá a ovláda sa správne — to je 1.12.
+
+### 1.10 Seed dáta — ✅ OVERENÉ RUNTIME (v DB), 🟡 v appke
+
+8 inzerátov na Rastiovom účte (`33fadff3-…`, Apple), všetky `is_seed = true`,
+**16 fotiek**. Mix zámerne pokrýva hraničné prípady:
+
+```
+SALE  LAND       Súľov-Hradná     1200 m²   42 000 €  [časovač]
+RENT  COMMERCIAL Žilina             95 m²    1 250 €
+SALE  APARTMENT  Banská Bystrica    78 m²   BEZ CENY  [časovač]   ← cena je voliteľná
+SALE  HOUSE      Bajerovce         132 m²  132 000 €
+RENT  APARTMENT  Košice             38 m²      480 €
+SALE  HOUSE      Selce             168 m²  289 000 €  [časovač]
+RENT  APARTMENT  Ružinov            54 m²      780 €
+SALE  APARTMENT  Petržalka          72 m²  219 000 €  [časovač]
+```
+
+Fotky sú z **Wikimedia Commons**, len CC0 / CC BY / CC BY-SA / public domain;
+licencia a autor ku každej sú v `photos.json` mimo repa. Exteriéry sú
+skutočné slovenské domy a mestské budovy. Historické čiernobiele fotky
+z Commons boli odfiltrované automaticky podľa sýtosti.
+
+Zmazanie: `delete from offerra.property where is_seed;`
+
+### 1.11 Obrazovky appky — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+- `src/lib/property.ts` — model, štítky, formátovanie cien
+  (**prenájom „/ mesiac", predaj celková suma** — nie ten istý údaj s iným
+  štítkom), `missingForPublish()` vracia ZOZNAM chýbajúceho, nie boolean.
+- `src/hooks/use-properties.ts` — katalóg / detail / moje. Fotky sa ťahajú
+  **jedným dotazom** pre celý zoznam, nie N+1 na kartu.
+- `src/hooks/use-photo-upload.ts` — `require('expo-image-picker')` vnútri
+  handlera (vzor MUTARKu), viacnásobný výber, mazanie fotiek.
+- `src/app/(tabs)/index.tsx` — katalóg s kartami a pull-to-refresh.
+- `src/app/nehnutelnost/[id].tsx` — detail: galéria, popis, parametre,
+  „Ponuky: čoskoro".
+- `src/app/(tabs)/pridat.tsx` + `src/app/inzerat/[id].tsx` — moje inzeráty
+  a editor s tlačidlom **Zverejniť**.
+- `src/components/city-picker.tsx` — hľadanie v 2 925 obciach cez DB
+  (`ilike`), nie načítanie celého zoznamu do telefónu.
+- `src/components/deadline-picker.tsx` — **zámerne bez natívneho date
+  pickera**, aby nepribudol natívny modul.
+
+Overené runtime: `npx tsc --noEmit` → **exit 0**; produkčný iOS bundle
+`expo export` → **1 669 modulov, 4 352 285 B, bez chýb**.
+
+### 1.12 Čo NIE JE dokázané — 🔴 ČAKÁ NA RASTIA
+
+Nič z bodu 1.11 nie je overené na zariadení. **Aktuálny TestFlight build je
+z commitu `7ed7fcf` a Fázu 1 neobsahuje.** Nový natívny modul nepribudol
+(`expo-image-picker` aj `expo-image` už v builde sú), takže **stačí OTA
+cez `eas update`** — nie nový build. Čaká sa na Rastiovo „OK update".
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
@@ -489,22 +735,30 @@ za mesiac, predaj celkovú cenu, a filtre aj karty to musia vedieť rozlíšiť.
 
 ## Čo blokuje postup
 
-Build aj submit sú hotové — binárka je v App Store Connect.
-Blokuje **jediná vec: overenie na telefóne v TestFlighte** (0.20).
-Zoznam, čo otestovať, je v `reports/FAZA_0_SUBMIT.md`.
+Fáza 1 je hotová v kóde aj v databáze. Blokuje **jediná vec: dostať ju na
+telefón a pozrieť sa na ňu** — `eas update` (OTA) čaká na „OK update",
+viď 1.12. Zoznam, čo otestovať, je v `reports/FAZA_1_INZERATY.md`.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
 
 ---
 
-## Otvorené na Fázu 1
+## Otvorené na Fázu 2 a ďalej
 
-- `RECORD_AUDIO` v `android.permissions` (pridal ho `expo-image-picker`) —
-  pre realitnú appku zbytočné, pred prvým store buildom pridať do
-  `blockedPermissions`.
-- Vystavenie schémy `offerra` cez PostgREST (`db_schema`) — zdieľané
-  nastavenie s MUTARKom, riešiť opatrne až s tabuľkami.
-- Verejné čítanie `offerra-media` pre fotky inzerátov.
-- Dátový model v schéme `offerra`.
-- Auth flow (Apple/Google) — vzor je prečítaný, kód zatiaľ neprenesený.
+Všetko, čo register držal ako otvorené na Fázu 1, je vyriešené
+(`RECORD_AUDIO` → 1.3, PostgREST → 1.6, verejné fotky → 1.7,
+dátový model → 1.4, auth flow → 0.16).
+
+Nové otvorené body:
+
+- **Zmenšovanie fotiek pri uploade** — dnes len prekódovanie `quality 0.6`
+  + poistka 8 MB. Skutočný resize potrebuje `expo-image-manipulator`, čo je
+  nový natívny modul → nový EAS build. Zvážiť pri najbližšom builde (1.7).
+- **Verejný bucket a DRAFT fotky** — fotka rozrobeného inzerátu je pri
+  znalosti UUID cesty dostupná. Ak má vadiť, riešením sú podpísané URL (1.7).
+- **`view_count` sa zatiaľ nikde nezvyšuje** — stĺpec existuje, počítanie
+  zobrazení príde s modulom ponúk.
+- **Tab „Dopyty"** je stále prázdny placeholder — je to Fáza 2+.
+- **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.
+- **Moderovanie inzerátov** (`PENDING_APPROVAL`) — Fáza 7, zámerne preskočené.

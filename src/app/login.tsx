@@ -1,3 +1,4 @@
+import { Image } from 'expo-image';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -79,7 +80,15 @@ export default function LoginScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
           <Pressable onPress={handleLogoTap} style={styles.header} accessibilityRole="header">
-            <Text style={[styles.wordmark, { color: palette.primary }]}>OFFERRA</Text>
+            {/* FÁZA 1 — skutočný wordmark identity A (Navy & Azure) namiesto
+                dočasného textu. Je to obrázok, nie font: značka je kreslená
+                abeceda a nesmie sa meniť podľa toho, čo má telefón. */}
+            <Image
+              source={require('../../assets/images/wordmark.png')}
+              style={styles.wordmark}
+              contentFit="contain"
+              accessibilityLabel="Offerra"
+            />
             <Text style={[styles.subtitle, { color: palette.textMuted }]}>
               Nehnuteľnosti na predaj aj prenájom
             </Text>
@@ -221,7 +230,7 @@ const styles = StyleSheet.create({
   flex: { flex: 1 },
   scroll: { flexGrow: 1, justifyContent: 'center', padding: Spacing.xl },
   header: { alignItems: 'center', gap: Spacing.sm, marginBottom: Spacing.xxl },
-  wordmark: { ...Type.hero, fontWeight: Weight.bold, letterSpacing: 4 },
+  wordmark: { width: 232, height: 64 },
   subtitle: { ...Type.bodyMd, textAlign: 'center' },
   actions: { gap: Spacing.sm },
   why: { ...Type.small, textAlign: 'center', marginBottom: Spacing.md },

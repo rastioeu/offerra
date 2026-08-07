@@ -76,6 +76,8 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="nehnutelnost/[id]" />
+          <Stack.Screen name="inzerat/[id]" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

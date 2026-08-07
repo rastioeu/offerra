@@ -16,7 +16,10 @@ export type Palette = {
   background: string;
   surface: string;
   surfacePressed: string;
+  /** Vlasová deliaca čiara (dekoratívna) — kontrast sa pri nej nemeria. */
   border: string;
+  /** Obrys ovládacieho prvku (pole formulára) — musí mať ≥ 3:1 (WCAG 1.4.11). */
+  borderStrong: string;
 
   textPrimary: string;
   textSecondary: string;
@@ -24,8 +27,10 @@ export type Palette = {
 
   /** Značková navy — hlavná akcia, nadpisy, aktívny tab. */
   primary: string;
-  /** Azúrová — odkazy, sekundárne akcie, zvýraznenie v kartách. */
+  /** Značková azúrová — VÝPLNE a grafika (ikona, akcentová linka). */
   secondary: string;
+  /** Azúrová ako TEXT. Odlíšená od `secondary`, viď poznámka o WCAG nižšie. */
+  link: string;
   /** Text NA vyplnenom `primary`/`secondary` povrchu (tlačidlo, badge). */
   onPrimary: string;
 
@@ -35,13 +40,26 @@ export type Palette = {
 };
 
 /**
- * FÁZA 0 (7.8.2026) — hodnoty schválené pred zápisom (zadanie Marco, bod 5:
- * „over so mnou farby predtým, než ich natvrdo zapíšeš").
+ * FÁZA 0 (7.8.2026) — paleta „B — Navy & Azure" schválená pred zápisom.
+ * FÁZA 1 (7.8.2026) — Rastio vybral identitu **A — Navy & Azure**, ktorá na
+ * tejto palete stavia; paleta sa teda nemenila, len DOKONČILA.
  *
- * Kontrast: textové tokeny sú volené nad WCAG AA 4.5:1 voči `background`
- * aj `surface`. Presné premeranie celej palety (vrátane `primary` na
- * `surface` a textu na vyplnených tlačidlách) je úloha Fázy 1 — dovtedy
- * sú to overené, nie certifikované hodnoty.
+ * ── Premeranie WCAG (Fáza 1, sľúbené v registri) ────────────────────────
+ * Každý token bol zmeraný voči `background` aj `surface`. Tri v light téme
+ * neprešli AA 4.5:1 pre bežný text a boli opravené:
+ *
+ *   success  #1F8A5F → #1D8058   (bolo 4.03:1)
+ *   warning  #B7791F → #99651A   (bolo 3.39:1 — najhoršie)
+ *   azúrová  #1B73D4 → viď nižšie
+ *
+ * Značková azúrová `secondary` #1B73D4 má na `background` len 4.40:1.
+ * ZÁMERNE sa NEMENÍ — je to farba loga a app ikony a v identite musí ostať
+ * presne tá. Namiesto toho pribudol token `link` #1B71D0 (opticky tá istá
+ * farba, 4.53:1), ktorý sa používa všade, kde je azúrová TEXT.
+ * Pravidlo: `secondary` = výplň/grafika, `link` = text.
+ *
+ * Biely text na výplni `secondary` má 4.72:1 — vyhovuje, tlačidlá sú v poriadku.
+ * Dark téma prešla celá bez zásahu (najnižšia hodnota 5.16:1).
  */
 export const Colors: { light: Palette; dark: Palette } = {
   light: {
@@ -49,6 +67,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     surface: '#FFFFFF',
     surfacePressed: '#E8EDF4',
     border: '#DCE3EC',
+    borderStrong: '#888E98',
 
     textPrimary: '#101828',
     textSecondary: '#445068',
@@ -56,10 +75,11 @@ export const Colors: { light: Palette; dark: Palette } = {
 
     primary: '#103A6B',
     secondary: '#1B73D4',
+    link: '#1B71D0',
     onPrimary: '#FFFFFF',
 
-    success: '#1F8A5F',
-    warning: '#B7791F',
+    success: '#1D8058',
+    warning: '#99651A',
     danger: '#B4342A',
   },
   dark: {
@@ -71,6 +91,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     surface: '#16202E',
     surfacePressed: '#1F2B3C',
     border: '#2A3749',
+    borderStrong: '#6B7A93',
 
     textPrimary: '#FFFFFF',
     textSecondary: '#A8B6CA',
@@ -78,6 +99,7 @@ export const Colors: { light: Palette; dark: Palette } = {
 
     primary: '#5AA0EE',
     secondary: '#4E9AF0',
+    link: '#4E9AF0',
     onPrimary: '#0D1520',
 
     success: '#3BB07E',
