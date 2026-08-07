@@ -226,13 +226,27 @@ nedostane. Rovnaký vzor ako MUTARK (kľúče cez EAS env, nie v repe).
   `Environment variables … loaded from the "production" environment on EAS:
   EXPO_PUBLIC_SUPABASE_ANON_KEY, EXPO_PUBLIC_SUPABASE_URL`
 
-### 0.14 `eas build --platform ios` — 🔴 NEDOKONČENÉ (chýba Apple login)
+### 0.14 `eas build --platform ios` — 🟡 BEŽÍ
 
-Spustené 7.8.2026 po Rastiovom „OK build", profil `production`,
-`--non-interactive`.
+**Build ID:** `1ec9874e-79f1-4abd-bedf-c42a6db8d46c`
+**Logy:** https://expo.dev/accounts/rastio_eu/projects/offerra/builds/1ec9874e-79f1-4abd-bedf-c42a6db8d46c
+Profil `production`, spustený 7.8.2026 08:01 UTC, stav `IN_PROGRESS`.
 
-Prešlo: načítanie env premenných, `✔ Using remote iOS credentials (Expo server)`.
-Zlyhalo na kredenciáloch:
+Kredenciály pred spustením overené (nie predpokladané):
+
+```
+Provisioning Profile
+  Developer Portal ID   6D5QB4GLWG
+  Status                active
+  Expiration            Fri, 09 Jul 2027 11:53:07 UTC
+  Apple Team            TC4V762X67 (Rastislav Janek (Individual))
+
+All credentials are ready to build @rastio_eu/offerra (com.offerra.app)
+```
+
+#### Prvý pokus (zlyhaný) — pre záznam
+
+Prvé spustenie `--non-interactive` zlyhalo:
 
 ```
 Distribution Certificate is not validated for non-interactive builds.
@@ -263,24 +277,30 @@ Apple ID nie je uložené nikde na stroji — `.mutark-secrets` má len
 Sign-in-with-Apple kľúče (`APPLE_KEY_ID`, `APPLE_SERVICES_ID`,
 `APPLE_CLIENT_SECRET_JWT`), tie na Developer portál neslúžia.
 
-**Potrebné:** `EXPO_APPLE_ID` + app-specific password
-(`EXPO_APPLE_APP_SPECIFIC_PASSWORD`), alebo jednorazové interaktívne
-prihlásenie Rastiom. Je to **jednorazová vec pre tento bundle id** —
-MUTARK aj Famiglia si tým kedysi prešli tiež.
+**Vyriešené:** Rastio sa prihlásil do Apple účtu interaktívne
+(`eas credentials -p ios`) a EAS profil vytvoril — Developer Portal ID
+`6D5QB4GLWG`, „Updated 2 minutes ago". Apple ID je `rastioeu@protonmail.com`
+(uložená session `/root/.app-store/auth/…/cookie` z 18.7.2026).
+Je to jednorazová vec pre tento bundle id.
+
+### 0.15 `expo-updates` / EAS Update — ✅ OVERENÉ RUNTIME
+
+`eas.json` mal vo všetkých profiloch `"channel"`, ale `expo-updates` nebolo
+nainštalované — build to hlásil ako varovanie a kanál bol nefunkčný.
+Doplnené **pred** prvým buildom (rozhodnutie Rastia 7.8.2026), aby prvý
+TestFlight build už vedel OTA a drobné opravy nevyžadovali nový build.
+
+- `expo-updates ~57.0.12`
+- `app.json` → `updates.url = https://u.expo.dev/31b8063a-…`
+- `app.json` → `runtimeVersion` policy `appVersion`
+- `npx tsc --noEmit` → **exit 0**
 
 ---
 
 ## Čo blokuje postup
 
-1. **🔴 Prihlásenie do Apple účtu** pre vytvorenie provisioning profilu
-   `com.offerra.app` (viď 0.14). Bez neho `eas build` neprejde.
-
-### Otvorené, nie blokujúce
-
-- `eas.json` má vo všetkých profiloch `"channel"`, ale **`expo-updates` nie je
-  nainštalované** — build to hlási ako varovanie a kanál je nefunkčný
-  (žiadne OTA aktualizácie). MUTARK `expo-updates` má. Rozhodnúť **pred**
-  prvým buildom, nech sa nerobí druhý zbytočne.
+Nič blokujúce. Beží iOS build (0.14); po ňom nasleduje `eas submit`
+do TestFlightu a overenie prihlásenia na fyzickom zariadení.
 
 > Token expiruje **6.9.2026**. Po tomto dátume push prestane fungovať —
 > vtedy stačí prepísať hodnotu v `/root/.offerra-secrets`, nič iné.
