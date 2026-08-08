@@ -8,7 +8,8 @@
  *
  * Aktuálne zohľadňuje: otvorené pseudonymné ponuky (nie slepé),
  * povinnú prezývku, odkrytie kontaktu až po akceptácii, dopyty ako
- * druhú stranu trhu, uzávierku ponúk a moderovanie správcom.
+ * druhú stranu trhu, uzávierku ponúk, moderovanie správcom a — od
+ * 8.8.2026 — presnosť polohy na mape (obec, nie adresa).
  */
 export type HowStep = { icon: string; title: string; body: string };
 
@@ -37,6 +38,13 @@ export const HOW_STEPS: HowStep[] = [
     body:
       'Keď predávajúci niektorú ponuku prijme, meno, telefón a e-mail sa odkryjú ' +
       'OBOM stranám naraz. Predtým ich nemá ani jeden z nich.',
+  },
+  {
+    icon: 'house',
+    title: 'Na mape vidíš obec, nie adresu',
+    body:
+      'Inzeráty sa dajú prezerať aj na mape. Pin však stojí na obci, nie na dome — ' +
+      'presná adresa je skrytá rovnako ako meno a odkryje sa až po dohode.',
   },
   {
     icon: 'envelope',

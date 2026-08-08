@@ -14,8 +14,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AvailableFromPicker } from '@/components/available-from-picker';
 import { CityPicker } from '@/components/city-picker';
 import { DeadlinePicker } from '@/components/deadline-picker';
+import { FormScreen } from '@/components/form-screen';
 import { Badge, Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { usePhotoUpload } from '@/hooks/use-photo-upload';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -24,13 +26,18 @@ import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import {
   db,
+  FURNISHING_LABEL,
   missingForPublish,
   PROPERTY_LABEL,
+  REGIONS,
   STATUS_LABEL,
   TRANSACTION_LABEL,
+  UTILITIES_LABEL,
+  type Furnishing,
   type Property,
   type PropertyType,
   type TransactionType,
+  type Utilities,
 } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -53,6 +60,12 @@ export default function PropertyEditorScreen() {
   const [rooms, setRooms] = useState('');
   const [area, setArea] = useState('');
   const [price, setPrice] = useState('');
+  // Číselné polia prenájmu držíme ako TEXT, nie číslo — inak by sa pri
+  // mazaní znaku pole vynulovalo na 0 a používateľ by prišiel o rozpísanú
+  // hodnotu. Prevod je až v `num()` pri ukladaní.
+  const [deposit, setDeposit] = useState('');
+  const [depositMonths, setDepositMonths] = useState('');
+  const [minLease, setMinLease] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -66,6 +79,9 @@ export default function PropertyEditorScreen() {
     setRooms(item.rooms != null ? String(item.rooms) : '');
     setArea(item.area_m2 != null ? String(item.area_m2) : '');
     setPrice(item.asking_price_hint != null ? String(item.asking_price_hint) : '');
+    setDeposit(item.deposit_amount != null ? String(item.deposit_amount) : '');
+    setDepositMonths(item.deposit_months != null ? String(item.deposit_months) : '');
+    setMinLease(item.min_lease_months != null ? String(item.min_lease_months) : '');
   }, [item]);
 
   function patch(p: Partial<Property>) {
@@ -74,6 +90,7 @@ export default function PropertyEditorScreen() {
 
   function collect(): Partial<Property> {
     if (!draft) return {};
+    const isRent = draft.transaction_type === 'RENT';
     return {
       transaction_type: draft.transaction_type,
       property_type: draft.property_type,
@@ -81,11 +98,25 @@ export default function PropertyEditorScreen() {
       description: draft.description,
       city: draft.city,
       district: draft.district,
+      region: draft.region,
+      street: draft.street?.trim() || null,
+      latitude: draft.latitude,
+      longitude: draft.longitude,
       address_hidden: draft.address_hidden,
       offer_deadline: draft.offer_deadline,
       rooms: num(rooms),
       area_m2: num(area),
       asking_price_hint: num(price),
+      // Pri PREDAJI sa podmienky nájmu ZAHADZUJÚ. Keby ostali, inzerát
+      // prepnutý z prenájmu na predaj by si so sebou niesol zábezpeku,
+      // ktorá pri predaji nedáva zmysel.
+      deposit_amount: isRent ? num(deposit) : null,
+      deposit_months: isRent ? num(depositMonths) : null,
+      available_from: isRent ? draft.available_from : null,
+      min_lease_months: isRent ? num(minLease) : null,
+      furnishing: isRent ? draft.furnishing : null,
+      utilities_included: isRent ? draft.utilities_included : null,
+      pets_allowed: isRent ? draft.pets_allowed : null,
     };
   }
 
@@ -172,7 +203,7 @@ export default function PropertyEditorScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <FormScreen>
         <ErrorNote error={error ?? saveError} />
 
         {item === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
@@ -286,7 +317,34 @@ export default function PropertyEditorScreen() {
             <CityPicker
               city={draft.city}
               district={draft.district}
-              onPick={(city, district) => patch({ city, district })}
+              // Kraj a súradnice sa dopĺňajú spolu s obcou — sú v tom istom
+              // riadku číselníka, takže pýtať sa na ne zvlášť by bolo
+              // prepisovanie toho, čo už vieme.
+              onPick={(p) =>
+                patch({
+                  city: p.city,
+                  district: p.district,
+                  region: p.region,
+                  latitude: p.latitude,
+                  longitude: p.longitude,
+                })
+              }
+            />
+
+            <ChoiceRow<string>
+              label="Kraj"
+              hint="Dopĺňa sa podľa obce. Zmeniť sa dá, keď to nesedí."
+              options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
+              value={draft.region}
+              onChange={(v) => patch({ region: v })}
+            />
+
+            <Field
+              label="Ulica (nepovinné)"
+              hint="Bez čísla domu. Presnú adresu si dohodnete až po prijatí ponuky."
+              value={draft.street ?? ''}
+              onChangeText={(v) => patch({ street: v })}
+              placeholder="napr. Šancová"
             />
 
             {!isLand ? (
@@ -309,6 +367,77 @@ export default function PropertyEditorScreen() {
               keyboardType="decimal-pad"
               placeholder={draft.transaction_type === 'RENT' ? '850 (za mesiac)' : '248000'}
             />
+
+            {/* ── podmienky prenájmu ──
+                Len pri PRENÁJME. Pri predaji sú tieto polia nezmysel a
+                formulár sa nimi nemá čím naťahovať. */}
+            {draft.transaction_type === 'RENT' ? (
+              <>
+                <Text style={[styles.section, { color: palette.textMuted }]}>PODMIENKY PRENÁJMU</Text>
+                <Text style={[styles.sectionHint, { color: palette.textMuted }]}>
+                  Všetko nepovinné — ale čím viac vyplníš, tým menej otázok dostaneš.
+                </Text>
+
+                <Field
+                  label="Zábezpeka (€)"
+                  value={deposit}
+                  onChangeText={setDeposit}
+                  keyboardType="decimal-pad"
+                  placeholder="1600"
+                />
+                <Field
+                  label="Zábezpeka = koľko mesačných nájmov"
+                  hint="Bežne 1 až 3. Slúži ako kontrola k sume vyššie."
+                  value={depositMonths}
+                  onChangeText={setDepositMonths}
+                  keyboardType="decimal-pad"
+                  placeholder="2"
+                />
+
+                <AvailableFromPicker
+                  value={draft.available_from}
+                  onChange={(day) => patch({ available_from: day })}
+                />
+
+                <Field
+                  label="Minimálna doba nájmu (mesiace)"
+                  value={minLease}
+                  onChangeText={setMinLease}
+                  keyboardType="numeric"
+                  placeholder="12"
+                />
+
+                <ChoiceRow<Furnishing>
+                  label="Zariadenie"
+                  options={(['FURNISHED', 'PARTIAL', 'UNFURNISHED'] as Furnishing[]).map((v) => ({
+                    value: v,
+                    label: FURNISHING_LABEL[v],
+                  }))}
+                  value={draft.furnishing}
+                  onChange={(v) => patch({ furnishing: v })}
+                />
+
+                <ChoiceRow<Utilities>
+                  label="Energie zahrnuté v nájme"
+                  options={(['YES', 'PARTIAL', 'NO'] as Utilities[]).map((v) => ({
+                    value: v,
+                    label: UTILITIES_LABEL[v],
+                  }))}
+                  value={draft.utilities_included}
+                  onChange={(v) => patch({ utilities_included: v })}
+                />
+
+                <ChoiceRow<'YES' | 'NO'>
+                  label="Domáce zvieratá"
+                  options={[
+                    { value: 'YES', label: 'Povolené' },
+                    { value: 'NO', label: 'Nepovolené' },
+                  ]}
+                  value={draft.pets_allowed == null ? null : draft.pets_allowed ? 'YES' : 'NO'}
+                  onChange={(v) => patch({ pets_allowed: v === 'YES' })}
+                />
+              </>
+            ) : null}
 
             <DeadlinePicker
               value={draft.offer_deadline}
@@ -335,7 +464,7 @@ export default function PropertyEditorScreen() {
             </View>
           </>
         ) : null}
-      </ScrollView>
+      </FormScreen>
     </SafeAreaView>
   );
 }

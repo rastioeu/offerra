@@ -19,6 +19,22 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
+    version: '1.2.0',
+    date: '8. augusta 2026',
+    title: 'Mapa, podmienky prenájmu a opravená klávesnica',
+    items: [
+      'Nehnuteľnosti sa dajú prezerať na MAPE — prepínač Zoznam/Mapa je hore vpravo. Na pine je rovno cena.',
+      'Mapa má prepínač Mapa/Satelit. Poloha je poloha obce, nie presnej adresy — tá ostáva skrytá.',
+      'Opravené: klávesnica už neprekrýva pole, do ktorého píšeš, a dá sa zavrieť — tlačidlom „Hotovo" nad ňou alebo ťuknutím vedľa poľa. Predtým sa pri číselných poliach nedala zavrieť vôbec.',
+      'Opravené: pri šípke späť sa už nezobrazuje „(tabs)". Je tam len šípka, ako inde v iOS.',
+      'Opravené: hlavička s logom sa už neprelína s ostrovčekom hore na obrazovke.',
+      'Inzeráty na prenájom majú nové polia: zábezpeka, dostupné od, minimálna doba nájmu, zariadenie, energie v nájme a či sú povolené zvieratá.',
+      'K adrese pribudol kraj (dopĺňa sa sám podľa obce) a nepovinná ulica.',
+      'Dopyt už hovorí rečou toho, kto hľadá — „Kúpim" a „Hľadám prenájom" namiesto „Predaj" a „Prenájom", a pri kúpe sa pýta „Ponúkam do".',
+      'Karty a riadky v celej appke sú klikateľné celé, nie len text v nich.',
+    ],
+  },
+  {
     version: '1.1.0',
     date: '7. augusta 2026',
     title: 'Nový vzhľad a vysvetlenie, ako to funguje',

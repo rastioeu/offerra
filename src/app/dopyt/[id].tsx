@@ -9,16 +9,16 @@
  */
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Badge, Button, Card, ErrorNote, Field } from '@/components/ui';
+import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar } from '@/components/ui';
 import { useOutreach, useRequest } from '@/hooks/use-offers';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
-import { db, formatArea, formatDate, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
+import { db, DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function RequestDetailScreen() {
@@ -92,7 +92,7 @@ export default function RequestDetailScreen() {
         {item ? (
           <>
             <View style={styles.badges}>
-              <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
+              <Badge text={DEMAND_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
               {item.property_type ? <Badge text={PROPERTY_LABEL[item.property_type as PropertyType]} /> : null}
             </View>
 
@@ -105,7 +105,7 @@ export default function RequestDetailScreen() {
 
             <Card>
               <Text style={[styles.section, { color: palette.textMuted }]}>ČO HĽADÁ</Text>
-              <Row label="Lokalita" value={[item.city, item.district].filter(Boolean).join(' · ') || '—'} />
+              <Row label="Lokalita" value={[item.city, item.district, item.region].filter(Boolean).join(' · ') || '—'} />
               <Row label="Typ" value={item.property_type ? PROPERTY_LABEL[item.property_type as PropertyType] : 'akýkoľvek'} />
               <Row label="Izby" value={item.rooms_min != null ? `aspoň ${item.rooms_min}` : '—'} />
               <Row label="Výmera" value={item.area_min != null ? `aspoň ${formatArea(item.area_min)}` : '—'} />
@@ -173,7 +173,11 @@ export default function RequestDetailScreen() {
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={styles.modalScroll} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.modalScroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
             {activeProperties.map((p) => {
               const used = alreadySent.has(p.id);
               const active = chosen === p.id;
@@ -214,6 +218,7 @@ export default function RequestDetailScreen() {
               disabled={busy || !chosen}
             />
           </ScrollView>
+          <KeyboardDoneBar />
         </SafeAreaView>
       </Modal>
     </SafeAreaView>

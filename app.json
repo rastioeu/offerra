@@ -2,7 +2,7 @@
   "expo": {
     "name": "Offerra",
     "slug": "offerra",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "offerra",
@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.offerra.app",
       "appleTeamId": "TC4V762X67",
-      "buildNumber": "3",
+      "buildNumber": "4",
       "supportsTablet": false,
       "usesAppleSignIn": true,
       "infoPlist": {
@@ -52,7 +52,8 @@
           "photosPermission": "Offerra použije tvoje fotky na pridanie obrázkov k inzerátu nehnuteľnosti."
         }
       ],
-      "expo-web-browser"
+      "expo-web-browser",
+      "react-native-maps"
     ],
     "experiments": {
       "typedRoutes": true,

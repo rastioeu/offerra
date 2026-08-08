@@ -7,7 +7,7 @@
  * proti konkurencii, čo je pri realitnom trhu reálne riziko.
  */
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useSession } from '@/hooks/use-session';
@@ -16,7 +16,7 @@ import { db } from '@/lib/property';
 import { REPORT_REASONS, type ReportTarget, type ReportReason } from '@/lib/report';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
-import { Button, ErrorNote, Field } from './ui';
+import { Button, ErrorNote, Field, KeyboardDoneBar } from './ui';
 
 export function ReportButton({
   targetType,
@@ -118,7 +118,11 @@ export function ReportButton({
             </Pressable>
           </View>
 
-          <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.scroll}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="interactive"
+            automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
             <Text style={[styles.lead, { color: palette.textSecondary }]}>
               Nič sa nezmaže automaticky. Nahlásenie si pozrie človek a rozhodne.
             </Text>
@@ -161,6 +165,7 @@ export function ReportButton({
 
             <Button title={busy ? 'Odosielam…' : 'Odoslať nahlásenie'} onPress={submit} disabled={busy} />
           </ScrollView>
+          <KeyboardDoneBar />
         </SafeAreaView>
       </Modal>
     </>

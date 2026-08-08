@@ -6,7 +6,9 @@
  * riešenie hľadanie podľa názvu. Dotaz ide do DB (`ilike`), nie cez
  * načítanie celého zoznamu do pamäte telefónu.
  *
- * Mapa a geokódovanie prídu vo Fáze 6; dovtedy je poloha = mesto + okres.
+ * Výber obce po novom vracia aj KRAJ a SÚRADNICE (8.8.2026). Bez toho by sa
+ * inzerát nikdy neobjavil na mape — súradnice nemá kde inde vziať, presnú
+ * adresu totiž zámerne nepýtame.
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -18,6 +20,16 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
 
+/** Čo sa o obci dozvie formulár. Súradnice môžu chýbať — obec bez nich sa
+ *  proste neobjaví na mape, uložiť sa ale dá. */
+export type PickedCity = {
+  city: string;
+  district: string;
+  region: string;
+  latitude: number | null;
+  longitude: number | null;
+};
+
 export function CityPicker({
   city,
   district,
@@ -25,7 +37,7 @@ export function CityPicker({
 }: {
   city: string | null;
   district: string | null;
-  onPick: (city: string, district: string) => void;
+  onPick: (picked: PickedCity) => void;
 }) {
   const palette = useTheme();
   const [open, setOpen] = useState(false);
@@ -67,7 +79,9 @@ export function CityPicker({
 
   return (
     <View style={styles.group}>
-      <Label hint="Mapa a presná adresa prídu neskôr — zatiaľ stačí obec.">Mesto / obec</Label>
+      <Label hint="Podľa obce sa dopĺňa kraj aj poloha na mape. Presnú adresu nepýtame.">
+        Mesto / obec
+      </Label>
 
       <Pressable
         onPress={() => setOpen(true)}
@@ -117,7 +131,13 @@ export function CityPicker({
               <Pressable
                 key={c.id}
                 onPress={() => {
-                  onPick(c.name, c.district);
+                  onPick({
+                    city: c.name,
+                    district: c.district,
+                    region: c.region,
+                    latitude: c.lat,
+                    longitude: c.lon,
+                  });
                   setOpen(false);
                   setQuery('');
                 }}

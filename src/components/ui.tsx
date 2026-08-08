@@ -6,6 +6,9 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import {
   ActivityIndicator,
   Animated,
+  InputAccessoryView,
+  Keyboard,
+  Platform,
   Pressable,
   StyleSheet,
   Text,
@@ -28,6 +31,42 @@ export function Label({ children, hint }: { children: string; hint?: string }) {
   );
 }
 
+/**
+ * `nativeID` lišty „Hotovo" nad klávesnicou. Musí byť JEDEN reťazec zdieľaný
+ * medzi poľom a lištou — inak sa nespoja a lišta sa nezobrazí.
+ */
+export const KEYBOARD_DONE_ID = 'offerra-keyboard-done';
+
+/**
+ * Lišta „Hotovo" nad klávesnicou (iOS).
+ *
+ * Vznikla z chyby (Rastio, 8.8.2026): numerická klávesnica nemá klávesu
+ * Enter, takže po ťuknutí do poľa „Počet izieb" alebo „Nájom do" sa nedala
+ * zavrieť NIJAKO. `InputAccessoryView` je súčasť React Native — žiadny nový
+ * natívny modul, ide OTA.
+ *
+ * Renderuje ju `FormScreen`, netreba ju písať do každej obrazovky.
+ */
+export function KeyboardDoneBar() {
+  const palette = useTheme();
+  // `InputAccessoryView` existuje len na iOS; na Androide by spadol render.
+  if (Platform.OS !== 'ios') return null;
+  return (
+    <InputAccessoryView nativeID={KEYBOARD_DONE_ID}>
+      <View style={[styles.doneBar, { backgroundColor: palette.surface, borderTopColor: palette.border }]}>
+        <Pressable
+          onPress={() => Keyboard.dismiss()}
+          accessibilityRole="button"
+          accessibilityLabel="Zavrieť klávesnicu"
+          hitSlop={12}
+          style={({ pressed }) => [styles.doneHit, { opacity: pressed ? 0.6 : 1 }]}>
+          <Text style={[styles.doneText, { color: palette.link }]}>Hotovo</Text>
+        </Pressable>
+      </View>
+    </InputAccessoryView>
+  );
+}
+
 export function Field({
   label,
   hint,
@@ -46,6 +85,9 @@ export function Field({
   multiline?: boolean;
 }) {
   const palette = useTheme();
+  // Lišta „Hotovo" tam, kde niet iného spôsobu zavretia: numerická klávesnica
+  // nemá Enter a viacriadkové pole ním robí nový riadok.
+  const needsDone = keyboardType === 'numeric' || keyboardType === 'decimal-pad' || Boolean(multiline);
   return (
     <View style={styles.group}>
       <Label hint={hint}>{label}</Label>
@@ -56,6 +98,8 @@ export function Field({
         placeholderTextColor={palette.textMuted}
         keyboardType={keyboardType ?? 'default'}
         multiline={multiline}
+        returnKeyType={multiline ? undefined : 'done'}
+        inputAccessoryViewID={Platform.OS === 'ios' && needsDone ? KEYBOARD_DONE_ID : undefined}
         style={[
           styles.input,
           multiline ? styles.inputMultiline : null,
@@ -81,7 +125,8 @@ export function ChoiceRow<T extends string>({
   label: string;
   hint?: string;
   options: { value: T; label: string }[];
-  value: T;
+  /** `null` = zatiaľ nevybrané. Nepovinné polia inak nemajú ako vyzerať. */
+  value: T | null;
   onChange: (v: T) => void;
 }) {
   const palette = useTheme();
@@ -300,6 +345,14 @@ const styles = StyleSheet.create({
     ...Type.bodyLg,
   },
   inputMultiline: { minHeight: 110, textAlignVertical: 'top' },
+  doneBar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    borderTopWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: Spacing.md,
+  },
+  doneHit: { paddingHorizontal: Spacing.sm, paddingVertical: Spacing.sm, minHeight: 44, justifyContent: 'center' },
+  doneText: { ...Type.button, fontWeight: Weight.semibold },
   choices: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   choice: {
     borderWidth: 1,

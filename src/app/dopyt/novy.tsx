@@ -4,18 +4,25 @@
  * Dopyt je verejný hneď (`status='ACTIVE'`), na rozdiel od inzerátu žiadny
  * DRAFT nemá: nemá fotky ani nič, čo by sa dalo rozrobiť, a jeho jediný
  * zmysel je, aby ho videli majitelia.
+ *
+ * JAZYK JE Z POHĽADU HĽADAJÚCEHO (Rastio, 8.8.2026). V DB je to ten istý
+ * `transaction_type` ako pri inzeráte, na obrazovke sa ale volá „Kúpim" /
+ * „Hľadám prenájom" — „Predaj" pri dopyte znelo, akoby človek predával.
+ * Prekladá to `DEMAND_LABEL`; hodnoty v DB sa NEMENIA, inak by sa dopyty
+ * prestali párovať s inzerátmi.
  */
 import { Stack, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text } from 'react-native';
+import { StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { CityPicker } from '@/components/city-picker';
+import { FormScreen } from '@/components/form-screen';
 import { Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
-import { db, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType, type TransactionType } from '@/lib/property';
-import { Spacing, Type, Weight } from '@/theme/tokens';
+import { db, DEMAND_LABEL, PROPERTY_LABEL, REGIONS, type PropertyType, type TransactionType } from '@/lib/property';
+import { Type } from '@/theme/tokens';
 
 type AnyType = PropertyType | 'ANY';
 
@@ -36,6 +43,7 @@ export default function NewRequestScreen() {
   const [type, setType] = useState<AnyType>('ANY');
   const [city, setCity] = useState<string | null>(null);
   const [district, setDistrict] = useState<string | null>(null);
+  const [region, setRegion] = useState<string | null>(null);
   const [budgetMin, setBudgetMin] = useState('');
   const [budgetMax, setBudgetMax] = useState('');
   const [rooms, setRooms] = useState('');
@@ -65,6 +73,7 @@ export default function NewRequestScreen() {
         property_type: type === 'ANY' ? null : type,
         city,
         district,
+        region,
         budget_min: min,
         budget_max: max,
         rooms_min: num(rooms),
@@ -93,84 +102,100 @@ export default function NewRequestScreen() {
           headerStyle: { backgroundColor: palette.surface },
         }}
       />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <Text style={[styles.lead, { color: palette.textSecondary }]}>
-            Dopyt je verejný pod tvojou prezývkou. Majitelia ťa naň môžu osloviť
-            svojím inzerátom.
-          </Text>
+      <FormScreen>
+        <Text style={[styles.lead, { color: palette.textSecondary }]}>
+          Dopyt je verejný pod tvojou prezývkou. Majitelia ťa naň môžu osloviť
+          svojím inzerátom.
+        </Text>
 
-          <ChoiceRow<TransactionType>
-            label="Chcem"
-            options={(['SALE', 'RENT'] as TransactionType[]).map((v) => ({
-              value: v,
-              label: v === 'SALE' ? 'Kúpiť' : 'Prenajať si',
-            }))}
-            value={transaction}
-            onChange={setTransaction}
-          />
+        <ChoiceRow<TransactionType>
+          label="Čo hľadám"
+          options={(['SALE', 'RENT'] as TransactionType[]).map((v) => ({
+            value: v,
+            label: DEMAND_LABEL[v],
+          }))}
+          value={transaction}
+          onChange={setTransaction}
+        />
 
-          <ChoiceRow<AnyType>
-            label="Typ nehnuteľnosti"
-            options={[
-              { value: 'ANY', label: 'Akýkoľvek' },
-              ...(['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL', 'OTHER'] as PropertyType[]).map((v) => ({
-                value: v as AnyType,
-                label: PROPERTY_LABEL[v],
-              })),
-            ]}
-            value={type}
-            onChange={setType}
-          />
+        <ChoiceRow<AnyType>
+          label="Typ nehnuteľnosti"
+          options={[
+            { value: 'ANY', label: 'Akýkoľvek' },
+            ...(['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL', 'OTHER'] as PropertyType[]).map((v) => ({
+              value: v as AnyType,
+              label: PROPERTY_LABEL[v],
+            })),
+          ]}
+          value={type}
+          onChange={setType}
+        />
 
-          <CityPicker
-            city={city}
-            district={district}
-            onPick={(c, d) => {
-              setCity(c);
-              setDistrict(d);
-            }}
-          />
+        <CityPicker
+          city={city}
+          district={district}
+          onPick={(p) => {
+            setCity(p.city);
+            setDistrict(p.district);
+            setRegion(p.region);
+          }}
+        />
 
-          <Field
-            label={transaction === 'RENT' ? 'Nájom od (€/mesiac)' : 'Rozpočet od (€)'}
-            value={budgetMin}
-            onChangeText={setBudgetMin}
-            keyboardType="decimal-pad"
-            placeholder={transaction === 'RENT' ? '400' : '120000'}
-          />
-          <Field
-            label={transaction === 'RENT' ? 'Nájom do (€/mesiac)' : 'Rozpočet do (€)'}
-            value={budgetMax}
-            onChangeText={setBudgetMax}
-            keyboardType="decimal-pad"
-            placeholder={transaction === 'RENT' ? '650' : '200000'}
-          />
+        <ChoiceRow<string>
+          label="Kraj"
+          hint="Dopĺňa sa podľa obce. Dá sa vybrať aj sám, keď je jedno ktorá obec."
+          options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
+          value={region}
+          onChange={setRegion}
+        />
 
-          <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="2" />
-          <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="55" />
+        {/* Pri kúpe je to suma, ktorú je záujemca ochotný dať — nie
+            „rozpočet" v zmysle mesačnej platby. Pri prenájme mesačný nájom. */}
+        <Field
+          label={transaction === 'RENT' ? 'Nájom od (€/mesiac)' : 'Ponúkam od (€)'}
+          value={budgetMin}
+          onChangeText={setBudgetMin}
+          keyboardType="decimal-pad"
+          placeholder={transaction === 'RENT' ? '400' : '120000'}
+        />
+        <Field
+          label={transaction === 'RENT' ? 'Nájom do (€/mesiac)' : 'Ponúkam do (€)'}
+          hint={
+            transaction === 'RENT'
+              ? 'Najviac, koľko si vieš dovoliť mesačne.'
+              : 'Najviac, koľko si za takú nehnuteľnosť ochotný ponúknuť.'
+          }
+          value={budgetMax}
+          onChangeText={setBudgetMax}
+          keyboardType="decimal-pad"
+          placeholder={transaction === 'RENT' ? '650' : '200000'}
+        />
 
-          <Field
-            label="Čo hľadáš"
-            hint="Toto je jediné povinné pole — podľa neho sa majiteľ rozhodne, či ťa osloví."
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            placeholder="napr. 3-izbový byt pre rodinu, ideálne s balkónom a parkovaním"
-          />
+        <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="2" />
+        <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="55" />
 
-          <ErrorNote error={error} />
+        <Field
+          label="Čo hľadáš"
+          hint="Toto je jediné povinné pole — podľa neho sa majiteľ rozhodne, či ťa osloví."
+          value={description}
+          onChangeText={setDescription}
+          multiline
+          placeholder={
+            transaction === 'RENT'
+              ? 'napr. Hľadám svetlý 2-izbový byt bližšie k centru, ideálne s balkónom, nasťahovanie od septembra'
+              : 'napr. Hľadám 3-izbový byt pre rodinu, ideálne s balkónom a parkovaním, do 20 minút od centra'
+          }
+        />
 
-          <Button title={busy ? 'Ukladám…' : 'Zverejniť dopyt'} onPress={submit} disabled={busy} />
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <ErrorNote error={error} />
+
+        <Button title={busy ? 'Ukladám…' : 'Zverejniť dopyt'} onPress={submit} disabled={busy} />
+      </FormScreen>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  flex: { flex: 1 },
-  scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
   lead: { ...Type.bodyMd },
 });

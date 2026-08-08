@@ -5,6 +5,7 @@
  * každá funkcia použitá na tejto obrazovke sa pýta `offerra.is_admin()`
  * a bežnému účtu vráti chybu alebo prázdno — aj keby sa sem dostal.
  */
+import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -45,6 +46,7 @@ type AdminProperty = {
 
 export default function AdminScreen() {
   const palette = useTheme();
+  const router = useRouter();
   const { session } = useSession();
 
   const [section, setSection] = useState<Section>('REPORTS');
@@ -150,6 +152,24 @@ export default function AdminScreen() {
     );
   }
 
+  /**
+   * Kam vedie ťuknutie na nahlásenie. Inzerát má obrazovku, používateľ ani
+   * ponuka nie — tam sa aspoň ukáže CELÉ id, ktoré je v riadku odrezané na
+   * osem znakov. Slepé ťuknutie, po ktorom sa nič nestane, je zakázané
+   * (CLAUDE.md §2).
+   */
+  function openTarget(targetType: string, targetId: string, extra?: string) {
+    if (targetType === 'PROPERTY') {
+      router.push({ pathname: '/nehnutelnost/[id]', params: { id: targetId } });
+      return;
+    }
+    Alert.alert(
+      targetType === 'USER' ? 'Nahlásený používateľ' : 'Nahlásená ponuka',
+      [`ID: ${targetId}`, extra].filter(Boolean).join('\n\n') +
+        '\n\nVlastnú obrazovku zatiaľ nemá — konať sa dá cez zoznam Používatelia.'
+    );
+  }
+
   const openReports = reports.filter((r) => r.status === 'PENDING');
 
   return (
@@ -184,9 +204,17 @@ export default function AdminScreen() {
               Traja rôzni ľudia nahlásili to isté — alebo niekto nahlásil podvod.
             </Text>
             {alerts.map((a) => (
-              <View
+              <Pressable
                 key={`${a.target_type}-${a.target_id}`}
-                style={[styles.alert, { borderColor: a.naliehave ? palette.danger : palette.warning }]}>
+                onPress={() => openTarget(a.target_type, a.target_id, `${a.nahlaseni}× · ${a.dovody}`)}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.alert,
+                  {
+                    borderColor: a.naliehave ? palette.danger : palette.warning,
+                    backgroundColor: pressed ? palette.surfacePressed : 'transparent',
+                  },
+                ]}>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
                     {a.target_type === 'PROPERTY' ? 'Inzerát' : a.target_type === 'USER' ? 'Používateľ' : 'Ponuka'}{' '}
@@ -197,7 +225,7 @@ export default function AdminScreen() {
                 <Text style={[styles.meta, { color: palette.textSecondary }]}>
                   {a.nahlaseni}× · {a.dovody}
                 </Text>
-              </View>
+              </Pressable>
             ))}
           </Card>
         ) : null}
@@ -234,7 +262,12 @@ export default function AdminScreen() {
             <Text style={[styles.empty, { color: palette.textMuted }]}>Žiadne nahlásenia.</Text>
           ) : (
             reports.map((r) => (
-              <Card key={r.id}>
+              <Pressable
+                key={r.id}
+                onPress={() => openTarget(r.target_type, r.target_id, r.note ?? undefined)}
+                accessibilityRole="button"
+                style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+              <Card>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
                     {r.target_type === 'PROPERTY' ? 'Inzerát' : r.target_type === 'USER' ? 'Používateľ' : 'Ponuka'}
@@ -266,13 +299,19 @@ export default function AdminScreen() {
                   </View>
                 ) : null}
               </Card>
+              </Pressable>
             ))
           )
         ) : null}
 
         {section === 'PROPERTIES'
           ? properties.map((p) => (
-              <Card key={p.id}>
+              <Pressable
+                key={p.id}
+                onPress={() => router.push({ pathname: '/nehnutelnost/[id]', params: { id: p.id } })}
+                accessibilityRole="button"
+                style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+              <Card>
                 <View style={styles.rowHead}>
                   <Text numberOfLines={1} style={[styles.rowTitle, { color: palette.textPrimary }]}>
                     {p.title || 'Bez názvu'}
@@ -302,12 +341,30 @@ export default function AdminScreen() {
                   <Button title="Zmazať natrvalo" onPress={() => destroy(p)} variant="danger" />
                 </View>
               </Card>
+              </Pressable>
             ))
           : null}
 
         {section === 'USERS'
           ? users.map((u) => (
-              <Card key={u.id}>
+              <Pressable
+                key={u.id}
+                onPress={() =>
+                  Alert.alert(
+                    u.nickname,
+                    [
+                      `ID: ${u.id}`,
+                      `E-mail: ${u.email}`,
+                      `Rola: ${u.role}`,
+                      `Inzerátov: ${u.inzeraty}`,
+                      `Registrovaný: ${formatDate(u.created_at)}`,
+                      u.is_blocked ? 'Stav: ZABLOKOVANÝ' : 'Stav: aktívny',
+                    ].join('\n')
+                  )
+                }
+                accessibilityRole="button"
+                style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
+              <Card>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{u.nickname}</Text>
                   {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="accent" /> : null}
@@ -326,6 +383,7 @@ export default function AdminScreen() {
                   <Text style={[styles.meta, { color: palette.textMuted }]}>To si ty.</Text>
                 )}
               </Card>
+              </Pressable>
             ))
           : null}
       </ScrollView>

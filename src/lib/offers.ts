@@ -46,6 +46,7 @@ export type BuyerRequest = {
   property_type: string | null;
   city: string | null;
   district: string | null;
+  region: string | null;
   budget_min: number | null;
   budget_max: number | null;
   rooms_min: number | null;

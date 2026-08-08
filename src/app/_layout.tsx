@@ -4,6 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
@@ -26,10 +27,16 @@ export default function RootLayout() {
 
   // Profil musí byť JEDEN zdieľaný stav — inak sa brána nedozvie, že si
   // používateľ práve uložil prezývku (chyba nahlásená 7.8.2026).
+  //
+  // `SafeAreaProvider` je tu ZÁMERNE na najvyššom mieste. Doteraz ho dodávala
+  // len navigácia svojim obrazovkám; `useSafeAreaInsets` v hlavičke (bezpečná
+  // zóna pod dynamic islandom) ho ale potrebuje vždy a všade.
   return (
-    <ProfileProvider userId={session?.user.id}>
-      <RootLayoutInner />
-    </ProfileProvider>
+    <SafeAreaProvider>
+      <ProfileProvider userId={session?.user.id}>
+        <RootLayoutInner />
+      </ProfileProvider>
+    </SafeAreaProvider>
   );
 }
 
@@ -119,10 +126,25 @@ function RootLayoutInner() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <ThemeProvider value={navTheme}>
         <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            // CHYBA (Rastio, 8.8.2026): pri šípke späť sa vypisovalo doslova
+            // „(tabs)". iOS tam dáva TITULOK PREDOŠLEJ obrazovky a predošlá
+            // je smerovacia skupina `(tabs)`, ktorá titulok nemá — tak sa
+            // vypísal názov priečinka.
+            //
+            // `minimal` = len šípka, bez textu. To je bežný iOS vzor a jediný,
+            // ktorý nemôže ukázať nič nesprávne. `headerBackTitle` je poistka
+            // pre prípad, že by systém text napriek tomu vykreslil.
+            headerBackButtonDisplayMode: 'minimal',
+            headerBackTitle: 'Späť',
+          }}>
           <Stack.Screen name="login" />
           <Stack.Screen name="prezyvka" />
-          <Stack.Screen name="(tabs)" />
+          {/* Titulok skupiny — druhá poistka toho istého: aj keby sa niekde
+              text pri šípke predsa vykreslil, je po slovensky. */}
+          <Stack.Screen name="(tabs)" options={{ title: 'Offerra' }} />
           <Stack.Screen name="nehnutelnost/[id]" />
           <Stack.Screen name="inzerat/[id]" />
           <Stack.Screen name="ponuka/[id]" />

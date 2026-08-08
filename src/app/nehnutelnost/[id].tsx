@@ -9,14 +9,14 @@
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { ActivityIndicator, Dimensions, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Platform, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FavoriteHeart } from '@/components/favorite-heart';
 import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
 import { ReportButton } from '@/components/report-button';
-import { Badge, Button, Card, ErrorNote } from '@/components/ui';
+import { Badge, Button, Card, ErrorNote, KeyboardDoneBar } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -31,6 +31,7 @@ import {
   formatPrice,
   isDeadlinePassed,
   PROPERTY_LABEL,
+  rentalRows,
   TRANSACTION_LABEL,
 } from '@/lib/property';
 import { formatAmount } from '@/lib/offers';
@@ -108,7 +109,13 @@ export default function PropertyDetailScreen() {
         }}
       />
 
-      <ScrollView contentContainerStyle={styles.scroll}>
+      {/* Hypotekárna kalkulačka má číselné polia — bez týchto troch
+          vlastností a lišty „Hotovo" nižšie sa klávesnica nedá zavrieť. */}
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
         <ErrorNote error={error} />
 
         {item === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
@@ -203,7 +210,10 @@ export default function PropertyDetailScreen() {
 
             <Card>
               <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PARAMETRE</Text>
-              <Row label="Poloha" value={[item.city, item.district].filter(Boolean).join(' · ') || '—'} />
+              <Row
+                label="Poloha"
+                value={[item.street, item.city, item.district, item.region].filter(Boolean).join(' · ') || '—'}
+              />
               <Row label="Typ" value={PROPERTY_LABEL[item.property_type]} />
               <Row label="Obchod" value={TRANSACTION_LABEL[item.transaction_type]} />
               <Row label="Izby" value={item.rooms != null ? String(item.rooms) : '—'} />
@@ -219,6 +229,17 @@ export default function PropertyDetailScreen() {
                 </Text>
               ) : null}
             </Card>
+
+            {/* Podmienky prenájmu — samostatná karta, aby sa nemiešali
+                s parametrami bytu. Pri predaji ju niet z čoho postaviť. */}
+            {rentalRows(item).length > 0 ? (
+              <Card>
+                <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PODMIENKY PRENÁJMU</Text>
+                {rentalRows(item).map((r) => (
+                  <Row key={r.label} label={r.label} value={r.value} />
+                ))}
+              </Card>
+            ) : null}
 
             {/* Kalkulačka dáva zmysel len pri PREDAJI a keď je uvedená cena. */}
             {item.transaction_type === 'SALE' && item.asking_price_hint ? (
@@ -267,6 +288,7 @@ export default function PropertyDetailScreen() {
           </>
         ) : null}
       </ScrollView>
+      <KeyboardDoneBar />
     </SafeAreaView>
   );
 }

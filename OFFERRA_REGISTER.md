@@ -1743,6 +1743,224 @@ Kým to menovite nepotvrdí, bod **2.6** (obrazovky) ostáva 🟡.
 
 ---
 
+## Fáza 7 — Mapa, klávesnica, prenájom, adresa (8.8.2026)
+
+Zadanie Rastia z 8.8.2026 (živé testovanie na telefóne). Poradie práce som
+zoradil sám, ako si vyžiadal: **najprv mapa** (bola rozrobená a build sa
+kvôli nej aj tak robí), potom tri kritické chyby, potom dátové rozšírenia,
+nakoniec build. Bod 7 (filter chips) som **nerozhodoval** — otázka je nižšie.
+
+### 7.1 Tlačidlo Späť ukazovalo „(tabs)" — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+**Príčina.** iOS píše pri šípke späť **titulok predošlej obrazovky**. Predošlá
+je smerovacia skupina `(tabs)`, ktorá v `src/app/_layout.tsx` žiadny `title`
+nemala — React Navigation preto vypísal názov route, doslova `(tabs)`.
+
+**Oprava** (`src/app/_layout.tsx`): do `screenOptions` pribudlo
+`headerBackButtonDisplayMode: 'minimal'` (len šípka, bežný iOS vzor)
+a `headerBackTitle: 'Späť'` ako poistka; skupina `(tabs)` navyše dostala
+`title: 'Offerra'`. Tri nezávislé vrstvy, lebo aj keby jedna neplatila,
+nesmie sa objaviť názov priečinka.
+
+**Platí pre všetkých 8 obrazoviek s headerom** — nastavenie je v koreňovom
+`Stack`, nie v jednotlivých obrazovkách: `inzerat/[id]`, `nehnutelnost/[id]`,
+`ponuka/[id]`, `ponuky/[id]`, `dopyt/[id]`, `dopyt/novy`, `nastavenia`,
+`ako-funguje`, `novinky`, `oznamenia`.
+
+**Prečo nie ✅:** vzhľad šípky vidno len na zariadení.
+
+### 7.2 Klávesnica prekrývala pole a nedala sa zavrieť — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+**Príčina bola dvojitá:**
+
+1. `KeyboardAvoidingView` obsah len **posunul**, ale nedoskroloval na
+   zaostrené pole — pole nižšie vo formulári preto ostalo pod klávesnicou.
+2. Numerická klávesnica (`decimal-pad`, `numeric`) **nemá klávesu Enter**,
+   takže „Počet izieb" a „Nájom do" sa nedali zavrieť **nijako**.
+
+**Oprava** — nový `src/components/form-screen.tsx` so **štyrmi nezávislými**
+cestami von, lebo jedna nestačí:
+
+| Cesta | Kde |
+|---|---|
+| `automaticallyAdjustKeyboardInsets` (iOS sám doskroluje) | `FormScreen` |
+| ťuknutie mimo poľa | `Pressable` cez celý obsah formulára |
+| potiahnutie po obsahu | `keyboardDismissMode="interactive"` |
+| lišta **„Hotovo"** nad klávesnicou | `KeyboardDoneBar` v `ui.tsx` (`InputAccessoryView`) |
+
+`InputAccessoryView` je súčasť React Native — **žiadny nový natívny modul**,
+ide OTA. `Field` si accessory pripája sám pri číselných a viacriadkových
+poliach, takže na to nemôže žiadna obrazovka zabudnúť.
+
+**Pokryté formuláre:** `inzerat/[id]`, `dopyt/novy`, `ponuka/[id]`,
+`prezyvka` (cez `FormScreen`); `profil`, `nehnutelnost/[id]` (kalkulačka),
+`dopyt/[id]` (modál oslovenia), `report-button` (modál nahlásenia),
+`login` (cez tie isté tri vlastnosti + `KeyboardDoneBar`). V `login.tsx`
+sa `KeyboardAvoidingView` zároveň obmedzil na Android — inak by sa obsah
+podložil dvakrát.
+
+### 7.3 Hlavička sa prelínala s dynamic islandom — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+**Príčina.** Odsadenie zhora si držala **obrazovka** (`SafeAreaView
+edges={['top', …]}`), nie hlavička. Stačilo, aby na `edges` jedna obrazovka
+zabudla, a logo skončilo pod ostrovčekom.
+
+**Oprava.** `AppHeader` si po novom berie `useSafeAreaInsets().top` **sám**
+a štyri taby s hlavičkou (`index`, `dopyty`, `pridat`, `profil`) horný edge
+odovzdali jej. Vedľajší efekt je aj krajší: farba hlavičky sa natiahne až
+pod ostrovček. Do `_layout.tsx` pribudol explicitný `SafeAreaProvider` —
+doteraz ho dodávala len navigácia svojim obrazovkám.
+
+### 7.4 Mapa (bod 13F + bod 5) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+- Prepínač **Zoznam / Mapa** v hlavičke katalógu. Filter platí pre obe —
+  mapa nie je iná obrazovka, len iný pohľad na tú istú množinu.
+- Mapa je **mimo `ScrollView`** (samostatná vetva renderu): vnútri by si
+  posúvanie mapy a scrollovanie stránky navzájom kradli gesto.
+- Piny nesú **cenu**, nie bodku. Terakota = najvyššia ponuka, navy =
+  orientačná cena.
+- **Prepínač Mapa / Satelit** (`mapType`) — natívna vlastnosť `MapView`,
+  funguje na Google aj Apple mapách.
+- Poloha je **poloha obce, nie adresy** — `address_hidden` sa mapou nesmie
+  obísť. Na mape to hovorí štítok „Poloha je obec, nie adresa".
+- `require('react-native-maps')` je v `try/catch`: starší build modul nemá
+  a namiesto pádu ukáže vysvetlenie.
+
+**⚠️ PROVIDER_GOOGLE na iOS potrebuje kľúč — viď 7.10 nižšie.**
+
+### 7.5 Súradnice — ✅ OVERENÉ RUNTIME
+
+Zdroj: **Wikidata (P625)**. Číselník `offerra.city` dostal `lat`/`lon`.
+
+```
+2925/2925 obcí má súradnice
+8/8 zverejnených inzerátov má súradnice
+```
+
+`CityPicker` po novom vracia `{ city, district, region, latitude, longitude }` —
+súradnice sa teda dopĺňajú automaticky pri výbere obce. Bez toho by sa nový
+inzerát na mape neobjavil nikdy a nemal by ich odkiaľ vziať (presnú adresu
+zámerne nepýtame).
+
+### 7.6 Polia prenájmu (bod 8) — ✅ OVERENÉ RUNTIME (dáta) / 🟡 (formulár)
+
+Nové stĺpce na `offerra.property`: `deposit_amount`, `deposit_months`,
+`available_from`, `min_lease_months`, `furnishing`, `utilities_included`,
+`pets_allowed`.
+
+**Prečo priamo na `property` a nie zvláštna 1:1 `rental_details`:** je to 7
+nullable stĺpcov, ktoré sa VŽDY čítajú spolu s inzerátom. Zvláštna tabuľka
+by znamenala join alebo druhý dotaz pri každom otvorení detailu a nezískala
+by nič — vzťah 1:1 sa nikdy nerozvetví.
+
+**Pasca, ktorá by inak formulár tíško rozbila:** `property` má **stĺpcové
+granty**, nie tabuľkové (14 stĺpcov mohlo `UPDATE`). Bez `grant update` na
+nové stĺpce by sa formulár tváril, že uložil, a neuložil by nič. Grant je
+súčasťou migrácie a test to overuje priamo.
+
+Kontroly hodnôt sú v DB (`check`), nie len v UI: `furnishing`, 
+`utilities_included`, nezáporná zábezpeka, kladná doba nájmu.
+
+**Dátum „Dostupné od"** rieši `AvailableFromPicker` — rýchle voľby (Ihneď /
+od budúceho mesiaca / o 2 / o 3) + ručné `DD.MM.RRRR`. **Zámerne bez
+natívneho date pickera**, rovnaký dôvod ako pri `DeadlinePicker`:
+`@react-native-community/datetimepicker` je ďalší natívny modul.
+
+### 7.7 Adresa: kraj + ulica (bod 9) — ✅ OVERENÉ RUNTIME (dáta) / 🟡 (formulár)
+
+`property.region` + `property.street`; `buyer_request.region` tiež.
+Kraj sa **dopĺňa sám z číselníka obcí** (je v tom istom riadku), dá sa
+prepísať z ôsmich možností (`REGIONS`). Ulica je nepovinná a **bez čísla
+domu** — presná adresa ostáva skrytá do dohody.
+
+Spätné doplnenie: `8/8` inzerátov a `7/7` dopytov má kraj z číselníka.
+
+### 7.8 Dopyt hovorí rečou hľadajúceho (bod 6) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+| Bolo | Je |
+|---|---|
+| „Chcem: Kúpiť / Prenajať si" | **„Čo hľadám: Kúpim / Hľadám prenájom"** |
+| „Rozpočet do (€)" | **„Ponúkam do (€)"** + vysvetlenie |
+| badge „PREDAJ" v zozname dopytov | **„KÚPIM"** |
+| placeholder len pri jednej vetve | **placeholder podľa typu**, ako si napísal |
+
+V DB sa `transaction_type` **nemení** (`SALE`/`RENT`) — preklad je len
+`DEMAND_LABEL` na obrazovke. Zmena hodnôt by rozbila párovanie dopytov
+s inzerátmi.
+
+### 7.9 Všetko klikateľné (bod 4) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Prešiel som appku obrazovka po obrazovke:
+
+| Obrazovka | Stav |
+|---|---|
+| Katalóg — karta inzerátu | už bola celá klikateľná |
+| Dopyty — karta dopytu | už bola celá klikateľná |
+| Profil — Moje inzeráty / Obľúbené / Moje ponuky / Moje dopyty | už boli |
+| Pridať — Moje inzeráty | už boli |
+| Oznámenia | už boli |
+| **Profil — časová os** | **opravené** (`onPress` bol v type, ale nikto ho nepoužil) |
+| **Správa — Nahlásenia** | **opravené** → otvorí cieľ |
+| **Správa — Inzeráty** | **opravené** → otvorí detail |
+| **Správa — Používatelia** | **opravené** → celé ID a údaje (obrazovku nemá) |
+| **Správa — „Vyžaduje pozornosť"** | **opravené** → otvorí cieľ |
+
+**Vedomá výnimka:** karty v „Ponuky na inzerát" (`ponuky/[id]`) klikateľné
+nie sú. Nie je to riadok vedúci niekam — je to hotová karta so VŠETKÝMI
+údajmi a s tlačidlami Prijať/Odmietnuť. Ťuknutie by nemalo kam viesť
+a „nestane sa nič" je zakázaná reakcia (CLAUDE.md §2).
+
+### 7.10 ⚠️ Google mapy na iOS potrebujú kľúč — 🔴 ČAKÁ NA RASTIA
+
+Zadanie: „použi `react-native-maps` s `PROVIDER_GOOGLE` (vzor MUTARK)".
+
+**Meranie:** MUTARK má `react-native-maps` v plugins, ale **žiadny**
+`ios.config.googleMapsApiKey` (`/root/mutark/app.json` — `ios.config` je
+`null`). Bez kľúča `react-native-maps` na iOS Google SDK vôbec nezalinkuje.
+
+**Ako som to vyriešil, aby mapa fungovala hneď:** provider sa odvodzuje od
+toho, či kľúč naozaj existuje —
+
+```ts
+provider = Platform.OS === 'android' || hasIosGoogleKey() ? PROVIDER_GOOGLE : undefined;
+```
+
+Bez kľúča teda iOS beží na **Apple Maps** (funkčná mapa vrátane satelitu),
+s kľúčom sa prepne na Google **bez zmeny kódu**. Kľúč je potrebné vyrobiť
+v Google Cloud (Maps SDK for iOS) a vložiť do `app.json` ako
+`ios.config.googleMapsApiKey` — to je krok, ktorý za teba spraviť nemôžem.
+
+### 7.11 Dôkazy — ✅ OVERENÉ RUNTIME
+
+| Test | Výsledok |
+|---|---|
+| `rental_test.py` — polia prenájmu a adresa proti živej DB | **12/12** |
+| `rental_pure_test.js` — dátumy a riadky prenájmu | **18/18** |
+| `npx tsc --noEmit` | **0 chýb** |
+| `npx expo export --platform ios` | **hotovo**, bundle 4,7 MB |
+
+`rental_test.py` overuje aj to, čo NEMÁ ísť: neplatné „zariadenie", záporná
+zábezpeka a neplatné „energie" vracajú **HTTP 400**, a cudzí používateľ
+podmienky prenájmu **neprepíše**.
+
+### 7.12 Verzia a OTA
+
+**VYŽADUJE NOVÝ BUILD** — pribudol natívny modul `react-native-maps`.
+`app.json`: `version 1.1.0 → 1.2.0`, `buildNumber 3 → 4`, plugin
+`react-native-maps`. `runtimeVersion` je na politike `fingerprint`, takže
+zvýšenie verzie **neodstrihne** existujúci build od OTA.
+
+Všetko ostatné z tejto dávky (klávesnica, tlačidlo späť, safe area,
+terminológia dopytov, polia prenájmu, kraj, klikateľné riadky) **IDE OTA** —
+je to čistý JS.
+
+### 7.13 Filter chips naprieč tabmi (bod 7) — 🔴 ČAKÁ NA ROZHODNUTIE RASTIA
+
+Zadanie výslovne: „napíš mi otázku s návrhom, nerozhoduj sám." Otázka je
+položená, návrh je v `reports/FAZA_7_MAPA_A_OPRAVY.md`.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

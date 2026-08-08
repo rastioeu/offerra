@@ -57,7 +57,7 @@ export default function PridatScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: palette.textPrimary }]}>Pridať</Text>

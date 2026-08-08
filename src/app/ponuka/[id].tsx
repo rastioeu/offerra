@@ -10,9 +10,10 @@
  */
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { FormScreen } from '@/components/form-screen';
 import { Button, Card, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
@@ -176,130 +177,126 @@ export default function OfferFormScreen() {
           headerStyle: { backgroundColor: palette.surface },
         }}
       />
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          {!item ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
+      <FormScreen>
+        {!item ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
 
-          {item ? (
-            <>
-              <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
-              <Text style={[styles.sub, { color: palette.textMuted }]}>
-                {formatPrice(item.asking_price_hint, item.transaction_type)
-                  ? `Orientačná cena ${formatPrice(item.asking_price_hint, item.transaction_type)}`
-                  : 'Predávajúci cenu neuviedol.'}
+        {item ? (
+          <>
+            <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
+            <Text style={[styles.sub, { color: palette.textMuted }]}>
+              {formatPrice(item.asking_price_hint, item.transaction_type)
+                ? `Orientačná cena ${formatPrice(item.asking_price_hint, item.transaction_type)}`
+                : 'Predávajúci cenu neuviedol.'}
+            </Text>
+            {highest ? (
+              <Text style={[styles.sub, { color: palette.link }]}>
+                Najvyššia ponuka zatiaľ: {formatAmount(highest.amount, item.transaction_type)}
               </Text>
-              {highest ? (
-                <Text style={[styles.sub, { color: palette.link }]}>
-                  Najvyššia ponuka zatiaľ: {formatAmount(highest.amount, item.transaction_type)}
+            ) : null}
+
+            {closed ? (
+              <Text style={[styles.closed, { color: palette.warning }]}>
+                Uzávierka ponúk už uplynula. Túto ponuku sa nedá podať ani zmeniť —
+                stiahnuť ju však môžeš.
+              </Text>
+            ) : null}
+
+            <Field
+              label="Moja ponuka (€)"
+              hint={
+                isRent
+                  ? 'Suma za mesiac. Bude verejná spolu s tvojou prezývkou.'
+                  : 'Celková suma. Bude verejná spolu s tvojou prezývkou.'
+              }
+              value={amount}
+              onChangeText={setAmount}
+              keyboardType="decimal-pad"
+              placeholder={isRent ? '780' : '215000'}
+            />
+
+            <Field
+              label="Správa pre predávajúceho (nepovinné)"
+              value={message}
+              onChangeText={setMessage}
+              placeholder="napr. mám schválenú hypotéku"
+              multiline
+            />
+
+            {isRent ? (
+              <Card>
+                <Text style={[styles.section, { color: palette.textMuted }]}>
+                  O NÁJOMCOVI — VIDÍ LEN MAJITEĽ
                 </Text>
-              ) : null}
-
-              {closed ? (
-                <Text style={[styles.closed, { color: palette.warning }]}>
-                  Uzávierka ponúk už uplynula. Túto ponuku sa nedá podať ani zmeniť —
-                  stiahnuť ju však môžeš.
+                <Text style={[styles.note, { color: palette.textMuted }]}>
+                  Tieto údaje sa NEZOBRAZUJÚ vo verejnom zozname ponúk. Vidí ich
+                  len majiteľ nehnuteľnosti a ty.
                 </Text>
-              ) : null}
 
-              <Field
-                label="Moja ponuka (€)"
-                hint={
-                  isRent
-                    ? 'Suma za mesiac. Bude verejná spolu s tvojou prezývkou.'
-                    : 'Celková suma. Bude verejná spolu s tvojou prezývkou.'
-                }
-                value={amount}
-                onChangeText={setAmount}
-                keyboardType="decimal-pad"
-                placeholder={isRent ? '780' : '215000'}
-              />
-
-              <Field
-                label="Správa pre predávajúceho (nepovinné)"
-                value={message}
-                onChangeText={setMessage}
-                placeholder="napr. mám schválenú hypotéku"
-                multiline
-              />
-
-              {isRent ? (
-                <Card>
-                  <Text style={[styles.section, { color: palette.textMuted }]}>
-                    O NÁJOMCOVI — VIDÍ LEN MAJITEĽ
-                  </Text>
-                  <Text style={[styles.note, { color: palette.textMuted }]}>
-                    Tieto údaje sa NEZOBRAZUJÚ vo verejnom zozname ponúk. Vidí ich
-                    len majiteľ nehnuteľnosti a ty.
-                  </Text>
-
-                  <Field label="Počet osôb" value={people} onChangeText={setPeople} keyboardType="numeric" placeholder="2" />
-                  <ChoiceRow<'NO' | 'YES'>
-                    label="Domáce zvieratá"
-                    options={[
-                      { value: 'NO', label: 'Nemám' },
-                      { value: 'YES', label: 'Mám' },
-                    ]}
-                    value={pets}
-                    onChange={setPets}
-                  />
-                  {pets === 'YES' ? (
-                    <Field
-                      label="Aké zviera"
-                      value={petDetails}
-                      onChangeText={setPetDetails}
-                      placeholder="napr. malý pes, 8 kg"
-                    />
-                  ) : null}
+                <Field label="Počet osôb" value={people} onChangeText={setPeople} keyboardType="numeric" placeholder="2" />
+                <ChoiceRow<'NO' | 'YES'>
+                  label="Domáce zvieratá"
+                  options={[
+                    { value: 'NO', label: 'Nemám' },
+                    { value: 'YES', label: 'Mám' },
+                  ]}
+                  value={pets}
+                  onChange={setPets}
+                />
+                {pets === 'YES' ? (
                   <Field
-                    label="Na ako dlho (mesiace)"
-                    value={months}
-                    onChangeText={setMonths}
-                    keyboardType="numeric"
-                    placeholder="24"
-                  />
-                  <ChoiceRow<string>
-                    label="Zamestnanie"
-                    options={EMPLOYMENT_OPTIONS.map((o) => ({ value: o, label: o }))}
-                    value={employment}
-                    onChange={setEmployment}
-                  />
-                  <Field
-                    label="Mesačný príjem — orientačne (nepovinné)"
-                    value={income}
-                    onChangeText={setIncome}
-                    keyboardType="decimal-pad"
-                    placeholder="2000"
-                  />
-                  <Field label="Poznámka" value={note} onChangeText={setNote} multiline placeholder="Čokoľvek, čo by mal majiteľ vedieť." />
-                </Card>
-              ) : null}
-
-              <ErrorNote error={error} />
-
-              <View style={styles.actions}>
-                {!closed ? (
-                  <Button
-                    title={busy ? 'Odosielam…' : mine ? 'Uložiť zmeny' : 'Podať ponuku'}
-                    onPress={submit}
-                    disabled={busy}
+                    label="Aké zviera"
+                    value={petDetails}
+                    onChangeText={setPetDetails}
+                    placeholder="napr. malý pes, 8 kg"
                   />
                 ) : null}
-                {mine ? (
-                  <Button title="Stiahnuť ponuku" onPress={withdraw} variant="danger" disabled={busy} />
-                ) : null}
-              </View>
-            </>
-          ) : null}
-        </ScrollView>
-      </KeyboardAvoidingView>
+                <Field
+                  label="Na ako dlho (mesiace)"
+                  value={months}
+                  onChangeText={setMonths}
+                  keyboardType="numeric"
+                  placeholder="24"
+                />
+                <ChoiceRow<string>
+                  label="Zamestnanie"
+                  options={EMPLOYMENT_OPTIONS.map((o) => ({ value: o, label: o }))}
+                  value={employment}
+                  onChange={setEmployment}
+                />
+                <Field
+                  label="Mesačný príjem — orientačne (nepovinné)"
+                  value={income}
+                  onChangeText={setIncome}
+                  keyboardType="decimal-pad"
+                  placeholder="2000"
+                />
+                <Field label="Poznámka" value={note} onChangeText={setNote} multiline placeholder="Čokoľvek, čo by mal majiteľ vedieť." />
+              </Card>
+            ) : null}
+
+            <ErrorNote error={error} />
+
+            <View style={styles.actions}>
+              {!closed ? (
+                <Button
+                  title={busy ? 'Odosielam…' : mine ? 'Uložiť zmeny' : 'Podať ponuku'}
+                  onPress={submit}
+                  disabled={busy}
+                />
+              ) : null}
+              {mine ? (
+                <Button title="Stiahnuť ponuku" onPress={withdraw} variant="danger" disabled={busy} />
+              ) : null}
+            </View>
+          </>
+        ) : null}
+      </FormScreen>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  flex: { flex: 1 },
-  scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
   spinner: { marginTop: Spacing.xxl },
   title: { ...Type.title, fontWeight: Weight.bold },
   sub: { ...Type.bodyMd },

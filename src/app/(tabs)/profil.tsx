@@ -11,11 +11,11 @@
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
 import { Icon } from '@/components/icon';
-import { Badge, Button, Card, ErrorNote, Field, SectionLabel } from '@/components/ui';
+import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
@@ -112,6 +112,7 @@ export default function ProfilScreen() {
       kind: 'INZERAT' as const,
       title: p.title || 'Bez názvu',
       detail: [p.city, STATUS_LABEL[p.status]].filter(Boolean).join(' · '),
+      onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
     })),
     ...(offers ?? []).map((o) => ({
       id: o.id,
@@ -119,6 +120,7 @@ export default function ProfilScreen() {
       kind: 'PONUKA_ODOSLANA' as const,
       title: o.property?.title || 'Inzerát',
       detail: `${formatAmount(o.amount, o.property?.transaction_type ?? 'SALE')} · ${OFFER_STATUS_LABEL[o.status]}`,
+      onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
     })),
     ...(requests ?? []).map((r) => ({
       id: r.id,
@@ -126,13 +128,18 @@ export default function ProfilScreen() {
       kind: 'DOPYT' as const,
       title: r.description?.slice(0, 60) || 'Dopyt',
       detail: formatBudget(r.budget_min, r.budget_max),
+      onPress: () => router.push({ pathname: '/dopyt/[id]', params: { id: r.id } }),
     })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <AppHeader />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="interactive"
+        automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
         <View style={styles.topRow}>
           <Text style={[styles.title, { color: palette.textPrimary }]}>Profil</Text>
           <Pressable
@@ -271,6 +278,7 @@ export default function ProfilScreen() {
           </>
         ) : null}
       </ScrollView>
+      <KeyboardDoneBar />
     </SafeAreaView>
   );
 }

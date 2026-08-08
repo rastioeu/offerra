@@ -15,7 +15,7 @@ import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
-import { formatArea, formatDate, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
+import { DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function DopytyScreen() {
@@ -31,7 +31,7 @@ export default function DopytyScreen() {
   }, [reload]);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <AppHeader />
       <ScrollView
         contentContainerStyle={styles.scroll}
@@ -65,7 +65,7 @@ export default function DopytyScreen() {
                 },
               ]}>
               <View style={styles.badges}>
-                <Badge text={TRANSACTION_LABEL[r.transaction_type].toUpperCase()} tone="accent" />
+                <Badge text={DEMAND_LABEL[r.transaction_type].toUpperCase()} tone="accent" />
                 {r.property_type ? <Badge text={PROPERTY_LABEL[r.property_type as PropertyType]} /> : null}
                 {r.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
               </View>

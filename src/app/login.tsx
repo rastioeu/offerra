@@ -75,10 +75,17 @@ export default function LoginScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]}>
+      {/* Na iOS podkladá obsah `automaticallyAdjustKeyboardInsets` nižšie —
+          `KeyboardAvoidingView` by to spravil DRUHÝKRÁT a obsah by vyskočil
+          privysoko. Ostáva len pre Android. */}
       <KeyboardAvoidingView
         style={styles.flex}
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        behavior={Platform.OS === 'android' ? 'height' : undefined}>
+        <ScrollView
+          contentContainerStyle={styles.scroll}
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
+          automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
           <Pressable onPress={handleLogoTap} style={styles.header} accessibilityRole="header">
             {/* FÁZA 1 — skutočný wordmark identity A (Navy & Azure) namiesto
                 dočasného textu. Je to obrázok, nie font: značka je kreslená

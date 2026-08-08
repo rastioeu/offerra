@@ -5,7 +5,7 @@
  * moje ponuky, prijaté ponuky, dopyty) sú **zlúčené a zoradené podľa
  * času**, takže vidno príbeh — kedy si čo pridal a čo sa na to dialo.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -56,12 +56,19 @@ export function ActivityTimeline({ events }: { events: ActivityEvent[] }) {
         const day = dayLabel(e.at);
         const newDay = day !== lastDay;
         lastDay = day;
+        // Celý riadok je klikateľný, nie len názov (Rastio, 8.8.2026).
+        // Bez `onPress` ostáva obyčajný `View` — Pressable, ktorý nič
+        // nerobí, by len klamal, že sa dá ťuknúť.
+        const Wrap = e.onPress ? Pressable : View;
         return (
           <View key={`${e.kind}-${e.id}`}>
             {newDay ? (
               <Text style={[styles.day, { color: palette.textMuted }]}>{day}</Text>
             ) : null}
-            <View style={styles.row}>
+            <Wrap
+              onPress={e.onPress}
+              accessibilityRole={e.onPress ? 'button' : undefined}
+              style={styles.row}>
               {/* Zvislá os s bodkou — vďaka nej sa to číta ako postupnosť,
                   nie ako zoznam. */}
               <View style={styles.rail}>
@@ -77,7 +84,7 @@ export function ActivityTimeline({ events }: { events: ActivityEvent[] }) {
                   <Text style={[styles.detail, { color: palette.textMuted }]}>{e.detail}</Text>
                 ) : null}
               </View>
-            </View>
+            </Wrap>
           </View>
         );
       })}
