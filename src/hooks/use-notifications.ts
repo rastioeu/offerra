@@ -5,12 +5,54 @@
  * ani `INSERT` grant. Vďaka tomu sa nedajú podvrhnúť a vzniknú aj vtedy,
  * keď appka odosielateľa medzitým spadne.
  *
- * Realtime je ten „živý pocit": keď na môj inzerát príde ponuka, zvonček
- * sa rozsvieti bez toho, aby som čokoľvek ťahal dole. Ak by sa kanál
- * nepodarilo otvoriť, appka funguje ďalej — len sa obnovuje pri návrate
- * na obrazovku. Tichý výpadok sa preto **loguje**, nie ignoruje.
+ * ── PÁD PRI PREPÍNANÍ TABOV (Rastio, 8.8.2026) ───────────────────────────
+ *
+ * Hláška zo zariadenia:
+ *
+ *   Error: cannot add `postgres_changes` callbacks for
+ *   realtime:notif-33fadff3-… after `subscribe()`
+ *   … NotificationBell ← AppHeader ← PridatScreen
+ *
+ * KOREŇOVÁ PRÍČINA, odmeraná v `realtime-js` 2.112.2
+ * (`RealtimeClient.channel()`, riadky 330–342):
+ *
+ *   const exists = this.getChannels().find((c) => c.topic === realtimeTopic);
+ *   if (!exists) { …vytvor nový… } else { return exists; }
+ *
+ * `supabase.channel(topic)` teda **NEVYTVÁRA nový kanál** — pri rovnakom
+ * názve vráti ten UŽ EXISTUJÚCI. A `AppHeader` (teda aj `NotificationBell`)
+ * je na štyroch taboch naraz; taby v expo-routeri po prvom otvorení
+ * ostávajú namontované. Takže:
+ *
+ *   1. tab Nehnuteľnosti  → channel('notif-X') vytvorí kanál → .on() → .subscribe()
+ *   2. tab Pridať         → channel('notif-X') vráti TEN ISTÝ, už pripojený kanál
+ *                         → .on('postgres_changes', …) na pripojený kanál → PÁD
+ *
+ * Poradie `.on()` pred `.subscribe()` teda bolo správne od začiatku — chyba
+ * bola v tom, že kanál vznikal N-krát pre N inštancií hlavičky.
+ *
+ * OPRAVA: **jeden kanál na celú appku.** Stav aj predplatné drží
+ * `NotificationsProvider` v koreni, presne ako `ProfileProvider`. Vedľajšie
+ * chyby, ktoré tým zmizli tiež:
+ *   - štyri rovnaké dotazy do DB pri každom otvorení tabu,
+ *   - rozchádzajúci sa stav (označenie za prečítané v jednej inštancii
+ *     nezhaslo zvonček v ostatných).
+ *
+ * Názov kanála má navyše **jednorazovú príponu**: aj keby v appke niekedy
+ * omylom vznikli dva provideri, nesiahnu na ten istý kanál a táto trieda
+ * chyby sa nemá ako vrátiť.
  */
-import { useCallback, useEffect, useState } from 'react';
+import {
+  createContext,
+  createElement,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react';
 
 import type { NotificationType } from '@/lib/notifications';
 import { db } from '@/lib/property';
@@ -27,9 +69,30 @@ export type AppNotification = {
   created_at: string;
 };
 
-export function useNotifications(userId: string | undefined) {
+export type NotificationsState = {
+  items: AppNotification[];
+  unread: number;
+  error: string | null;
+  reload: () => Promise<void>;
+  markAllRead: () => Promise<void>;
+};
+
+const NotificationsContext = createContext<NotificationsState | null>(null);
+
+/** Beží raz na appku. Zakladá sa v `src/app/_layout.tsx`. */
+export function NotificationsProvider({
+  userId,
+  children,
+}: {
+  userId: string | undefined;
+  children: ReactNode;
+}) {
   const [items, setItems] = useState<AppNotification[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // Jednorazová prípona názvu kanála — poistka proti návratu tej istej
+  // chyby, keby v appke niekedy vznikli dva provideri.
+  const suffix = useRef(Math.random().toString(36).slice(2, 8));
 
   const reload = useCallback(async () => {
     if (!userId) {
@@ -44,6 +107,7 @@ export function useNotifications(userId: string | undefined) {
         .limit(100);
       if (e) throw e;
       setItems((data ?? []) as AppNotification[]);
+      setError(null);
     } catch (e: unknown) {
       const m = e instanceof Error ? e.message : String(e);
       console.log(`[ZVONČEK] Načítanie zlyhalo: ${m}`);
@@ -55,11 +119,17 @@ export function useNotifications(userId: string | undefined) {
     void reload();
   }, [reload]);
 
-  // ── živé obnovenie
+  // ── živé obnovenie ─────────────────────────────────────────────────
   useEffect(() => {
     if (!userId) return;
+
+    const topic = `notif-${userId}-${suffix.current}`;
+    console.log(`[ZVONČEK] 1 otváram kanál ${topic}`);
+
+    // `.on()` MUSÍ byť pred `.subscribe()` a v jednej reťazi — a keďže
+    // provider je jeden, tento kód nebeží druhýkrát na ten istý kanál.
     const channel = supabase
-      .channel(`notif-${userId}`)
+      .channel(topic)
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'offerra', table: 'notification', filter: `user_id=eq.${userId}` },
@@ -69,12 +139,14 @@ export function useNotifications(userId: string | undefined) {
         }
       )
       .subscribe((status) => {
+        console.log(`[ZVONČEK] 2 stav kanála: ${status}`);
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log(`[ZVONČEK] Realtime kanál sa neotvoril: ${status} — appka funguje ďalej bez neho`);
+          console.log(`[ZVONČEK] Kanál sa neotvoril: ${status} — appka funguje ďalej bez neho`);
         }
       });
 
     return () => {
+      console.log(`[ZVONČEK] 3 zatváram kanál ${topic}`);
       void supabase.removeChannel(channel);
     };
   }, [userId]);
@@ -94,5 +166,16 @@ export function useNotifications(userId: string | undefined) {
     }
   }, [unread, reload]);
 
-  return { items, unread, error, reload, markAllRead };
+  const value = useMemo<NotificationsState>(
+    () => ({ items, unread, error, reload, markAllRead }),
+    [items, unread, error, reload, markAllRead]
+  );
+
+  return createElement(NotificationsContext.Provider, { value }, children);
+}
+
+export function useNotifications(): NotificationsState {
+  const ctx = useContext(NotificationsContext);
+  if (!ctx) throw new Error('useNotifications sa dá volať len vnútri <NotificationsProvider>.');
+  return ctx;
 }

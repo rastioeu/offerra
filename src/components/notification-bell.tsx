@@ -15,7 +15,7 @@ export function NotificationBell() {
   const palette = useTheme();
   const router = useRouter();
   const { session } = useSession();
-  const { unread } = useNotifications(session?.user.id);
+  const { unread } = useNotifications();
 
   if (!session) return null;
 

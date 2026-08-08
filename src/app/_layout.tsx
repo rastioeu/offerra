@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { NotificationsProvider } from '@/hooks/use-notifications';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { decideRoute } from '@/lib/gate';
@@ -39,7 +40,13 @@ export default function RootLayout() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <ProfileProvider userId={session?.user.id}>
-          <RootLayoutInner />
+          {/* JEDEN kanál Realtime na celú appku. `AppHeader` je na štyroch
+              taboch naraz a `supabase.channel()` vracia pri rovnakom názve
+              TEN ISTÝ kanál — druhá inštancia preto volala `.on()` na už
+              pripojený kanál a appka padla (Rastio, 8.8.2026). */}
+          <NotificationsProvider userId={session?.user.id}>
+            <RootLayoutInner />
+          </NotificationsProvider>
         </ProfileProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

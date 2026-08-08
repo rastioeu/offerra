@@ -13,7 +13,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { EmptyState } from '@/components/empty-state';
 import { Card, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotifications } from '@/hooks/use-notifications';
-import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -21,8 +20,7 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 export default function OznameniaScreen() {
   const palette = useTheme();
   const router = useRouter();
-  const { session } = useSession();
-  const { items, unread, error, markAllRead } = useNotifications(session?.user.id);
+  const { items, unread, error, markAllRead } = useNotifications();
 
   // Otvorením sa považujú za prečítané — presne to otvorenie znamená.
   useEffect(() => {
