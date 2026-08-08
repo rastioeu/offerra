@@ -14,7 +14,8 @@ import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
-import { Button, Card, ChoiceRow, ErrorNote, Field } from '@/components/ui';
+import { OfferTimeline } from '@/components/offer-timeline';
+import { Button, Card, ChoiceRow, ErrorNote, Eyebrow, Field } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
@@ -199,6 +200,15 @@ export default function OfferFormScreen() {
                 Uzávierka ponúk už uplynula. Túto ponuku sa nedá podať ani zmeniť —
                 stiahnuť ju však môžeš.
               </Text>
+            ) : null}
+
+            {/* Priebeh MOJEJ ponuky — kvôli tomu vzniklo razítko o pozretí.
+                Bez neho tu bolo len ticho, kým majiteľ nerozhodol. */}
+            {mine ? (
+              <Card>
+                <Eyebrow>Priebeh mojej ponuky</Eyebrow>
+                <OfferTimeline offer={mine} />
+              </Card>
             ) : null}
 
             <Field

@@ -10,6 +10,7 @@ import { useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
 import { Card, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useSession } from '@/hooks/use-session';
@@ -49,10 +50,11 @@ export default function OznameniaScreen() {
         </Text>
 
         {items.length === 0 ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>
-            Zatiaľ nič. Keď niekto ponúkne za tvoj inzerát alebo ti prijme ponuku,
-            objaví sa to tu.
-          </Text>
+          <EmptyState
+            icon="bell"
+            title="Zatiaľ ticho"
+            body="Keď niekto ponúkne za tvoj inzerát alebo ti prijme ponuku, objaví sa to tu."
+          />
         ) : null}
 
         {items.map((n) => (

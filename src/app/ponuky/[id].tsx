@@ -16,11 +16,12 @@
  * porovnať sumy na jednej obrazovke bolo nemožné.
  */
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OfferList } from '@/components/offer-list';
+import { OfferTimeline } from '@/components/offer-timeline';
 import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -49,6 +50,24 @@ export default function ManageOffersScreen() {
   const [busy, setBusy] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
   useRefreshOnFocus(reload);
+
+  // Otvorenie tejto obrazovky ZNAMENÁ, že majiteľ ponuky videl — presne to
+  // sa záujemcovi zobrazí. Razítko zapisuje `mark_offers_viewed()`, lebo
+  // priamy UPDATE na ten stĺpec nemá povolený nikto (viď register 7.15).
+  useEffect(() => {
+    if (!id) return;
+    void db()
+      .rpc('mark_offers_viewed', { p_property_id: id })
+      .then(({ data, error: e }) => {
+        if (e) {
+          console.log(`[PONUKY] Označenie za videné zlyhalo: ${e.message}`);
+          return;
+        }
+        // Prekresliť treba len keď sa naozaj niečo zmenilo.
+        if (typeof data === 'number' && data > 0) void reload();
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id]);
 
   // Panel číta ZO ZOZNAMU, nie z vlastnej kópie — po prijatí ponuky sa tak
   // prekreslí sám a nezobrazuje zastaraný stav.
@@ -173,6 +192,11 @@ export default function ManageOffersScreen() {
                 {selected.message ? (
                   <Text style={[styles.message, { color: palette.textSecondary }]}>„{selected.message}"</Text>
                 ) : null}
+
+                <View style={styles.section}>
+                  <Eyebrow>Priebeh</Eyebrow>
+                  <OfferTimeline offer={selected} />
+                </View>
 
                 {isRent ? (
                   tenant ? (

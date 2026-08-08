@@ -11,6 +11,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyNote } from '@/components/empty-state';
 import { Badge, Button, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useMyProperties } from '@/hooks/use-properties';
@@ -85,9 +86,7 @@ export default function PridatScreen() {
         {items === undefined ? <ActivityIndicator color={palette.primary} /> : null}
 
         {items?.length === 0 ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>
-            Zatiaľ nemáš žiadny inzerát. Založ prvý tlačidlom vyššie.
-          </Text>
+          <EmptyNote>Zatiaľ nemáš žiadny inzerát. Založ prvý tlačidlom vyššie.</EmptyNote>
         ) : null}
 
         {items?.map((p) => (

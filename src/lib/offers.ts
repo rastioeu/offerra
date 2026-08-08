@@ -24,8 +24,42 @@ export type Offer = {
   status: OfferStatus;
   created_at: string;
   updated_at: string;
+  /**
+   * Kedy si ponuku otvoril majiteľ inzerátu. `null` = ešte nie.
+   *
+   * Zapísať ho vie VÝHRADNE `offerra.mark_offers_viewed()` — záujemca naň
+   * nemá ani stĺpcový grant. Keby si ho vedel nastaviť sám, bola by tá
+   * informácia bezcenná.
+   */
+  viewed_by_owner_at: string | null;
   bidder?: PublicBidder | null;
 };
+
+/** Stav ponuky ako CESTA, nie ako jedno slovo (bod 13B). */
+export type OfferStep = { label: string; at: string | null; done: boolean };
+
+export function offerSteps(o: Offer): OfferStep[] {
+  const decided = o.status === 'ACCEPTED' || o.status === 'REJECTED';
+  return [
+    { label: 'Podaná', at: o.created_at, done: true },
+    {
+      label: o.viewed_by_owner_at ? 'Predávajúci ju videl' : 'Čaká na predávajúceho',
+      at: o.viewed_by_owner_at,
+      done: Boolean(o.viewed_by_owner_at) || decided,
+    },
+    {
+      label:
+        o.status === 'ACCEPTED' ? 'Prijatá'
+          : o.status === 'REJECTED' ? 'Odmietnutá'
+          : o.status === 'WITHDRAWN' ? 'Stiahnutá'
+          : 'Rozhodnutie',
+      // `updated_at` je pri rozhodnutej ponuke čas rozhodnutia; pri
+      // čakajúcej by to bol čas poslednej úpravy sumy, čo by klamalo.
+      at: decided || o.status === 'WITHDRAWN' ? o.updated_at : null,
+      done: decided || o.status === 'WITHDRAWN',
+    },
+  ];
+}
 
 export type TenantProfile = {
   offer_id: string;

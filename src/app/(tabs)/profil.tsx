@@ -249,7 +249,15 @@ export default function ProfilScreen() {
               rows={(offers ?? []).map((o) => ({
                 key: o.id,
                 title: o.property?.title || 'Inzerát',
-                meta: `${formatAmount(o.amount, o.property?.transaction_type ?? 'SALE')} · ${formatDate(o.created_at)}`,
+                // „videná" je pri čakajúcej ponuke to jediné, čo sa medzi
+                // podaním a rozhodnutím zmení — patrí do prehľadu.
+                meta: [
+                  formatAmount(o.amount, o.property?.transaction_type ?? 'SALE'),
+                  formatDate(o.created_at),
+                  o.status === 'PENDING' && o.viewed_by_owner_at ? 'videná' : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
                 badge: OFFER_STATUS_LABEL[o.status],
                 onPress: () =>
                   router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),

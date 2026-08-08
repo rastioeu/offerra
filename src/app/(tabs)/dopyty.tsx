@@ -8,11 +8,12 @@
  * len so slovami hľadajúceho — „Kúpim / Hľadám prenájom". Nie je to druhý
  * komponent; `SearchBar` dostane `side="DEMAND"`.
  */
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { EmptyState } from '@/components/empty-state';
 import { SearchBar } from '@/components/search-bar';
 import { Badge, ErrorNote } from '@/components/ui';
 import { useRequests } from '@/hooks/use-offers';
@@ -26,6 +27,7 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function DopytyScreen() {
   const palette = useTheme();
+  const router = useRouter();
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
   const { items, error, reload } = useRequests(undefined, filter);
   const [refreshing, setRefreshing] = useState(false);
@@ -64,11 +66,23 @@ export default function DopytyScreen() {
         {items === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
 
         {items?.length === 0 && !error ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>
-            {isFilterEmpty(filter)
-              ? 'Zatiaľ žiadne dopyty. Pridaj prvý cez tab „Pridať".'
-              : 'Tomuto hľadaniu nezodpovedá žiadny dopyt. Skús ubrať niektorý filter.'}
-          </Text>
+          isFilterEmpty(filter) ? (
+            <EmptyState
+              icon="envelope"
+              title="Zatiaľ žiadne dopyty"
+              body="Dopyt je opačný smer: napíšeš, čo hľadáš, a majitelia ťa môžu osloviť sami."
+              actionTitle="Pridať dopyt"
+              onAction={() => router.push('/dopyt/novy')}
+            />
+          ) : (
+            <EmptyState
+              icon="magnifyingglass"
+              title="Žiadny dopyt tomu nezodpovedá"
+              body="Skús ubrať niektorý filter — napríklad typ nehnuteľnosti."
+              actionTitle="Zrušiť filtre"
+              onAction={() => setFilter({ ...EMPTY_FILTER })}
+            />
+          )
         ) : null}
 
         {items?.map((r) => (

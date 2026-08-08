@@ -17,6 +17,7 @@ import { ReportButton } from '@/components/report-button';
 import { AppHeader } from '@/components/app-header';
 import { HowItWorksCard } from '@/components/how-it-works-card';
 import { SearchBar } from '@/components/search-bar';
+import { EmptyState } from '@/components/empty-state';
 import { ErrorNote, PropertyCardSkeleton } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useHints } from '@/hooks/use-hints';
@@ -128,11 +129,23 @@ export default function NehnutelnostiScreen() {
         ) : null}
 
         {items?.length === 0 && !error ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>
-            {isFilterEmpty(filter)
-              ? 'Žiadne zverejnené inzeráty. Pridaj prvý cez tab „Pridať".'
-              : 'Tomuto hľadaniu nič nezodpovedá. Skús ubrať niektorý filter.'}
-          </Text>
+          isFilterEmpty(filter) ? (
+            <EmptyState
+              icon="house"
+              title="Zatiaľ tu nič nie je"
+              body="Žiadny zverejnený inzerát. Prvý môžeš pridať ty — a nemusíš pri tom povedať cenu."
+              actionTitle="Pridať nehnuteľnosť"
+              onAction={() => router.push('/pridat')}
+            />
+          ) : (
+            <EmptyState
+              icon="magnifyingglass"
+              title="Tomuto hľadaniu nič nezodpovedá"
+              body="Skús ubrať niektorý filter alebo napísať hľadanie voľnejšie."
+              actionTitle="Zrušiť filtre"
+              onAction={() => setFilter({ ...EMPTY_FILTER })}
+            />
+          )
         ) : null}
 
         {items?.map((item) => (
