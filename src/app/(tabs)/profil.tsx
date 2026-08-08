@@ -229,7 +229,16 @@ export default function ProfilScreen() {
               rows={(properties ?? []).map((p) => ({
                 key: p.id,
                 title: p.title.trim() || 'Bez názvu',
-                meta: `${[p.city, `${p.media.length} fotiek`].filter(Boolean).join(' · ')}`,
+                // Počet zobrazení patrí sem, k VLASTNÍKOVI — v katalógu by
+                // to bola informácia pre cudzích ľudí, ktorých sa netýka.
+                meta: [
+                  p.city,
+                  `${p.media.length} fotiek`,
+                  `${p.view_count} zobrazení`,
+                  p.offer_count ? `${p.offer_count} ponúk` : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · '),
                 badge: STATUS_LABEL[p.status],
                 onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
               }))}

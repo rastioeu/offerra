@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Vzhľad si vyberáš ty + obrana proti realitkám',
+    items: [
+      'Opravené a dôležité: kto mal na telefóne zapnutý tmavý režim, dostal tmavú Offerru a nemal sa ako vrátiť. V Nastaveniach je teraz na prvom mieste voľba vzhľadu — Svetlý, Tmavý, Podľa telefónu. Predvolený je svetlý, lebo tak je Offerra navrhnutá.',
+      'Opravené a vážne: pri registrácii chýbalo zaškrtávacie políčko potvrdenia veku. Bez neho sa nedalo dokončiť vytvorenie účtu vôbec — nikomu novému.',
+      'Nový dôvod nahlásenia: „Realitka/sprostredkovateľ — vydáva sa za fyzickú osobu". Dá sa použiť pri inzeráte aj pri používateľovi.',
+      'Pri registrácii potvrdzuješ, že konáš vo vlastnom mene ako fyzická osoba. Offerra je trh medzi ľuďmi, nie pre realitné kancelárie — je to teraz aj v Podmienkach používania.',
+      'Jeden účet môže mať naraz zverejnených najviac 5 inzerátov. Ak to nejde, appka povie prečo a koľko ich máš.',
+      'V Profile → Moje inzeráty vidíš pri každom inzeráte počet zobrazení a počet ponúk.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Súkromie správ, obhliadky a polia navyše',
     items: [
       'Opravené a dôležité: správa priložená k ponuke bola verejná — čítal ju ktokoľvek, kto si otvoril inzerát. Odteraz ju vidí len predávajúci a ten, kto ju napísal. Suma a prezývka ostávajú verejné ako doteraz.',

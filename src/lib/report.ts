@@ -6,11 +6,20 @@
  * do slovenčiny je tu.
  */
 export type ReportTarget = 'PROPERTY' | 'USER' | 'OFFER';
-export type ReportReason = 'SPAM' | 'PODVOD' | 'NEVHODNY_OBSAH' | 'FALOSNY_INZERAT' | 'INE';
+export type ReportReason =
+  | 'SPAM'
+  | 'PODVOD'
+  | 'NEVHODNY_OBSAH'
+  | 'FALOSNY_INZERAT'
+  | 'REALITKA'
+  | 'INE';
 export type ReportStatus = 'PENDING' | 'REVIEWED' | 'ACTIONED' | 'DISMISSED';
 
 export const REPORT_REASONS: { value: ReportReason; label: string }[] = [
   { value: 'FALOSNY_INZERAT', label: 'Falošný inzerát — nehnuteľnosť neexistuje' },
+  // Číselník dôvodov je spoločný pre inzerát aj používateľa — cieľ drží
+  // samostatný stĺpec. Jeden zápis teda pokrýva obe miesta.
+  { value: 'REALITKA', label: 'Realitka/sprostredkovateľ — vydáva sa za fyzickú osobu' },
   { value: 'PODVOD', label: 'Podvod — pýta zálohu, nechce obhliadku' },
   { value: 'SPAM', label: 'Spam alebo reklama' },
   { value: 'NEVHODNY_OBSAH', label: 'Nevhodný obsah' },

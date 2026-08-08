@@ -423,6 +423,53 @@ export function ErrorNote({ error }: { error: string | null }) {
   );
 }
 
+/**
+ * Zaškrtávacie políčko s textom.
+ *
+ * Existuje preto, že 8.8.2026 sa v registrácii stalo toto: stav `adult`
+ * bol založený, `submit()` ho vyžadoval, ale POLÍČKO SA NEVYKRESLILO —
+ * registrácia bola tým pádom neprejditeľná pre každého nového človeka.
+ * Ručne skladaný `Pressable` + `View` + dva `Text` je presne ten druh
+ * kódu, ktorý sa dá omylom nedopísať. Komponent sa nedopísať nedá.
+ */
+export function CheckRow({
+  checked,
+  onToggle,
+  label,
+  hint,
+}: {
+  checked: boolean;
+  onToggle: () => void;
+  label: string;
+  hint?: string;
+}) {
+  const palette = useTheme();
+  return (
+    <Pressable
+      onPress={onToggle}
+      accessibilityRole="checkbox"
+      accessibilityState={{ checked }}
+      accessibilityLabel={label}
+      hitSlop={6}
+      style={({ pressed }) => [styles.checkRow, { opacity: pressed ? 0.75 : 1 }]}>
+      <View
+        style={[
+          styles.checkBox,
+          {
+            borderColor: checked ? palette.accentDeep : palette.borderStrong,
+            backgroundColor: checked ? palette.accentDeep : 'transparent',
+          },
+        ]}>
+        {checked ? <Text style={[styles.checkMark, { color: palette.onPrimary }]}>✓</Text> : null}
+      </View>
+      <View style={styles.checkTexts}>
+        <Text style={[styles.checkLabel, { color: palette.textPrimary }]}>{label}</Text>
+        {hint ? <Text style={[styles.checkHint, { color: palette.textMuted }]}>{hint}</Text> : null}
+      </View>
+    </Pressable>
+  );
+}
+
 export function Card({ children }: { children: ReactNode }) {
   const palette = useTheme();
   // Tieň tu CHÝBAL — karta bola plochá oproti karte v katalógu, ktorá ho
@@ -500,6 +547,20 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   paramCellWide: { flexBasis: '100%' },
+  checkRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  checkBox: {
+    width: 26,
+    height: 26,
+    borderRadius: Radius.sm,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  checkMark: { ...Type.bodyLg, fontWeight: Weight.bold, lineHeight: 20 },
+  checkTexts: { flex: 1, gap: 2 },
+  checkLabel: { ...Type.bodyMd, fontWeight: Weight.medium },
+  checkHint: { ...Type.caption },
   paramValue: { ...Type.subtitle, fontWeight: Weight.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
   rowLabel: { ...Type.bodyMd },

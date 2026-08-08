@@ -9,11 +9,11 @@
  * Táto obrazovka je len pohodlná cesta k tomu istému pravidlu.
  */
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
-import { Button, ErrorNote, Field } from '@/components/ui';
+import { Button, CheckRow, ErrorNote, Field } from '@/components/ui';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -31,6 +31,7 @@ export default function PrezyvkaScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [adult, setAdult] = useState(false);
+  const [ownName, setOwnName] = useState(false);
 
   const trimmed = nickname.trim();
   const tooShort = trimmed.length > 0 && trimmed.length < 3;
@@ -45,6 +46,13 @@ export default function PrezyvkaScreen() {
       setError('Bez potvrdenia veku sa registrovať nedá — inzerovať a podávať ponuky môžu len plnoletí.');
       return;
     }
+    if (!ownName) {
+      setError(
+        'Bez potvrdenia, že konáš vo vlastnom mene, sa registrovať nedá. ' +
+          'Offerra je trh medzi ľuďmi, nie pre realitné kancelárie.'
+      );
+      return;
+    }
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
@@ -56,6 +64,9 @@ export default function PrezyvkaScreen() {
         // Čas potvrdenia, nie `true`: pri prípadnej neskoršej zmene
         // podmienok treba vedieť, KEDY to človek odklikol.
         age_confirmed_at: new Date().toISOString(),
+        // Rovnaký dôvod ako pri veku: pri spore je podstatné KEDY to človek
+        // potvrdil, nie len že áno.
+        agent_declaration_at: new Date().toISOString(),
       },
       true
     );
@@ -110,6 +121,26 @@ export default function PrezyvkaScreen() {
           value={phone}
           onChangeText={setPhone}
           placeholder="+421 9xx xxx xxx"
+        />
+
+        <View style={[styles.divider, { borderTopColor: palette.border }]} />
+
+        {/* Tieto dve políčka MUSIA byť vykreslené.
+            8.8.2026: stav `adult` existoval, validácia naň existovala, ale
+            samotné políčko v obrazovke chýbalo — nikto nový sa preto nevedel
+            zaregistrovať vôbec. Preto tu je aj tento komentár. */}
+        <CheckRow
+          checked={adult}
+          onToggle={() => setAdult((v) => !v)}
+          label="Mám 18 rokov alebo viac."
+          hint="Inzerovať a podávať ponuky môžu len plnoletí."
+        />
+
+        <CheckRow
+          checked={ownName}
+          onToggle={() => setOwnName((v) => !v)}
+          label="Konám vo vlastnom mene ako fyzická osoba — nie som realitná kancelária ani sprostredkovateľ."
+          hint="Offerra je trh medzi ľuďmi. Nepravdivé potvrdenie je dôvod na zablokovanie účtu."
         />
 
         <ErrorNote error={error} />

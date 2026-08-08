@@ -7,7 +7,7 @@
  */
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
@@ -16,11 +16,29 @@ import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import type { AdminStats, AdminUser, ReportRow } from '@/lib/admin';
 import { db, formatDate, STATUS_LABEL, type PropertyStatus } from '@/lib/property';
-import { REPORT_REASON_LABEL, REPORT_STATUS_LABEL, type ReportReason, type ReportStatus } from '@/lib/report';
+import {
+  REPORT_REASONS,
+  REPORT_REASON_LABEL,
+  REPORT_STATUS_LABEL,
+  type ReportReason,
+  type ReportStatus,
+} from '@/lib/report';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
-type Section = 'REPORTS' | 'PROPERTIES' | 'USERS';
+type Section = 'REPORTS' | 'PROPERTIES' | 'USERS' | 'SETTINGS';
+
+type ConfigRow = { key: string; value: string; label: string; hint: string | null };
+type TopLister = {
+  user_id: string;
+  nickname: string;
+  email: string;
+  active_count: number;
+  total_count: number;
+  agent_declared_at: string | null;
+  is_blocked: boolean;
+};
+type DuplicateContact = { kind: string; value: string; accounts: number; nicknames: string };
 
 /**
  * Prah upozornenia (schválil Rastio 7.8.2026): TRAJA RÔZNI nahlasovatelia
@@ -56,30 +74,47 @@ export default function AdminScreen() {
   const [alerts, setAlerts] = useState<Alert_[]>([]);
   const [properties, setProperties] = useState<AdminProperty[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [config, setConfig] = useState<ConfigRow[]>([]);
+  const [topListers, setTopListers] = useState<TopLister[]>([]);
+  const [dupes, setDupes] = useState<DuplicateContact[]>([]);
+  /** `null` = bez filtra. Nefiltruje sa na serveri — 200 riadkov je málo. */
+  const [reasonFilter, setReasonFilter] = useState<ReportReason | null>(null);
+  const [limitDraft, setLimitDraft] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, p, u, a] = await Promise.all([
+      const [s, r, p, u, a, c, t, d] = await Promise.all([
         db().rpc('admin_stats'),
         db().from('report').select('*').order('created_at', { ascending: false }).limit(200),
         db().from('property').select('id,title,status,city,created_at,rejection_reason')
           .order('created_at', { ascending: false }).limit(200),
         db().rpc('admin_users'),
         db().rpc('admin_alerts'),
+        db().from('app_config').select('key,value,label,hint').order('key'),
+        db().rpc('admin_top_listers'),
+        db().rpc('admin_duplicate_contacts'),
       ]);
       if (s.error) throw s.error;
       if (r.error) throw r.error;
       if (p.error) throw p.error;
       if (u.error) throw u.error;
       if (a.error) throw a.error;
+      if (c.error) throw c.error;
+      if (t.error) throw t.error;
+      if (d.error) throw d.error;
       setStats(((s.data ?? []) as AdminStats[])[0] ?? null);
       setReports((r.data ?? []) as ReportRow[]);
       setProperties((p.data ?? []) as AdminProperty[]);
       setUsers((u.data ?? []) as AdminUser[]);
       setAlerts((a.data ?? []) as Alert_[]);
+      const cfg = (c.data ?? []) as ConfigRow[];
+      setConfig(cfg);
+      setLimitDraft(cfg.find((x) => x.key === 'max_active_listings')?.value ?? '');
+      setTopListers((t.data ?? []) as TopLister[]);
+      setDupes((d.data ?? []) as DuplicateContact[]);
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] Načítanie zlyhalo: ${m}`);
@@ -172,6 +207,12 @@ export default function AdminScreen() {
   }
 
   const openReports = reports.filter((r) => r.status === 'PENDING');
+  const shownReports = reasonFilter ? reports.filter((r) => r.reason === reasonFilter) : reports;
+  /** Koľko nahlásení pripadá na ktorý dôvod — bez toho je filter hádanie. */
+  const reasonCounts = reports.reduce<Record<string, number>>((acc, r) => {
+    acc[r.reason] = (acc[r.reason] ?? 0) + 1;
+    return acc;
+  }, {});
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
@@ -237,6 +278,7 @@ export default function AdminScreen() {
               ['REPORTS', `Nahlásenia (${openReports.length})`],
               ['PROPERTIES', 'Inzeráty'],
               ['USERS', 'Používatelia'],
+              ['SETTINGS', 'Nastavenia'],
             ] as [Section, string][]
           ).map(([key, label]) => (
             <Pressable
@@ -258,11 +300,43 @@ export default function AdminScreen() {
           ))}
         </View>
 
+        {/* Filter podľa dôvodu. Podozrenia na realitku sa musia dať oddeliť
+            od zvyšku jedným ťuknutím — inak sa v zozname stratia. */}
+        {section === 'REPORTS' && reports.length > 0 ? (
+          <View style={styles.filterRow}>
+            {([null, ...REPORT_REASONS.map((x) => x.value)] as (ReportReason | null)[]).map((v) => {
+              const on = reasonFilter === v;
+              const count = v == null ? reports.length : (reasonCounts[v] ?? 0);
+              const label = v == null ? 'Všetky' : v === 'REALITKA' ? 'Realitka' : REPORT_REASON_LABEL[v].split(' —')[0];
+              return (
+                <Pressable
+                  key={v ?? 'ALL'}
+                  onPress={() => setReasonFilter(v)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: on }}
+                  style={[
+                    styles.chip,
+                    {
+                      backgroundColor: on ? palette.primary : palette.surface,
+                      borderColor: on ? palette.primary : palette.border,
+                    },
+                  ]}>
+                  <Text style={[styles.chipText, { color: on ? palette.onPrimary : palette.textSecondary }]}>
+                    {label} ({count})
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+
         {section === 'REPORTS' ? (
-          reports.length === 0 ? (
-            <Text style={[styles.empty, { color: palette.textMuted }]}>Žiadne nahlásenia.</Text>
+          shownReports.length === 0 ? (
+            <Text style={[styles.empty, { color: palette.textMuted }]}>
+              {reasonFilter ? 'Žiadne nahlásenie s týmto dôvodom.' : 'Žiadne nahlásenia.'}
+            </Text>
           ) : (
-            reports.map((r) => (
+            shownReports.map((r) => (
               <Pressable
                 key={r.id}
                 onPress={() => openTarget(r.target_type, r.target_id, r.note ?? undefined)}
@@ -387,6 +461,97 @@ export default function AdminScreen() {
               </Pressable>
             ))
           : null}
+
+        {section === 'SETTINGS' ? (
+          <>
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>LIMIT INZERÁTOV</Text>
+              {config
+                .filter((c) => c.key === 'max_active_listings')
+                .map((c) => (
+                  <View key={c.key} style={styles.cfg}>
+                    <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{c.label}</Text>
+                    {c.hint ? (
+                      <Text style={[styles.meta, { color: palette.textMuted }]}>{c.hint}</Text>
+                    ) : null}
+                    <View style={styles.cfgRow}>
+                      <TextInput
+                        value={limitDraft}
+                        onChangeText={setLimitDraft}
+                        keyboardType="numeric"
+                        accessibilityLabel={c.label}
+                        style={[
+                          styles.cfgInput,
+                          { borderColor: palette.borderStrong, color: palette.textPrimary, backgroundColor: palette.surface },
+                        ]}
+                      />
+                      <Button
+                        title="Uložiť"
+                        disabled={limitDraft.trim() === c.value}
+                        onPress={() =>
+                          call(
+                            'admin_set_config',
+                            { p_key: 'max_active_listings', p_value: limitDraft.trim() },
+                            `Limit je teraz ${limitDraft.trim()}. Platí okamžite, nový build netreba.`
+                          )
+                        }
+                      />
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>
+                      Teraz platí: {c.value}. Zmena sa prejaví hneď pri ďalšom pokuse o zverejnenie.
+                    </Text>
+                  </View>
+                ))}
+            </Card>
+
+            {/* Heuristiky sú SIGNÁLY na ručnú kontrolu, nie dôvod na ban.
+                Dve osoby v jednej domácnosti majú tiež jeden telefón. */}
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>NAJVIAC INZERÁTOV</Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Podnet na pozretie, nie obvinenie. „Bez deklarácie" znamená účet z čias
+                pred zavedením potvrdenia, nie priznanie.
+              </Text>
+              {topListers.length === 0 ? (
+                <Text style={[styles.empty, { color: palette.textMuted }]}>Zatiaľ nikto nemá inzerát.</Text>
+              ) : (
+                topListers.slice(0, 15).map((t) => (
+                  <View key={t.user_id} style={styles.cfg}>
+                    <View style={styles.rowHead}>
+                      <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{t.nickname}</Text>
+                      {t.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="warning" /> : null}
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                      {t.active_count} aktívnych · {t.total_count} spolu · {t.email}
+                    </Text>
+                    <Text style={[styles.meta, { color: t.agent_declared_at ? palette.textMuted : palette.warning }]}>
+                      {t.agent_declared_at
+                        ? `Deklaroval fyzickú osobu ${formatDate(t.agent_declared_at)}`
+                        : 'Bez deklarácie fyzickej osoby'}
+                    </Text>
+                  </View>
+                ))
+              )}
+            </Card>
+
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>ROVNAKÝ KONTAKT NA VIACERÝCH ÚČTOCH</Text>
+              {dupes.length === 0 ? (
+                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+              ) : (
+                dupes.map((d) => (
+                  <View key={`${d.kind}-${d.value}`} style={styles.cfg}>
+                    <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
+                      {d.kind === 'TELEFON' ? 'Telefón' : 'E-mail'} · {d.accounts} účty
+                    </Text>
+                    <Text style={[styles.meta, { color: palette.textSecondary }]}>{d.value}</Text>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>{d.nicknames}</Text>
+                  </View>
+                ))
+              )}
+            </Card>
+          </>
+        ) : null}
       </ScrollView>
     </SafeAreaView>
   );
@@ -415,6 +580,12 @@ const styles = StyleSheet.create({
   statLabel: { ...Type.caption },
   tabs: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
   tab: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 6 },
+  filterRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
+  chip: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: Spacing.sm, paddingVertical: 6 },
+  chipText: { ...Type.caption, fontWeight: Weight.semibold },
+  cfg: { gap: 4, marginTop: Spacing.sm },
+  cfgRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  cfgInput: { borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, minWidth: 90, ...Type.bodyLg },
   tabText: { ...Type.caption, fontWeight: Weight.semibold },
   empty: { ...Type.body },
   rowHead: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm, flexWrap: 'wrap' },

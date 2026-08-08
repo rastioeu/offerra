@@ -146,9 +146,27 @@ export const TERMS: LegalDoc = {
       ],
     },
     {
+      heading: 'Len fyzické osoby vo vlastnom mene',
+      paragraphs: [
+        'Offerra je trh MEDZI ĽUĎMI. Používať ju smie výhradne fyzická osoba konajúca vo vlastnom mene — ' +
+          'ako vlastník, spoluvlastník, nájomca alebo záujemca.',
+        'Realitné kancelárie, sprostredkovatelia, makléri a osoby konajúce na cudzí účet alebo za odmenu ' +
+          'službu používať NESMÚ, a to ani cez účet vedený na fyzickú osobu.',
+        'Pri registrácii každý používateľ výslovne potvrdzuje: „Konám vo vlastnom mene ako fyzická osoba — ' +
+          'nie som realitná kancelária ani sprostredkovateľ." Čas tohto potvrdenia sa uchováva.',
+        'Nepravdivé potvrdenie je porušením týchto podmienok a je dôvodom na okamžité zablokovanie účtu ' +
+          'a zmazanie inzerátov, bez nároku na akúkoľvek náhradu.',
+        'Podozrenie na realitnú kanceláriu je možné nahlásiť priamo v aplikácii samostatným dôvodom ' +
+          '„Realitka/sprostredkovateľ — vydáva sa za fyzickú osobu".',
+        'Počet súčasne zverejnených inzerátov na jeden účet je obmedzený. Aktuálny limit je uvedený v aplikácii ' +
+          'pri pokuse o prekročenie.',
+      ],
+    },
+    {
       heading: 'Účet',
       paragraphs: [
         'Na inzerovanie a podávanie ponúk je potrebný účet a prezývka. Prezývka je verejná.',
+        'Účet smie založiť len osoba staršia ako 18 rokov.',
         'Za obsah, ktorý pridáš, zodpovedáš ty. Musíš mať právo zverejniť fotografie, ktoré nahráš.',
         'Účet je osobný. Neprenechávaj ho niekomu inému.',
       ],
@@ -160,6 +178,7 @@ export const TERMS: LegalDoc = {
         'Cudzie fotografie bez práva ich použiť.',
         'Obťažovanie, urážky, nenávistný prejav a zverejňovanie osobných údajov iných ľudí.',
         'Spam, reklama nesúvisiaca s nehnuteľnosťou a pokusy o obchádzanie pravidiel aplikácie.',
+        'Zakladanie viacerých účtov s cieľom obísť limit zverejnených inzerátov alebo zákaz sprostredkovateľov.',
         'Automatizované sťahovanie obsahu a zásahy do fungovania služby.',
       ],
     },

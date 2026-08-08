@@ -34,6 +34,14 @@ export type MyProfile = {
    * spôsobilosť. Preto 18+, nie 16+ ako MUTARK, ktorý je sociálna hra.
    */
   age_confirmed_at: string | null;
+  /**
+   * Kedy používateľ potvrdil, že koná vo vlastnom mene ako fyzická osoba.
+   *
+   * Offerra je trh medzi ľuďmi. Toto potvrdenie je právny základ na
+   * zablokovanie účtu, ak sa ukáže, že ide o realitnú kanceláriu —
+   * preto čas, nie `true`: pri spore je podstatné KEDY to odklikol.
+   */
+  agent_declaration_at: string | null;
 };
 
 type ProfileState = {

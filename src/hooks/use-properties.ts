@@ -167,7 +167,9 @@ export function useMyProperties(userId: string | undefined) {
         .eq('owner_id', userId)
         .order('updated_at', { ascending: false });
       if (e) throw e;
-      setItems(await attachMedia((data ?? []) as Property[]));
+      // Ponuky sa doťahujú aj pre MOJE inzeráty — vlastník musí v profile
+      // vidieť, či jeho inzerát niekoho zaujal, nielen že existuje.
+      setItems(await attachOfferStats(await attachMedia((data ?? []) as Property[])));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[MOJE] Načítanie zlyhalo: ${m}`);

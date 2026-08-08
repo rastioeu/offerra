@@ -13,10 +13,10 @@ import { useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Card, ErrorNote, SectionLabel } from '@/components/ui';
+import { Button, Card, ChoiceRow, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
 import { useSession } from '@/hooks/use-session';
-import { useTheme } from '@/hooks/use-theme';
+import { useTheme, useThemeMode, THEME_MODE_LABEL, type ThemeMode } from '@/hooks/use-theme';
 import {
   FREQUENCY_LABEL,
   NOTIFICATION_TYPES,
@@ -36,6 +36,7 @@ const DIGEST_READY = false;
 
 export default function NastaveniaScreen() {
   const palette = useTheme();
+  const { mode: themeMode, setMode: setThemeMode, effective: effectiveTheme } = useThemeMode();
   const router = useRouter();
   const { session } = useSession();
   const { prefs, error: prefError, save } = useNotificationPrefs(session?.user.id);
@@ -103,6 +104,29 @@ export default function NastaveniaScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scroll}>
+        {/* Vzhľad je PRVÝ. Kto sa sem prišiel dostať z tmavej appky späť na
+            svetlú, nemá čo hľadať pod tromi kartami upozornení. */}
+        <Card>
+          <SectionLabel>VZHĽAD</SectionLabel>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Offerra je navrhnutá ako svetlá. „Podľa telefónu" znamená, že sa
+            prepne na tmavú vždy, keď je tmavý režim zapnutý v systéme.
+          </Text>
+          <ChoiceRow<ThemeMode>
+            label="Režim"
+            options={(['light', 'dark', 'system'] as ThemeMode[]).map((m) => ({
+              value: m,
+              label: THEME_MODE_LABEL[m],
+            }))}
+            value={themeMode}
+            onChange={(v) => setThemeMode(v ?? 'light')}
+          />
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Teraz je zapnutý {effectiveTheme === 'dark' ? 'tmavý' : 'svetlý'} vzhľad.
+            Voľba sa pamätá aj po zatvorení appky.
+          </Text>
+        </Card>
+
         <Card>
           <SectionLabel>UPOZORNENIA</SectionLabel>
           <Text style={[styles.hint, { color: palette.textMuted }]}>

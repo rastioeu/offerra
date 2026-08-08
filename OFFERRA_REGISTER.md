@@ -2442,6 +2442,139 @@ test dobehol.
 
 ---
 
+## Fáza 9 — Realitky, vzhľad, dve vážne chyby (8.8.2026)
+
+**Všetko IDE OTA.**
+
+### 9.1 🔴→✅ REGISTRÁCIA BOLA NEPREJDITEĽNÁ — chyba z Fázy 8
+
+Pri práci na deklarácii fyzickej osoby sa ukázalo, že v `prezyvka.tsx`
+**JSX zaškrtávacieho políčka 18+ vôbec neexistovalo**. Stav `adult` bol
+založený, `submit()` ho vyžadoval, ale políčko sa nevykreslilo — takže
+`adult` ostal navždy `false` a **žiadny nový používateľ nedokončil
+registráciu**. Bolo to už nasadené v OTA.
+
+Zaviedol som to ja v dávke „vek 18+" a nikto to nechytil, lebo dôkazom
+bol test proti DB (stĺpec sa zapisuje správne), nie obrazovka.
+
+**Poučenie:** DB test dokazuje, že sa hodnota dá uložiť. Nedokazuje, že
+ju má používateľ ako zadať. To je presne ten zákaz odvodzovania B z A
+(§1) — len obrátený.
+
+Oprava: nový zdieľaný komponent **`CheckRow`** v `ui.tsx`. Ručne skladaný
+`Pressable` + `View` + dva `Text` sa dá omylom nedopísať; komponent nie.
+
+### 9.2 🔴→✅ APPKA UVIAZLA V TMAVOM REŽIME
+
+Hlásil Rastio zo screenshotu. `useTheme()` čítal výhradne
+`useColorScheme()` zo systému a manuálny prepínač neexistoval — kto mal
+tmavý telefón, nemal sa ako vrátiť na schválenú svetlú paletu.
+
+Nový `ThemeProvider` (`use-theme.tsx`) s voľbou **Svetlý / Tmavý /
+Podľa telefónu**, uloženou v `AsyncStorage`, prvá karta v Nastaveniach.
+
+**Rozhodnutie, ktoré som spravil sám:** predvolené je `light`, nie
+`system`. Dôvod: CLAUDE.md §5 — Offerra je light-first a schválená paleta
+je svetlá. `system` by znamenalo, že väčšine ľudí s tmavým telefónom sa
+ukáže podoba, ktorú nikto neschvaľoval.
+
+**K obave „tmavá je len invertovaná svetlá":** nie je. `tokens.ts` má
+tmavú ako **teplé uhlie** `#161311` / `#211D1A` s terakotou, zámerne
+odlíšenú od mutarkovskej studenej `#0B1020`. Kontrast bol overený už vo
+Fáze 7.14 — 12 dvojíc × 2 témy, 0 zlyhaní. Vizuálne potvrdenie je ale na
+Rastiovi.
+
+### 9.3 Nový dôvod nahlásenia „REALITKA" — ✅ OVERENÉ RUNTIME
+
+Číselník dôvodov je spoločný pre všetky ciele, cieľ drží samostatný
+stĺpec — jeden zápis teda pokryl inzerát **aj** používateľa. Overené
+zvlášť pre `PROPERTY` aj `USER`.
+
+V admin konzole pribudol **filter dôvodov s počtami** (chipy nad
+zoznamom). Filtruje sa na klientovi — 200 riadkov je málo na to, aby to
+stálo za ďalší dotaz.
+
+### 9.4 Deklarácia fyzickej osoby — ✅ OVERENÉ RUNTIME
+
+`profile.agent_declaration_at` (čas, nie boolean — pri spore je podstatné
+KEDY). Pri registrácii, nie pri prvom inzeráte: registrácia už rovnaký
+vzor má a pokrýva všetkých, nielen inzerentov.
+
+**Našlo sa pritom, že `my_profile()` nevracala ani `age_confirmed_at`** —
+typ `MyProfile` teda tvrdil niečo, čo v dátach nikdy nebolo. Opravené,
+funkcia teraz vracia obe pečiatky.
+
+Text v `legal.ts` doplnený o celú sekciu „Len fyzické osoby vo vlastnom
+mene" + zákaz zakladania viacerých účtov na obídenie limitu. Web
+`rastioeu/offerra_web` prepísaný a **pushnutý** (commit `22d8e51`).
+
+### 9.5 Limit aktívnych inzerátov — ✅ OVERENÉ RUNTIME
+
+`offerra.app_config` (kľúč, hodnota, štítok, hint) + `config_int()` +
+`admin_set_config()`. Default **5**, meniteľné z admin konzoly, sekcia
+**Nastavenia**.
+
+Vynucuje `enforce_active_limit` trigger na INSERT **aj** UPDATE — inzerát
+sa vie stať aktívnym oboma cestami. `0` = bez limitu. Koncepty sa
+nepočítajú, archivácia miesto uvoľní.
+
+Overené aj to podstatné: **zmena hodnoty zaberie okamžite, bez nového
+buildu** (limit 2 → tretí padne → limit 3 → ten istý prejde).
+
+### 9.6 Admin heuristiky — ✅ OVERENÉ RUNTIME (stihnuté, nie 🟡)
+
+`admin_top_listers()` a `admin_duplicate_contacts()`. Druhá porovnáva
+telefón po odstránení nečíselných znakov a e-mail **bez `+`-časti**
+(`jan+offerra1@` = `jan+offerra2@` je ten istý účet).
+
+Sú to signály na ručnú kontrolu, nie automatický ban — dve osoby
+v jednej domácnosti majú tiež jeden telefón. Napísané je to aj
+v obrazovke.
+
+### 9.7 „Počet zobrazení" — odpoveď na Rastiovu otázku
+
+Meraním: **v Profile → Moje inzeráty naozaj nebol.** `view_count` je
+v modeli od Fázy 1 a zobrazoval sa výhradne na detaile inzerátu.
+
+Doplnený do riadku „Moje inzeráty" spolu s počtom ponúk. Do katalógu
+zámerne NIE — cudzieho človeka nezaujíma, koľkokrát niekto videl inzerát.
+
+### 9.8 Chyba, ktorú našlo až upratovanie po teste — ✅ OPRAVENÉ
+
+`app_config.updated_by` mal cudzí kľúč **bez `on delete`**. Admin, ktorý
+raz zmenil nastavenie, by si už **nevedel zmazať účet** —
+`delete_my_account()` by padlo na 23503. Zmenené na `on delete set null`.
+
+Našlo sa to len preto, že testovací harness prestal prehĺtať chyby z
+Management API: vracia ich ako objekt s kľúčom `message`, nie nenulovým
+exit kódom, takže zlyhaný príkaz vyzeral ako prázdny výsledok.
+**Tichý catch bol v mojom vlastnom nástroji.**
+
+### 9.9 Dôkazy — 282 testov, 0 zlyhaní
+
+```
+admin 24 · avatar 8 · dopyty 11 · diakritika 13 · e-mail 7 · chyby 2
+flow 10 · funkcie 5 · diery 5 · prenájom 12 · RLS 15 · vek 4 · videnie 10
+správa 19 · obhliadka 23 · realitky 21
+dopyt-parse 9 · chyby-js 15 · cena 14 · realtime 6 · prenájom-čistý 18
+triedenie 11 · budova 20
+```
+
+Päť zlyhaní v priebehu bolo v MOJICH testoch, nie v appke — a jedno
+z nich odhalilo skutočnú vec: **RLS nepustí vložiť inzerát rovno ako
+`ACTIVE`.** Inzerát vzniká ako koncept a zverejní sa až úpravou. Test to
+teraz robí tou istou cestou ako appka.
+
+### 9.10 Otvorené — čaká na Rastia
+
+- **GitHub Pages** — ani jeden z troch tokenov nemá `pages=write`.
+  GitHub to hovorí sám: `x-accepted-github-permissions: pages=write,
+  administration=write`. Riešenie je jedno kliknutie v Settings → Pages.
+- **`.claude/` v `.gitignore`** — pridať pri najbližšom natívnom builde,
+  vtedy sa fingerprint mení tak či tak (viď `reports/FINGERPRINT_A_OTA.md`).
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
