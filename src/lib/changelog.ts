@@ -21,6 +21,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Ulica sa našepkáva z úradného registra',
+    items: [
+      'Pri zadávaní inzerátu ti appka po dvoch písmenách sama ponúkne ulicu — zoznam je z Registra adries Ministerstva vnútra, teda ten istý, čo používa štát.',
+      'Ponuka sa riadi obcou, ktorú si vybral: v Petržalke ti neponúkne ulice z Košíc.',
+      'Ak vyberieš „Bratislava" alebo „Košice" ako celok, ponúknu sa ulice zo všetkých mestských častí naraz.',
+      'Ulica ostáva nepovinná a stále sa dá napísať ručne — register nemusí poznať novú ulicu a v mnohých obciach sa ulice nepomenúvajú vôbec.',
+      'Doplnené obce, ktoré v appke dosiaľ chýbali a nedal sa v nich založiť inzerát: Bojnice, Dudince, Sklené Teplice, Mužla a Veľké Kapušany.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Počet fotiek a triedenie „Čoskoro končí"',
     items: [
       'Na karte v katalógu vidíš, koľko má inzerát fotiek — napríklad „1/3". Pri jedinej fotke sa nezobrazuje.',

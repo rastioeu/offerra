@@ -2331,3 +2331,125 @@ Nové otvorené body:
   v appke, nie push (2.7).
 - **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.
 - **Moderovanie inzerátov** (`PENDING_APPROVAL`) — Fáza 7, zámerne preskočené.
+
+---
+
+## Fáza 8 — Ulice z Registra adries (8.8.2026)
+
+### 8.1 Zdroj street-level dát — ✅ OVERENÉ RUNTIME
+
+Zadanie: skutočný dataset, nie rastúci zoznam z dát používateľov.
+Zvolený **Register adries MV SR** (možnosť 2), nie OSM/Nominatim.
+
+**Ako sa k dátam vôbec dá dostať** (staré návody sú neplatné):
+
+| Cesta | Výsledok |
+|---|---|
+| `data.gov.sk/dataset/register-adries-register-ulic` | 302 → nekonečná slučka http↔https |
+| starý priamy CSV odkaz `…/download/consstreetname.*.csv` | HTTP 200, ale telo je SPA HTML |
+| `data.gov.sk/api/3/action/package_show` | 302, mŕtve |
+| **`data.slovensko.sk/api/sparql`** | **400 „Missing parameter: query" → žije** |
+
+Celoštátne RA datasety majú **0 `dcat:distribution`**. Súbory visia až na
+členoch `dct:hasPart` série. Živý odkaz je tvaru
+`data.slovensko.sk/download?id=<uuid>`.
+
+**Dôkaz stiahnutia:**
+
+```
+ulice_konsolidovane.csv   http=200  size=6 239 286  type=text/csv
+obce_konsolidovane.csv    http=200  size=  436 192  type=text/csv
+okresy_konsolidovane.csv  http=200  size=    9 633  type=text/csv
+file(1): CSV Unicode text, UTF-8
+```
+
+OSM overené ako záloha: Geofabrik `slovakia-latest.osm.pbf` **HTTP 200,
+342 035 866 B**, `Last-Modified 7.8.2026` — stiahnuteľné, ale nepoužité
+(ulica je v OSM čiara bez obce a slovenské adresy v OSM aj tak pochádzajú
+z toho istého registra MV SR). Nominatim za behu vylúčený — 1 dotaz/s
+a autocomplete má priamo v zakázaných spôsoboch použitia.
+
+### 8.2 Dataset na import — ✅ OVERENÉ RUNTIME
+
+```
+platných ulíc v RA (validTo = rok 3000)   28 795
+napojených na offerra.city                28 345   (98,44 %)
+zrkadlených do Bratislava/Košice           2 942
+duplicity                                   −206
+NA IMPORT                                 31 165 ulíc v 763 obciach
+```
+
+Dve pasce, obe zmerané:
+
+- **RA značí platnosť rokom 3000, nie `NULL`.** `validTo IS NULL` vráti
+  **0 riadkov** — vyzerá to ako prázdny dataset.
+- **CSV je uvodzovkované** (240 riadkov), dva názvy majú v sebe čiarku
+  (`Febr,víťazstva`). Importér má RFC4180 parser, nie `split(',')`.
+
+Číslo 31 165 potvrdené **dvoma nezávislými implementáciami** (Python
+prototyp a finálny Node skript) — zhoda do posledného riadku.
+
+### 8.3 Bratislava/Košice ako celok — ✅ OVERENÉ RUNTIME
+
+RA vedie ulice pod mestskými časťami. Riadok „Bratislava" mal preto
+**0 ulíc**, hoci register (1.5) sám hovorí, že *predávajúci často povie len
+„Bratislava"*. Ulice 39 mestských častí sa zrkadlia aj pod zastrešujúce
+mesto.
+
+```
+pred:  Bratislava 0 ulíc,     Košice 2 ulice
+po:    Bratislava 1 991 ulíc, Košice 953 ulíc
+```
+
+### 8.4 Chýbajúce obce v číselníku — 🔴 NEDOKONČENÉ (čaká na zápis)
+
+Porovnanie s RA odhalilo, že `offerra.city` nepozná **5 platných obcí** —
+**nedá sa v nich založiť inzerát vôbec**:
+
+| Obec | Okres | Viselo na nej ulíc |
+|---|---|---|
+| Bojnice | Prievidza | 64 |
+| Veľké Kapušany | Michalovce | 34 |
+| Mužla | Nové Zámky | 34 |
+| Dudince | Krupina | 17 |
+| Sklené Teplice | Žiar nad Hronom | 0 |
+
+Migrácia `scripts/sql/2026-08-08-city-chybajuce.sql` pripravená, súradnice
+z Wikidata (P625) — rovnaký zdroj ako zvyšok číselníka. Vojenské obvody
+(Javorina, Lešť, Valaškovce) zámerne nedopĺňame.
+
+### 8.5 `offerra.street` + autocomplete — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+`name_norm` je **generovaný** cez `offerra.norm()` — tú istú funkciu má
+`city.name_norm`, takže sa nemôže rozísť s `normalizeText()` na klientovi.
+Index `(city_id, name_norm text_pattern_ops)`; bez `text_pattern_ops` by
+`LIKE 'prefix%'` index nevyužil. Unikátny `(city_id, name_norm)` robí import
+idempotentným.
+
+Ulica ostáva **nepovinná a voľne písateľná** — 763 obcí z 2 925 má
+pomenované ulice, zvyšok nie. Preto pole s našeptávaním, nie modál ako pri
+obci.
+
+`npx tsc --noEmit` → **EXIT=0**.
+
+**Čo overiť na telefóne (až po importe):** Petržalka + `ben` → Beňadická ·
+Bratislava (celok) + `sanc` → Šancová · nezmyselná ulica sa musí dať
+uložiť · Zavar + `ne` → ulice zo Zavaru, nie z Trnavy.
+
+### 8.6 Import do DB — 🔴 NEDOKONČENÉ
+
+**Dôvod:** zápis ide cez Supabase Management API a potrebuje
+`SUPABASE_ACCESS_TOKEN`. V `/root/.offerra-secrets` je len `GITHUB_TOKEN`
+a `DEMO_PASSWORD`; k iným súborom s tajomstvami prístup zamietlo
+bezpečnostné pravidlo prostredia. Anon kľúč z `.env` na DDL ani na zápis do
+číselníka nestačí a ani nemá.
+
+`--dry-run` prejde celý reťazec (sťahovanie, párovanie, štatistika)
+a skončí presne na hranici zápisu — nie je to odhad.
+
+**Odblokovanie:** doplniť `SUPABASE_ACCESS_TOKEN=sbp_…` do
+`/root/.offerra-secrets` a spustiť `node scripts/import-streets.mjs`.
+Skript na konci sám vypíše spätný SELECT (počet ulíc, obcí, Bratislava) —
+to bude dôkaz sem.
+
+Podrobne: `reports/ULICE_REGISTER_ADRIES.md`.
