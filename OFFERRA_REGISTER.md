@@ -2286,6 +2286,162 @@ pravdivé vety o tom, ako appka funguje — skryť ich by znamenalo klamať.
 
 ---
 
+## Fáza 8 — Súkromie správ, obhliadky, polia bytu (8.8.2026)
+
+**Všetko IDE OTA** — nepribudol žiadny natívny modul, nemení sa `app.json`
+ani verzia.
+
+### 8.1 ÚNIK: správa pri ponuke bola verejná — ✅ OVERENÉ RUNTIME (19/19)
+
+Hlásil Rastio zo screenshotu: `offer.message` bolo vidieť pri každej
+ponuke komukoľvek.
+
+**Príčina — a nebola tam, kde sa čakalo.** RLS `offer_select_public`
+riadok púšťa von správne (ponuky sú zámerne otvorené). Diera bola
+v grante:
+
+```
+grant select on offerra.property_offer to anon, authenticated   ← TABUĽKOVÝ
+```
+
+Tabuľkový grant sa v `information_schema.column_privileges` vypisuje pri
+každom stĺpci zvlášť, takže na pohľad vyzerá rovnako ako stĺpcové granty
+na `profile`. Rozdiel je v tom, že pri pridaní ďalšieho stĺpca sa nový
+stane verejným automaticky.
+
+**Prečo sa to nedalo opraviť v tej istej tabuľke:** Postgres nemá
+per-riadkové maskovanie stĺpca. Tá istá ponuka má byť pre majiteľa celá
+a pre cudzieho čiastočná — jedným `select` z tabuľky nevyjadriteľné.
+
+**Oprava:**
+
+```sql
+revoke select on offerra.property_offer from anon, authenticated;
+grant select (id, property_id, bidder_id, amount, status,
+              created_at, updated_at, viewed_by_owner_at) …
+offerra.offer_messages(p_property)  -- SECURITY DEFINER, podmienka na riadok vo funkcii
+```
+
+Zápis (`insert`/`update`) ostal nedotknutý — ponuka a jej správa naďalej
+vznikajú JEDNOU vetou. Alternatíva „message do vlastnej tabuľky" (Rastiov
+návrh) by znamenala dva zápisy a riziko ponuky bez správy.
+
+**Vedľajší efekt, ktorý je prínos:** `select('*')` na `property_offer` už
+neprejde (42501). Klient musí stĺpce vymenovať — `OFFER_PUBLIC_COLS`.
+Ďalší citlivý stĺpec sa tým pádom nemôže zverejniť potichu.
+
+**Trieda chyby — preverené dvojito, ako Rastio žiadal:** `tenant_profile`
+ani `request_outreach` grant pre `anon` nemajú vôbec. Nebolo to plošné.
+
+Dôkaz: 5 identít (anon, cudzí, vlastník, záujemca A, záujemca B) vrátane
+pokusov uhádnuť obsah cez `message=ilike.*…*` a `order=message.asc` —
+oboje 42501.
+
+### 8.2 Obhliadky — ✅ OVERENÉ RUNTIME (23/23) / 🟡 obrazovka
+
+Rozhodnutie Rastia: žiadne navrhovanie termínov. Jedno tlačidlo, okamžité
+odkrytie kontaktu obom stranám, dohoda telefonicky.
+
+Tabuľka `viewing` predtým **neexistovala** — nebolo čo orezávať.
+
+```
+id · property_id · requester_id · status · created_at · updated_at
+unique (property_id, requester_id)
+offerra.viewing_contact(p_viewing_id)   -- bez podmienky na stav, na rozdiel od offer_contact()
+offerra.guard_viewing_update()          -- property_id/requester_id/created_at nemenné
+ZIADOST_O_OBHLIADKU                     -- nový typ oznámenia
+```
+
+**Obhliadka NIE JE verejná** (na rozdiel od ponuky) — vlastné rozhodnutie,
+pomenované v reporte: ponuka je súťaž, obhliadka je súkromná dohoda dvoch
+ľudí.
+
+**Otvorené na rozhodnutie Rastia:** stav `REQUESTED` je v číselníku, lebo
+ho vymenoval v zadaní, ale v tomto toku sa naň nedá dostať — žiadosť
+vzniká rovno ako `CONTACT_SHARED`. Jediná hodnota bez použitia.
+
+`VIEWING_CONSENT` je konštanta, nie text v obrazovke — informovaný súhlas
+sa nesmie dať zmeniť na jednom mieste a zabudnúť na druhom.
+
+### 8.3 Placeholder podľa SALE/RENT — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+Pri tom opravený aj popisok: pri prenájme hovoril „Správa pre
+**predávajúceho**". Pribudla veta, že správu vidí len druhá strana (nová
+pravda z 8.1).
+
+### 8.4 Polia bytu + internet — ✅ OVERENÉ RUNTIME (dáta) / 🟡 formulár
+
+`floor`, `floors_total`, `has_elevator`, `monthly_costs` →
+**do `property`, nie do tabuľky pre nájom**: sú to vlastnosti BUDOVY,
+kupca zaujímajú rovnako ako nájomcu. `internet_included` je jediné, čo je
+naozaj len o nájme.
+
+Check constraints: `floor` −5…200, `floors_total` 1…200, `floor ≤
+floors_total` („7. z 5" DB nepustí), `monthly_costs ≥ 0`.
+
+Suterén je dôvod, prečo `Field` prijíma aj `numbers-and-punctuation` —
+`numeric` na iOS nemá mínus.
+
+### 8.5 Počet osôb pri prenájme NEBOL povinný — ✅ OVERENÉ RUNTIME
+
+Rastiova obava bola oprávnená, zmerané pred zásahom:
+
+```
+tenant_profile.num_people  is_nullable = YES
+19 dotazníkov, z toho 4 BEZ počtu osôb
+```
+
+Opravené v appke **aj** v DB (`tenant_num_people_required`, `NOT VALID` —
+štyri staré riadky sa nedopĺňajú, vymyslený údaj je horší než chýbajúci).
+
+### 8.6 Prezývka vlastníka na detaile — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+`useProperty` ťahá `owner:owner_id(nickname, avatar_url)` jedným dotazom.
+
+### 8.7 Orezaný text v mriežke — 🟡 PRÍČINA NÁJDENÁ
+
+**Prečo predošlá oprava nezabrala:** riešila šírku bunky. Skutočná príčina
+bolo `numberOfLines={1}` v `ParamCell`. „1 600 € (2× mesačný nájom)" sa na
+jeden riadok do polovičnej bunky nezmestí pri ŽIADNEJ šírke — šírka teda
+nemohla pomôcť nikdy.
+
+Teraz sa text smie zalomiť a hodnota dlhšia než 16 znakov si berie celý
+riadok (`PARAM_WIDE_AT`).
+
+### 8.8 Regresný prechod — ✅ OVERENÉ RUNTIME, 261 testov, 0 zlyhaní
+
+Zmena grantov na `property_offer` vie potichu rozbiť čokoľvek, čo z tej
+tabuľky číta, preto prešlo všetko:
+
+```
+admin 24 · avatar 8 · dopyty 11 · diakritika 13 · e-mail 7 · chyby 2
+flow 10 · funkcie 5 · diery 5 · prenájom 12 · RLS 15 · vek 4 · videnie 10
+správa 19 · obhliadka 23 · dopyt-parse 9 · chyby-js 15 · cena 14
+realtime 6 · prenájom-čistý 18 · triedenie 11 · budova 20
+```
+
+Tri suity najprv spadli — **neboli to regresie appky**, testy robili
+`POST … return=representation` bez výberu stĺpcov, teda presne to, čo sa
+utesnilo. Appka to nikde nerobí (`.select('id')`).
+
+### 8.9 Moje testovacie inzeráty ostali v ŽIVOM katalógu — ✅ NAPRAVENÉ
+
+Pri prechode sa ukázalo, že v katalógu sedia štyri moje záznamy („Test
+videnia" ×2, „Diera test", „Test email kontakt"). Ostali tam, keď testy
+spadli uprostred a nedobehli po sebe upratovanie.
+
+**Je to druhýkrát** (prvý raz „Test videnia" pri bode 7.18).
+
+Zmazané (overené, že všetky štyri patria `@offerra.test` účtom).
+Upratovanie presunuté zo záveru testu do samostatného kroku, ktorý beží
+**aj keď test spadne** — príčina nebola zabudnutie, ale umiestnenie
+upratovania tam, kam sa pri páde nedôjde.
+
+**Pravidlo do budúcna:** upratovanie po teste nesmie závisieť od toho, či
+test dobehol.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

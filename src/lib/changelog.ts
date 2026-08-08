@@ -21,6 +21,21 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Súkromie správ, obhliadky a polia navyše',
+    items: [
+      'Opravené a dôležité: správa priložená k ponuke bola verejná — čítal ju ktokoľvek, kto si otvoril inzerát. Odteraz ju vidí len predávajúci a ten, kto ju napísal. Suma a prezývka ostávajú verejné ako doteraz.',
+      'Nové tlačidlo „Chcem obhliadku". Kliknutím sa kontakt odkryje obom stranám naraz a termín si dohodnete telefonicky — appka do toho nevstupuje. Čo sa stane, je napísané nad tlačidlom, nie až po ňom.',
+      'Pri byte môžeš uviesť poschodie („3. z 5"), či je v dome výťah, a mesačné náklady ako fond opráv. Pri predaji aj pri prenájme.',
+      'Pri prenájme pribudlo samostatné „Internet v cene nájmu" — energie a internet už nie sú jedna otázka.',
+      'Na detaile inzerátu je vidieť prezývku toho, kto ho pridal.',
+      'Príklad v poli „Správa pre predávajúceho" sa mení podľa toho, či ide o predaj alebo prenájom — hypotéka pri nájme nedávala zmysel.',
+      'Počet osôb pri ponuke na prenájom je teraz naozaj povinný. Doteraz sa dal preskočiť.',
+      'Opravené: dlhé hodnoty v mriežke (napríklad zábezpeka aj s počtom nájmov) sa už neorezávajú — zalomia sa a zaberú celý riadok.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Počet fotiek a triedenie „Čoskoro končí"',
     items: [
       'Na karte v katalógu vidíš, koľko má inzerát fotiek — napríklad „1/3". Pri jedinej fotke sa nezobrazuje.',

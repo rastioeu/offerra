@@ -42,3 +42,6 @@ example
 # generated native folders
 /ios
 /android
+
+# pracovny adresar Claude Code — do repa nepatri
+.claude/

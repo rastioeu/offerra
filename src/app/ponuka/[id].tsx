@@ -114,6 +114,14 @@ export default function OfferFormScreen() {
       setError('Zadaj sumu ponuky.');
       return;
     }
+    // Počet osôb bol doteraz len ZOBRAZENÝ, nie vyžadovaný — 4 z 19
+    // dotazníkov ho nemali. Pri prenájme je to prvá otázka, ktorú
+    // prenajímateľ položí, takže sa pýta hneď. Drží to aj DB.
+    const peopleCount = num(people);
+    if (isRent && (peopleCount == null || peopleCount < 1)) {
+      setError('Zadaj počet osôb, ktoré sa nasťahujú — bez toho ponuku poslať nemožno.');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -143,7 +151,7 @@ export default function OfferFormScreen() {
       if (isRent && offerId) {
         const payload = {
           offer_id: offerId,
-          num_people: num(people),
+          num_people: peopleCount,
           has_pets: pets === 'YES',
           pet_details: pets === 'YES' ? petDetails.trim() || null : null,
           lease_duration_months: num(months),
@@ -277,10 +285,17 @@ export default function OfferFormScreen() {
             />
 
             <Field
-              label="Správa pre predávajúceho (nepovinné)"
+              label={isRent ? 'Správa pre prenajímateľa (nepovinné)' : 'Správa pre predávajúceho (nepovinné)'}
+              hint="Vidí ju len druhá strana — v zozname ponúk verejne nie je."
               value={message}
               onChangeText={setMessage}
-              placeholder="napr. mám schválenú hypotéku"
+              // Príklad musí sedieť na obchod. Hypotéka pri nájme nedáva
+              // zmysel a rovno hovorí, že si to nikto neprečítal.
+              placeholder={
+                isRent
+                  ? 'napr. sťahujem sa kvôli práci, zmluvu viem podpísať do týždňa'
+                  : 'napr. mám schválenú hypotéku, viem sa dohodnúť rýchlo'
+              }
               multiline
             />
 
@@ -294,7 +309,14 @@ export default function OfferFormScreen() {
                   len majiteľ nehnuteľnosti a ty.
                 </Text>
 
-                <Field label="Počet osôb" value={people} onChangeText={setPeople} keyboardType="numeric" placeholder="2" />
+                <Field
+                  label="Počet osôb — povinné"
+                  hint="Koľko ľudí sa nasťahuje vrátane teba."
+                  value={people}
+                  onChangeText={setPeople}
+                  keyboardType="numeric"
+                  placeholder="2"
+                />
                 <ChoiceRow<'NO' | 'YES'>
                   label="Domáce zvieratá"
                   options={[

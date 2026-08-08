@@ -44,6 +44,8 @@ import { OfferList } from '@/components/offer-list';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
+import { ViewingCard } from '@/components/viewing-card';
+import { useViewings } from '@/hooks/use-viewings';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -60,6 +62,7 @@ import {
   formatPrice,
   isDeadlinePassed,
   PROPERTY_LABEL,
+  buildingRows,
   rentalRows,
   TRANSACTION_LABEL,
 } from '@/lib/property';
@@ -74,6 +77,7 @@ export default function PropertyDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, error } = useProperty(id);
   const { offers, error: offersError, reload: reloadOffers } = useOffers(id);
+  const { items: viewings, reload: reloadViewings } = useViewings(id);
   const [photo, setPhoto] = useState(0);
   useRefreshOnFocus(reloadOffers);
 
@@ -243,6 +247,11 @@ export default function PropertyDetailScreen() {
                 <Text style={[styles.place, { color: palette.textMuted }]}>
                   {[item.street, item.city, item.district].filter(Boolean).join(' · ') || '—'}
                 </Text>
+                {/* Kto inzeruje. Doteraz to na detaile vidieť nebolo — prezývka
+                    sa objavila až pri ponukách, čo je neskoro. */}
+                <Text style={[styles.place, { color: palette.textMuted }]}>
+                  Pridal: {isOwner ? 'ty' : (item.owner?.nickname ?? 'neznámy')}
+                </Text>
               </View>
 
               {/* ── cena ── */}
@@ -297,6 +306,18 @@ export default function PropertyDetailScreen() {
                 </Text>
               ) : null}
 
+              {/* O byte a budove — pri predaji ROVNAKO ako pri prenájme. */}
+              {buildingRows(item).length > 0 ? (
+                <Card>
+                  <Eyebrow>O byte a budove</Eyebrow>
+                  <View style={styles.grid}>
+                    {buildingRows(item).map((r) => (
+                      <ParamCell key={r.label} value={r.value} label={r.label} />
+                    ))}
+                  </View>
+                </Card>
+              ) : null}
+
               {/* Podmienky prenájmu — pri predaji ich niet z čoho postaviť. */}
               {rentalRows(item).length > 0 ? (
                 <Card>
@@ -322,7 +343,8 @@ export default function PropertyDetailScreen() {
                 <Eyebrow>{`Ponuky (${offers?.length ?? 0})`}</Eyebrow>
                 <Text style={[styles.soon, { color: palette.textMuted }]}>
                   Sumy aj prezývky sú verejné. Kto za nimi stojí, sa dozvie až ten,
-                  koho ponuku predávajúci prijme.
+                  koho ponuku predávajúci prijme. Správa priložená k ponuke verejná
+                  nie je — číta ju len predávajúci a ten, kto ju napísal.
                 </Text>
                 <ErrorNote error={offersError} />
                 <OfferList
@@ -337,6 +359,15 @@ export default function PropertyDetailScreen() {
                   </Text>
                 ) : null}
               </Card>
+
+              <ViewingCard
+                propertyId={item.id}
+                myId={myId}
+                isOwner={isOwner}
+                closed={closed}
+                viewings={viewings}
+                reload={reloadViewings}
+              />
 
               <Text style={[styles.added, { color: palette.textMuted }]}>
                 Pridané {formatDate(item.created_at)}

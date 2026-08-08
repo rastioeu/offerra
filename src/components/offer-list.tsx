@@ -88,6 +88,9 @@ export function OfferList({
                 {mine ? ' · ty' : ''}
               </Text>
               <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
+              {/* Správa je tu, LEN ak na ňu volajúci má nárok — `message` je
+                  `null` pre všetkých ostatných a rozhodla o tom databáza,
+                  nie táto podmienka. Do 8.8.2026 ju videl ktokoľvek. */}
               {o.message ? (
                 <Text style={[styles.message, { color: palette.textSecondary }]}>„{o.message}"</Text>
               ) : null}

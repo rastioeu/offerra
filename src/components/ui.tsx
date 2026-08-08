@@ -81,13 +81,21 @@ export function Field({
   value: string;
   onChangeText: (v: string) => void;
   placeholder?: string;
-  keyboardType?: 'default' | 'numeric' | 'decimal-pad';
+  /**
+   * `numbers-and-punctuation` je tu kvôli poschodiu: `numeric` na iOS
+   * nemá mínus, takže suterén by sa nedal zadať vôbec.
+   */
+  keyboardType?: 'default' | 'numeric' | 'decimal-pad' | 'numbers-and-punctuation';
   multiline?: boolean;
 }) {
   const palette = useTheme();
   // Lišta „Hotovo" tam, kde niet iného spôsobu zavretia: numerická klávesnica
   // nemá Enter a viacriadkové pole ním robí nový riadok.
-  const needsDone = keyboardType === 'numeric' || keyboardType === 'decimal-pad' || Boolean(multiline);
+  const needsDone =
+    keyboardType === 'numeric' ||
+    keyboardType === 'decimal-pad' ||
+    keyboardType === 'numbers-and-punctuation' ||
+    Boolean(multiline);
   return (
     <View style={styles.group}>
       <Label hint={hint}>{label}</Label>
@@ -371,13 +379,31 @@ export function Eyebrow({ children }: { children: string }) {
  * Bunka mriežky parametrov 2×2 (mockup). Hodnota hore a veľká, popis pod
  * ňou malý — číslo sa má dať prečítať bez toho, aby oko hľadalo štítok.
  */
+/**
+ * Bunka v mriežke parametrov.
+ *
+ * Mala `numberOfLines={1}`, a to bola príčina orezaných hodnôt v mriežke
+ * (Rastio to hlásil dvakrát). Do polovičnej bunky sa „1 600 € (2× mesačný
+ * nájom)" na jeden riadok nezmestí NIKDY — pri akejkoľvek šírke. Preto sa
+ * orezanie neopravuje šírkou, ale tým, že sa text smie zalomiť.
+ *
+ * Dlhá hodnota si navyše vezme celý riadok. Prah je pevný, nie odhad podľa
+ * behu: pri `Type.subtitle` sa do polovice obrazovky bezpečne zmestí okolo
+ * 16 znakov, tak je hranica tam.
+ */
+const PARAM_WIDE_AT = 16;
+
 export function ParamCell({ value, label }: { value: string; label: string }) {
   const palette = useTheme();
+  const wide = value.length > PARAM_WIDE_AT;
   return (
-    <View style={[styles.paramCell, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-      <Text numberOfLines={1} style={[styles.paramValue, { color: palette.textPrimary }]}>
-        {value}
-      </Text>
+    <View
+      style={[
+        styles.paramCell,
+        wide ? styles.paramCellWide : null,
+        { backgroundColor: palette.surface, borderColor: palette.border },
+      ]}>
+      <Text style={[styles.paramValue, { color: palette.textPrimary }]}>{value}</Text>
       <Eyebrow>{label}</Eyebrow>
     </View>
   );
@@ -473,6 +499,7 @@ const styles = StyleSheet.create({
     paddingVertical: Spacing.sm,
     gap: 2,
   },
+  paramCellWide: { flexBasis: '100%' },
   paramValue: { ...Type.subtitle, fontWeight: Weight.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
   rowLabel: { ...Type.bodyMd },

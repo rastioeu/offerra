@@ -120,7 +120,14 @@ export function useProperty(id: string | undefined) {
     if (!id) return;
     setError(null);
     try {
-      const { data, error: e } = await db().from('property').select('*').eq('id', id).maybeSingle();
+      // Prezývka vlastníka sa doťahuje spolu s inzerátom — na detaile má byť
+      // vidieť, kto inzeruje (Rastio, 8.8.2026). `nickname` je verejný;
+      // meno a telefón stĺpcový grant nepustí a ani sa tu nepýtame.
+      const { data, error: e } = await db()
+        .from('property')
+        .select('*, owner:owner_id(nickname, avatar_url)')
+        .eq('id', id)
+        .maybeSingle();
       if (e) throw e;
       if (!data) {
         setItem(null);

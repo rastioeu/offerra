@@ -14,6 +14,7 @@ export type NotificationType =
   | 'PONUKA_ZAMIETNUTA'
   | 'NOVY_DOPYT_ZODPOVEDA_INZERATU'
   | 'NOVA_ZHODA'
+  | 'ZIADOST_O_OBHLIADKU'
   | 'SYSTEMOVE';
 
 export type NotificationFrequency = 'IHNED' | 'DENNY_SUHRN' | 'TYZDENNY_SUHRN';
@@ -56,6 +57,11 @@ export const NOTIFICATION_TYPES: {
     type: 'NOVA_ZHODA',
     label: 'Nová zhoda',
     hint: 'Nový inzerát zodpovedá tomu, čo hľadáš.',
+  },
+  {
+    type: 'ZIADOST_O_OBHLIADKU',
+    label: 'Niekto chce obhliadku',
+    hint: 'Kontakt máte v tej chvíli odkrytý obaja — dohodnete sa telefonicky.',
   },
   {
     type: 'SYSTEMOVE',

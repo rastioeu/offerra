@@ -7,7 +7,14 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import type { BuyerRequest, Offer, Outreach, TenantProfile } from '@/lib/offers';
+import {
+  fetchOfferMessages,
+  OFFER_PUBLIC_COLS,
+  type BuyerRequest,
+  type Offer,
+  type Outreach,
+  type TenantProfile,
+} from '@/lib/offers';
 import { db } from '@/lib/property';
 import { normalizeText, type CatalogFilter } from '@/lib/search';
 import { errorText } from '@/lib/errors';
@@ -23,11 +30,26 @@ export function useOffers(propertyId: string | undefined) {
     try {
       const { data, error: e } = await db()
         .from('property_offer')
-        .select('*, bidder:bidder_id(nickname, avatar_url)')
+        .select(`${OFFER_PUBLIC_COLS}, bidder:bidder_id(nickname, avatar_url)`)
         .eq('property_id', propertyId)
         .order('amount', { ascending: false });
       if (e) throw e;
-      setOffers((data ?? []) as Offer[]);
+      // `message` v odpovedi zámerne nie je (nie je vo výbere stĺpcov),
+      // preto `Omit` — dopĺňa sa až nižšie z `offer_messages()`.
+      const rows = (data ?? []) as unknown as Omit<Offer, 'message'>[];
+
+      // Správa NIE JE súčasťou riadku — doťahuje sa osobitne a len tá,
+      // na ktorú má volajúci nárok. Robí sa to tu, na jedinom mieste, aby
+      // každá obrazovka ďalej čítala `o.message` a nemusela o tom vedieť.
+      let messages: Record<string, string> = {};
+      try {
+        messages = await fetchOfferMessages(propertyId);
+      } catch (me: unknown) {
+        // Neprihlásený sem legitímne nedosiahne — ponuky sa musia zobraziť
+        // aj tak, len bez správ. Zamlčať to ale nebudem.
+        console.log(`[PONUKY] Správy nedostupné: ${errorText(me)}`);
+      }
+      setOffers(rows.map((o) => ({ ...o, message: messages[o.id] ?? null })));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKY] Načítanie zlyhalo: ${m}`);
@@ -91,11 +113,13 @@ export function useMyOffers(userId: string | undefined) {
     try {
       const { data, error: e } = await db()
         .from('property_offer')
-        .select('*, property:property_id(title, transaction_type)')
+        .select(`${OFFER_PUBLIC_COLS}, property:property_id(title, transaction_type)`)
         .eq('bidder_id', userId)
         .order('created_at', { ascending: false });
       if (e) throw e;
-      setItems((data ?? []) as never);
+      // `message` sa tu zámerne neťahá — zoznam mojich ponúk ju nezobrazuje
+      // a je viazaná na inzerát, nie na používateľa.
+      setItems((data ?? []).map((r) => ({ ...r, message: null })) as never);
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[MOJE PONUKY] Načítanie zlyhalo: ${m}`);

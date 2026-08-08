@@ -43,6 +43,20 @@ export type Property = {
   asking_price_hint: number | null;
   offer_deadline: string | null;
 
+  // ── len pre BYT, predaj aj prenájom (8.8.2026) ────────────────────────
+  // Sú to vlastnosti BUDOVY, nie obchodu — poschodie a výťah zaujímajú
+  // kupca rovnako ako nájomcu, preto nie sú medzi poľami nájmu nižšie.
+  /** Poschodie. Záporné = podzemné podlažie. */
+  floor: number | null;
+  /** Z koľkých poschodí celkovo — spolu s `floor` dá „3. z 5". */
+  floors_total: number | null;
+  has_elevator: boolean | null;
+  /**
+   * Mesačné prevádzkové náklady bytu (fond opráv, spoločné priestory…).
+   * NIE je to nájom ani zábezpeka — platí ich aj vlastník po kúpe.
+   */
+  monthly_costs: number | null;
+
   // ── len pre PRENÁJOM (bod 8, 8.8.2026) ────────────────────────────────
   // Pri predaji ostávajú `null` a formulár ich vôbec neukáže.
   /** Zábezpeka v eurách. */
@@ -54,6 +68,11 @@ export type Property = {
   min_lease_months: number | null;
   furnishing: Furnishing | null;
   utilities_included: Utilities | null;
+  /**
+   * Internet v cene nájmu. ZÁMERNE oddelené od `utilities_included` —
+   * ľudia sa naň pýtajú zvlášť a „energie áno" nikdy neznamená „aj internet".
+   */
+  internet_included: boolean | null;
   pets_allowed: boolean | null;
 
   view_count: number;
@@ -74,6 +93,8 @@ export type Media = {
 
 export type PropertyWithMedia = Property & {
   media: Media[];
+  /** Kto inzerát pridal. Len prezývka a avatar — nič viac verejné nie je. */
+  owner?: { nickname: string; avatar_url: string | null } | null;
   /** Najvyššia ŽIVÁ ponuka. Dopĺňa katalóg, v detaile sa počíta zo zoznamu. */
   top_offer?: number | null;
   offer_count?: number;
@@ -226,6 +247,38 @@ export function parseSkDate(text: string): string | null {
  * Riadky „podmienky prenájmu" do detailu. Nevyplnené polia sa vynechávajú —
  * prázdny riadok „Zábezpeka: —" nehovorí nič a len naťahuje obrazovku.
  */
+/**
+ * Riadky o BUDOVE — poschodie, výťah, mesačné náklady.
+ *
+ * Zobrazujú sa pri byte, a to pri predaji ROVNAKO ako pri prenájme.
+ * Fond opráv nie je vec nájmu; kupca zaujíma presne tak isto.
+ */
+export function buildingRows(p: Property): { label: string; value: string }[] {
+  if (p.property_type !== 'APARTMENT') return [];
+  const rows: { label: string; value: string }[] = [];
+
+  if (p.floor != null) {
+    const where = p.floor < 0 ? 'Suterén' : p.floor === 0 ? 'Prízemie' : `${p.floor}. poschodie`;
+    rows.push({
+      label: 'Poschodie',
+      value: p.floors_total != null ? `${where} z ${p.floors_total}` : where,
+    });
+  } else if (p.floors_total != null) {
+    rows.push({ label: 'Počet poschodí', value: String(p.floors_total) });
+  }
+
+  if (p.has_elevator != null) rows.push({ label: 'Výťah', value: p.has_elevator ? 'Áno' : 'Nie' });
+  if (p.monthly_costs != null) {
+    rows.push({
+      label: 'Mesačné náklady',
+      // `SALE` je tu len preto, aby sa suma nevypísala ako „…/mesiac" —
+      // slovo „mesačné" je už v názve riadku a dvakrát by to bolo hlúpe.
+      value: formatPrice(p.monthly_costs, 'SALE') ?? '—',
+    });
+  }
+  return rows;
+}
+
 export function rentalRows(p: Property): { label: string; value: string }[] {
   if (p.transaction_type !== 'RENT') return [];
   const rows: { label: string; value: string }[] = [];
@@ -251,6 +304,9 @@ export function rentalRows(p: Property): { label: string; value: string }[] {
   if (p.furnishing) rows.push({ label: 'Zariadenie', value: FURNISHING_LABEL[p.furnishing] });
   if (p.utilities_included) {
     rows.push({ label: 'Energie v nájme', value: UTILITIES_LABEL[p.utilities_included] });
+  }
+  if (p.internet_included != null) {
+    rows.push({ label: 'Internet v nájme', value: p.internet_included ? 'Áno' : 'Nie' });
   }
   if (p.pets_allowed != null) {
     rows.push({ label: 'Domáce zvieratá', value: p.pets_allowed ? 'Povolené' : 'Nepovolené' });

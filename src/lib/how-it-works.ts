@@ -9,7 +9,8 @@
  * Aktuálne zohľadňuje: otvorené pseudonymné ponuky (nie slepé),
  * povinnú prezývku, odkrytie kontaktu až po akceptácii, dopyty ako
  * druhú stranu trhu, uzávierku ponúk, moderovanie správcom a — od
- * 8.8.2026 — presnosť polohy na mape (obec, nie adresa).
+ * 8.8.2026 — presnosť polohy na mape (obec, nie adresa), súkromie správy
+ * pri ponuke a obhliadku ako okamžité odkrytie kontaktu.
  */
 export type HowStep = { icon: string; title: string; body: string };
 
@@ -30,7 +31,8 @@ export const HOW_STEPS: HowStep[] = [
     title: 'Ponuky sú verejné, ľudia nie',
     body:
       'Sumu, prezývku aj dátum každej ponuky vidí ktokoľvek, aj neprihlásený. ' +
-      'Kto za prezývkou stojí, sa nedozvie nikto — dovtedy.',
+      'Kto za prezývkou stojí, sa nedozvie nikto — dovtedy. Správa priložená ' +
+      'k ponuke verejná NIE JE: číta ju len predávajúci a ten, kto ju napísal.',
   },
   {
     icon: 'checkmark.seal',
@@ -38,6 +40,14 @@ export const HOW_STEPS: HowStep[] = [
     body:
       'Keď predávajúci niektorú ponuku prijme, meno, telefón a e-mail sa odkryjú ' +
       'OBOM stranám naraz. Predtým ich nemá ani jeden z nich.',
+  },
+  {
+    icon: 'key',
+    title: 'Obhliadka je jedno kliknutie',
+    body:
+      'Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku" sa kontakt ' +
+      'odkryje OBOM stranám okamžite a termín si dohodnete telefonicky. Appka ' +
+      'termíny nenavrhuje ani nepotvrdzuje — a späť sa to vziať nedá.',
   },
   {
     icon: 'house',

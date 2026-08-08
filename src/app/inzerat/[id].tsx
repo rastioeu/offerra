@@ -67,6 +67,9 @@ export default function PropertyEditorScreen() {
   const [deposit, setDeposit] = useState('');
   const [depositMonths, setDepositMonths] = useState('');
   const [minLease, setMinLease] = useState('');
+  const [floor, setFloor] = useState('');
+  const [floorsTotal, setFloorsTotal] = useState('');
+  const [monthlyCosts, setMonthlyCosts] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -83,6 +86,9 @@ export default function PropertyEditorScreen() {
     setDeposit(item.deposit_amount != null ? String(item.deposit_amount) : '');
     setDepositMonths(item.deposit_months != null ? String(item.deposit_months) : '');
     setMinLease(item.min_lease_months != null ? String(item.min_lease_months) : '');
+    setFloor(item.floor != null ? String(item.floor) : '');
+    setFloorsTotal(item.floors_total != null ? String(item.floors_total) : '');
+    setMonthlyCosts(item.monthly_costs != null ? String(item.monthly_costs) : '');
   }, [item]);
 
   function patch(p: Partial<Property>) {
@@ -92,6 +98,7 @@ export default function PropertyEditorScreen() {
   function collect(): Partial<Property> {
     if (!draft) return {};
     const isRent = draft.transaction_type === 'RENT';
+    const isFlat = draft.property_type === 'APARTMENT';
     return {
       transaction_type: draft.transaction_type,
       property_type: draft.property_type,
@@ -117,7 +124,14 @@ export default function PropertyEditorScreen() {
       min_lease_months: isRent ? num(minLease) : null,
       furnishing: isRent ? draft.furnishing : null,
       utilities_included: isRent ? draft.utilities_included : null,
+      internet_included: isRent ? draft.internet_included : null,
       pets_allowed: isRent ? draft.pets_allowed : null,
+      // Rovnaký dôvod ako pri nájme: prepnutie bytu na pozemok nesmie
+      // nechať v inzeráte poschodie a výťah.
+      floor: isFlat ? num(floor) : null,
+      floors_total: isFlat ? num(floorsTotal) : null,
+      has_elevator: isFlat ? draft.has_elevator : null,
+      monthly_costs: isFlat ? num(monthlyCosts) : null,
     };
   }
 
@@ -369,6 +383,50 @@ export default function PropertyEditorScreen() {
               placeholder={draft.transaction_type === 'RENT' ? '850 (za mesiac)' : '248000'}
             />
 
+            {/* ── o budove ──
+                Len pri BYTE, ale pri predaji ROVNAKO ako pri prenájme.
+                Fond opráv platí aj ten, kto byt kúpi. */}
+            {draft.property_type === 'APARTMENT' ? (
+              <>
+                <Text style={[styles.section, { color: palette.textMuted }]}>O BYTE A BUDOVE</Text>
+
+                <Field
+                  label="Poschodie"
+                  hint="0 = prízemie. Záporné číslo = suterén."
+                  value={floor}
+                  onChangeText={setFloor}
+                  keyboardType="numbers-and-punctuation"
+                  placeholder="3"
+                />
+                <Field
+                  label="Z koľkých poschodí celkovo"
+                  value={floorsTotal}
+                  onChangeText={setFloorsTotal}
+                  keyboardType="numeric"
+                  placeholder="5"
+                />
+
+                <ChoiceRow<'YES' | 'NO'>
+                  label="Výťah"
+                  options={[
+                    { value: 'YES', label: 'Je' },
+                    { value: 'NO', label: 'Nie je' },
+                  ]}
+                  value={draft.has_elevator == null ? null : draft.has_elevator ? 'YES' : 'NO'}
+                  onChange={(v) => patch({ has_elevator: v === 'YES' })}
+                />
+
+                <Field
+                  label="Mesačné náklady (€)"
+                  hint="Fond opráv, spoločné priestory, správa. Nie je to nájom ani zábezpeka — platia sa aj po kúpe."
+                  value={monthlyCosts}
+                  onChangeText={setMonthlyCosts}
+                  keyboardType="decimal-pad"
+                  placeholder="140"
+                />
+              </>
+            ) : null}
+
             {/* ── podmienky prenájmu ──
                 Len pri PRENÁJME. Pri predaji sú tieto polia nezmysel a
                 formulár sa nimi nemá čím naťahovať. */}
@@ -426,6 +484,18 @@ export default function PropertyEditorScreen() {
                   }))}
                   value={draft.utilities_included}
                   onChange={(v) => patch({ utilities_included: v })}
+                />
+
+                {/* Internet je ZVLÁŠŤ od energií — „energie áno" nikdy
+                    neznamenalo aj internet a ľudia sa naň pýtajú osobitne. */}
+                <ChoiceRow<'YES' | 'NO'>
+                  label="Internet v cene nájmu"
+                  options={[
+                    { value: 'YES', label: 'Áno' },
+                    { value: 'NO', label: 'Nie' },
+                  ]}
+                  value={draft.internet_included == null ? null : draft.internet_included ? 'YES' : 'NO'}
+                  onChange={(v) => patch({ internet_included: v === 'YES' })}
                 />
 
                 <ChoiceRow<'YES' | 'NO'>

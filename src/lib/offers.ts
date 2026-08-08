@@ -9,6 +9,7 @@
  * nešlo by to a ani by to nebolo správne.
  */
 import { db } from './property';
+import { supabase } from './supabase';
 
 export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
 export type RequestStatus = 'ACTIVE' | 'FULFILLED' | 'EXPIRED' | 'CLOSED';
@@ -20,6 +21,13 @@ export type Offer = {
   property_id: string;
   bidder_id: string;
   amount: number;
+  /**
+   * Správa pre predávajúceho. **Nie je verejná** — 8.8.2026 sa zistilo, že
+   * ju cez `select *` videl ktokoľvek, kto otvoril inzerát. Odvtedy na ňu
+   * `anon` ani `authenticated` nemajú stĺpcový grant a napĺňa sa výhradne
+   * cez `offer_messages()` (vlastník inzerátu = všetky, záujemca = len tá
+   * svoja). Kde sa nedotiahne, je `null` — to je správny stav, nie chyba.
+   */
   message: string | null;
   status: OfferStatus;
   created_at: string;
@@ -150,6 +158,37 @@ export function formatBudget(min: number | null, max: number | null): string {
   if (max != null) return `do ${f(max)}`;
   if (min != null) return `od ${f(min)}`;
   return 'Rozpočet neuvedený';
+}
+
+/**
+ * Stĺpce ponuky, ktoré smie čítať ktokoľvek.
+ *
+ * ZÁMERNE tu NIE JE `message` — a zámerne sa nepoužíva `*`. Rola `anon`
+ * ani `authenticated` na `message` stĺpcový grant nemá, takže `*` by celý
+ * dotaz zhodilo na 42501. Je to poistka: keby v tabuľke pribudol ďalší
+ * citlivý stĺpec, `*` by ho ticho zverejnilo, tento zoznam nie.
+ */
+export const OFFER_PUBLIC_COLS =
+  'id, property_id, bidder_id, amount, status, created_at, updated_at, viewed_by_owner_at';
+
+/**
+ * Správy k ponukám na jeden inzerát — len tie, ktoré volajúci smie vidieť.
+ *
+ * Vlastník inzerátu dostane správy pri všetkých ponukách naň, záujemca
+ * výhradne svoju vlastnú, neprihlásený nič. Rozhoduje o tom DB, nie appka.
+ */
+export async function fetchOfferMessages(propertyId: string): Promise<Record<string, string>> {
+  // Neprihlásený na funkciu nemá `execute` — dotaz by skončil na 401 a do
+  // logu by pri každom otvorení inzerátu spadla „chyba", ktorá chybou nie
+  // je. Skutočné chyby by sa v tom šume stratili.
+  const { data: s } = await supabase.auth.getSession();
+  if (!s.session) return {};
+
+  const { data, error } = await db().rpc('offer_messages', { p_property: propertyId });
+  if (error) throw error;
+  const map: Record<string, string> = {};
+  for (const r of (data ?? []) as { offer_id: string; message: string }[]) map[r.offer_id] = r.message;
+  return map;
 }
 
 /** Kontakt protistrany. Mimo stavu ACCEPTED vráti `null` — tak je to v DB. */
