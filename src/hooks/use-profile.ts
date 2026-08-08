@@ -26,6 +26,14 @@ export type MyProfile = {
   full_name: string | null;
   phone: string | null;
   avatar_url: string | null;
+  /**
+   * Kedy používateľ potvrdil, že má 18+. `null` = nepotvrdil.
+   *
+   * Offerra sprostredkúva REÁLNE právne úkony (kúpa, predaj, nájom
+   * nehnuteľnosti) a na tie nemá neplnoletá osoba na Slovensku plnú
+   * spôsobilosť. Preto 18+, nie 16+ ako MUTARK, ktorý je sociálna hra.
+   */
+  age_confirmed_at: string | null;
 };
 
 type ProfileState = {

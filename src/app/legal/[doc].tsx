@@ -18,7 +18,7 @@ import { LEGAL_DOCS, LEGAL_UPDATED, type LegalDoc } from '@/lib/legal';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 /** Verejná verzia toho istého dokumentu — tú vidí aj Apple. */
-const WEB_BASE = 'https://rastioeu.github.io/offerra';
+const WEB_BASE = 'https://rastioeu.github.io/offerra_web';
 
 export default function LegalScreen() {
   const palette = useTheme();

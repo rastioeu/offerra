@@ -14,7 +14,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
-const OUT = join(ROOT, 'docs');
+// Kam sa generuje. Bez argumentu do `docs/` v tomto repe, s argumentom
+// kamkoľvek — používa sa na naplnenie samostatného webového repa
+// `rastioeu/offerra_web`.
+const OUT = process.argv[2] ? process.argv[2] : join(ROOT, 'docs');
 
 /**
  * Texty sa čítajú zo zdroja ako TEXT a vyhodnotia sa po odstránení
@@ -100,7 +103,7 @@ function docPage(doc, updated) {
 <h1>${esc(doc.title)}</h1>
 <p class="lead">${esc(doc.lead)}</p>
 <p class="updated">Aktualizované ${esc(updated)}</p>
-<nav><a href="./privacy.html">Ochrana osobných údajov</a><a href="./terms.html">Podmienky používania</a></nav>
+<nav><a href="./privacy.html">Ochrana osobných údajov</a><a href="./terms.html">Podmienky používania</a><a href="./support.html">Podpora</a></nav>
 ${doc.sections
   .map(
     (s) =>
@@ -110,7 +113,7 @@ ${doc.sections
   return page({ title: doc.title, body });
 }
 
-const { LEGAL_DOCS, LEGAL_UPDATED, LEGAL_CONTACT_EMAIL } = loadLegal();
+const { LEGAL_DOCS, LEGAL_UPDATED, LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } = loadLegal();
 
 mkdirSync(OUT, { recursive: true });
 for (const doc of Object.values(LEGAL_DOCS)) {
@@ -120,16 +123,45 @@ for (const doc of Object.values(LEGAL_DOCS)) {
 writeFileSync(
   join(OUT, 'index.html'),
   page({
-    title: 'Dokumenty',
+    title: 'Offerra',
     body: `
 <h1>Offerra</h1>
-<p class="lead">Obrátený trh s nehnuteľnosťami. Predávajúci nemusí povedať cenu — záujemcovia predkladajú vlastné ponuky a všetci vidia, ako to ide.</p>
+<p class="lead">Obrátený trh s nehnuteľnosťami. Predávajúci nemusí povedať cenu — záujemcovia predkladajú vlastné ponuky pod prezývkou a všetci vidia, ako to ide. Skutočné meno a telefón sa odkryjú až vtedy, keď predávajúci niektorú ponuku prijme.</p>
+<nav><a href="./privacy.html">Ochrana osobných údajov</a><a href="./terms.html">Podmienky používania</a><a href="./support.html">Podpora</a></nav>
+<section><h2>Ako to funguje</h2>
+<p><strong>Cena je nepovinná.</strong> Kto ponúka nehnuteľnosť, môže uviesť orientačnú sumu — alebo nechať pole prázdne a počkať, čo mu ľudia ponúknu.</p>
+<p><strong>Ponuky sú verejné, ľudia nie.</strong> Sumu, prezývku aj dátum každej ponuky vidí ktokoľvek. Kto za prezývkou stojí, sa nedozvie nikto — dovtedy.</p>
+<p><strong>Kontakt až po dohode.</strong> Keď predávajúci ponuku prijme, meno, telefón a e-mail sa odkryjú obom stranám naraz.</p>
+<p><strong>Hľadať sa dá aj naopak.</strong> Napíšeš, čo hľadáš, a majitelia ťa môžu osloviť sami.</p>
+</section>
+<section><h2>Aplikácia</h2><p>Offerra je mobilná aplikácia pre iOS. Je v slovenčine a je bezplatná.</p></section>`,
+  })
+);
+
+writeFileSync(
+  join(OUT, 'support.html'),
+  page({
+    title: 'Podpora',
+    body: `
+<h1>Podpora</h1>
+<p class="lead">Niečo nefunguje, máš otázku alebo chceš nahlásiť obsah? Napíš — odpovedá človek.</p>
 <nav><a href="./privacy.html">Ochrana osobných údajov</a><a href="./terms.html">Podmienky používania</a></nav>
-<section><h2>Kontakt</h2><p><a href="mailto:${esc(LEGAL_CONTACT_EMAIL)}">${esc(LEGAL_CONTACT_EMAIL)}</a></p></section>`,
+<section><h2>Kontakt</h2>
+<p>E-mail: <a href="mailto:${esc(LEGAL_CONTACT_EMAIL)}">${esc(LEGAL_CONTACT_EMAIL)}</a></p>
+<p>Prevádzkovateľ: ${esc(LEGAL_OPERATOR)}</p>
+<p>Odpovedáme spravidla do niekoľkých pracovných dní.</p>
+</section>
+<section><h2>Nahlásenie obsahu</h2>
+<p>Nevhodný inzerát, ponuku aj používateľa je možné nahlásiť priamo v aplikácii — pri každom z nich je odkaz „Nahlásiť“. Nič sa nemaže automaticky, každé nahlásenie posudzuje človek.</p>
+<p>Ak sa do aplikácie nedostaneš, napíš na e-mail vyššie.</p>
+</section>
+<section><h2>Zmazanie účtu</h2>
+<p>Účet zmažeš priamo v aplikácii: Profil → Nastavenia → Zmazať účet. Odstráni sa profil, inzeráty, fotografie, ponuky aj dopyty. Nie je na to potrebná žiadna žiadosť.</p>
+</section>`,
   })
 );
 
 // GitHub Pages by inak hnalo obsah cez Jekyll a súbory so `_` by zmizli.
 writeFileSync(join(OUT, '.nojekyll'), '');
 
-console.log('Vygenerované: docs/index.html, docs/privacy.html, docs/terms.html');
+console.log(`Vygenerované do ${OUT}: index.html, privacy.html, terms.html, support.html`);

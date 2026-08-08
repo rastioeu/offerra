@@ -9,7 +9,7 @@
  * Táto obrazovka je len pohodlná cesta k tomu istému pravidlu.
  */
 import { useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
@@ -17,7 +17,7 @@ import { Button, ErrorNote, Field } from '@/components/ui';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing, Type, Weight } from '@/theme/tokens';
+import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function PrezyvkaScreen() {
   const palette = useTheme();
@@ -30,6 +30,7 @@ export default function PrezyvkaScreen() {
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [adult, setAdult] = useState(false);
 
   const trimmed = nickname.trim();
   const tooShort = trimmed.length > 0 && trimmed.length < 3;
@@ -40,6 +41,10 @@ export default function PrezyvkaScreen() {
       setError('Prezývka musí mať aspoň 3 znaky.');
       return;
     }
+    if (!adult) {
+      setError('Bez potvrdenia veku sa registrovať nedá — inzerovať a podávať ponuky môžu len plnoletí.');
+      return;
+    }
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
@@ -48,6 +53,9 @@ export default function PrezyvkaScreen() {
         nickname: trimmed,
         full_name: fullName.trim() || null,
         phone: phone.trim() || null,
+        // Čas potvrdenia, nie `true`: pri prípadnej neskoršej zmene
+        // podmienok treba vedieť, KEDY to človek odklikol.
+        age_confirmed_at: new Date().toISOString(),
       },
       true
     );
@@ -120,4 +128,16 @@ const styles = StyleSheet.create({
   divider: { borderTopWidth: StyleSheet.hairlineWidth, marginVertical: Spacing.xs },
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   note: { ...Type.caption, marginTop: -Spacing.sm },
+  ageRow: { flexDirection: 'row', alignItems: 'flex-start', gap: Spacing.sm },
+  box: {
+    width: 24,
+    height: 24,
+    borderRadius: Radius.sm,
+    borderWidth: 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  tick: { ...Type.bodyMd, fontWeight: Weight.bold },
+  ageText: { ...Type.bodyMd, flexShrink: 1 },
 });
