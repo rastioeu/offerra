@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { db } from '@/lib/property';
+import { errorText } from '@/lib/errors';
 
 export type HintKey = 'HOW_IT_WORKS' | 'ADD_PROPERTY' | 'MAKE_OFFER' | 'ADMIN';
 
@@ -25,7 +26,7 @@ export function useHints(userId: string | undefined) {
       if (error) throw error;
       setDismissed(new Set(((data ?? []) as { hint: HintKey }[]).map((r) => r.hint)));
     } catch (e: unknown) {
-      console.log(`[TIPY] Načítanie zlyhalo: ${String(e)}`);
+      console.log(`[TIPY] Načítanie zlyhalo: ${errorText(e)}`);
       setDismissed(undefined);
     }
   }, [userId]);
@@ -42,7 +43,7 @@ export function useHints(userId: string | undefined) {
         const { error } = await db().from('dismissed_hint').insert({ user_id: userId, hint });
         if (error && !/duplicate key/i.test(error.message)) throw error;
       } catch (e: unknown) {
-        console.log(`[TIPY] Uloženie zlyhalo: ${String(e)}`);
+        console.log(`[TIPY] Uloženie zlyhalo: ${errorText(e)}`);
         await reload();
       }
     },

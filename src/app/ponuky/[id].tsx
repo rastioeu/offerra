@@ -37,6 +37,7 @@ import {
 } from '@/lib/offers';
 import { db, formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 export default function ManageOffersScreen() {
   const palette = useTheme();
@@ -92,7 +93,7 @@ export default function ManageOffersScreen() {
         setOpenId(null);
       }
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[PONUKY] Rozhodnutie zlyhalo: ${m}`);
       Alert.alert('Nepodarilo sa uložiť', m);
     } finally {
@@ -106,7 +107,7 @@ export default function ManageOffersScreen() {
       setContacts((prev) => ({ ...prev, [offerId]: c }));
       if (!c) Alert.alert('Kontakt nie je dostupný', 'Odkryje sa až po prijatí ponuky.');
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       Alert.alert('Načítanie kontaktu zlyhalo', m);
     }
   }

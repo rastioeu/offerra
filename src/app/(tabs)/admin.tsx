@@ -18,6 +18,7 @@ import type { AdminStats, AdminUser, ReportRow } from '@/lib/admin';
 import { db, formatDate, STATUS_LABEL, type PropertyStatus } from '@/lib/property';
 import { REPORT_REASON_LABEL, REPORT_STATUS_LABEL, type ReportReason, type ReportStatus } from '@/lib/report';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 type Section = 'REPORTS' | 'PROPERTIES' | 'USERS';
 
@@ -80,7 +81,7 @@ export default function AdminScreen() {
       setUsers((u.data ?? []) as AdminUser[]);
       setAlerts((a.data ?? []) as Alert_[]);
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[ADMIN] Načítanie zlyhalo: ${m}`);
       setError(m);
     } finally {
@@ -100,7 +101,7 @@ export default function AdminScreen() {
       await reload();
       Alert.alert('Hotovo', done);
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[ADMIN] ${fn} zlyhalo: ${m}`);
       Alert.alert('Akcia zlyhala', m);
     }

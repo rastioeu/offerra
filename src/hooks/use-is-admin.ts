@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 
 import { db } from '@/lib/property';
+import { errorText } from '@/lib/errors';
 
 export function useIsAdmin(userId: string | undefined): boolean {
   const [admin, setAdmin] = useState(false);
@@ -22,7 +23,7 @@ export function useIsAdmin(userId: string | undefined): boolean {
         if (error) throw error;
         if (!cancelled) setAdmin(Boolean(data));
       } catch (e: unknown) {
-        console.log(`[ADMIN] Overenie roly zlyhalo: ${String(e)}`);
+        console.log(`[ADMIN] Overenie roly zlyhalo: ${errorText(e)}`);
         if (!cancelled) setAdmin(false);
       }
     })();

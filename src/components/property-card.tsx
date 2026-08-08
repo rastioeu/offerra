@@ -39,6 +39,7 @@ import { FavoriteHeart } from './favorite-heart';
 import { Icon } from './icon';
 import { LongPressMenu, tapFeedback, type LongPressAction } from './long-press-menu';
 import { Badge, Eyebrow } from './ui';
+import { errorText } from '@/lib/errors';
 
 /** Zdieľanie karty — rovnaký text ako v detaile, len iné spúšťacie miesto. */
 export async function shareProperty(item: PropertyWithMedia) {
@@ -54,7 +55,7 @@ export async function shareProperty(item: PropertyWithMedia) {
         .join('\n'),
     });
   } catch (e: unknown) {
-    console.log(`[ZDIEĽANIE] Zlyhalo: ${String(e)}`);
+    console.log(`[ZDIEĽANIE] Zlyhalo: ${errorText(e)}`);
   }
 }
 

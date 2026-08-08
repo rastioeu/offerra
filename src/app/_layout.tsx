@@ -13,6 +13,7 @@ import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { decideRoute } from '@/lib/gate';
 import { Colors } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -80,7 +81,7 @@ function RootLayoutInner() {
     // tiež, inak by appka ostala visieť — tá istá trieda chyby ako 0.17.
     if (session && profile === undefined && !profileError) return;
     SplashScreen.hideAsync().catch((e: unknown) => {
-      console.log(`[APP] Skrytie splash screenu zlyhalo: ${String(e)}`);
+      console.log(`[APP] Skrytie splash screenu zlyhalo: ${errorText(e)}`);
     });
   }, [session, profile, profileError]);
 

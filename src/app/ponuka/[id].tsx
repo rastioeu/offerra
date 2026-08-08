@@ -23,6 +23,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { EMPLOYMENT_OPTIONS, formatAmount } from '@/lib/offers';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 function num(text: string): number | null {
   const c = text.replace(',', '.').trim();
@@ -134,7 +135,7 @@ export default function OfferFormScreen() {
       );
       router.back();
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[PONUKA] Odoslanie zlyhalo: ${m}`);
       setError(m);
     } finally {
@@ -159,7 +160,7 @@ export default function OfferFormScreen() {
             await reloadOffers();
             router.back();
           } catch (e: unknown) {
-            const m = e instanceof Error ? e.message : String(e);
+            const m = errorText(e);
             console.log(`[PONUKA] Stiahnutie zlyhalo: ${m}`);
             Alert.alert('Stiahnutie zlyhalo', m);
           }

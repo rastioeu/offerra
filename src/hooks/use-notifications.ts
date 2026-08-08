@@ -57,6 +57,7 @@ import {
 import type { NotificationType } from '@/lib/notifications';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
+import { errorText } from '@/lib/errors';
 
 export type AppNotification = {
   id: string;
@@ -109,7 +110,7 @@ export function NotificationsProvider({
       setItems((data ?? []) as AppNotification[]);
       setError(null);
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[ZVONČEK] Načítanie zlyhalo: ${m}`);
       setError(m);
     }
@@ -161,7 +162,7 @@ export function NotificationsProvider({
       const { error: e } = await db().rpc('mark_notifications_read');
       if (e) throw e;
     } catch (e: unknown) {
-      console.log(`[ZVONČEK] Označenie zlyhalo: ${String(e)}`);
+      console.log(`[ZVONČEK] Označenie zlyhalo: ${errorText(e)}`);
       await reload();
     }
   }, [unread, reload]);

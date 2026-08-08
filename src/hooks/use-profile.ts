@@ -18,6 +18,7 @@
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { db } from '@/lib/property';
+import { errorText } from '@/lib/errors';
 
 export type MyProfile = {
   id: string;
@@ -42,7 +43,7 @@ type ProfileState = {
 
 function message(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
-  return e instanceof Error ? e.message : String(e);
+  return errorText(e);
 }
 
 const ProfileContext = createContext<ProfileState | null>(null);

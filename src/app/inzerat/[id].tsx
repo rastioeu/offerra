@@ -40,6 +40,7 @@ import {
   type Utilities,
 } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 /** Číslo z poľa. Prázdne → `null` (stĺpec je nullable, 0 by bola lož). */
 function num(text: string): number | null {
@@ -133,7 +134,7 @@ export default function PropertyEditorScreen() {
       await reload();
       return true;
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[EDITOR] Uloženie zlyhalo: ${m}`);
       setSaveError(m);
       return false;
@@ -180,7 +181,7 @@ export default function PropertyEditorScreen() {
             if (e) throw e;
             router.back();
           } catch (e: unknown) {
-            const m = e instanceof Error ? e.message : String(e);
+            const m = errorText(e);
             console.log(`[EDITOR] Zmazanie zlyhalo: ${m}`);
             Alert.alert('Zmazanie zlyhalo', m);
           }

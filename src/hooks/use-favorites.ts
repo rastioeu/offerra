@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { db, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
+import { errorText } from '@/lib/errors';
 
 export function useFavoriteIds(userId: string | undefined) {
   const [ids, setIds] = useState<Set<string>>(new Set());
@@ -20,7 +21,7 @@ export function useFavoriteIds(userId: string | undefined) {
       if (error) throw error;
       setIds(new Set(((data ?? []) as { property_id: string }[]).map((r) => r.property_id)));
     } catch (e: unknown) {
-      console.log(`[OBĽÚBENÉ] Načítanie zlyhalo: ${String(e)}`);
+      console.log(`[OBĽÚBENÉ] Načítanie zlyhalo: ${errorText(e)}`);
     }
   }, [userId]);
 
@@ -47,7 +48,7 @@ export function useFavoriteIds(userId: string | undefined) {
         if (error) throw error;
         return !on;
       } catch (e: unknown) {
-        console.log(`[OBĽÚBENÉ] Zmena zlyhala: ${String(e)}`);
+        console.log(`[OBĽÚBENÉ] Zmena zlyhala: ${errorText(e)}`);
         await reload(); // vrátime sa k pravde zo servera
         return null;
       }
@@ -105,7 +106,7 @@ export function useFavoriteProperties(userId: string | undefined) {
           .map((p) => ({ ...(p as Property), media: photos.get((p as Property).id) ?? [] }))
       );
     } catch (e: unknown) {
-      console.log(`[OBĽÚBENÉ] Zoznam zlyhal: ${String(e)}`);
+      console.log(`[OBĽÚBENÉ] Zoznam zlyhal: ${errorText(e)}`);
       setItems([]);
     }
   }, [userId]);

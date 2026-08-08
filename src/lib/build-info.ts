@@ -19,6 +19,8 @@
  * 8 znakov). `embedded` znamená, že beží kód zabudovaný v builde,
  * teda žiadna OTA zatiaľ nedorazila.
  */
+import { errorText } from '@/lib/errors';
+
 export type BuildInfo = {
   version: string;
   runtimeVersion: string;
@@ -42,7 +44,7 @@ export function readBuildInfo(): BuildInfo {
     const Constants = require('expo-constants').default;
     version = Constants?.expoConfig?.version ?? '?';
   } catch (e: unknown) {
-    problem = `expo-constants: ${String(e)}`;
+    problem = `expo-constants: ${errorText(e)}`;
   }
 
   try {
@@ -52,7 +54,7 @@ export function readBuildInfo(): BuildInfo {
     embedded = Boolean(Updates.isEmbeddedLaunch);
     ota = embedded ? 'embedded' : (Updates.updateId?.slice(0, 8) ?? '?');
   } catch (e: unknown) {
-    problem = [problem, `expo-updates: ${String(e)}`].filter(Boolean).join(' · ');
+    problem = [problem, `expo-updates: ${errorText(e)}`].filter(Boolean).join(' · ');
   }
 
   return { version, runtimeVersion, ota, embedded, problem };

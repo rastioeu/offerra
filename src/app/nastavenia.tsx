@@ -26,6 +26,7 @@ import { signOut } from '@/lib/auth';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 export default function NastaveniaScreen() {
   const palette = useTheme();
@@ -41,7 +42,7 @@ export default function NastaveniaScreen() {
       await signOut();
       // Presmerovanie robí brána v `_layout.tsx`.
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       Alert.alert('Odhlásenie zlyhalo', m);
       setBusy(false);
     }
@@ -77,7 +78,7 @@ export default function NastaveniaScreen() {
       await supabase.auth.signOut().catch(() => undefined);
       Alert.alert('Účet zmazaný', 'Ďakujeme, že si to skúsil.');
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[NASTAVENIA] Zmazanie účtu zlyhalo: ${m}`);
       Alert.alert('Zmazanie účtu zlyhalo', m);
       setBusy(false);

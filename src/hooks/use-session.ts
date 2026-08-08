@@ -2,6 +2,7 @@ import type { Session } from '@supabase/supabase-js';
 import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
+import { errorText } from '@/lib/errors';
 
 export type SessionState = {
   /** `undefined` = ešte sa načítava, `null` = nikto nie je prihlásený. */
@@ -32,7 +33,7 @@ export function useSession(): SessionState {
       })
       .catch((e: unknown) => {
         if (cancelled) return;
-        console.log(`[AUTH] Neočakávaná chyba pri načítaní session: ${String(e)}`);
+        console.log(`[AUTH] Neočakávaná chyba pri načítaní session: ${errorText(e)}`);
         setSession(null);
       });
 

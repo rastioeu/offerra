@@ -19,6 +19,7 @@ import { db, type City } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
+import { errorText } from '@/lib/errors';
 
 /** Čo sa o obci dozvie formulár. Súradnice môžu chýbať — obec bez nich sa
  *  proste neobjaví na mape, uložiť sa ale dá. */
@@ -61,7 +62,7 @@ export function CityPicker({
         if (e) throw e;
         if (!cancelled) setResults((data ?? []) as City[]);
       } catch (e: unknown) {
-        const m = e instanceof Error ? e.message : String(e);
+        const m = errorText(e);
         console.log(`[MESTÁ] Hľadanie zlyhalo: ${m}`);
         if (!cancelled) {
           setError(m);

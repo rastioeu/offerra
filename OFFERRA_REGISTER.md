@@ -2060,6 +2060,162 @@ dopytov skonštruovaných presne na túto NULL-otázku), `demand_parse_test.js`
 
 **IDE OTA** — je to čistý JS, žiadny natívny modul.
 
+### 7.15 PÁD pri prepnutí tabu — ✅ POTVRDENÉ POUŽÍVATEĽOM (8.8.2026)
+
+Rastio na buildе #4: appka padala pri ťuknutí na spodné taby. Po oprave
+a OTA potvrdil menovite: **„nepada"**.
+
+**Hláška zo zariadenia:**
+
+```
+Error: cannot add `postgres_changes` callbacks for
+realtime:notif-33fadff3-69a5-4b6f-9e62-cd6e554b8a05 after `subscribe()`.
+    NotificationBell ← AppHeader ← PridatScreen
+```
+
+**Koreňová príčina** — odmeraná v `realtime-js` 2.112.2,
+`RealtimeClient.channel()`, riadky 330–342:
+
+```js
+const exists = this.getChannels().find((c) => c.topic === realtimeTopic);
+if (!exists) { …vytvor nový… } else { return exists; }
+```
+
+`supabase.channel(topic)` **nevytvára nový kanál** — pri rovnakom názve
+vráti ten už existujúci. `AppHeader` je na štyroch taboch naraz a taby
+v expo-routeri ostávajú namontované, takže druhá hlavička dostala ten istý,
+už pripojený kanál a zavolala naň `.on()`. Podmienka výnimky je
+`isJoined() || isJoining()`, a `isJoining()` je `true` hneď po
+`subscribe()` — preto stačilo prepnúť tab.
+
+**Čo NEBOLO príčinou:** poradie `.on()` pred `.subscribe()`. To bolo
+správne od začiatku, v jednej reťazi v jednom efekte. Rastiov tip mieril
+na správne miesto, ale o úroveň vyššie.
+
+**Oprava:** `NotificationsProvider` v koreni appky — jeden kanál, jedno
+predplatné, jeden stav (rovnaký vzor ako `ProfileProvider`, ktorý v appke
+už bol). Názov kanála má jednorazovú príponu ako poistka.
+
+**Tri ďalšie chyby, ktoré tým zmizli** (neboli nahlásené):
+
+- štyri rovnaké dotazy do DB — každá hlavička si ťahala oznámenia sama;
+- rozchádzajúci sa stav — prečítanie správ nezhaslo zvonček v iných taboch;
+- `removeChannel()` pri odmontovaní jednej hlavičky odstránil kanál aj
+  ostatným, ktoré naň spoliehali.
+
+**Dôkaz:** `realtime_test.js` **6/6** proti skutočnému
+`@supabase/realtime-js`. Prvé tri testy reprodukujú pôvodnú hlášku
+doslova vrátane toho istého `notif-33fadff3-…`, ďalšie tri dokazujú opravu.
+
+**Trieda chyby.** Je to **piata chyba tej istej triedy**: stav, ktorý má
+byť JEDEN, existoval N-krát. Predošlé štyri: tri inštancie `useProfile`
+(2.11), lokálny stav zavretých tipov (6.5), `viewed_by_owner_at` bez
+jedného zapisovateľa (7.15 rieši inak) a onboarding prezývky (BUG 0).
+**Pravidlo do budúcna: čokoľvek, čo drží predplatné alebo zdieľaný stav,
+patrí do providera v koreni, nie do komponentu, ktorý môže byť na
+obrazovke viackrát.**
+
+### 7.16 Prechod celého registra po dnešných zmenách — ✅ OVERENÉ RUNTIME
+
+Rastio (8.8.2026): „Prejdi si CELÝ OFFERRA_REGISTER.md, over KAŽDÚ položku
+označenú ✅."
+
+Spustil som **všetkých 15 testovacích sád naraz** proti živej DB — teda
+každý bod, ktorý je v registri ✅ vďaka automatickému dôkazu:
+
+| Sada | Čo drží | Výsledok |
+|---|---|---|
+| `rls_test.py` | 1.8 RLS Fázy 1 | **15/15** |
+| `rls_test_f2.py` | 2.4 otvorené pseudonymné ponuky | **25/25** |
+| `flow_test.py` | 1.9 reťazec formulára cez REST | **10/10** |
+| `fn_test.py` | 2.5 funkcie | **5/5** |
+| `admin_test.py` | 3.6 nahlasovanie, moderovanie, admin | **24/24** |
+| `hole_test.py` | 2.12 štyri diery v oprávneniach | **5/5, 0 dier** |
+| `hole_test2.py` | 2.15 druhé kolo auditu | **6/6, 0 dier** |
+| `avatar_test.py` | 1.7 Storage, 4.3 obľúbené | **8/8** |
+| `rental_test.py` | 7.6 + 7.7 polia prenájmu a adresa | **12/12** |
+| `demand_filter_test.py` | 7.13 filtre nad dopytmi | **11/11** |
+| `viewed_test.py` | 7.17 razítko o pozretí | **10/10** |
+| `rental_pure_test.js` | dátumy a riadky prenájmu | **18/18** |
+| `demand_parse_test.js` | rozbor vety hľadajúceho | **9/9** |
+| `price_display_test.js` | čo je hlavné číslo po redizajne | **14/14** |
+| `realtime_test.js` | 7.15 pád pri prepnutí tabu | **6/6** |
+
+**Spolu 178 testov, 0 zlyhaní.** Žiadny skorší ✅ bod sa dnešnými zmenami
+nerozbil — vrátane tých, ktorých sa migrácia priamo dotkla (`property`
+dostal 9 nových stĺpcov, `property_offer` jeden, `buyer_request` jeden).
+
+**Nájdené regresie:** jedna jediná — pád v 7.15. Nič iné.
+
+**Čo tento prechod NEDOKAZUJE.** Body, ktoré sú v registri 🟡, ostávajú 🟡:
+sú to obrazovky a ich vzhľad a tie sa z terminálu overiť nedajú. Zoznam
+toho, čo treba prekliknúť na telefóne, je v
+`reports/FAZA_7_MAPA_A_OPRAVY.md`.
+
+### 7.17 Countdown platnosti inzerátu — ✅ NIE JE REGRESIA, presunutý
+
+Rastio hlásil, že countdown z `offer_deadline` na hlavnej stránke zmizol.
+**Nezmizol.** Pri redizajne (7.14) som ho presunul z riadku pod cenou na
+štítok priamo na fotke, vľavo dole — uzávierka je naliehavý údaj a v pätke
+rozbíjala pomer 60/40. Používa ten istý `deadlineLabel`.
+
+Overené dáta aj výpočet:
+
+```
+4 zo 7 zverejnených inzerátov MÁ uzávierku
+2026-08-21 → „Ponuky do 21. augusta 2026 · ostáva 13 dní"
+2026-09-21 → „Ponuky do 21. septembra 2026 · ostáva 44 dní"
+```
+
+**Moja chyba je v komunikácii, nie v kóde:** presun som nenapísal do
+reportu, takže to vyzeralo ako stratená funkcia.
+
+### 7.18 „[object Object]" v chybovom rámčeku — 🟡 OPRAVENÉ, ČAKÁ VIZUÁLNE OVERENIE
+
+Rastio (8.8.2026, screenshot): na obrazovke „Podať ponuku" sa v chybovom
+rámčeku zobrazilo doslova `[object Object]`.
+
+**Koreňová príčina.** V appke bol **25× rozkopírovaný** vzorec
+
+```ts
+const m = e instanceof Error ? e.message : String(e);
+```
+
+Chyby zo Supabase **nie sú inštancie `Error`** — PostgREST vracia obyčajný
+objekt `{ code, message, details, hint }`. Vetva `instanceof` neplatila,
+spadlo to do `String(e)` a z objektu vyšlo `[object Object]`.
+
+**Čo to naozaj bolo.** Rastio otvoril inzerát „Test videnia" — **môj
+testovací záznam**. Testy ho po sebe upratali (overené, v DB nie je), ale
+appka mala v zozname starú kópiu a server ponuku odmietol (`42501`).
+Hlásenie tak odhalilo dve veci: nečitateľnú chybu **a môj neporiadok
+v jeho katalógu**. Testovacie záznamy sa odteraz mažú v tom istom behu,
+v ktorom vzniknú, a majú v názve `Test`.
+
+**Oprava.** Jedna funkcia `errorText()` v `src/lib/errors.ts` namiesto
+vzorca na kopírovanie. Surová hláška sa nikdy nezahadzuje (§2 chce celú
+chybu), ľudský preklad kódu sa pripája nad ňu. Opravených **35 miest v 22
+súboroch** — nielen formulár ponuky:
+
+```
+25×  e instanceof Error ? e.message : String(e)
+ 8×  ${String(e)} v logoch
+ 2×  lokálne kópie helpera `message()` v hookoch
+```
+
+V appke nezostalo **ani jedno** miesto s `String(e)`.
+
+**Dôkazy:** `errors_test.js` **15/15** (tvary chýb sú skutočné odpovede
+PostgRESTu, nie vymyslené) a `errors_live_test.py` **2/2**, ktorý vyvolá
+presne tú situáciu zo screenshotu a surovú odpoveď prežene cez skutočný
+`errorText()`.
+
+**Trieda chyby.** Je to **šiesta chyba tej istej triedy** ako 7.15: to
+isté rozhodnutie rozkopírované na N miest namiesto jedného spoločného
+miesta. Predtým to bol zdieľaný stav, teraz formátovanie chyby.
+**Pravidlo: keď sa ten istý štvorriadkový vzorec objaví tretíkrát, je to
+funkcia, nie vzorec.**
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

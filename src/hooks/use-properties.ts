@@ -11,11 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { CatalogFilter } from '@/lib/search';
 import { db, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
-
-function message(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
-  return e instanceof Error ? e.message : String(e);
-}
+import { errorText } from '@/lib/errors';
 
 /** Fotky sa doťahujú jedným dotazom pre celý zoznam, nie N+1 na kartu. */
 async function attachMedia(rows: Property[]): Promise<PropertyWithMedia[]> {
@@ -96,7 +92,7 @@ export function useProperties(filter?: CatalogFilter) {
       if (e) throw e;
       setItems(await attachOfferStats(await attachMedia((data ?? []) as Property[])));
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[KATALÓG] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);
@@ -127,7 +123,7 @@ export function useProperty(id: string | undefined) {
       const [withMedia] = await attachMedia([data as Property]);
       setItem(withMedia);
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[DETAIL] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItem(null);
@@ -160,7 +156,7 @@ export function useMyProperties(userId: string | undefined) {
       if (e) throw e;
       setItems(await attachMedia((data ?? []) as Property[]));
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[MOJE] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);

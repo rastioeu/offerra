@@ -23,6 +23,7 @@ import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { db, DEMAND_LABEL, PROPERTY_LABEL, REGIONS, type PropertyType, type TransactionType } from '@/lib/property';
 import { Type } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 type AnyType = PropertyType | 'ANY';
 
@@ -84,7 +85,7 @@ export default function NewRequestScreen() {
       if (e) throw e;
       router.back();
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[DOPYT] Vytvorenie zlyhalo: ${m}`);
       setError(m);
     } finally {

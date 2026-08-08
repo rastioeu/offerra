@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Oprava pádu pri prepínaní tabov',
+    items: [
+      'Opravené: appka padala pri ťuknutí na spodné taby. Zvonček si na každej obrazovke otváral vlastné spojenie a druhé v poradí to zhodilo — teraz je jedno na celú appku.',
+      'Vedľajší efekt: zvonček zhasne všade naraz, keď si oznámenia prečítaš, a appka si menej pýta dáta zo servera.',
+      'Keby sa appka predsa niekedy pokazila, namiesto bielej plochy uvidíš, čo sa stalo — dá sa to odfotiť a poslať.',
+      'Opravené: chybové hlášky sú po slovensky a zrozumiteľné. Predtým sa pri niektorých chybách zobrazilo nezmyselné „[object Object]".',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Mapa, podmienky prenájmu a opravená klávesnica',
     items: [
       'Nehnuteľnosti sa dajú prezerať na MAPE — prepínač Zoznam/Mapa je hore vpravo. Na pine je rovno cena.',

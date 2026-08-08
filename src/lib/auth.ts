@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import type * as AppleAuthenticationType from 'expo-apple-authentication';
 
 import { supabase } from './supabase';
+import { errorText } from '@/lib/errors';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -84,7 +85,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
     }
     return session;
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = errorText(e);
     console.log(`[AUTH] Google — neočakávaná chyba: ${message}`);
     return { ok: false, message };
   }
@@ -145,7 +146,7 @@ export async function signInWithApple(): Promise<AuthResult> {
       console.log('[AUTH] Apple — používateľ prerušil.');
       return { ok: 'canceled' };
     }
-    const message = e instanceof Error ? e.message : String(e);
+    const message = errorText(e);
     console.log(`[AUTH] Apple — neočakávaná chyba: ${message}`);
     return { ok: false, message };
   }
@@ -179,7 +180,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
     console.log(`[AUTH] E-mail — prihlásený: user.id=${data.user.id}`);
     return { ok: true, userId: data.user.id, email: data.user.email };
   } catch (e) {
-    const message = e instanceof Error ? e.message : String(e);
+    const message = errorText(e);
     console.log(`[AUTH] E-mail — neočakávaná chyba: ${message}`);
     return { ok: false, message };
   }

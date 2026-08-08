@@ -21,6 +21,7 @@
 import type * as ImagePickerType from 'expo-image-picker';
 
 import { supabase } from './supabase';
+import { errorText } from '@/lib/errors';
 
 export const BUCKET = 'offerra-media';
 /** Bucket má limit 10 MB; zastavíme sa skôr a s vysvetlením. */
@@ -124,5 +125,5 @@ export async function uploadPhoto(path: string, photo: PickedPhoto, upsert: bool
 /** Text pre používateľa vrátane kroku — aby sa nehádalo, kde to padlo. */
 export function photoErrorMessage(e: unknown): string {
   if (e instanceof PhotoError) return `${e.message}\n\n(krok ${e.step})`;
-  return e instanceof Error ? e.message : String(e);
+  return errorText(e);
 }

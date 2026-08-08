@@ -10,11 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import type { BuyerRequest, Offer, Outreach, TenantProfile } from '@/lib/offers';
 import { db } from '@/lib/property';
 import type { CatalogFilter } from '@/lib/search';
-
-function message(e: unknown): string {
-  if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
-  return e instanceof Error ? e.message : String(e);
-}
+import { errorText } from '@/lib/errors';
 
 /** Verejný zoznam ponúk na inzeráte, zoradený podľa sumy zostupne. */
 export function useOffers(propertyId: string | undefined) {
@@ -33,7 +29,7 @@ export function useOffers(propertyId: string | undefined) {
       if (e) throw e;
       setOffers((data ?? []) as Offer[]);
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[PONUKY] Načítanie zlyhalo: ${m}`);
       setError(m);
       setOffers([]);
@@ -68,7 +64,7 @@ export function useTenantProfiles(offerIds: string[]) {
         setMap(next);
       } catch (e: unknown) {
         // Nie je to chyba používateľa — cudzí dotazník proste nevidí.
-        console.log(`[DOTAZNÍK] Nedostupný: ${message(e)}`);
+        console.log(`[DOTAZNÍK] Nedostupný: ${errorText(e)}`);
         if (!cancelled) setMap({});
       }
     })();
@@ -101,7 +97,7 @@ export function useMyOffers(userId: string | undefined) {
       if (e) throw e;
       setItems((data ?? []) as never);
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[MOJE PONUKY] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);
@@ -155,7 +151,7 @@ export function useRequests(mineOf?: string, filter?: CatalogFilter) {
       if (e) throw e;
       setItems((data ?? []) as BuyerRequest[]);
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[DOPYTY] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);
@@ -185,7 +181,7 @@ export function useRequest(id: string | undefined) {
       if (e) throw e;
       setItem((data as BuyerRequest) ?? null);
     } catch (e: unknown) {
-      const m = message(e);
+      const m = errorText(e);
       console.log(`[DOPYT] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItem(null);
@@ -214,7 +210,7 @@ export function useOutreach(requestId: string | undefined) {
       if (error) throw error;
       setItems((data ?? []) as Outreach[]);
     } catch (e: unknown) {
-      console.log(`[OSLOVENIA] Nedostupné: ${message(e)}`);
+      console.log(`[OSLOVENIA] Nedostupné: ${errorText(e)}`);
       setItems([]);
     }
   }, [requestId]);

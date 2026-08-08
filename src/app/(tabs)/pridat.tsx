@@ -20,6 +20,7 @@ import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { db, formatDate, PROPERTY_LABEL, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 export default function PridatScreen() {
   const palette = useTheme();
@@ -49,7 +50,7 @@ export default function PridatScreen() {
       await reload();
       router.push({ pathname: '/inzerat/[id]', params: { id: (data as { id: string }).id } });
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[PRIDAŤ] Vytvorenie konceptu zlyhalo: ${m}`);
       Alert.alert('Nepodarilo sa založiť inzerát', m);
     } finally {

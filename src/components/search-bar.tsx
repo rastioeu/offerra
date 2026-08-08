@@ -29,6 +29,7 @@ import {
   type FilterSide,
 } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 const TYPES: PropertyType[] = ['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL'];
 
@@ -90,7 +91,7 @@ export function SearchBar({
             break;
           }
         } catch (e: unknown) {
-          console.log(`[HĽADANIE] Obec sa nepodarilo overiť: ${String(e)}`);
+          console.log(`[HĽADANIE] Obec sa nepodarilo overiť: ${errorText(e)}`);
         }
       }
 

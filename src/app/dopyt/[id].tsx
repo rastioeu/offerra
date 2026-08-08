@@ -20,6 +20,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
 import { db, DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { errorText } from '@/lib/errors';
 
 export default function RequestDetailScreen() {
   const palette = useTheme();
@@ -60,7 +61,7 @@ export default function RequestDetailScreen() {
         'Autor dopytu ho uvidí vo svojom profile. Push notifikácie zatiaľ appka nemá.'
       );
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[OSLOVENIE] Odoslanie zlyhalo: ${m}`);
       Alert.alert(
         'Oslovenie sa nepodarilo',

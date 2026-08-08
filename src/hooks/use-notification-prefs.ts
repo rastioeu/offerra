@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { NotificationFrequency, NotificationPreference, NotificationType } from '@/lib/notifications';
 import { db } from '@/lib/property';
+import { errorText } from '@/lib/errors';
 
 export function useNotificationPrefs(userId: string | undefined) {
   const [prefs, setPrefs] = useState<Record<string, NotificationPreference>>({});
@@ -17,7 +18,7 @@ export function useNotificationPrefs(userId: string | undefined) {
       for (const p of (data ?? []) as NotificationPreference[]) next[p.type] = p;
       setPrefs(next);
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[NOTIFIKÁCIE] Načítanie zlyhalo: ${m}`);
       setError(m);
     }
@@ -44,7 +45,7 @@ export function useNotificationPrefs(userId: string | undefined) {
           .upsert(next, { onConflict: 'user_id,type' });
         if (e) throw e;
       } catch (e: unknown) {
-        const m = e instanceof Error ? e.message : String(e);
+        const m = errorText(e);
         console.log(`[NOTIFIKÁCIE] Uloženie zlyhalo: ${m}`);
         setError(m);
         await reload(); // späť k pravde zo servera

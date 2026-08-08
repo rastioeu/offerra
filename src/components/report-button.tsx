@@ -17,6 +17,7 @@ import { REPORT_REASONS, type ReportTarget, type ReportReason } from '@/lib/repo
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Button, ErrorNote, Field, KeyboardDoneBar } from './ui';
+import { errorText } from '@/lib/errors';
 
 export function ReportButton({
   targetType,
@@ -71,7 +72,7 @@ export function ReportButton({
         if (e) throw e;
         if (!cancelled) setAlready(Boolean(data));
       } catch (e: unknown) {
-        console.log(`[NAHLÁSENIE] Kontrola zlyhala: ${String(e)}`);
+        console.log(`[NAHLÁSENIE] Kontrola zlyhala: ${errorText(e)}`);
       }
     })();
     return () => {
@@ -101,7 +102,7 @@ export function ReportButton({
           'obsah posúdi človek.'
       );
     } catch (e: unknown) {
-      const m = e instanceof Error ? e.message : String(e);
+      const m = errorText(e);
       console.log(`[NAHLÁSENIE] Odoslanie zlyhalo: ${m}`);
       setError(/duplicate key/i.test(m) ? 'Toto si už nahlásil.' : m);
     } finally {
