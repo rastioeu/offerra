@@ -50,8 +50,19 @@ export function isFilterEmpty(f: CatalogFilter): boolean {
   return (Object.keys(EMPTY_FILTER) as (keyof CatalogFilter)[]).every((k) => f[k] == null);
 }
 
-/** Diakritika preč — aby „Petrzalka" našlo Petržalku. */
-function fold(s: string): string {
+/**
+ * Diakritika preč a malé písmená — aby „banska bystrica" našlo
+ * „Banská Bystrica".
+ *
+ * MUSÍ dávať ten istý výsledok ako `offerra.norm()` v databáze, inak by
+ * sa hľadanie minulo cieľ. Overené na desiatich slovenských názvoch
+ * vrátane `ľ`, `ô`, `ä` — obe strany vrátili to isté (report
+ * `HLADANIE_BEZ_DIAKRITIKY.md`).
+ *
+ * Používa sa VŠADE, kde ide text od používateľa do dotazu — nie len
+ * v rozbore vety.
+ */
+export function normalizeText(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
@@ -97,7 +108,7 @@ export function parseQuery(raw: string): Parsed {
   // ostatnú interpunkciu zahodíme.
   let s =
     ' ' +
-    fold(raw)
+    normalizeText(raw)
       .replace(/(\d),(\d)/g, '$1.$2')
       .replace(/[,;]/g, ' ')
       .replace(/\.(?!\d)/g, ' ')

@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { db, type City } from '@/lib/property';
+import { normalizeText } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
@@ -55,7 +56,11 @@ export function CityPicker({
       setError(null);
       try {
         let q = db().from('city').select('*');
-        if (query.trim().length > 0) q = q.ilike('name', `${query.trim()}%`);
+        // Hľadá sa v `name_norm` (bez diakritiky, malé písmená), nie
+        // v `name` — inak by „banska" nenašlo „Banská". `like` a nie
+        // `ilike`, aby sa využil prefixový index.
+        const needle = normalizeText(query.trim());
+        if (needle.length > 0) q = q.like('name_norm', `${needle}%`);
         const { data, error: e } = await q
           .order('population', { ascending: false, nullsFirst: false })
           .limit(40);

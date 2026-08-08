@@ -15,12 +15,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
 import { OfferTimeline } from '@/components/offer-timeline';
-import { Button, Card, ChoiceRow, ErrorNote, Eyebrow, Field } from '@/components/ui';
+import { Button, Card, ChoiceRow, ErrorNote, Eyebrow, Field, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
-import { EMPLOYMENT_OPTIONS, formatAmount } from '@/lib/offers';
+import { EMPLOYMENT_OPTIONS, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -41,7 +41,15 @@ export default function OfferFormScreen() {
 
   const { item } = useProperty(id);
   const { offers, reload: reloadOffers } = useOffers(id);
-  const mine = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
+  // CHYBA, KTORÚ TO OPRAVUJE (nájdená 8.8.2026): hľadala sa len ponuka
+  // v stave PENDING, takže po PRIJATÍ ponuky záujemca uvidel prázdny
+  // formulár „Podať ponuku" — vlastnú prijatú ponuku ani odkrytý kontakt
+  // nevidel vôbec, hoci mu ho databáza vydať vie (`offer_contact` pozná
+  // obe strany).
+  const mine = offers?.find(
+    (o) => o.bidder_id === myId && (o.status === 'PENDING' || o.status === 'ACCEPTED')
+  );
+  const accepted = mine?.status === 'ACCEPTED';
   const tenants = useTenantProfiles(mine ? [mine.id] : []);
   const myTenant = mine ? tenants[mine.id] : undefined;
 
@@ -73,6 +81,25 @@ export default function OfferFormScreen() {
     setIncome(myTenant.monthly_income_hint != null ? String(myTenant.monthly_income_hint) : '');
     setNote(myTenant.note ?? '');
   }, [myTenant]);
+
+  // Kontakt na predávajúceho — vydá ho len `offer_contact()` a len keď
+  // je ponuka prijatá. Pred prijatím vráti prázdno aj samotnému
+  // záujemcovi, takže sa tu nedá nič vytiahnuť skôr.
+  const [contact, setContact] = useState<OfferContact | null>(null);
+  useEffect(() => {
+    if (!accepted || !mine) return;
+    let cancelled = false;
+    void fetchOfferContact(mine.id)
+      .then((c) => {
+        if (!cancelled) setContact(c);
+      })
+      .catch((e: unknown) => {
+        console.log(`[PONUKA] Kontakt sa nepodarilo načítať: ${errorText(e)}`);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [accepted, mine]);
 
   const isRent = item?.transaction_type === 'RENT';
   const highest = offers?.find((o) => o.status === 'PENDING');
@@ -212,6 +239,30 @@ export default function OfferFormScreen() {
               </Card>
             ) : null}
 
+            {accepted ? (
+              <Card>
+                <Eyebrow>Odkrytý kontakt na predávajúceho</Eyebrow>
+                <Text style={[styles.note, { color: palette.textMuted }]}>
+                  Ponuka bola prijatá, takže vidíte na seba obaja. Údaje použi
+                  výhradne na dohodu o tejto nehnuteľnosti.
+                </Text>
+                {contact ? (
+                  <View style={styles.contactGrid}>
+                    <ParamCell value={contact.nickname ?? '—'} label="Prezývka" />
+                    <ParamCell value={contact.full_name ?? 'nevyplnené'} label="Meno" />
+                    <ParamCell value={contact.phone ?? 'nevyplnený'} label="Telefón" />
+                    <ParamCell value={contact.email ?? 'nedostupný'} label="E-mail" />
+                  </View>
+                ) : (
+                  <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam kontakt…</Text>
+                )}
+              </Card>
+            ) : null}
+
+            {/* Po prijatí sa formulár skryje — meniť prijatú ponuku
+                nemá zmysel a databáza to aj tak nepustí (guard trigger). */}
+            {!accepted ? (
+            <>
             <Field
               label="Moja ponuka (€)"
               hint={
@@ -285,6 +336,9 @@ export default function OfferFormScreen() {
               </Card>
             ) : null}
 
+            </>
+            ) : null}
+
             <ErrorNote error={error} />
 
             <View style={styles.actions}>
@@ -314,5 +368,6 @@ const styles = StyleSheet.create({
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   note: { ...Type.caption, marginTop: -Spacing.sm },
   actions: { gap: Spacing.sm },
+  contactGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   closed: { ...Type.bodyMd, fontWeight: Weight.medium },
 });

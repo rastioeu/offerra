@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import type { CatalogFilter } from '@/lib/search';
+import { normalizeText, type CatalogFilter } from '@/lib/search';
 import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 import { errorText } from '@/lib/errors';
 
@@ -84,8 +84,10 @@ export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWES
       if (f?.priceMax != null) q = q.or(`asking_price_hint.lte.${f.priceMax},asking_price_hint.is.null`);
       if (f?.priceMin != null) q = q.or(`asking_price_hint.gte.${f.priceMin},asking_price_hint.is.null`);
       if (f?.text) {
-        const t = f.text.replace(/[%,()]/g, ' ').trim();
-        if (t) q = q.or(`title.ilike.*${t}*,description.ilike.*${t}*,city.ilike.*${t}*`);
+        // JEDEN normalizovaný stĺpec namiesto troch `or` vetiev: hľadá
+        // bez diakritiky a využije trigramový index.
+        const t = normalizeText(f.text.replace(/[%,()]/g, ' ').trim());
+        if (t) q = q.like('search_norm', `%${t}%`);
       }
 
       // Server radí od najnovšieho — to je predvolené poradie katalógu.

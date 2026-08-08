@@ -84,7 +84,8 @@ export function SearchBar({
           const { data } = await db()
             .from('city')
             .select('name')
-            .ilike('name', `${candidate}%`)
+            // `candidate` už z rozboru vety prichádza bez diakritiky.
+            .like('name_norm', `${candidate}%`)
             .order('population', { ascending: false, nullsFirst: false })
             .limit(1);
           const hit = (data ?? [])[0] as { name: string } | undefined;

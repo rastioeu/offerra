@@ -194,6 +194,10 @@ export default function ProfilScreen() {
 
               {editing ? (
                 <>
+                  <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
+                  <Text style={[styles.hint, { color: palette.textMuted }]}>
+                    E-mail sa mení cez prihlásenie, nie tu.
+                  </Text>
                   <Field label="Prezývka" value={nickname} onChangeText={setNickname} />
                   <Field label="Meno a priezvisko" value={fullName} onChangeText={setFullName} />
                   <Field label="Telefón" value={phone} onChangeText={setPhone} />
@@ -202,6 +206,11 @@ export default function ProfilScreen() {
                 </>
               ) : (
                 <>
+                  {/* E-mail sa NEDÁ upraviť tu. Zmena e-mailu má vlastný
+                      overovací tok cez Supabase Auth (potvrdzovací odkaz na
+                      starú aj novú adresu) a pole, ktoré sa tvári
+                      upraviteľne a nič neuloží, je horšie než read-only. */}
+                  <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
                   <Row label="Meno" value={profile.full_name ?? 'nevyplnené'} />
                   <Row label="Telefón" value={profile.phone ?? 'nevyplnený'} />
                   {missingContact ? (
