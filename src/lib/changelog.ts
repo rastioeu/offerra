@@ -34,6 +34,12 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Karty a riadky v celej appke sú klikateľné celé, nie len text v nich.',
       'Dopyty majú vlastné vyhľadávanie a filtre — rovnaké ovládanie ako pri nehnuteľnostiach, len so slovami hľadajúceho („Kúpim", „Hľadám prenájom").',
       'Dopyt, ktorý berie akýkoľvek typ nehnuteľnosti, sa filtrom nestratí — objaví sa aj keď hľadáš konkrétne byty.',
+      'Katalóg vyzerá inak: fotka zaberá väčšinu karty a cena je terakotová, väčšia a v inom písme — nájdeš ju bez čítania.',
+      'Keď na inzerát niekto ponúkol, hlavné číslo je NAJVYŠŠIA PONUKA. Orientačná cena predávajúceho je vedľa, menšia.',
+      'Detail inzerátu má galériu cez celú šírku s bodkami, parametre v prehľadnej mriežke a tlačidlo Podať ponuku prilepené dole — nezmizne po scrollovaní.',
+      'Ponuky sú karty s iniciálou, najvyššia má terakotový rámik a odznak.',
+      'Ako majiteľ ťukneš na ponuku a otvorí sa spodný panel so všetkým, čo o nej vieš, aj s Prijať a Odmietnuť.',
+      'Podržanie prsta na karte v katalógu ukáže náhľad a rýchle akcie — obľúbené, zdieľanie, nahlásenie. Telefón pri tom jemne zavibruje.',
     ],
   },
   {

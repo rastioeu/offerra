@@ -216,7 +216,12 @@ export function Button({
 }) {
   const palette = useTheme();
   const filled = variant === 'primary';
-  const tint = variant === 'danger' ? palette.danger : palette.primary;
+  // Hlavná akcia je TERAKOTOVÁ, nie navy. Tokeny to hovorili od začiatku
+  // (`accentDeep` = „CTA tlačidlá"), tlačidlo to ale nedodržiavalo —
+  // dorovnané s mockupom „Dôveryhodne teplá" (8.8.2026). `Shadow.button`
+  // má terakotový tieň, takže sedeli len navzájom, nie s palettou.
+  const tint =
+    variant === 'danger' ? palette.danger : filled ? palette.accentDeep : palette.primary;
   const off = disabled || loading;
 
   return (
@@ -268,7 +273,8 @@ export function PropertyCardSkeleton() {
   const palette = useTheme();
   return (
     <View style={[styles.card, Shadow.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-      <Skeleton style={{ height: 190, borderRadius: 0 }} />
+      {/* Rovnaká výška ako skutočná fotka na karte (~60 % karty). */}
+      <Skeleton style={{ height: 208, borderRadius: 0 }} />
       <View style={{ padding: Spacing.md, gap: Spacing.sm }}>
         <Skeleton style={{ height: 18, width: '75%' }} />
         <Skeleton style={{ height: 13, width: '50%' }} />
@@ -295,14 +301,56 @@ export function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function Badge({ text, tone = 'neutral' }: { text: string; tone?: 'neutral' | 'accent' | 'warning' }) {
+/**
+ * `navy` a `onPhoto` pribudli s redizajnom (mockup „Dôveryhodne teplá"):
+ * na fotke sú dva štítky vedľa seba — plný navy pre typ obchodu
+ * a poloprehľadný svetlý pre typ nehnuteľnosti. Plný biely obdĺžnik by
+ * z fotky vystrihol dieru.
+ */
+export function Badge({
+  text,
+  tone = 'neutral',
+}: {
+  text: string;
+  tone?: 'neutral' | 'accent' | 'warning' | 'navy' | 'onPhoto';
+}) {
   const palette = useTheme();
   const bg =
-    tone === 'accent' ? palette.secondary : tone === 'warning' ? palette.warning : palette.surfacePressed;
-  const fg = tone === 'neutral' ? palette.textSecondary : palette.onPrimary;
+    tone === 'accent' ? palette.secondary
+      : tone === 'warning' ? palette.warning
+      : tone === 'navy' ? palette.primary
+      : tone === 'onPhoto' ? palette.onPhotoSurface
+      : palette.surfacePressed;
+  const fg =
+    tone === 'neutral' || tone === 'onPhoto' ? palette.textSecondary : palette.onPrimary;
   return (
     <View style={[styles.badge, { backgroundColor: bg }]}>
       <Text style={[styles.badgeText, { color: fg }]}>{text}</Text>
+    </View>
+  );
+}
+
+/**
+ * Verzálkový štítok nad údajom („NAJVYŠŠIA PONUKA", „VÝMERA").
+ * Z mockupu — drží mriežku parametrov aj hlavičku ceny pokope.
+ */
+export function Eyebrow({ children }: { children: string }) {
+  const palette = useTheme();
+  return <Text style={[styles.eyebrow, { color: palette.textMuted }]}>{children.toUpperCase()}</Text>;
+}
+
+/**
+ * Bunka mriežky parametrov 2×2 (mockup). Hodnota hore a veľká, popis pod
+ * ňou malý — číslo sa má dať prečítať bez toho, aby oko hľadalo štítok.
+ */
+export function ParamCell({ value, label }: { value: string; label: string }) {
+  const palette = useTheme();
+  return (
+    <View style={[styles.paramCell, { backgroundColor: palette.surface, borderColor: palette.border }]}>
+      <Text numberOfLines={1} style={[styles.paramValue, { color: palette.textPrimary }]}>
+        {value}
+      </Text>
+      <Eyebrow>{label}</Eyebrow>
     </View>
   );
 }
@@ -380,6 +428,17 @@ const styles = StyleSheet.create({
   errorText: { ...Type.bodyMd, fontWeight: Weight.medium },
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.md },
   sectionLabel: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
+  eyebrow: { ...Type.eyebrow, fontWeight: Weight.semibold },
+  paramCell: {
+    flexGrow: 1,
+    flexBasis: '47%',
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    gap: 2,
+  },
+  paramValue: { ...Type.subtitle, fontWeight: Weight.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
   rowLabel: { ...Type.bodyMd },
   rowValue: { ...Type.bodyMd, fontWeight: Weight.medium, flexShrink: 1, textAlign: 'right' },

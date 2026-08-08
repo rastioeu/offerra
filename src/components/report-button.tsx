@@ -23,17 +23,34 @@ export function ReportButton({
   targetId,
   label,
   compact,
+  hideTrigger,
+  openExternally,
+  onExternalClose,
 }: {
   targetType: ReportTarget;
   targetId: string;
   label: string;
   compact?: boolean;
+  /**
+   * Skryje odkaz „Nahlásiť" a formulár sa otvára zvonku — používa to
+   * podržanie prstu na karte v katalógu (bod 12). Ten istý formulár,
+   * len iné spúšťacie miesto; kopírovať ho druhýkrát by znamenalo dve
+   * miesta, kde sa dá pokaziť validácia.
+   */
+  hideTrigger?: boolean;
+  openExternally?: boolean;
+  onExternalClose?: () => void;
 }) {
   const palette = useTheme();
   const { session } = useSession();
   const myId = session?.user.id;
 
   const [open, setOpen] = useState(false);
+  const visible = hideTrigger ? Boolean(openExternally) : open;
+  const close = () => {
+    setOpen(false);
+    onExternalClose?.();
+  };
   const [already, setAlready] = useState(false);
   const [reason, setReason] = useState<ReportReason>('SPAM');
   const [note, setNote] = useState('');
@@ -75,7 +92,7 @@ export function ReportButton({
         note: note.trim() || null,
       });
       if (e) throw e;
-      setOpen(false);
+      close();
       setAlready(true);
       setNote('');
       Alert.alert(
@@ -92,28 +109,42 @@ export function ReportButton({
     }
   }
 
+  // Už nahlásené + otvorené zvonku (podržanie prstu): povedz to a zavri.
+  // Musí to byť EFEKT, nie vetva v rendere — `Alert` aj zmena stavu rodiča
+  // sú vedľajšie účinky a v tele komponentu by spôsobili varovanie a v
+  // najhoršom slučku prekreslení.
+  useEffect(() => {
+    if (hideTrigger && openExternally && already) {
+      Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.');
+      onExternalClose?.();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hideTrigger, openExternally, already]);
+
   if (!myId) return null;
 
   return (
     <>
-      <Pressable
-        onPress={() => (already ? Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.') : setOpen(true))}
-        accessibilityRole="button"
-        hitSlop={8}>
-        <Text
-          style={[
-            compact ? styles.compact : styles.link,
-            { color: already ? palette.textMuted : palette.danger },
-          ]}>
-          {already ? 'Nahlásené' : label}
-        </Text>
-      </Pressable>
+      {hideTrigger ? null : (
+        <Pressable
+          onPress={() => (already ? Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.') : setOpen(true))}
+          accessibilityRole="button"
+          hitSlop={8}>
+          <Text
+            style={[
+              compact ? styles.compact : styles.link,
+              { color: already ? palette.textMuted : palette.danger },
+            ]}>
+            {already ? 'Nahlásené' : label}
+          </Text>
+        </Pressable>
+      )}
 
-      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
+      <Modal visible={visible} animationType="slide" onRequestClose={close}>
         <SafeAreaView style={[styles.modal, { backgroundColor: palette.background }]}>
           <View style={styles.head}>
             <Text style={[styles.title, { color: palette.textPrimary }]}>{label}</Text>
-            <Pressable onPress={() => setOpen(false)} hitSlop={12} accessibilityRole="button">
+            <Pressable onPress={close} hitSlop={12} accessibilityRole="button">
               <Text style={[styles.close, { color: palette.link }]}>Zavrieť</Text>
             </Pressable>
           </View>

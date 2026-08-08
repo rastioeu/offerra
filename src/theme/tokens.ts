@@ -44,6 +44,14 @@ export type Palette = {
   /** Text NA vyplnenom `primary`/`secondary` povrchu (tlačidlo, badge). */
   onPrimary: string;
 
+  /**
+   * Svetlá plocha NAD FOTKOU (štítok typu na karte). Musí byť
+   * poloprehľadná, inak by z fotky vystrihla biely obdĺžnik.
+   */
+  onPhotoSurface: string;
+  /** Stmavenie pozadia pod kontextovým náhľadom (podržanie prstu). */
+  scrim: string;
+
   success: string;
   warning: string;
   danger: string;
@@ -91,6 +99,8 @@ export const Colors: { light: Palette; dark: Palette } = {
     accent: '#C9703B',
     accentDeep: '#A85526',
     onPrimary: '#FFFFFF',
+    onPhotoSurface: 'rgba(255,255,255,0.92)',
+    scrim: 'rgba(28,24,21,0.55)',
 
     success: '#1D6B4A',
     warning: '#8A5A12',
@@ -118,6 +128,8 @@ export const Colors: { light: Palette; dark: Palette } = {
     accent: '#E39A5E',
     accentDeep: '#E39A5E',
     onPrimary: '#161311',
+    onPhotoSurface: 'rgba(33,29,26,0.92)',
+    scrim: 'rgba(0,0,0,0.62)',
 
     success: '#5CC08E',
     warning: '#E0A94A',
@@ -146,6 +158,12 @@ export const Radius = {
 /** Typografická škála — prevzatá z MUTARKu (osvedčená), vrátane minima 13px. */
 export const Type = {
   caption: { fontSize: 13, lineHeight: 17 },
+  /**
+   * Verzálkový štítok nad údajom („VÝMERA", „NAJVYŠŠIA PONUKA") z mockupu.
+   * Zostáva na 13px — menšie písmo by porušilo minimum, ktoré si drží
+   * celá appka; odlišuje ho prestrkanie a verzálky, nie veľkosť.
+   */
+  eyebrow: { fontSize: 13, lineHeight: 16, letterSpacing: 0.9 },
   small: { fontSize: 13, lineHeight: 18 },
   body: { fontSize: 13, lineHeight: 18 },
   bodyMd: { fontSize: 14, lineHeight: 19 },

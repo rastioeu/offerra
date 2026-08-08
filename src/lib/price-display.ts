@@ -48,8 +48,11 @@ export function priceDisplay(
     return { asking, topOffer, offerCount, headline: 'ASKING', note: 'orientačne' };
   }
 
-  // 4. cena aj ponuky — obe, jasne odlíšené
-  return { asking, topOffer, offerCount, headline: 'ASKING', note: 'orientačne' };
+  // 4. cena aj ponuky — hlavné číslo je PONUKA, orientačná cena vedľa.
+  //    Rozhodnutie z mockupu „Dôveryhodne teplá" (schválené 8.8.2026):
+  //    skutočná ponuka je dôležitejšia než želanie predávajúceho. Predtým
+  //    tu bolo `ASKING` a ponuka sa krčila v druhom riadku pod ňou.
+  return { asking, topOffer, offerCount, headline: 'TOP_OFFER', note: 'orientačne' };
 }
 
 /** „2 ponuky" so správnym tvarom. `null` keď niet čo písať. */

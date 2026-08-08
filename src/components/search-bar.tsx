@@ -185,8 +185,11 @@ function Chip({ label, active, onPress }: { label: string; active: boolean; onPr
       style={({ pressed }) => [
         styles.chip,
         {
-          backgroundColor: active ? palette.primary : palette.surface,
-          borderColor: active ? palette.primary : palette.border,
+          // Aktívny filter je TERAKOTOVÝ (mockup „Dôveryhodne teplá").
+          // Navy ostáva pre nadpisy a odznaky — dva rôzne významy nesmú
+          // mať tú istú farbu.
+          backgroundColor: active ? palette.accentDeep : palette.surface,
+          borderColor: active ? palette.accentDeep : palette.border,
           opacity: pressed ? 0.85 : 1,
         },
       ]}>

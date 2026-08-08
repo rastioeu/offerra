@@ -20,10 +20,13 @@ Vyžiadal si si to sám („zosúlaď poradie sám a napíš mi ako si to zoradi
 5. **Polia prenájmu + adresa** — migrácia DB, najväčší kus.
 6. **Build**.
 
-**Redizajn jednotlivých obrazoviek** podľa schváleného mockupu („Dôveryhodne
-teplá") som do tejto dávky **nezaraďoval** — kritické bugy majú prednosť
-a miešať ich do redizajnu by znamenalo, že sa nedá povedať, čo ktorú zmenu
-spôsobilo.
+7. **Filtre nad Dopytmi** — až po tvojom rozhodnutí (možnosť B).
+8. **Redizajn obrazoviek** podľa schváleného mockupu — na tvoj pokyn
+   dorobený do toho istého buildu, aby sa nemíňal EAS kredit dvakrát.
+
+Redizajn som zámerne robil **až po opravách**, nie súčasne: keby sa
+zamiešal do nich, pri prvej chybe na telefóne by sa nedalo povedať, či ju
+spôsobila oprava alebo prekreslenie.
 
 ---
 
@@ -134,9 +137,9 @@ Prešiel som appku obrazovka po obrazovke. Väčšina už klikateľná bola;
 **opravené sú:** časová os v Profile a všetky štyri zoznamy v tabe Správa
 (nahlásenia, inzeráty, používatelia, „vyžaduje pozornosť").
 
-**Jedna vedomá výnimka:** karty v „Ponuky na inzerát". Nie je to riadok
-vedúci niekam — je to hotová karta so všetkými údajmi a s tlačidlami
-Prijať/Odmietnuť. Ťuknutie by nemalo kam viesť.
+Pôvodne som karty v „Ponuky na inzerát" nechal ako vedomú výnimku, lebo
+ťuknutie nemalo kam viesť. **Redizajn nižšie tomu dal cieľ** (spodný panel),
+takže výnimka padla a klikateľné je naozaj všetko.
 
 ### 9. Filtre nad Dopytmi (bod 7) — vybral si **možnosť B**
 
@@ -158,6 +161,45 @@ rozpočet. Keby ich filter na „Byt" odstrihol, prišiel by si **práve o tých
 záujemcov, ktorí sú ochotní vziať čokoľvek** — teda o najlepších. Filter ich
 preto zámerne necháva prejsť. Overené tromi dopytmi postavenými presne na
 túto otázku.
+
+### 10. Redizajn obrazoviek — dotiahnutý schválený mockup
+
+Doťahuje posledný 🔴 zvyšok mockupu „Dôveryhodne teplá".
+
+**Katalóg.** Fotka zaberá ~60 % karty. Cena je terakotová, pätkovým rezom
+a najväčšia na karte. Uzávierka sa presunula na fotku ako štítok — je to
+naliehavý údaj a v pätke rozbíjala pomer.
+
+**Zmena, ktorá nie je len vzhľad:** keď na inzerát niekto ponúkol, hlavné
+číslo je odteraz **najvyššia ponuka**, nie orientačná cena. Tá je vedľa,
+menšia a sivá. Mockup to hovorí priamo: skutočná ponuka je dôležitejšia
+než želanie predávajúceho. Predtým sa ponuka krčila v druhom riadku pod
+cenou.
+
+**Detail.** Galéria cez celú šírku s bodkami (namiesto vety „6 fotiek —
+potiahni do strany"), cena ako karta, parametre v mriežke 2×2 a **prilepené
+spodné tlačidlo**. To vzniklo presne kvôli tvojmu screenshotu s orezaným
+„Zdieľať" — takto sa hlavná akcia nemá ako orezať a nezmizne po scrollovaní.
+
+**Ponuky.** Karty s iniciálou v krúžku namiesto riadkov; najvyššia má
+terakotový rámik a odznak. Ako majiteľ na ponuku ťukneš a otvorí sa
+**spodný panel** so všetkým — dotazník nájomcu, kontakt po prijatí,
+Prijať a Odmietnuť. Predtým bola každá ponuka rozbalená a pri piatich sa
+nedali porovnať sumy na jednej obrazovke.
+
+**Podržanie prsta (bod 12).** Na karte v katalógu podržíš prst a dostaneš
+náhľad + obľúbené / zdieľať / nahlásiť. Telefón zavibruje. Nahlásenie
+otvára ten istý formulár ako odkaz „Nahlásiť" — nie druhú kópiu.
+
+**Tlačidlá sú terakotové, nie navy.** Tokeny to hovorili od začiatku
+(`accentDeep` = „CTA tlačidlá"), tlačidlo to ale nedodržiavalo — jeho tieň
+už terakotový bol, takže si tieň a výplň nesedeli.
+
+**Kontrast som premeral, dve dvojice neprešli a opravil som ich** — odznak
+„NAJVYŠŠIA" a neutrálny odznak mali na tlmenom podklade 4,42 a 4,06
+namiesto 4,5. Namiesto stlmenia dostali obrys na svetlom podklade: 5,18
+a 4,76. Iniciála v krúžku má 20px tučné, čím sa počíta ako veľký text.
+Spolu 12 dvojíc × 2 témy, **0 zlyhaní**.
 
 ---
 
@@ -192,6 +234,8 @@ a fakturáciu.
 | dátumy a riadky prenájmu (jednotkový) | **18/18** |
 | filtre nad dopytmi proti živej DB | **11/11** |
 | rozbor vety hľadajúceho + popis filtra | **9/9** |
+| čo je hlavné číslo po redizajne | **14/14** |
+| kontrast nových dvojíc farieb (12 × 2 témy) | **0 zlyhaní** |
 | `npx tsc --noEmit` | **0 chýb** |
 | `npx expo export --platform ios` | **hotovo**, bundle 4,7 MB |
 
@@ -220,3 +264,13 @@ z terminálu overiť neviem:
 - [ ] V **Dopytoch** musí byť hore hľadanie a chips **Kúpim / Hľadám
       prenájom / Byt / Dom / Pozemok / Komerčný priestor**. Ťukni na
       „Kúpim" — musia ostať len kupujúci.
+- [ ] **Karta v katalógu**: fotka má zaberať väčšinu karty, cena má byť
+      terakotová a v pätkovom písme. Pri inzeráte s ponukami má byť veľké
+      číslo NAJVYŠŠIA PONUKA a orientačná cena malá vpravo.
+- [ ] **Podrž prst na karte** — má zavibrovať, pozadie stmavnúť
+      (s buildom #4 rozmazať) a objaviť sa náhľad s tromi akciami.
+- [ ] **Detail**: galéria potiahnutím do strán, bodky dole musia meniť
+      aktívnu. Dole prilepené tlačidlo **Podať ponuku** — nesmie sa
+      orezať ani zmiznúť po scrollovaní.
+- [ ] **Ponuky na inzerát** (ako majiteľ): ťukni na ponuku → má sa vysunúť
+      spodný panel s Prijať a Odmietnuť.

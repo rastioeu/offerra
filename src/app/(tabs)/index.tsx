@@ -12,6 +12,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PropertyCard } from '@/components/property-card';
 import { PropertyMap } from '@/components/property-map';
+import { ReportButton } from '@/components/report-button';
 
 import { AppHeader } from '@/components/app-header';
 import { HowItWorksCard } from '@/components/how-it-works-card';
@@ -36,6 +37,9 @@ export default function NehnutelnostiScreen() {
   const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
   const { shouldShow, dismiss } = useHints(session?.user.id);
   const [view, setView] = useState<'LIST' | 'MAP'>('LIST');
+  // Nahlásenie z podržania prstu na karte. Formulár je ten istý ako inde,
+  // len sa otvára odtiaľto — preto stačí držať id, nie druhý formulár.
+  const [reporting, setReporting] = useState<string | null>(null);
   useRefreshOnFocus(reload);
 
   const onRefresh = useCallback(async () => {
@@ -137,9 +141,27 @@ export default function NehnutelnostiScreen() {
             item={item}
             favorite={favorites.has(item.id)}
             onToggleFavorite={session ? () => toggle(item.id) : undefined}
+            // Vlastný inzerát sa nahlásiť nedá — ponuka akcie, ktorá by
+            // aj tak neprešla, je horšia než jej absencia.
+            onReport={
+              session && item.owner_id !== session.user.id
+                ? () => setReporting(item.id)
+                : undefined
+            }
           />
         ))}
       </ScrollView>
+
+      {reporting ? (
+        <ReportButton
+          targetType="PROPERTY"
+          targetId={reporting}
+          label="Nahlásiť inzerát"
+          hideTrigger
+          openExternally
+          onExternalClose={() => setReporting(null)}
+        />
+      ) : null}
     </SafeAreaView>
   );
 }

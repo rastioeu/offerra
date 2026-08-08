@@ -1,5 +1,19 @@
 /**
- * Detail inzerátu — galéria, popis, parametre a VEREJNÝ zoznam ponúk.
+ * Detail inzerátu — redizajn podľa mockupu „Dôveryhodne teplá"
+ * (schválený Rastiom 8.8.2026).
+ *
+ * Čo sa zmenilo oproti pôvodnej obrazovke:
+ *
+ * 1. **Hero galéria cez celú šírku s bodkami.** Predtým to bola galéria
+ *    v odsadení s vetou „6 fotiek — potiahni do strany". Bodky to povedia
+ *    bez slov a rovno ukážu, koľkátu fotku človek pozerá.
+ * 2. **Cena je karta, nie riadok.** Najvyššia ponuka je terakotová
+ *    a najväčšia; orientačná cena a počet ponúk sú pod ňou drobné.
+ *    Uzávierka má teplú farbu — je to naliehavý údaj.
+ * 3. **Parametre sú mriežka 2×2**, nie voľné riadky „štítok — hodnota".
+ * 4. **Prilepené spodné tlačidlo.** Hlavná akcia nezmizne po scrollovaní
+ *    a nemá ako sa orezať — presne kvôli tomu vzniklo (Rastio nahlásil
+ *    orezané „Zdieľať" 7.8.2026).
  *
  * Zoznam ponúk sa načítava bez ohľadu na prihlásenie: suma, prezývka, stav
  * a dátum sú verejné (rozhodnutie Rastia 7.8.2026 — otvorené pseudonymné
@@ -8,21 +22,36 @@
  */
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { ActivityIndicator, Dimensions, Platform, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  type NativeScrollEvent,
+  type NativeSyntheticEvent,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { FavoriteHeart } from '@/components/favorite-heart';
+import { Icon } from '@/components/icon';
 import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
+import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
-import { Badge, Button, Card, ErrorNote, KeyboardDoneBar } from '@/components/ui';
+import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { formatAmount } from '@/lib/offers';
+import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
   db,
   deadlineLabel,
@@ -34,18 +63,18 @@ import {
   rentalRows,
   TRANSACTION_LABEL,
 } from '@/lib/property';
-import { formatAmount } from '@/lib/offers';
-import { offerCountLabel, priceDisplay } from '@/lib/price-display';
-import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
-const PHOTO_W = Dimensions.get('window').width - Spacing.lg * 2;
+const SCREEN_W = Dimensions.get('window').width;
 
 export default function PropertyDetailScreen() {
   const palette = useTheme();
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, error } = useProperty(id);
   const { offers, error: offersError, reload: reloadOffers } = useOffers(id);
+  const [photo, setPhoto] = useState(0);
   useRefreshOnFocus(reloadOffers);
 
   // `view_count` je v modeli od Fázy 1, ale nemal ho kto zvyšovať — UPDATE
@@ -68,38 +97,52 @@ export default function PropertyDetailScreen() {
   const closed = isDeadlinePassed(item?.offer_deadline ?? null);
   const { ids: favorites, toggle } = useFavoriteIds(myId);
 
-  /**
-   * Zdieľanie cez systémový share sheet. `Share` je súčasť React Native —
-   * žiadny nový natívny modul. Odkaz je hlboký (`offerra://`), ten istý
-   * scheme, aký už používa prihlásenie cez Google.
-   */
-  async function share() {
-    if (!item) return;
-    try {
-      await Share.share({
-        title: item.title,
-        message: [
-          item.title,
-          [item.city, formatArea(item.area_m2)].filter(Boolean).join(' · '),
-          price ? `Orientačne ${price}` : 'Cena neuvedená — čaká na ponuky',
-          `offerra://nehnutelnost/${item.id}`,
-        ].join('\n'),
-      });
-    } catch (e: unknown) {
-      console.log(`[ZDIEĽANIE] Zlyhalo: ${String(e)}`);
-    }
-  }
-
   // Živé ponuky = tie, ktoré ešte stoja. Stiahnutá ani odmietnutá ponuka
   // nie je „ponuka na inzeráte".
   const live = (offers ?? []).filter((o) => o.status === 'PENDING' || o.status === 'ACCEPTED');
   const topOffer = live.length > 0 ? Math.max(...live.map((o) => o.amount)) : null;
   const pd = item ? priceDisplay(item.asking_price_hint, topOffer, live.length) : null;
-  const price = pd ? formatPrice(pd.asking, item!.transaction_type) : null;
   const deadline = item ? deadlineLabel(item.offer_deadline) : null;
+  const isOffer = Boolean(pd && pd.headline === 'TOP_OFFER' && pd.topOffer != null);
+
+  function onGalleryScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
+    const i = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    if (i !== photo) setPhoto(i);
+  }
+
+  /** Text hlavného tlačidla + čo spraví. Jedno miesto, nie štyri vetvy v JSX. */
+  function primaryAction(): { title: string; onPress: () => void } | null {
+    if (!item) return null;
+    if (isOwner) {
+      return {
+        title: 'Spravovať ponuky',
+        onPress: () => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } }),
+      };
+    }
+    // Po uzávierke sa ponuka podať nedá — tlačidlo, ktoré by aj tak
+    // neprešlo, radšej nie je (dôvod píše karta ponúk).
+    if (closed) return null;
+    if (!myId) {
+      return { title: 'Prihlás sa a ponúkni', onPress: () => router.push('/login') };
+    }
+    return {
+      title: myOffer ? 'Upraviť moju ponuku' : 'Podať ponuku',
+      onPress: () => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } }),
+    };
+  }
+  const cta = primaryAction();
+
+  const params = item
+    ? ([
+        formatArea(item.area_m2) ? { value: formatArea(item.area_m2) as string, label: 'Výmera' } : null,
+        item.rooms != null ? { value: String(item.rooms), label: 'Izby' } : null,
+        { value: PROPERTY_LABEL[item.property_type], label: 'Typ' },
+        { value: String(item.view_count), label: 'Zobrazení' },
+      ].filter(Boolean) as { value: string; label: string }[])
+    : [];
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right', 'bottom']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <Stack.Screen
         options={{
           headerShown: true,
@@ -109,10 +152,8 @@ export default function PropertyDetailScreen() {
         }}
       />
 
-      {/* Hypotekárna kalkulačka má číselné polia — bez týchto troch
-          vlastností a lišty „Hotovo" nižšie sa klávesnica nedá zavrieť. */}
       <ScrollView
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: 110 + insets.bottom }]}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
@@ -126,206 +167,302 @@ export default function PropertyDetailScreen() {
           </Text>
         ) : null}
 
-        {item ? (
+        {item && pd ? (
           <>
-            {item.media.length > 0 ? (
-              <ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} style={styles.gallery}>
-                {item.media.map((m) => (
-                  <Image
-                    key={m.id}
-                    source={{ uri: m.url }}
-                    style={[styles.photo, { backgroundColor: palette.surfacePressed }]}
-                    contentFit="cover"
-                    transition={160}
-                  />
-                ))}
-              </ScrollView>
-            ) : (
-              <View style={[styles.photo, styles.noPhoto, { backgroundColor: palette.surfacePressed }]}>
-                <Text style={{ color: palette.textMuted }}>Bez fotky</Text>
+            {/* ── hero galéria cez celú šírku ── */}
+            <View style={[styles.hero, { backgroundColor: palette.surfacePressed }]}>
+              {item.media.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  pagingEnabled
+                  showsHorizontalScrollIndicator={false}
+                  onMomentumScrollEnd={onGalleryScroll}>
+                  {item.media.map((m) => (
+                    <Image
+                      key={m.id}
+                      source={{ uri: m.url }}
+                      style={styles.heroPhoto}
+                      contentFit="cover"
+                      transition={160}
+                    />
+                  ))}
+                </ScrollView>
+              ) : (
+                <View style={[styles.heroPhoto, styles.noPhoto]}>
+                  <Text style={{ color: palette.textMuted }}>Bez fotky</Text>
+                </View>
+              )}
+
+              <View style={styles.heroBadges}>
+                <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
+                {item.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
               </View>
-            )}
 
-            {item.media.length > 1 ? (
-              <Text style={[styles.galleryHint, { color: palette.textMuted }]}>
-                {item.media.length} fotiek — potiahni do strany
-              </Text>
-            ) : null}
-
-            <View style={styles.badges}>
-              <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
-              <Badge text={PROPERTY_LABEL[item.property_type]} />
-              {item.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
-            </View>
-
-            <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
-
-            {pd?.headline === 'ASKING' && price ? (
-              <View style={styles.priceRow}>
-                <Text style={[styles.price, { color: palette.primary }]}>{price}</Text>
-                <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd.note}</Text>
+              <View style={styles.heroActions}>
+                <Pressable
+                  onPress={() => void shareProperty(item)}
+                  hitSlop={10}
+                  accessibilityRole="button"
+                  accessibilityLabel="Zdieľať inzerát">
+                  <Icon name="square.and.arrow.up" size={24} color={palette.surface} weight="semibold" />
+                </Pressable>
+                {myId ? (
+                  <FavoriteHeart active={favorites.has(item.id)} onToggle={() => toggle(item.id)} size={26} />
+                ) : null}
               </View>
-            ) : pd?.headline === 'TOP_OFFER' && pd.topOffer != null ? (
-              <View style={styles.priceRow}>
-                <Text style={[styles.price, { color: palette.link }]}>
-                  {formatAmount(pd.topOffer, item.transaction_type)}
-                </Text>
-                <Text style={[styles.priceNote, { color: palette.textMuted }]}>
-                  najvyššia ponuka · {pd.note}
-                </Text>
-              </View>
-            ) : (
-              <Text style={[styles.priceNote, { color: palette.textMuted }]}>{pd?.note}</Text>
-            )}
 
-            {/* Keď je hlavné číslo orientačná cena, najvyššiu ponuku pridáme
-                pod ňu — aby bolo vidieť oboje a nesplynulo to. */}
-            {pd?.headline === 'ASKING' && pd.topOffer != null ? (
-              <Text style={[styles.deadline, { color: palette.link }]}>
-                Najvyššia ponuka {formatAmount(pd.topOffer, item.transaction_type)}
-                {offerCountLabel(pd.offerCount) ? ` · ${offerCountLabel(pd.offerCount)}` : ''}
-              </Text>
-            ) : null}
-
-            {deadline ? <Text style={[styles.deadline, { color: palette.link }]}>{deadline}</Text> : null}
-
-            {/* Tri prvky v jednom neurastúcom riadku pretekali cez okraj.
-                Teraz: srdiečko + Zdieľať v riadku, nahlásenie na vlastnom. */}
-            <View style={styles.toolRow}>
-              {myId ? (
-                <FavoriteHeart
-                  active={favorites.has(item.id)}
-                  onToggle={() => toggle(item.id)}
-                  size={30}
-                />
+              {/* Bodky namiesto vety „potiahni do strany". */}
+              {item.media.length > 1 ? (
+                <View style={styles.dots}>
+                  {item.media.map((m, i) => (
+                    <View
+                      key={m.id}
+                      style={[
+                        styles.dot,
+                        i === photo ? styles.dotOn : null,
+                        { backgroundColor: i === photo ? palette.onPrimary : palette.onPhotoSurface },
+                      ]}
+                    />
+                  ))}
+                </View>
               ) : null}
-              <View style={styles.toolSpacer} />
-              <Button title="Zdieľať" onPress={share} variant="outline" />
             </View>
-            {!isOwner ? (
-              <View style={styles.reportRow}>
-                <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
-              </View>
-            ) : null}
 
-            <Card>
-              <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PARAMETRE</Text>
-              <Row
-                label="Poloha"
-                value={[item.street, item.city, item.district, item.region].filter(Boolean).join(' · ') || '—'}
-              />
-              <Row label="Typ" value={PROPERTY_LABEL[item.property_type]} />
-              <Row label="Obchod" value={TRANSACTION_LABEL[item.transaction_type]} />
-              <Row label="Izby" value={item.rooms != null ? String(item.rooms) : '—'} />
-              <Row label="Výmera" value={formatArea(item.area_m2) ?? '—'} />
-              <Row label="Pridané" value={formatDate(item.created_at)} />
-              <Row
-                label="Zobrazení"
-                value={String(item.view_count)}
-              />
+            <View style={styles.body}>
+              <View>
+                <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
+                <Text style={[styles.place, { color: palette.textMuted }]}>
+                  {[item.street, item.city, item.district].filter(Boolean).join(' · ') || '—'}
+                </Text>
+              </View>
+
+              {/* ── cena ── */}
+              <View
+                style={[
+                  styles.priceCard,
+                  Shadow.card,
+                  { backgroundColor: palette.surface, borderColor: palette.border },
+                ]}>
+                <Eyebrow>{isOffer ? 'Najvyššia ponuka' : 'Orientačná cena'}</Eyebrow>
+                <Text style={[styles.money, { color: isOffer ? palette.accent : palette.primary }]}>
+                  {isOffer
+                    ? formatAmount(pd.topOffer as number, item.transaction_type)
+                    : (formatPrice(pd.asking, item.transaction_type) ?? 'Neuvedená')}
+                </Text>
+                <Text style={[styles.priceSub, { color: palette.textMuted }]}>
+                  {[
+                    isOffer && pd.asking != null
+                      ? `orientačne ${formatPrice(pd.asking, item.transaction_type)}`
+                      : isOffer
+                        ? 'cenu predávajúci neuviedol'
+                        : null,
+                    offerCountLabel(pd.offerCount) ?? 'zatiaľ bez ponúk',
+                  ]
+                    .filter(Boolean)
+                    .join(' · ')}
+                </Text>
+                {deadline ? (
+                  <Text
+                    style={[
+                      styles.deadline,
+                      {
+                        borderTopColor: palette.border,
+                        color: closed ? palette.textMuted : palette.accentDeep,
+                      },
+                    ]}>
+                    {deadline}
+                  </Text>
+                ) : null}
+              </View>
+
+              {/* ── parametre 2×2 ── */}
+              <View style={styles.grid}>
+                {params.map((p) => (
+                  <ParamCell key={p.label} value={p.value} label={p.label} />
+                ))}
+              </View>
+
               {item.address_hidden ? (
                 <Text style={[styles.hidden, { color: palette.textMuted }]}>
                   Presná adresa je skrytá — zobrazí sa až po dohode s predávajúcim.
                 </Text>
               ) : null}
-            </Card>
 
-            {/* Podmienky prenájmu — samostatná karta, aby sa nemiešali
-                s parametrami bytu. Pri predaji ju niet z čoho postaviť. */}
-            {rentalRows(item).length > 0 ? (
-              <Card>
-                <Text style={[styles.cardLabel, { color: palette.textMuted }]}>PODMIENKY PRENÁJMU</Text>
-                {rentalRows(item).map((r) => (
-                  <Row key={r.label} label={r.label} value={r.value} />
-                ))}
-              </Card>
-            ) : null}
-
-            {/* Kalkulačka dáva zmysel len pri PREDAJI a keď je uvedená cena. */}
-            {item.transaction_type === 'SALE' && item.asking_price_hint ? (
-              <MortgageCalculator price={item.asking_price_hint} />
-            ) : null}
-
-            {item.description ? (
-              <Card>
-                <Text style={[styles.cardLabel, { color: palette.textMuted }]}>POPIS</Text>
-                <Text style={[styles.description, { color: palette.textPrimary }]}>{item.description}</Text>
-              </Card>
-            ) : null}
-
-            <Card>
-              <Text style={[styles.cardLabel, { color: palette.textMuted }]}>
-                PONUKY ({offers?.length ?? 0})
-              </Text>
-              <Text style={[styles.soon, { color: palette.textMuted }]}>
-                Ponuky sú verejné — sumu vidí každý. Kto za prezývkou stojí,
-                sa dozvie až ten, koho ponuku predávajúci prijme.
-              </Text>
-              <ErrorNote error={offersError} />
-              <OfferList
-                offers={offers ?? []}
-                transaction={item.transaction_type}
-                highlightBidderId={myId}
-                allowReport
-              />
-
-              {isOwner ? (
-                <Button
-                  title="Spravovať ponuky"
-                  onPress={() => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } })}
-                />
-              ) : closed ? (
-                <Text style={[styles.soon, { color: palette.warning }]}>
-                  Príjem ponúk sa uzavrel — nové ponuky už podať nemožno.
-                </Text>
-              ) : myId ? (
-                <Button
-                  title={myOffer ? 'Upraviť moju ponuku' : 'Podať ponuku'}
-                  onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
-                />
+              {/* Podmienky prenájmu — pri predaji ich niet z čoho postaviť. */}
+              {rentalRows(item).length > 0 ? (
+                <Card>
+                  <Eyebrow>Podmienky prenájmu</Eyebrow>
+                  <View style={styles.grid}>
+                    {rentalRows(item).map((r) => (
+                      <ParamCell key={r.label} value={r.value} label={r.label} />
+                    ))}
+                  </View>
+                </Card>
               ) : null}
-            </Card>
+
+              {/* Kalkulačka dáva zmysel len pri PREDAJI a keď je uvedená cena. */}
+              {item.transaction_type === 'SALE' && item.asking_price_hint ? (
+                <MortgageCalculator price={item.asking_price_hint} />
+              ) : null}
+
+              {item.description ? (
+                <Text style={[styles.description, { color: palette.textSecondary }]}>{item.description}</Text>
+              ) : null}
+
+              <Card>
+                <Eyebrow>{`Ponuky (${offers?.length ?? 0})`}</Eyebrow>
+                <Text style={[styles.soon, { color: palette.textMuted }]}>
+                  Sumy aj prezývky sú verejné. Kto za nimi stojí, sa dozvie až ten,
+                  koho ponuku predávajúci prijme.
+                </Text>
+                <ErrorNote error={offersError} />
+                <OfferList
+                  offers={offers ?? []}
+                  transaction={item.transaction_type}
+                  highlightBidderId={myId}
+                  allowReport
+                />
+                {closed && !isOwner ? (
+                  <Text style={[styles.soon, { color: palette.warning }]}>
+                    Príjem ponúk sa uzavrel — nové ponuky už podať nemožno.
+                  </Text>
+                ) : null}
+              </Card>
+
+              <Text style={[styles.added, { color: palette.textMuted }]}>
+                Pridané {formatDate(item.created_at)}
+              </Text>
+
+              {!isOwner ? (
+                <View style={styles.reportRow}>
+                  <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
+                </View>
+              ) : null}
+            </View>
           </>
         ) : null}
       </ScrollView>
+
+      {/* ── prilepená spodná lišta ──
+          Vždy v bezpečnej zóne, nezmizne po scrollovaní a nemá ako sa
+          orezať. To je celý dôvod, prečo v mockupe zostala. */}
+      {item && cta ? (
+        <View
+          style={[
+            styles.sticky,
+            Shadow.bar,
+            {
+              backgroundColor: palette.surface,
+              borderTopColor: palette.border,
+              paddingBottom: Spacing.md + insets.bottom,
+            },
+          ]}>
+          <Pressable
+            onPress={cta.onPress}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.cta,
+              Shadow.button,
+              { backgroundColor: palette.accentDeep, opacity: pressed ? 0.9 : 1 },
+            ]}>
+            <Text style={[styles.ctaText, { color: palette.onPrimary }]}>{cta.title}</Text>
+          </Pressable>
+          <Pressable
+            onPress={() => void shareProperty(item)}
+            accessibilityRole="button"
+            accessibilityLabel="Zdieľať inzerát"
+            style={({ pressed }) => [
+              styles.ghost,
+              { borderColor: palette.borderStrong, opacity: pressed ? 0.7 : 1 },
+            ]}>
+            <Icon name="square.and.arrow.up" size={22} color={palette.primary} />
+          </Pressable>
+        </View>
+      ) : null}
       <KeyboardDoneBar />
     </SafeAreaView>
   );
 }
 
-function Row({ label, value }: { label: string; value: string }) {
-  const palette = useTheme();
-  return (
-    <View style={styles.row}>
-      <Text style={[styles.rowLabel, { color: palette.textSecondary }]}>{label}</Text>
-      <Text style={[styles.rowValue, { color: palette.textPrimary }]}>{value}</Text>
-    </View>
-  );
-}
-
 const styles = StyleSheet.create({
   safe: { flex: 1 },
-  scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
+  scroll: { gap: Spacing.md },
   spinner: { marginTop: Spacing.xxl },
   missing: { ...Type.body, textAlign: 'center', marginTop: Spacing.xxl },
-  gallery: { borderRadius: Radius.lg },
-  photo: { width: PHOTO_W, height: 240, borderRadius: Radius.lg },
+
+  hero: { height: 264 },
+  heroPhoto: { width: SCREEN_W, height: 264 },
   noPhoto: { alignItems: 'center', justifyContent: 'center' },
-  galleryHint: { ...Type.caption, textAlign: 'center' },
-  badges: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
-  title: { ...Type.hero, fontWeight: Weight.bold },
-  priceRow: { flexDirection: 'row', alignItems: 'baseline', gap: Spacing.sm },
-  price: { ...Type.heading, fontWeight: Weight.bold },
-  priceNote: { ...Type.small },
-  deadline: { ...Type.bodyMd, fontWeight: Weight.medium },
-  cardLabel: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
-  rowLabel: { ...Type.bodyMd },
-  rowValue: { ...Type.bodyMd, fontWeight: Weight.medium, flexShrink: 1, textAlign: 'right' },
+  heroBadges: { position: 'absolute', top: Spacing.md, left: Spacing.md, flexDirection: 'row', gap: Spacing.xs },
+  heroActions: {
+    position: 'absolute',
+    top: Spacing.md,
+    right: Spacing.md,
+    flexDirection: 'row',
+    gap: Spacing.md,
+    alignItems: 'center',
+  },
+  dots: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: Spacing.md,
+    flexDirection: 'row',
+    gap: 5,
+    justifyContent: 'center',
+  },
+  dot: { width: 6, height: 6, borderRadius: 3 },
+  dotOn: { width: 18 },
+
+  body: { paddingHorizontal: Spacing.lg, gap: Spacing.md },
+  title: { ...Type.heading, fontWeight: Weight.bold },
+  place: { ...Type.bodyMd, marginTop: 2 },
+
+  priceCard: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, gap: 2 },
+  money: { fontFamily: MoneyType.fontFamily, fontWeight: Weight.bold, ...MoneyType.hero, marginTop: 2 },
+  priceSub: { ...Type.bodyMd, marginTop: 3 },
+  deadline: {
+    ...Type.bodyMd,
+    fontWeight: Weight.semibold,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    marginTop: Spacing.sm,
+    paddingTop: Spacing.sm,
+  },
+
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   hidden: { ...Type.caption },
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
-  toolRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
-  toolSpacer: { flex: 1 },
+  added: { ...Type.caption },
   reportRow: { alignItems: 'flex-end' },
+
+  sticky: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+  },
+  cta: {
+    flex: 1,
+    borderRadius: Radius.md,
+    minHeight: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.lg,
+  },
+  ctaText: { ...Type.button, fontWeight: Weight.bold },
+  ghost: {
+    width: 52,
+    minHeight: 50,
+    borderWidth: 1,
+    borderRadius: Radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

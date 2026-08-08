@@ -1641,13 +1641,13 @@ stav, ktorý sa resetuje — je to tá istá chyba ako pri onboardingu
 prezývky. `useHints` preto rozlišuje „ešte nevieme" od „nič nie je
 zavreté" a tip radšej neukáže, než aby preblikol.
 
-### 6.6 Čo z redizajnu ešte NIE JE hotové — 🔴
+### 6.6 Prekreslenie obrazoviek — ✅ DOKONČENÉ 8.8.2026, viď 7.14
 
-Základ je položený (paleta, typografia peňazí, hlavička, tiene), ale
-**prekreslenie jednotlivých obrazoviek podľa mockupu ešte prebieha**:
-karta katalógu s fotkou na 60 %, hero galéria s bodkami, mriežka
-parametrov 2×2, prilepené spodné tlačidlo, spodný panel pri ponuke
-a náhľad po podržaní.
+Základ (paleta, typografia peňazí, hlavička, tiene) bol položený 7.8.2026.
+Zvyšok — karta katalógu s fotkou na 60 %, hero galéria s bodkami, mriežka
+parametrov 2×2, prilepené spodné tlačidlo, spodný panel pri ponuke a náhľad
+po podržaní — je hotový a rozpísaný v **7.14**. Status ostáva 🟡 do
+vizuálneho overenia na zariadení.
 
 ### 6.7 Body, ktoré VYŽADUJÚ nový build — 🔴
 
@@ -1930,6 +1930,68 @@ s kľúčom sa prepne na Google **bez zmeny kódu**. Kľúč je potrebné vyrobi
 v Google Cloud (Maps SDK for iOS) a vložiť do `app.json` ako
 `ios.config.googleMapsApiKey` — to je krok, ktorý za teba spraviť nemôžem.
 
+### 7.14 Redizajn obrazoviek (Fáza 6, bod 6.6) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Rastio 8.8.2026: „2 urob aj redizajn." Doťahuje sa tým bod **6.6**, ktorý
+bol jediný 🔴 zvyšok schváleného mockupu „Dôveryhodne teplá".
+
+| Z mockupu | Kde | Stav |
+|---|---|---|
+| karta katalógu s fotkou na 60 % | `property-card.tsx` | hotové |
+| hero galéria s bodkami | `nehnutelnost/[id].tsx` | hotové |
+| mriežka parametrov 2×2 | `ui.tsx` `ParamCell` | hotové |
+| prilepené spodné tlačidlo | `nehnutelnost/[id].tsx` | hotové |
+| ponuky ako karty s iniciálou | `offer-list.tsx` | hotové |
+| spodný panel pri ponuke | `ponuky/[id].tsx` | hotové |
+| náhľad po podržaní prstu (bod 12) | `long-press-menu.tsx` | hotové |
+
+**Zmena SPRÁVANIA, nie len vzhľadu.** Mockup hovorí: „skutočná ponuka je
+dôležitejšia než želanie predávajúceho." `priceDisplay` preto pri inzeráte,
+ktorý má cenu AJ ponuky, vracia po novom `TOP_OFFER`, nie `ASKING` —
+hlavné číslo je najvyššia ponuka a orientačná cena je vedľa, menšia a sivá.
+Predtým sa ponuka krčila v druhom riadku pod cenou.
+
+**Tlačidlo hlavnej akcie je terakotové, nie navy.** Tokeny to hovorili od
+začiatku (`accentDeep` = „CTA tlačidlá"), `Button` to ale nedodržiaval —
+a `Shadow.button` má terakotový tieň, takže tieň a výplň si roky
+nesedeli. Rovnako aktívny filter chip.
+
+**Podržanie prstu (bod 12) — čo z toho potrebovalo build:**
+
+| Časť | Modul | Stav |
+|---|---|---|
+| menu samotné | žiadny — `Modal` + `Animated` | ide OTA |
+| haptika | `expo-haptics` | bolo v builde #3 |
+| ikony | `expo-symbols` | bolo v builde #3 |
+| rozmazané pozadie | `expo-blur` | **pribudlo do buildu #4** |
+
+`expo-blur` je v `require()` v try/catch: keď modul chýba, pozadie sa len
+STMAVÍ. Rozmazanie je kozmetika a nesmie kvôli nej spadnúť obrazovka.
+
+Nahlásenie z podržania otvára **ten istý formulár** ako odkaz „Nahlásiť"
+(`ReportButton` dostal `hideTrigger` + `openExternally`). Druhá kópia
+formulára by znamenala dve miesta, kde sa dá pokaziť validácia.
+
+**WCAG.** Nové dvojice farieb som premeral, dve v svetlej téme neprešli
+a boli opravené — nie stlmené, ale vyriešené:
+
+```
+odznak NAJVYŠŠIA na surfacePressed   4.42:1  🔴 → obrys na surface    5.18:1 ✅
+odznak neutrálny na surfacePressed   4.06:1  🔴 → obrys na surface    4.76:1 ✅
+iniciála 18px na surfacePressed      4.42:1  🔴 → 20px tučné (prah 3) 4.42:1 ✅
+```
+
+Terakotová cena má 3,53:1 na karte — prah pre veľký text je 3:1 a `Money`
+je 22–27px tučné, takže vyhovuje. **12 dvojíc × 2 témy, 0 zlyhaní.**
+
+**Doťahuje aj bod 4 (všetko klikateľné).** V predošlom hlásení som karty
+v „Ponuky na inzerát" označil za vedomú výnimku, lebo ťuknutie nemalo kam
+viesť. Spodný panel z mockupu ten cieľ **dal**, takže výnimka padá a
+klikateľné je naozaj všetko.
+
+**IDE OTA** okrem rozmazaného pozadia, ktoré potrebuje `expo-blur`
+z buildu #4.
+
 ### 7.11 Dôkazy — ✅ OVERENÉ RUNTIME
 
 | Test | Výsledok |
@@ -1938,6 +2000,8 @@ v Google Cloud (Maps SDK for iOS) a vložiť do `app.json` ako
 | `rental_pure_test.js` — dátumy a riadky prenájmu | **18/18** |
 | `demand_filter_test.py` — filtre nad dopytmi proti živej DB | **11/11** |
 | `demand_parse_test.js` — rozbor vety hľadajúceho + popis filtra | **9/9** |
+| `price_display_test.js` — čo je hlavné číslo po redizajne | **14/14** |
+| kontrast nových dvojíc farieb (12 × 2 témy) | **0 zlyhaní** |
 | `npx tsc --noEmit` | **0 chýb** |
 | `npx expo export --platform ios` | **hotovo**, bundle 4,7 MB |
 

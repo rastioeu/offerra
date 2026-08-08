@@ -8,13 +8,20 @@
  * Kontakt sa NEČÍTA z tabuľky `profile` — rola `authenticated` na
  * `full_name`/`phone` nemá SELECT vôbec. Ide cez `offerra.offer_contact()`,
  * ktorá ho vydá len stranám prijatej ponuky.
+ *
+ * REDIZAJN (mockup „Dôveryhodne teplá", obrazovka 4, schválené 8.8.2026):
+ * zoznam sú KARTY ako všade inde a podrobnosti + rozhodnutie sa otvárajú
+ * v SPODNOM PANELI. Predtým bola každá ponuka rozbalená karta s dotazníkom
+ * aj tlačidlami — pri piatich ponukách sa v tom nedalo zorientovať a
+ * porovnať sumy na jednej obrazovke bolo nemožné.
  */
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Badge, Button, Card, ErrorNote } from '@/components/ui';
+import { OfferList } from '@/components/offer-list';
+import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
@@ -23,14 +30,16 @@ import {
   fetchOfferContact,
   formatAmount,
   OFFER_STATUS_LABEL,
+  type Offer,
   type OfferContact,
   type TenantProfile,
 } from '@/lib/offers';
 import { db, formatDate } from '@/lib/property';
-import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
+import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ManageOffersScreen() {
   const palette = useTheme();
+  const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item } = useProperty(id);
   const { offers, error, reload } = useOffers(id);
@@ -38,7 +47,12 @@ export default function ManageOffersScreen() {
 
   const [contacts, setContacts] = useState<Record<string, OfferContact | null>>({});
   const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   useRefreshOnFocus(reload);
+
+  // Panel číta ZO ZOZNAMU, nie z vlastnej kópie — po prijatí ponuky sa tak
+  // prekreslí sám a nezobrazuje zastaraný stav.
+  const selected: Offer | undefined = (offers ?? []).find((o) => o.id === openId);
 
   async function decide(offerId: string, status: 'ACCEPTED' | 'REJECTED') {
     setBusy(offerId);
@@ -55,6 +69,8 @@ export default function ManageOffersScreen() {
             ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone, c.email].filter(Boolean).join('\n')}`
             : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
         );
+      } else {
+        setOpenId(null);
       }
     } catch (e: unknown) {
       const m = e instanceof Error ? e.message : String(e);
@@ -77,6 +93,8 @@ export default function ManageOffersScreen() {
   }
 
   const isRent = item?.transaction_type === 'RENT';
+  const tenant: TenantProfile | undefined = selected ? tenants[selected.id] : undefined;
+  const contact = selected ? contacts[selected.id] : undefined;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right', 'bottom']}>
@@ -97,121 +115,147 @@ export default function ManageOffersScreen() {
         ) : null}
 
         {item ? <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text> : null}
-
-        {offers?.length === 0 ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>
-            Na tento inzerát zatiaľ nikto neponúkol.
+        {item ? (
+          <Text style={[styles.lead, { color: palette.textMuted }]}>
+            Ťukni na ponuku a uvidíš všetko, čo o nej vieš — aj tlačidlá Prijať
+            a Odmietnuť.
           </Text>
         ) : null}
 
-        {item &&
-          offers?.map((o) => {
-            const t: TenantProfile | undefined = tenants[o.id];
-            const contact = contacts[o.id];
-            return (
-              <Card key={o.id}>
+        {item && offers ? (
+          <OfferList
+            offers={offers}
+            transaction={item.transaction_type}
+            onPressOffer={(o) => setOpenId(o.id)}
+          />
+        ) : null}
+      </ScrollView>
+
+      {/* ── spodný panel ── */}
+      <Modal visible={Boolean(selected)} transparent animationType="slide" onRequestClose={() => setOpenId(null)}>
+        <View style={styles.sheetWrap}>
+          {/* Ťuknutie nad panel ho zavrie — bežné správanie spodných panelov. */}
+          <Pressable
+            style={[styles.scrim, { backgroundColor: palette.scrim }]}
+            onPress={() => setOpenId(null)}
+            accessibilityLabel="Zavrieť"
+          />
+
+          {selected && item ? (
+            <View
+              style={[
+                styles.sheet,
+                Shadow.bar,
+                { backgroundColor: palette.surface, paddingBottom: Spacing.lg + insets.bottom },
+              ]}>
+              <View style={[styles.grip, { backgroundColor: palette.border }]} />
+
+              <ScrollView contentContainerStyle={styles.sheetScroll} keyboardShouldPersistTaps="handled">
                 <View style={styles.head}>
-                  <View style={styles.headLeft}>
+                  <View style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}>
+                    <Text style={[styles.avatarText, { color: palette.accentDeep }]}>
+                      {(selected.bidder?.nickname ?? '?').trim().slice(0, 1).toUpperCase()}
+                    </Text>
+                  </View>
+                  <View style={styles.headText}>
                     <Text style={[styles.nick, { color: palette.textPrimary }]}>
-                      {o.bidder?.nickname ?? 'neznámy'}
+                      {selected.bidder?.nickname ?? 'neznámy'}
                     </Text>
-                    <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
-                  </View>
-                  <View style={styles.headRight}>
-                    <Text style={[styles.amount, { color: palette.primary }]}>
-                      {formatAmount(o.amount, item.transaction_type)}
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>
+                      {formatDate(selected.created_at)} · {OFFER_STATUS_LABEL[selected.status].toLowerCase()}
                     </Text>
-                    <Badge
-                      text={OFFER_STATUS_LABEL[o.status]}
-                      tone={o.status === 'ACCEPTED' ? 'accent' : o.status === 'PENDING' ? 'warning' : 'neutral'}
-                    />
                   </View>
+                  <Text style={[styles.amount, { color: palette.accent }]}>
+                    {formatAmount(selected.amount, item.transaction_type)}
+                  </Text>
                 </View>
 
-                {o.message ? (
-                  <Text style={[styles.message, { color: palette.textSecondary }]}>„{o.message}"</Text>
+                {selected.message ? (
+                  <Text style={[styles.message, { color: palette.textSecondary }]}>„{selected.message}"</Text>
                 ) : null}
 
                 {isRent ? (
-                  t ? (
-                    <View style={[styles.tenant, { borderTopColor: palette.border }]}>
-                      <Text style={[styles.section, { color: palette.textMuted }]}>O NÁJOMCOVI</Text>
-                      <Row label="Osôb" value={t.num_people != null ? String(t.num_people) : '—'} />
-                      <Row
-                        label="Zvieratá"
-                        value={t.has_pets ? t.pet_details || 'Áno' : 'Nemá'}
-                      />
-                      <Row
-                        label="Dĺžka nájmu"
-                        value={t.lease_duration_months != null ? `${t.lease_duration_months} mes.` : '—'}
-                      />
-                      <Row label="Zamestnanie" value={t.employment_status ?? '—'} />
-                      <Row
-                        label="Príjem orientačne"
-                        value={
-                          t.monthly_income_hint != null
-                            ? new Intl.NumberFormat('sk-SK', {
-                                style: 'currency',
-                                currency: 'EUR',
-                                maximumFractionDigits: 0,
-                              }).format(t.monthly_income_hint)
-                            : '—'
-                        }
-                      />
-                      {t.note ? <Row label="Poznámka" value={t.note} /> : null}
+                  tenant ? (
+                    <View style={styles.section}>
+                      <Eyebrow>O nájomcovi</Eyebrow>
+                      <View style={styles.grid}>
+                        <ParamCell value={tenant.num_people != null ? String(tenant.num_people) : '—'} label="Osôb" />
+                        <ParamCell
+                          value={tenant.has_pets ? tenant.pet_details || 'Áno' : 'Nemá'}
+                          label="Zvieratá"
+                        />
+                        <ParamCell
+                          value={tenant.lease_duration_months != null ? `${tenant.lease_duration_months} mes.` : '—'}
+                          label="Dĺžka nájmu"
+                        />
+                        <ParamCell value={tenant.employment_status ?? '—'} label="Zamestnanie" />
+                        <ParamCell
+                          value={
+                            tenant.monthly_income_hint != null
+                              ? new Intl.NumberFormat('sk-SK', {
+                                  style: 'currency',
+                                  currency: 'EUR',
+                                  maximumFractionDigits: 0,
+                                }).format(tenant.monthly_income_hint)
+                              : '—'
+                          }
+                          label="Príjem orientačne"
+                        />
+                      </View>
+                      {tenant.note ? (
+                        <Text style={[styles.message, { color: palette.textSecondary }]}>{tenant.note}</Text>
+                      ) : null}
                     </View>
                   ) : (
-                    <Text style={[styles.date, { color: palette.textMuted }]}>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>
                       Záujemca dotazník nevyplnil.
                     </Text>
                   )
                 ) : null}
 
-                {o.status === 'ACCEPTED' ? (
-                  <View style={[styles.contact, { borderColor: palette.secondary }]}>
-                    <Text style={[styles.section, { color: palette.link }]}>ODKRYTÝ KONTAKT</Text>
+                {selected.status === 'ACCEPTED' ? (
+                  <Card>
+                    <Eyebrow>Odkrytý kontakt</Eyebrow>
                     {contact ? (
-                      <>
-                        <Row label="Meno" value={contact.full_name ?? 'nevyplnené'} />
-                        <Row label="Telefón" value={contact.phone ?? 'nevyplnený'} />
-                        <Row label="E-mail" value={contact.email ?? 'nedostupný'} />
-                      </>
+                      <View style={styles.grid}>
+                        <ParamCell value={contact.full_name ?? 'nevyplnené'} label="Meno" />
+                        <ParamCell value={contact.phone ?? 'nevyplnený'} label="Telefón" />
+                        <ParamCell value={contact.email ?? 'nedostupný'} label="E-mail" />
+                      </View>
                     ) : (
-                      <Button title="Zobraziť kontakt" onPress={() => revealContact(o.id)} variant="outline" />
+                      <Button
+                        title="Zobraziť kontakt"
+                        onPress={() => revealContact(selected.id)}
+                        variant="outline"
+                      />
                     )}
-                  </View>
+                  </Card>
                 ) : null}
 
-                {o.status === 'PENDING' ? (
+                {selected.status === 'PENDING' ? (
                   <View style={styles.actions}>
                     <Button
-                      title={busy === o.id ? 'Ukladám…' : 'Prijať'}
-                      onPress={() => decide(o.id, 'ACCEPTED')}
+                      title="Prijať ponuku"
+                      onPress={() => decide(selected.id, 'ACCEPTED')}
+                      loading={busy === selected.id}
                       disabled={busy !== null}
                     />
                     <Button
                       title="Odmietnuť"
-                      onPress={() => decide(o.id, 'REJECTED')}
+                      onPress={() => decide(selected.id, 'REJECTED')}
                       variant="outline"
                       disabled={busy !== null}
                     />
                   </View>
                 ) : null}
-              </Card>
-            );
-          })}
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
 
-function Row({ label, value }: { label: string; value: string }) {
-  const palette = useTheme();
-  return (
-    <View style={styles.row}>
-      <Text style={[styles.rowLabel, { color: palette.textSecondary }]}>{label}</Text>
-      <Text style={[styles.rowValue, { color: palette.textPrimary }]}>{value}</Text>
-    </View>
+                <Button title="Zavrieť" onPress={() => setOpenId(null)} variant="outline" />
+              </ScrollView>
+            </View>
+          ) : null}
+        </View>
+      </Modal>
+    </SafeAreaView>
   );
 }
 
@@ -220,19 +264,23 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   spinner: { marginTop: Spacing.xxl },
   title: { ...Type.title, fontWeight: Weight.bold },
-  empty: { ...Type.body },
-  head: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
-  headLeft: { flexShrink: 1, gap: 2 },
-  headRight: { alignItems: 'flex-end', gap: 4 },
-  nick: { ...Type.subtitle, fontWeight: Weight.semibold },
-  date: { ...Type.caption },
-  amount: { ...Type.subtitle, fontWeight: Weight.bold },
+  lead: { ...Type.bodyMd, marginTop: -Spacing.sm },
+
+  sheetWrap: { flex: 1, justifyContent: 'flex-end' },
+  scrim: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 },
+  sheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: '86%', paddingTop: Spacing.sm },
+  grip: { width: 38, height: 4, borderRadius: 2, alignSelf: 'center', marginBottom: Spacing.sm },
+  sheetScroll: { paddingHorizontal: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.md },
+
+  head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
+  avatar: { width: 40, height: 40, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
+  avatarText: { ...Type.title, fontWeight: Weight.bold },
+  headText: { flex: 1, gap: 2 },
+  nick: { ...Type.subtitle, fontWeight: Weight.bold },
+  meta: { ...Type.caption },
+  amount: { fontFamily: MoneyType.fontFamily, fontWeight: Weight.bold, ...MoneyType.medium },
   message: { ...Type.bodyMd, fontStyle: 'italic' },
-  tenant: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.sm, gap: Spacing.xs },
-  section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
-  contact: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.xs },
-  row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
-  rowLabel: { ...Type.bodyMd },
-  rowValue: { ...Type.bodyMd, fontWeight: Weight.medium, flexShrink: 1, textAlign: 'right' },
+  section: { gap: Spacing.sm },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   actions: { gap: Spacing.sm },
 });
