@@ -6,6 +6,7 @@ import { Pressable, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { ErrorBoundary } from '@/components/error-boundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
@@ -31,12 +32,17 @@ export default function RootLayout() {
   // `SafeAreaProvider` je tu ZÁMERNE na najvyššom mieste. Doteraz ho dodávala
   // len navigácia svojim obrazovkám; `useSafeAreaInsets` v hlavičke (bezpečná
   // zóna pod dynamic islandom) ho ale potrebuje vždy a všade.
+  // `ErrorBoundary` je NAJVYŠŠIE: bez neho React pri chybe odmontuje celý
+  // strom a ostane biela obrazovka bez slova — presne to „nestane sa nič",
+  // ktoré CLAUDE.md §2 zakazuje. Takto je na obrazovke celá surová chyba.
   return (
-    <SafeAreaProvider>
-      <ProfileProvider userId={session?.user.id}>
-        <RootLayoutInner />
-      </ProfileProvider>
-    </SafeAreaProvider>
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <ProfileProvider userId={session?.user.id}>
+          <RootLayoutInner />
+        </ProfileProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
   );
 }
 
