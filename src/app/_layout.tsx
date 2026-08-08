@@ -169,6 +169,7 @@ function RootLayoutInner() {
           <Stack.Screen name="ako-funguje" />
           <Stack.Screen name="novinky" />
           <Stack.Screen name="oznamenia" />
+          <Stack.Screen name="legal/[doc]" />
         </Stack>
       </ThemeProvider>
     </GestureHandlerRootView>

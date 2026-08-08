@@ -185,6 +185,19 @@ export default function NastaveniaScreen() {
           <Text style={[styles.section, { color: palette.textMuted }]}>O APPKE</Text>
           <Button title="Ako funguje Offerra" onPress={() => router.push('/ako-funguje')} variant="outline" />
           <Button title="Čo je nové" onPress={() => router.push('/novinky')} variant="outline" />
+          {/* Apple chce, aby sa používateľ k podmienkam dostal bez
+              opustenia appky. Text je ten istý ako na verejnej stránke —
+              generuje sa z jedného zdroja (`src/lib/legal.ts`). */}
+          <Button
+            title="Ochrana osobných údajov"
+            onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
+            variant="outline"
+          />
+          <Button
+            title="Podmienky používania"
+            onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
+            variant="outline"
+          />
           <Text style={[styles.hint, { color: palette.textMuted }]}>
             Zoznam zmien podľa verzií — podľa neho spoznáš, čo ti už dorazilo.
           </Text>
