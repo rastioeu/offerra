@@ -257,35 +257,34 @@ support.html   kontakt, nahlásenie obsahu, zmazanie účtu
 README.md      ako sa web prepisuje
 ```
 
-**Push zlyhal:**
+**Push prešiel** (8.8.2026, po tom, čo mi Rastio dal token s prístupom
+na tento repozitár). Súbory sú na GitHube:
 
 ```
-remote: Permission to rastioeu/offerra_web.git denied to rastioeu.
-fatal: ... error: 403
+.nojekyll        0 B
+README.md      726 B
+index.html   2 916 B
+privacy.html 6 514 B
+support.html 2 743 B
+terms.html   4 756 B
 ```
 
-Token v `/root/.offerra-secrets` je fine-grained a je viazaný **len na
-repozitár `offerra`**. Overil som to aj cez API — do `offerra` píše
-(HTTP 200), do `offerra_web` nie. To isté mi predtým zabránilo zapnúť
-GitHub Pages.
+### 🔴 Ostáva JEDEN krok — zapnúť Pages
 
-### Máš dve možnosti
+Token má **Contents: write**, ale nie **Pages: write**:
 
-**A) Rozšír token** (potom to dorobím sám, aj Pages):
-`github.com/settings/personal-access-tokens` → tvoj token →
-*Repository access*: pridaj **offerra_web** →
-*Permissions*: **Contents: Read and write**, **Pages: Read and write** →
-Save. Ten istý token potom už zvládne aj Pages na `offerra`.
-
-**B) Pushni to sám** — všetko je pripravené, stačí jeden príkaz:
-
-```bash
-cd /tmp/claude-0/-root-offerra/a4b1b16d-ad9c-4dde-b7e9-e6b962d647a9/scratchpad/offerra_web
-git push origin main
+```
+POST /repos/rastioeu/offerra_web/pages   →  403
+"Resource not accessible by personal access token"
 ```
 
-Potom `github.com/rastioeu/offerra_web/settings/pages` →
-Source: **Deploy from a branch** → **main** / **`/ (root)`** → Save.
+Sprav to prosím ty (30 sekúnd):
+
+1. `https://github.com/rastioeu/offerra_web/settings/pages`
+2. **Source: Deploy from a branch**
+3. **Branch: `main`**, priečinok **`/ (root)`** → **Save**
+
+Alebo mi doplň tokenu oprávnenie **Pages: Read and write** a zapnem to sám.
 
 ### URL do App Store Connect (platné po zapnutí Pages)
 
