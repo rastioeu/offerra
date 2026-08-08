@@ -331,6 +331,34 @@ export function Badge({
 }
 
 /**
+ * Štítok POLOŽENÝ NA FOTKE — uzávierka, počítadlo fotiek.
+ *
+ * Existuje preto, aby to bola jedna vizuálna rodina, nie tri podobné veci
+ * (Rastio, 8.8.2026: „má to pôsobiť ako jedna konzistentná rodina
+ * badge-ov na obrázku, nie ako pridaný cudzí prvok"). Pozadie je
+ * poloprehľadné `onPhotoSurface` — plný obdĺžnik by z fotky vystrihol dieru.
+ */
+export function PhotoBadge({
+  text,
+  tone = 'muted',
+}: {
+  text: string;
+  /** `warm` = beží uzávierka, `urgent` = ostávajú menej než 3 dni. */
+  tone?: 'muted' | 'warm' | 'urgent';
+}) {
+  const palette = useTheme();
+  const color =
+    tone === 'urgent' ? palette.danger : tone === 'warm' ? palette.accentDeep : palette.textSecondary;
+  return (
+    <View style={[styles.photoBadge, { backgroundColor: palette.onPhotoSurface }]}>
+      <Text numberOfLines={1} style={[styles.photoBadgeText, { color }]}>
+        {text}
+      </Text>
+    </View>
+  );
+}
+
+/**
  * Verzálkový štítok nad údajom („NAJVYŠŠIA PONUKA", „VÝMERA").
  * Z mockupu — drží mriežku parametrov aj hlavičku ceny pokope.
  */
@@ -429,6 +457,13 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.md },
   sectionLabel: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   eyebrow: { ...Type.eyebrow, fontWeight: Weight.semibold },
+  photoBadge: {
+    borderRadius: Radius.full,
+    paddingHorizontal: Spacing.sm,
+    paddingVertical: 3,
+    flexShrink: 1,
+  },
+  photoBadgeText: { ...Type.caption, fontWeight: Weight.semibold },
   paramCell: {
     flexGrow: 1,
     flexBasis: '47%',

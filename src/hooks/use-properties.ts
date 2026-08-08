@@ -10,7 +10,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import type { CatalogFilter } from '@/lib/search';
-import { db, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
+import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 import { errorText } from '@/lib/errors';
 
 /** Fotky sa doťahujú jedným dotazom pre celý zoznam, nie N+1 na kartu. */
@@ -62,7 +62,7 @@ async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWith
   }));
 }
 
-export function useProperties(filter?: CatalogFilter) {
+export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWEST') {
   const [items, setItems] = useState<PropertyWithMedia[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   // Filter je objekt — bez tohto by sa `reload` menil pri každom rendere.
@@ -88,16 +88,20 @@ export function useProperties(filter?: CatalogFilter) {
         if (t) q = q.or(`title.ilike.*${t}*,description.ilike.*${t}*,city.ilike.*${t}*`);
       }
 
+      // Server radí od najnovšieho — to je predvolené poradie katalógu.
+      // „Čoskoro končí" sa dorovná v `sortProperties`, lebo SQL by dalo
+      // hore inzeráty, ktorým termín DÁVNO vypršal (viď komentár tam).
       const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);
       if (e) throw e;
-      setItems(await attachOfferStats(await attachMedia((data ?? []) as Property[])));
+      const rows = await attachOfferStats(await attachMedia((data ?? []) as Property[]));
+      setItems(sortProperties(rows, sort));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[KATALÓG] Načítanie zlyhalo: ${m}`);
       setError(m);
       setItems([]);
     }
-  }, [key]);
+  }, [key, sort]);
 
   useEffect(() => {
     void reload();

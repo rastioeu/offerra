@@ -21,6 +21,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Počet fotiek a triedenie „Čoskoro končí"',
+    items: [
+      'Na karte v katalógu vidíš, koľko má inzerát fotiek — napríklad „1/3". Pri jedinej fotke sa nezobrazuje.',
+      'V detaile ti pri listovaní galériou číslo hovorí, koľkú fotku práve pozeráš.',
+      'Katalóg sa dá prepnúť na „Čoskoro končí" — hore idú inzeráty, ktorým sa najskôr uzatvárajú ponuky. Tie bez časovača sú na konci.',
+      'Keď do konca ponúk ostávajú menej než 3 dni, štítok na fotke sčervenie.',
+      'Predvolene je katalóg naďalej zoradený od najnovšieho.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Oprava pádu pri prepínaní tabov',
     items: [
       'Opravené: appka padala pri ťuknutí na spodné taby. Zvonček si na každej obrazovke otváral vlastné spojenie a druhé v poradí to zhodilo — teraz je jedno na celú appku.',

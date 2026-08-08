@@ -43,7 +43,7 @@ import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
-import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell } from '@/components/ui';
+import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -211,7 +211,16 @@ export default function PropertyDetailScreen() {
                 ) : null}
               </View>
 
-              {/* Bodky namiesto vety „potiahni do strany". */}
+              {/* Počítadlo pozície — DOPLNOK k bodkám, nie náhrada:
+                  bodky ukazujú, kde v poradí človek je, číslo povie presne
+                  koľkú z koľkých pozerá. Vpravo dole, aby nekolidovalo
+                  s bodkami v strede ani s ikonami hore. */}
+              {item.media.length > 1 ? (
+                <View style={styles.heroCounter}>
+                  <PhotoBadge text={`${photo + 1}/${item.media.length}`} />
+                </View>
+              ) : null}
+
               {item.media.length > 1 ? (
                 <View style={styles.dots}>
                   {item.media.map((m, i) => (
@@ -411,6 +420,7 @@ const styles = StyleSheet.create({
     gap: 5,
     justifyContent: 'center',
   },
+  heroCounter: { position: 'absolute', right: Spacing.md, bottom: Spacing.md },
   dot: { width: 6, height: 6, borderRadius: 3 },
   dotOn: { width: 18 },
 

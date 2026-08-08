@@ -258,6 +258,65 @@ export function rentalRows(p: Property): { label: string; value: string }[] {
   return rows;
 }
 
+/**
+ * Naliehavosť uzávierky — riadi FARBU štítku na karte, nie jeho text.
+ *
+ * `PASSED`  — už po termíne, žiadna urgencia, len fakt.
+ * `SOON`    — menej než 3 dni; vtedy sa štítok sfarbí varovne.
+ * `OPEN`    — beží, ale pokojne.
+ * `NONE`    — inzerát časovač nemá.
+ */
+export type DeadlineUrgency = 'NONE' | 'OPEN' | 'SOON' | 'PASSED';
+
+/** Hranica, od ktorej je uzávierka „naliehavá" (Rastio, 8.8.2026). */
+export const SOON_DAYS = 3;
+
+export function deadlineUrgency(iso: string | null): DeadlineUrgency {
+  if (!iso) return 'NONE';
+  const ms = new Date(iso).getTime() - Date.now();
+  if (ms <= 0) return 'PASSED';
+  return ms < SOON_DAYS * 86_400_000 ? 'SOON' : 'OPEN';
+}
+
+/** Podľa čoho je katalóg zoradený. */
+export type CatalogSort = 'NEWEST' | 'ENDING_SOON';
+
+/**
+ * Zoradenie katalógu. Čistá funkcia — dá sa otestovať bez appky aj bez DB.
+ *
+ * `ENDING_SOON` má TRI skupiny, nie dve, a je to zámer:
+ *
+ *   1. inzeráty s BEŽIACOU uzávierkou, od najskôr končiacej,
+ *   2. inzeráty, ktorým uzávierka UŽ UPLYNULA,
+ *   3. inzeráty BEZ časovača.
+ *
+ * Samotné `order by offer_deadline asc` by dalo hore tie, ktorým termín
+ * dávno vypršal — teda presný opak urgencie, ktorú má toto triedenie
+ * ukazovať. Preto sa to nerobí v SQL, ale tu.
+ */
+export function sortProperties<T extends { created_at: string; offer_deadline: string | null }>(
+  items: T[],
+  sort: CatalogSort
+): T[] {
+  const byNewest = (a: T, b: T) => (a.created_at < b.created_at ? 1 : a.created_at > b.created_at ? -1 : 0);
+  if (sort === 'NEWEST') return [...items].sort(byNewest);
+
+  const bucket = (p: T): number => {
+    const u = deadlineUrgency(p.offer_deadline);
+    return u === 'NONE' ? 2 : u === 'PASSED' ? 1 : 0;
+  };
+
+  return [...items].sort((a, b) => {
+    const ba = bucket(a), bb = bucket(b);
+    if (ba !== bb) return ba - bb;
+    if (ba === 2) return byNewest(a, b); // bez časovača — aspoň od najnovšieho
+    const ta = new Date(a.offer_deadline as string).getTime();
+    const tb = new Date(b.offer_deadline as string).getTime();
+    // Bežiace: čo končí skôr, ide hore. Uplynuté: čo skončilo naposledy.
+    return ba === 0 ? ta - tb : tb - ta;
+  });
+}
+
 /** Uplynula uzávierka? Bez časovača nikdy. Vynucuje to aj RLS v DB. */
 export function isDeadlinePassed(iso: string | null): boolean {
   return iso != null && new Date(iso).getTime() <= Date.now();

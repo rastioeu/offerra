@@ -2216,6 +2216,74 @@ miesta. Predtým to bol zdieľaný stav, teraz formátovanie chyby.
 **Pravidlo: keď sa ten istý štvorriadkový vzorec objaví tretíkrát, je to
 funkcia, nie vzorec.**
 
+### 7.19 Počítadlo fotiek + triedenie katalógu — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+**Počítadlo fotiek.** Rastio žiadal overiť kolízie a nerozhodovať sám
+o natlačenom kompromise. Voľný bol pravý dolný roh, ale riešiť to druhým
+absolútnym prvkom by bola chyba — text uzávierky je dlhý a na užšom
+displeji by sa prekryli. Spodok fotky je preto **jeden riadok**
+(`space-between`): uzávierka sa zmršťuje, počítadlo má pevnú šírku.
+
+Vznikol spoločný **`PhotoBadge`** — uzávierka aj obe počítadlá sú teraz
+jedna vizuálna rodina (rovnaké pozadie, zaoblenie, veľkosť). Líši sa len
+farba textu a tá nesie význam: `muted` / `warm` / `urgent`.
+
+V detaile je počítadlo **doplnok k bodkám, nie náhrada**, a **live sa
+mení pri swipe** (stav `photo` sa už počítal kvôli bodkám).
+
+**Triedenie.** Predvolené „od najnovšieho" v kóde UŽ BOLO — overené pred
+zmenou, `useProperties` radilo `created_at desc`. Pribudlo „Čoskoro
+končí" ako chip nad filtrami.
+
+Netriviálna časť: obyčajné `order by offer_deadline asc` by dalo hore
+inzeráty, ktorým termín **dávno vypršal** — presný opak urgencie. Triedi
+sa preto v čistej funkcii `sortProperties` do **troch** skupín: bežiace
+(od najskoršej), uplynuté, bez časovača (na konci).
+
+**Dopyty prepínač NEMAJÚ** — `buyer_request` nemá `offer_deadline` ani
+iný časový aspekt (overené v modeli). `SearchBar` ho vykreslí len keď mu
+ho obrazovka podá.
+
+Štítok uzávierky **červenie pri menej než 3 dňoch** (`SOON_DAYS`).
+
+**Dôkaz:** `sort_test.js` **11/11**, `tsc` 0, `expo export` OK.
+
+**Zásah do dát:** žiadny inzerát nekončil do 3 dní, takže červený štítok
+by nebolo vidieť. Nastavil som uzávierku ~2 dni inzerátu „Svetlý
+3-izbový byt s loggiou, Nitra" (demo účet, nie Rastiov).
+
+### 7.20 Demo účet pre Apple review — ✅ OVERENÉ RUNTIME
+
+`applereview@offerra.app`, odomkne sa **5 ťuknutiami na logo** (mechanizmus
+v appke už bol). Prihlásenie overené naživo: HTTP 200, profil
+`demo_ucet`, katalóg 9 inzerátov.
+
+Obsah účtu: 2 inzeráty (predaj s uzávierkou + prenájom so **všetkými**
+novými poľami), 6 fotiek, 4 ponuky naň z toho 1 PRIJATÁ aj s dotazníkom
+nájomcu, 2 vlastné ponuky, 2 dopyty, 4 oznámenia.
+
+**Vedomá odchýlka od MUTARKu.** MUTARK má demo heslo natvrdo v zdrojáku —
+môže, jeho repo je private. Repo Offerry je **VEREJNÉ** a CLAUDE.md §4 to
+zakazuje. Heslo ide cez `EXPO_PUBLIC_DEMO_PASSWORD` (EAS Environment
+Variables). Recenzent má rovnakú skúsenosť (jedno ťuknutie), ale v gite
+heslo nie je: overené — v bundli **1 výskyt**, v repe **0**.
+
+Postup pozvania rodiny do TestFlightu (interní vs. verejný odkaz) je
+v `reports/TESTFLIGHT_A_APPLE_REVIEW.md`.
+
+### 7.21 „Coming soon" výplne — ✅ ODSTRÁNENÉ
+
+Apple pri recenzii odmieta nefunkčné výplne (App Review 2.1). V
+Nastaveniach boli chipy frekvencie so štítkom **„(čoskoro)"** — denný
+a týždenný súhrn. Výber frekvencie sa už nezobrazuje vôbec: jedna
+možnosť nie je výber. Za konštantou `DIGEST_READY`.
+
+Zmazaný aj `screen-placeholder.tsx` (výplň z Fázy 0, nikde sa nepoužívala).
+
+**Nechané zámerne:** vety „Offerra zatiaľ push upozornenia neposiela"
+a „Oslovenie autor uvidí vo svojom profile". Nie sú to výplne, sú to
+pravdivé vety o tom, ako appka funguje — skryť ich by znamenalo klamať.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

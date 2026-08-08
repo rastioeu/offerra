@@ -26,9 +26,9 @@ import { formatAmount } from '@/lib/offers';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
   deadlineLabel,
+  deadlineUrgency,
   formatArea,
   formatPrice,
-  isDeadlinePassed,
   PROPERTY_LABEL,
   TRANSACTION_LABEL,
   type PropertyWithMedia,
@@ -38,7 +38,7 @@ import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/the
 import { FavoriteHeart } from './favorite-heart';
 import { Icon } from './icon';
 import { LongPressMenu, tapFeedback, type LongPressAction } from './long-press-menu';
-import { Badge, Eyebrow } from './ui';
+import { Badge, Eyebrow, PhotoBadge } from './ui';
 import { errorText } from '@/lib/errors';
 
 /** Zdieľanie karty — rovnaký text ako v detaile, len iné spúšťacie miesto. */
@@ -76,7 +76,9 @@ export function PropertyCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const cover = item.media[0]?.url;
   const deadline = deadlineLabel(item.offer_deadline);
-  const closed = isDeadlinePassed(item.offer_deadline);
+  // Menej než 3 dni = štítok sa sfarbí varovne. Urgencia patrí do FARBY,
+  // text ostáva ten istý.
+  const urgency = deadlineUrgency(item.offer_deadline);
   // Text sa počíta zo ŽIVÉHO počtu ponúk, nie z toho, či je vyplnená cena.
   const pd = priceDisplay(item.asking_price_hint, item.top_offer ?? null, item.offer_count ?? 0);
 
@@ -143,14 +145,23 @@ export function PropertyCard({
             <FavoriteHeart active={Boolean(favorite)} onToggle={onToggleFavorite} />
           ) : null}
         </View>
-        {/* Uzávierka je naliehavý údaj — patrí na fotku, nie do pätky. */}
-        {deadline ? (
-          <View style={[styles.deadline, { backgroundColor: palette.onPhotoSurface }]}>
-            <Text
-              style={[styles.deadlineText, { color: closed ? palette.textMuted : palette.accentDeep }]}
-              numberOfLines={1}>
-              {deadline}
-            </Text>
+        {/* Spodná lišta fotky: uzávierka vľavo, počet fotiek vpravo.
+            JEDEN riadok, nie dva absolútne prvky — takto sa nemôžu
+            prekryť ani pri dlhom texte uzávierky (Rastio žiadal overiť
+            kolízie). Vľavo hore sú pilulky, vpravo hore zdieľať a
+            srdiečko, takže spodok je jediné voľné miesto. */}
+        {deadline || item.media.length > 1 ? (
+          <View style={styles.photoFoot}>
+            {deadline ? (
+              <PhotoBadge
+                text={deadline}
+                tone={urgency === 'PASSED' ? 'muted' : urgency === 'SOON' ? 'urgent' : 'warm'}
+              />
+            ) : (
+              <View />
+            )}
+            {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. */}
+            {item.media.length > 1 ? <PhotoBadge text={`1/${item.media.length}`} /> : null}
           </View>
         ) : null}
       </View>
@@ -238,16 +249,16 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   badges: { position: 'absolute', top: Spacing.sm, left: Spacing.sm, flexDirection: 'row', gap: Spacing.xs },
-  deadline: {
+  photoFoot: {
     position: 'absolute',
     left: Spacing.sm,
+    right: Spacing.sm,
     bottom: Spacing.sm,
-    borderRadius: Radius.full,
-    paddingHorizontal: Spacing.sm,
-    paddingVertical: 3,
-    maxWidth: '85%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: Spacing.sm,
   },
-  deadlineText: { ...Type.caption, fontWeight: Weight.semibold },
   body: { padding: Spacing.md, gap: 2 },
   title: { ...Type.subtitle, fontWeight: Weight.semibold },
   facts: { ...Type.bodyMd },

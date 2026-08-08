@@ -19,7 +19,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
-import { db, DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
+import { db, DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL, type CatalogSort, type PropertyType } from '@/lib/property';
 import {
   describeFilter,
   EMPTY_FILTER,
@@ -43,11 +43,20 @@ export function SearchBar({
   filter,
   onChange,
   side = 'PROPERTY',
+  sort,
+  onSortChange,
 }: {
   filter: CatalogFilter;
   onChange: (f: CatalogFilter) => void;
   /** Ktorá strana trhu — mení SLOVÁ, nie mechaniku. */
   side?: FilterSide;
+  /**
+   * Triedenie. Zobrazí sa LEN keď ho obrazovka podá — Dopyty ho nemajú,
+   * lebo `buyer_request` žiadnu uzávierku v modeli nemá a „Čoskoro končí"
+   * by tam nemalo podľa čoho triediť (overené v modeli, 8.8.2026).
+   */
+  sort?: CatalogSort;
+  onSortChange?: (s: CatalogSort) => void;
 }) {
   const palette = useTheme();
   const label = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
@@ -141,6 +150,24 @@ export function SearchBar({
         <Text style={[styles.hint, { color: palette.link }]}>
           Rozumiem: {understood.join(' · ')}
         </Text>
+      ) : null}
+
+      {sort && onSortChange ? (
+        <View style={styles.row}>
+          {(
+            [
+              ['NEWEST', 'Najnovšie'],
+              ['ENDING_SOON', 'Čoskoro končí'],
+            ] as [CatalogSort, string][]
+          ).map(([value, label]) => (
+            <Chip
+              key={value}
+              label={label}
+              active={sort === value}
+              onPress={() => onSortChange(value)}
+            />
+          ))}
+        </View>
       ) : null}
 
       <View style={styles.row}>

@@ -25,6 +25,7 @@ import { useSession } from '@/hooks/use-session';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useTheme } from '@/hooks/use-theme';
+import type { CatalogSort } from '@/lib/property';
 import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -32,7 +33,9 @@ export default function NehnutelnostiScreen() {
   const palette = useTheme();
   const router = useRouter();
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
-  const { items, error, reload } = useProperties(filter);
+  // Predvolene VŽDY od najnovšieho, nezávisle od filtrov.
+  const [sort, setSort] = useState<CatalogSort>('NEWEST');
+  const { items, error, reload } = useProperties(filter, sort);
   const [refreshing, setRefreshing] = useState(false);
   const { session } = useSession();
   const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
@@ -93,7 +96,7 @@ export default function NehnutelnostiScreen() {
         <AppHeader />
         <View style={styles.mapHead}>
           {head}
-          <SearchBar filter={filter} onChange={setFilter} />
+          <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
           <ErrorNote error={error} />
         </View>
         <PropertyMap
@@ -116,7 +119,7 @@ export default function NehnutelnostiScreen() {
 
         {head}
 
-        <SearchBar filter={filter} onChange={setFilter} />
+        <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
 
         <ErrorNote error={error} />
 
