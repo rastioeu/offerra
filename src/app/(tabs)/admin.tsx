@@ -314,7 +314,7 @@ export default function AdminScreen() {
                 style={({ pressed }) => [{ opacity: pressed ? 0.85 : 1 }]}>
               <Card>
                 <View style={styles.rowHead}>
-                  <Text numberOfLines={1} style={[styles.rowTitle, { color: palette.textPrimary }]}>
+                  <Text numberOfLines={2} style={[styles.rowTitle, { color: palette.textPrimary }]}>
                     {p.title || 'Bez názvu'}
                   </Text>
                   <Badge

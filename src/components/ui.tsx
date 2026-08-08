@@ -370,12 +370,21 @@ export function Eyebrow({ children }: { children: string }) {
 /**
  * Bunka mriežky parametrov 2×2 (mockup). Hodnota hore a veľká, popis pod
  * ňou malý — číslo sa má dať prečítať bez toho, aby oko hľadalo štítok.
+ *
+ * Hodnota sa smie ZALOMIŤ na dva riadky. Pôvodné `numberOfLines={1}`
+ * orezávalo presne tie údaje, kvôli ktorým mriežka vznikla — „1 240 €
+ * (2× mesačný nájom)" sa ukázalo ako „1 240 € (2× m…" a „7. septembra
+ * 2026" ako „7. septembra…". Bunka je široká 47 % obrazovky, dlhšia
+ * hodnota sa do jedného riadku zmestiť NEMÔŽE.
+ *
+ * Bunky v tom istom riadku mriežky si výšku dorovnajú samy — flexbox má
+ * predvolene `alignItems: 'stretch'`, takže vyšší susedia nerozhádže.
  */
 export function ParamCell({ value, label }: { value: string; label: string }) {
   const palette = useTheme();
   return (
     <View style={[styles.paramCell, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-      <Text numberOfLines={1} style={[styles.paramValue, { color: palette.textPrimary }]}>
+      <Text numberOfLines={2} style={[styles.paramValue, { color: palette.textPrimary }]}>
         {value}
       </Text>
       <Eyebrow>{label}</Eyebrow>
@@ -475,6 +484,8 @@ const styles = StyleSheet.create({
   },
   paramValue: { ...Type.subtitle, fontWeight: Weight.semibold },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
-  rowLabel: { ...Type.bodyMd },
+  // Aj štítok sa musí vedieť zmenšiť. Bez `flexShrink` by dlhý štítok
+  // („Minimálna doba nájmu") vytlačil hodnotu z riadku von.
+  rowLabel: { ...Type.bodyMd, flexShrink: 1 },
   rowValue: { ...Type.bodyMd, fontWeight: Weight.medium, flexShrink: 1, textAlign: 'right' },
 });

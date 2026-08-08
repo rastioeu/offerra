@@ -170,8 +170,10 @@ export function PropertyCard({
         <Text numberOfLines={2} style={[styles.title, { color: palette.textPrimary }]}>
           {item.title}
         </Text>
+        {/* Dva riadky, nie jeden — „Bratislava-Podunajské Biskupice · 78 m²"
+            sa do jedného riadku karty nezmestí a orezalo by práve výmeru. */}
         {facts.length > 0 ? (
-          <Text numberOfLines={1} style={[styles.facts, { color: palette.textMuted }]}>
+          <Text numberOfLines={2} style={[styles.facts, { color: palette.textMuted }]}>
             {facts.join(' · ')}
           </Text>
         ) : null}

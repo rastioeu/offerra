@@ -103,7 +103,7 @@ export default function PridatScreen() {
               },
             ]}>
             <View style={styles.rowHead}>
-              <Text numberOfLines={1} style={[styles.rowTitle, { color: palette.textPrimary }]}>
+              <Text numberOfLines={2} style={[styles.rowTitle, { color: palette.textPrimary }]}>
                 {p.title.trim() || 'Bez názvu'}
               </Text>
               <Badge

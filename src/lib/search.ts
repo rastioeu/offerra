@@ -66,6 +66,116 @@ export function normalizeText(s: string): string {
   return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 }
 
+/**
+ * SKLOŇOVANIE — „v Bratislave" musí nájsť „Bratislava".
+ *
+ * Appka NEHĽADÁ vo voľnom texte, ale v uzavretom zozname 2 925 obcí, ktoré
+ * sú v číselníku v prvom páde. To celú úlohu mení: netreba morfologickú
+ * analýzu slovenčiny, stačí nájsť obec, s ktorou má zadané slovo dosť dlhý
+ * SPOLOČNÝ ZÁKLAD. „bratislave" a „bratislava" sa rozchádzajú až na
+ * desiatom písmene.
+ *
+ * Prefix zadaného slova preto NESTAČÍ hľadať priamo — `like 'bratislave%'`
+ * nenájde nič, lebo v databáze je kratší tvar. Skracuje sa teda ZADANÉ
+ * slovo, nie hľadané.
+ */
+
+/** Najkratší základ, ktorý ešte pošleme do databázy. */
+export function cityStem(candidate: string): string {
+  const s = normalizeText(candidate.trim());
+  // Štyri písmená sú najdlhšia slovenská pádová koncovka, ktorú takto
+  // potrebujeme zahodiť („Košic-iach").
+  //
+  // Spodná hranica sú TRI písmená, nie štyri — „Šali" by inak ostalo celé
+  // a nenašlo „Šaľa" (zmerané). Široký záber tu nevadí, lebo vyberá až
+  // `pickCity()` a ten žiada, aby bol názov obce takmer celý spotrebovaný.
+  return s.slice(0, Math.max(3, s.length - 4));
+}
+
+/**
+ * Z obcí, ktoré prefix vrátil, vyberie tú správnu.
+ *
+ * `dbSlack` = koľko z názvu obce ostalo nevyužité. Musí byť malé — inak by
+ * „nitre" chytilo „Nitrianske Pravno". `inputSlack` = koľko ostalo zo
+ * zadaného slova, čiže pádová koncovka; tá smie byť dlhšia.
+ */
+const VOWELS = 'aeiouy';
+
+/**
+ * Pohyblivé „-e-" — jediná alternácia, ktorú prefix sám nezvládne.
+ * „Senec → v Senci", „Hlohovec → v Hlohovci": pri skloňovaní vypadne
+ * samohláska UPROSTRED, takže spoločný základ končí už na „sen".
+ *
+ * Vracia tvar so vsunutým „e" späť („senci" → „senec"), aby sa dal
+ * porovnať priamo. Nie je to morfologická analýza — je to jedno pravidlo
+ * na jeden vzor, ktorý má medzi slovenskými mestami dosť zástupcov na to,
+ * aby sa oplatil (Senec, Hlohovec, Vrbovec…).
+ */
+function restoreDroppedE(c: string): string | null {
+  if (c.length < 4 || !VOWELS.includes(c[c.length - 1])) return null;
+  const root = c.slice(0, -1);
+  const a = root[root.length - 2];
+  const b = root[root.length - 1];
+  if (VOWELS.includes(a) || VOWELS.includes(b)) return null;   // treba dve spoluhlásky
+  return `${root.slice(0, -1)}e${b}`;
+}
+
+export function pickCity<T extends { name_norm: string; population?: number | null }>(
+  candidate: string,
+  rows: T[]
+): T | null {
+  const c = normalizeText(candidate.trim());
+  const cAlt = restoreDroppedE(c);
+  let best: T | null = null;
+  let bestScore = -Infinity;
+
+  const common = (a: string, b: string) => {
+    let k = 0;
+    while (k < a.length && k < b.length && a[k] === b[k]) k++;
+    return k;
+  };
+
+  for (const r of rows) {
+    const n = r.name_norm;
+    // Skúsi sa zadaný tvar aj tvar s vrátenou samohláskou — vyhrá ten,
+    // ktorý má s názvom obce dlhší spoločný základ.
+    const iAlt = cAlt ? common(n, cAlt) : 0;
+    const useAlt = iAlt > common(n, c);
+    const c2 = useAlt ? (cAlt as string) : c;
+    const i = useAlt ? iAlt : common(n, c);
+
+    const dbSlack = n.length - i;
+    const inputSlack = c2.length - i;
+
+    // Názov obce musí byť takmer celý spotrebovaný. Jedno písmeno smie
+    // ostať — to je práve tá pádová koncovka („Bratislav|a"). Dve už nie:
+    // „so záhradou" by inak našlo obec **Záhradné** (zmerané, bola to
+    // falošná zhoda).
+    if (dbSlack > 1) continue;
+    // Zo zadaného slova smie ostať celá koncovka („Košic|iach").
+    if (inputSlack > 4) continue;
+    // Pri krátkych názvoch nemožno žiadať štyri spoločné písmená —
+    // „Šali" a „Šaľa" majú spoločné len tri.
+    if (i < 3) continue;
+    // Tri spoločné písmená stačia LEN vtedy, keď obom stranám ostáva
+    // nanajvýš jedno. Bez tejto poistky „Senci" našlo obec **Seňa**
+    // (zmerané) — sebavedomá nesprávna odpoveď je horšia než žiadna.
+    if (i < 4 && dbSlack + inputSlack > 2) continue;
+    // Dlhá koncovka („Košic|iach") je dôveryhodná len pri dlhom základe.
+    // Inak „tehlový" našlo obec **Tehla** (zmerané).
+    if (inputSlack >= 3 && i < 5) continue;
+
+    // Dlhší spoločný základ vyhráva; pri zhode rozhodne väčšia obec —
+    // „Selce" existujú v troch okresoch a človek myslí najčastejšie tú väčšiu.
+    const score = i * 1000 - (dbSlack + inputSlack) * 100 + Math.min(r.population ?? 0, 99_999) / 1e5;
+    if (score > bestScore) {
+      bestScore = score;
+      best = r;
+    }
+  }
+  return best;
+}
+
 const TRANSACTION_WORDS: [RegExp, TransactionType][] = [
   [/\b(prenaj|najom|najm|podnaj)/, 'RENT'],
   [/\b(predaj|predam|kupa|kupit|kupim|na predaj)/, 'SALE'],

@@ -324,7 +324,7 @@ function SectionList({
             { borderColor: palette.border, backgroundColor: pressed ? palette.surfacePressed : 'transparent' },
           ]}>
           <View style={styles.listText}>
-            <Text numberOfLines={1} style={[styles.listTitle, { color: palette.textPrimary }]}>
+            <Text numberOfLines={2} style={[styles.listTitle, { color: palette.textPrimary }]}>
               {r.title}
             </Text>
             <Text style={[styles.hint, { color: palette.textMuted }]}>{r.meta}</Text>

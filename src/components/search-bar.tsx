@@ -21,10 +21,13 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { db, DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL, type CatalogSort, type PropertyType } from '@/lib/property';
 import {
+  cityStem,
   describeFilter,
   EMPTY_FILTER,
   isFilterEmpty,
+  normalizeText,
   parseQuery,
+  pickCity,
   type CatalogFilter,
   type FilterSide,
 } from '@/lib/search';
@@ -81,14 +84,33 @@ export function SearchBar({
       // ak nie, ostane fulltextom — nič sa nezahodí.
       for (const candidate of cityCandidates.slice(0, 4)) {
         try {
-          const { data } = await db()
+          type Row = { name: string; name_norm: string; population: number | null };
+          const ask = (prefix: string, limit: number) =>
+            db()
+              .from('city')
+              .select('name,name_norm,population')
+              // `candidate` už z rozboru vety prichádza bez diakritiky.
+              .like('name_norm', `${prefix}%`)
+              .order('population', { ascending: false, nullsFirst: false })
+              .limit(limit);
+
+          // Tri kroky od najpresnejšieho po najvoľnejší. Prvý zvyčajne sedí,
+          // takže sa v bežnom prípade pošle JEDEN dotaz.
+          //
+          //  1. presná rovnosť — prvý pád, drvivá väčšina zadaní. Musí byť
+          //     prvá: `like 'petrovce%'` zoradené podľa veľkosti vráti
+          //     **Petrovce nad Laborcom**, nie **Petrovce** (zmerané).
+          //  2. prefix — človek dopísal len časť názvu („Bratislav").
+          //  3. skrátený základ — skloňovanie („v Bratislave").
+          let { data } = await db()
             .from('city')
-            .select('name')
-            // `candidate` už z rozboru vety prichádza bez diakritiky.
-            .like('name_norm', `${candidate}%`)
+            .select('name,name_norm,population')
+            .eq('name_norm', normalizeText(candidate))
             .order('population', { ascending: false, nullsFirst: false })
             .limit(1);
-          const hit = (data ?? [])[0] as { name: string } | undefined;
+          if (!data?.length) ({ data } = await ask(candidate, 5));
+          if (!data?.length) ({ data } = await ask(cityStem(candidate), 20));
+          const hit = pickCity(candidate, (data ?? []) as Row[]);
           if (hit) {
             // Obec vypadne z fulltextu — inak by sa hľadala aj v názve
             // a popise a zbytočne zúžila výsledok.
