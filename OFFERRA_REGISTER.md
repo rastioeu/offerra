@@ -2453,3 +2453,120 @@ Skript na konci sám vypíše spätný SELECT (počet ulíc, obcí, Bratislava) 
 to bude dôkaz sem.
 
 Podrobne: `reports/ULICE_REGISTER_ADRIES.md`.
+
+---
+
+## Fáza 9 — Dávka 2: orezaný text, obhliadky, dizajn, filtre (8.8.2026)
+
+**IDE OTA** — nepribudol žiadny natívny modul. Termín obhliadky sa preto
+vyberá rýchlymi voľbami, nie natívnym date pickerom (ten v builde nie je).
+
+### 9.1 Orezaný text — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+`ParamCell` mal `numberOfLines={1}` pri bunke širokej 47 % obrazovky.
+Orezávalo to presne tie polia, kvôli ktorým mriežka vznikla:
+„1 240 € (2× mesačný nájom)" → „1 240 € (2× m…".
+
+Prejdených **všetkých 11 výskytov** `numberOfLines` v appke. Na 2 riadky
+zmenené: `ParamCell`, fakty na karte, riadky v Profile, Pridať a Admin.
+Bez zmeny ostali zámerné orezania (názov na karte, popis dopytu, časová os,
+aktívne filtre) a `PhotoBadge` s pinom na mape (obsah nemá čo pretiecť).
+`Row` dostal `flexShrink` aj na štítok — dlhý štítok inak vytlačí hodnotu.
+
+### 9.2 Obhliadky — 🔴 NEDOKONČENÉ (kód hotový, migrácia nebežala)
+
+Nová tabuľka `offerra.viewing` + RLS + trigger na stavy + `viewing_contact()`
++ tri typy oznámení. Migrácia `scripts/sql/2026-08-08-viewing.sql`
+**nebola spustená** — chýba `SUPABASE_ACCESS_TOKEN` (rovnaký blocker ako 8.6).
+
+**Rozhodnutie o kontakte (odpoveď na Rastiovu otázku):** odkrýva sa pri
+**POTVRDENÍ** obhliadky, nie pri žiadosti, a **obom stranám**.
+
+| Stav | Majiteľ vidí | Záujemca vidí |
+|---|---|---|
+| REQUESTED | prezývku, čas | nič nové |
+| CONFIRMED | meno, telefón, e-mail | meno, telefón, e-mail **+ presnú adresu** |
+
+Dôvody: žiadosť nesmie odkryť nič (inak stačí rozposlať žiadosti a zbierať
+telefóny); potvrdenie JE súhlas — majiteľ sa práve rozhodol pustiť si
+človeka domov; odkrýva sa obojstranne, lebo väčšie riziko nesie majiteľ;
+adresa ide len jedným smerom, bez nej sa na obhliadku nedá prísť.
+Drží to `viewing_contact()`, nie UI — mimo CONFIRMED/COMPLETED nevráti riadok.
+
+Ďalšie rozhodnutia: vlastná tabuľka (nie stĺpec na ponuke — obhliadka je
+nezávislá a obe poradia musia fungovať); jeden navrhnutý čas + možnosť
+potvrdiť s posunom (stav „protinávrh" by bol piaty a výsledok ten istý);
+jedna živá obhliadka na dvojicu cez čiastočný unikátny index; kto smie
+ktorý stav nastaviť, drží **trigger**, nie policy.
+
+**Čo sa overiť dalo aj bez tokenu:**
+
+```
+GET /rest/v1/viewing        → HTTP 404 (tabuľka naozaj neexistuje)
+offerra.profile má kľúč `id`, nie `user_id`  (podľa use-profile.ts)
+```
+
+Druhé zistenie opravilo chybu v prvej verzii migrácie, ktorá by padla až
+za behu. Neoveriteľné ostalo, či `notification.type` je `enum` alebo
+`check` — OpenAPI je len pre `service_role`. Migrácia preto zvláda **obe**
+podoby a nič nepredpokladá.
+
+Panel majiteľa (`ponuky/[id]`) zobrazuje ponuky **aj** obhliadky spolu
+vrátane štatistiky „3 záujemcovia už boli na obhliadke". Profil zobrazuje
+`MOJE OBHLIADKY` pod `MOJE PONUKY`.
+
+### 9.3 „Ako funguje Offerra" — ✅ OVERENÉ (text)
+
+Standing rule §8. Pribudol krok o obhliadkach a prepísal sa krok o kontakte
+— menuje teraz **obe** chvíle odkrytia a výslovne hovorí, že samotná
+žiadosť o obhliadku neodkryje nič.
+
+### 9.4 Dizajn — 🟡 KÓD HOTOVÝ
+
+`Shadow.glow` — princíp z MUTARKu (`branch-rivalry.tsx`: farebný
+`shadowColor`, offset 0, opacity 0.4, radius 10) v **našej** terakote.
+`elevation: 0`, lebo Android farebné tiene nevie. Nový token `accentGlow`.
+Použité na logo v hlavičke a na profilovú fotku.
+
+**Avatary už okrúhle BOLI** (`Radius.full` na všetkých troch miestach) —
+tvar nebolo čo meniť, chýbal obsah. Pribudlo 12 vygenerovaných obrazcov
+(DiceBear „Shapes", **CC0 1.0**, bez povinnosti uvádzať autora, 184 KB)
+**pribalených v repe** — hotlink by posielal IP používateľa tretej strane.
+Zámerne geometrické tvary, nie tváre: ponuky sú pseudonymné a cudzia tvár
+by predstierala človeka, ktorý za prezývkou nestojí.
+Doklad: `assets/images/avatars/LICENSE.md`.
+
+### 9.5 Filter „Obľúbené" — 🟡 KÓD HOTOVÝ
+
+Chip ♥ v katalógu. Ide do **dotazu** (`id in (…)`), nie cez preosiatie
+načítaných kariet — katalóg berie 200 najnovších a obľúbený inzerát môže
+byť starší, takže by sa preosievaním stratil. Odhlásenému sa nezakrýva,
+klik ho pošle na prihlásenie.
+
+### 9.6 Skloňovanie — ✅ OVERENÉ RUNTIME
+
+Appka nehľadá vo voľnom texte, ale v uzavretom zozname 2 925 obcí v prvom
+páde. Netreba teda morfológiu — stačí spoločný základ. Skracuje sa
+**zadané** slovo, nie hľadané.
+
+Tri kroky: **rovnosť → prefix → skrátený základ**. Poradie je merané:
+keď šiel prefix prvý, „Petrovce" vracalo „Petrovce nad Laborcom" a takto
+vypadlo 22 obcí.
+
+Prahy v `pickCity()` sú tiež merané, nie odhadnuté:
+- `dbSlack ≤ 1` — bez toho „so záhradou" našlo obec **Záhradné**
+- dlhá koncovka len pri dlhom základe — bez toho „tehlový" našlo **Tehla**
+- pohyblivé „-e-" (Senec → v Senci) rieši jedno cielené pravidlo; bez neho
+  „Senci" našlo **Seňa**
+
+**Dôkaz** — skompilovaný skutočný `search.ts` proti skutočným 2 925 obciam:
+
+```
+skloňovanie                          25/25
+prvý pád nájde sám seba          2925/2925
+falošné nálezy (22 bežných slov)      0/22
+```
+
+`npx tsc --noEmit` → **EXIT=0**.
+
+Podrobne: `reports/DAVKA_2_UI_A_OBHLIADKY.md`.

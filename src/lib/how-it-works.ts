@@ -7,9 +7,11 @@
  * funguje, je horší než žiadny.
  *
  * Aktuálne zohľadňuje: otvorené pseudonymné ponuky (nie slepé),
- * povinnú prezývku, odkrytie kontaktu až po akceptácii, dopyty ako
- * druhú stranu trhu, uzávierku ponúk, moderovanie správcom a — od
- * 8.8.2026 — presnosť polohy na mape (obec, nie adresa).
+ * povinnú prezývku, dopyty ako druhú stranu trhu, uzávierku ponúk,
+ * moderovanie správcom, presnosť polohy na mape (obec, nie adresa)
+ * a — od 8.8.2026 — OBHLIADKY vrátane toho, že kontakt sa odkrýva
+ * v DVOCH chvíľach, nie v jednej: pri potvrdení obhliadky a pri
+ * prijatí ponuky.
  */
 export type HowStep = { icon: string; title: string; body: string };
 
@@ -33,11 +35,23 @@ export const HOW_STEPS: HowStep[] = [
       'Kto za prezývkou stojí, sa nedozvie nikto — dovtedy.',
   },
   {
+    icon: 'calendar',
+    title: 'Obhliadka kedykoľvek — pred ponukou aj po nej',
+    body:
+      'Na inzeráte si vieš vyžiadať obhliadku. Nemusíš pred ňou nič ponúkať a nič ' +
+      'ťa nezaväzuje. Navrhneš termín, majiteľ ho potvrdí alebo navrhne iný. ' +
+      'Po obhliadke si ju označíš ako absolvovanú — majiteľ tak pri rozhodovaní ' +
+      'vidí, kto si byt naozaj pozrel.',
+  },
+  {
     icon: 'checkmark.seal',
     title: 'Kontakt až po dohode',
     body:
-      'Keď predávajúci niektorú ponuku prijme, meno, telefón a e-mail sa odkryjú ' +
-      'OBOM stranám naraz. Predtým ich nemá ani jeden z nich.',
+      'Sú dve chvíle, keď sa meno, telefón a e-mail odkryjú — vždy OBOM stranám ' +
+      'naraz. Prvá: majiteľ potvrdí obhliadku (bez spojenia sa nedá dohodnúť čas ' +
+      'a on púšťa cudzieho človeka domov). Druhá: prijme ponuku. Vtedy sa ' +
+      'potvrdenému záujemcovi ukáže aj presná adresa. Dovtedy nemá kontakt ani ' +
+      'jeden z nich — a samotná ŽIADOSŤ o obhliadku neodkryje nič.',
   },
   {
     icon: 'house',

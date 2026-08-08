@@ -20,6 +20,7 @@ import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
+import { useMyViewings } from '@/hooks/use-viewings';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
@@ -27,6 +28,7 @@ import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } 
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
 import { formatArea, formatDate, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
+import { formatViewingTime, viewingTime, VIEWING_STATUS_LABEL } from '@/lib/viewings';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ProfilScreen() {
@@ -40,6 +42,7 @@ export default function ProfilScreen() {
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
   const { items: favorites } = useFavoriteProperties(userId);
+  const { items: viewings } = useMyViewings(userId);
 
   const [nickname, setNickname] = useState('');
   const [fullName, setFullName] = useState('');
@@ -261,6 +264,22 @@ export default function ProfilScreen() {
                 badge: OFFER_STATUS_LABEL[o.status],
                 onPress: () =>
                   router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
+              }))}
+            />
+
+            {/* Ponuky a obhliadky POKOPE — obe strany toho istého záujmu
+                o jednu nehnuteľnosť. Chodiť za nimi na dve miesta by
+                znamenalo dvakrát si pamätať, čo som už spravil. */}
+            <SectionList
+              label={`MOJE OBHLIADKY (${viewings?.length ?? 0})`}
+              empty="Zatiaľ si o žiadnu nepožiadal."
+              rows={(viewings ?? []).map((v) => ({
+                key: v.id,
+                title: v.property?.title || 'Inzerát',
+                meta: [formatViewingTime(viewingTime(v)), v.property?.city].filter(Boolean).join(' · '),
+                badge: VIEWING_STATUS_LABEL[v.status],
+                onPress: () =>
+                  router.push({ pathname: '/nehnutelnost/[id]', params: { id: v.property_id } }),
               }))}
             />
 

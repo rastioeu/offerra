@@ -14,6 +14,9 @@ export type NotificationType =
   | 'PONUKA_ZAMIETNUTA'
   | 'NOVY_DOPYT_ZODPOVEDA_INZERATU'
   | 'NOVA_ZHODA'
+  | 'NOVA_OBHLIADKA'
+  | 'OBHLIADKA_POTVRDENA'
+  | 'OBHLIADKA_ZAMIETNUTA'
   | 'SYSTEMOVE';
 
 export type NotificationFrequency = 'IHNED' | 'DENNY_SUHRN' | 'TYZDENNY_SUHRN';
@@ -56,6 +59,21 @@ export const NOTIFICATION_TYPES: {
     type: 'NOVA_ZHODA',
     label: 'Nová zhoda',
     hint: 'Nový inzerát zodpovedá tomu, čo hľadáš.',
+  },
+  {
+    type: 'NOVA_OBHLIADKA',
+    label: 'Žiadosť o obhliadku môjho inzerátu',
+    hint: 'Keď si niekto chce prísť pozrieť tvoju nehnuteľnosť.',
+  },
+  {
+    type: 'OBHLIADKA_POTVRDENA',
+    label: 'Moja obhliadka je potvrdená',
+    hint: 'Vtedy sa odkryje kontakt na druhú stranu aj presná adresa.',
+  },
+  {
+    type: 'OBHLIADKA_ZAMIETNUTA',
+    label: 'Moja obhliadka bola zamietnutá',
+    hint: '',
   },
   {
     type: 'SYSTEMOVE',

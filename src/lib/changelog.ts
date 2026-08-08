@@ -21,6 +21,32 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Obhliadky',
+    items: [
+      'Na inzeráte si vieš vyžiadať OBHLIADKU — navrhneš deň a hodinu, majiteľ ju potvrdí alebo navrhne iný čas.',
+      'Obhliadka ťa k ničomu nezaväzuje a nemusíš pred ňou nič ponúkať. Ponuku môžeš podať pred ňou aj po nej.',
+      'Kontakt sa odkryje obom stranám až keď majiteľ obhliadku POTVRDÍ — samotná žiadosť neodkryje nič. Potvrdenému záujemcovi sa vtedy ukáže aj presná adresa, inak by nemal kam prísť.',
+      'Po obhliadke si ju označíš ako absolvovanú. Majiteľ potom pri rozhodovaní vidí, koľko záujemcov si nehnuteľnosť naozaj pozrelo.',
+      'Majiteľ má ponuky aj obhliadky na jednej obrazovke — rozhoduje sa o nich naraz.',
+      'V Profile vidíš svoje obhliadky hneď pod svojimi ponukami.',
+      '„Ako funguje Offerra" je doplnené o celý priebeh obhliadky.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
+    title: 'Obľúbené, avatary a čitateľnejšie údaje',
+    items: [
+      'V katalógu pribudol filter ♥ Obľúbené — ukáže len to, čo si si odložil.',
+      'Opravené: v mriežke údajov sa už text neoreže. „1 240 € (2× mesačný nájom)" a dlhé dátumy sa zalomia na dva riadky namiesto „1 240 € (2× m…".',
+      'Vyhľadávanie rozumie skloňovaniu — „byt v Bratislave" nájde Bratislavu, „v Košiciach" Košice.',
+      'Kto nemá profilovú fotku, dostane vlastný farebný obrazec namiesto sivého kolieska — v zozname ponúk sa ľudia konečne rozlíšia.',
+      'Logo v hlavičke a profilová fotka majú jemné teplé podsvietenie.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Ulica sa našepkáva z úradného registra',
     items: [
       'Pri zadávaní inzerátu ti appka po dvoch písmenách sama ponúkne ulicu — zoznam je z Registra adries Ministerstva vnútra, teda ten istý, čo používa štát.',

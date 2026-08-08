@@ -43,6 +43,8 @@ import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
+import { ViewingCard } from '@/components/viewing-card';
+import { useMyViewings } from '@/hooks/use-viewings';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
@@ -93,6 +95,10 @@ export default function PropertyDetailScreen() {
 
   const myId = session?.user.id;
   const isOwner = Boolean(myId && item && item.owner_id === myId);
+  // Moje obhliadky na tomto inzeráte. RLS pustí len moje, takže tu ide
+  // o zúženie na jednu, nie o bezpečnosť.
+  const { items: myViewings, reload: reloadViewings } = useMyViewings(myId);
+  const myViewing = myViewings?.find((v) => v.property_id === id);
   const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
   const closed = isDeadlinePassed(item?.offer_deadline ?? null);
   const { ids: favorites, toggle } = useFavoriteIds(myId);
@@ -337,6 +343,18 @@ export default function PropertyDetailScreen() {
                   </Text>
                 ) : null}
               </Card>
+
+              {/* Obhliadka je NEZÁVISLÁ od ponuky — preto vlastná karta pod
+                  ponukami, nie tlačidlo vnútri nich. */}
+              {!isOwner ? (
+                <ViewingCard
+                  propertyId={item.id}
+                  userId={myId}
+                  mine={myViewing}
+                  onChanged={reloadViewings}
+                  onNeedSignIn={() => router.push('/login')}
+                />
+              ) : null}
 
               <Text style={[styles.added, { color: palette.textMuted }]}>
                 Pridané {formatDate(item.created_at)}

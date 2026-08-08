@@ -21,6 +21,8 @@ import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Tex
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { OfferList } from '@/components/offer-list';
+import { ViewingOwnerList } from '@/components/viewing-owner-list';
+import { useViewings } from '@/hooks/use-viewings';
 import { OfferTimeline } from '@/components/offer-timeline';
 import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
@@ -46,6 +48,7 @@ export default function ManageOffersScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item } = useProperty(id);
   const { offers, error, reload } = useOffers(id);
+  const { items: viewings, reload: reloadViewings } = useViewings(id);
   const tenants = useTenantProfiles((offers ?? []).map((o) => o.id));
 
   const [contacts, setContacts] = useState<Record<string, OfferContact | null>>({});
@@ -150,6 +153,11 @@ export default function ManageOffersScreen() {
             onPressOffer={(o) => setOpenId(o.id)}
           />
         ) : null}
+
+        {/* Ponuky a obhliadky POKOPE — majiteľ sa o nich rozhoduje naraz
+            („ten, čo tu už bol, ponúka menej"). Dve obrazovky by to len
+            sťažili. */}
+        {viewings ? <ViewingOwnerList items={viewings} onChanged={reloadViewings} /> : null}
       </ScrollView>
 
       {/* ── spodný panel ── */}
