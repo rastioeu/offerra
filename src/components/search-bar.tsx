@@ -48,6 +48,8 @@ export function SearchBar({
   side = 'PROPERTY',
   sort,
   onSortChange,
+  signedIn,
+  onNeedSignIn,
 }: {
   filter: CatalogFilter;
   onChange: (f: CatalogFilter) => void;
@@ -60,6 +62,13 @@ export function SearchBar({
    */
   sort?: CatalogSort;
   onSortChange?: (s: CatalogSort) => void;
+  /**
+   * Či je kto prihlásený. Chip „Obľúbené" sa zobrazuje vždy — skryť ho
+   * odhlásenému by znamenalo, že o funkcii nikdy nezistí. Namiesto toho
+   * ho klik vyzve na prihlásenie.
+   */
+  signedIn?: boolean;
+  onNeedSignIn?: () => void;
 }) {
   const palette = useTheme();
   const label = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
@@ -194,6 +203,20 @@ export function SearchBar({
       ) : null}
 
       <View style={styles.row}>
+        {/* Srdiečko je prvé — je to filter na „moje", nie na typ obchodu. */}
+        {onNeedSignIn ? (
+          <Chip
+            label="♥ Obľúbené"
+            active={filter.favoritesOnly === true}
+            onPress={() => {
+              if (!signedIn) {
+                onNeedSignIn();
+                return;
+              }
+              onChange({ ...filter, favoritesOnly: filter.favoritesOnly ? null : true });
+            }}
+          />
+        ) : null}
         {(['SALE', 'RENT'] as const).map((t) => (
           <Chip
             key={t}

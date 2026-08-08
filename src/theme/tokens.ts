@@ -41,6 +41,12 @@ export type Palette = {
    * Opticky tá istá farba, len prejde kontrastom.
    */
   accentDeep: string;
+  /**
+   * Teplý závoj za logom v hlavičke — podsvietenie, nie plocha. MUSÍ byť
+   * poloprehľadný: kreslí sa cez `surface` a plná farba by z hlavičky
+   * spravila terakotový obdĺžnik namiesto jemného nádychu.
+   */
+  accentGlow: string;
   /** Text NA vyplnenom `primary`/`secondary` povrchu (tlačidlo, badge). */
   onPrimary: string;
 
@@ -98,6 +104,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     link: '#1B71D0',
     accent: '#C9703B',
     accentDeep: '#A85526',
+    accentGlow: 'rgba(201,112,59,0.10)',
     onPrimary: '#FFFFFF',
     onPhotoSurface: 'rgba(255,255,255,0.92)',
     scrim: 'rgba(28,24,21,0.55)',
@@ -127,6 +134,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     // rozdvojenie netreba — obe smerujú na ten istý odtieň.
     accent: '#E39A5E',
     accentDeep: '#E39A5E',
+    accentGlow: 'rgba(227,154,94,0.16)',
     onPrimary: '#161311',
     onPhotoSurface: 'rgba(33,29,26,0.92)',
     scrim: 'rgba(0,0,0,0.62)',
@@ -211,6 +219,22 @@ export const Shadow = {
     shadowOpacity: 0.09,
     shadowRadius: 14,
     elevation: 2,
+  },
+  /**
+   * PODSVIETENIE — tieň bez posunu, takže žiari na všetky strany.
+   * Princíp prevzatý z MUTARKu (`branch-rivalry.tsx`, fáza dizajn-dark:
+   * farebný `shadowColor`, offset 0, opacity 0.4, radius 10), ale
+   * v NAŠEJ teplej terakote, nie v mutarkovskej neónovej zlatej.
+   *
+   * `elevation: 0` zámerne: Android farebné tiene nevie a spravil by
+   * z toho sivý obdĺžnik pod logom.
+   */
+  glow: {
+    shadowColor: '#C9703B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 0,
   },
   /** Prilepená spodná lišta — tieň smeruje NAHOR, oddeľuje ju od obsahu. */
   bar: {

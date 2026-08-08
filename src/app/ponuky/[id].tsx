@@ -26,6 +26,7 @@ import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
+import { Avatar } from '@/components/avatar';
 import { useTheme } from '@/hooks/use-theme';
 import {
   fetchOfferContact,
@@ -172,11 +173,7 @@ export default function ManageOffersScreen() {
 
               <ScrollView contentContainerStyle={styles.sheetScroll} keyboardShouldPersistTaps="handled">
                 <View style={styles.head}>
-                  <View style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}>
-                    <Text style={[styles.avatarText, { color: palette.accentDeep }]}>
-                      {(selected.bidder?.nickname ?? '?').trim().slice(0, 1).toUpperCase()}
-                    </Text>
-                  </View>
+                  <Avatar name={selected.bidder?.nickname ?? 'neznámy'} size={40} />
                   <View style={styles.headText}>
                     <Text style={[styles.nick, { color: palette.textPrimary }]}>
                       {selected.bidder?.nickname ?? 'neznámy'}
@@ -298,8 +295,6 @@ const styles = StyleSheet.create({
   sheetScroll: { paddingHorizontal: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.md },
 
   head: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  avatar: { width: 40, height: 40, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { ...Type.title, fontWeight: Weight.bold },
   headText: { flex: 1, gap: 2 },
   nick: { ...Type.subtitle, fontWeight: Weight.bold },
   meta: { ...Type.caption },

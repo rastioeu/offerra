@@ -62,17 +62,36 @@ async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWith
   }));
 }
 
-export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWEST') {
+export function useProperties(
+  filter?: CatalogFilter,
+  sort: CatalogSort = 'NEWEST',
+  /**
+   * Id obľúbených. Filter „Obľúbené" ide do DOTAZU, nie cez preosiatie
+   * načítaných kariet — katalóg berie 200 najnovších a obľúbený inzerát
+   * môže byť starší, takže by sa preosievaním stratil.
+   */
+  favoriteIds?: Set<string>
+) {
   const [items, setItems] = useState<PropertyWithMedia[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   // Filter je objekt — bez tohto by sa `reload` menil pri každom rendere.
   const key = JSON.stringify(filter ?? null);
+  // To isté pre množinu — zoradene, nech sa kľúč nemení podľa poradia.
+  const favKey = filter?.favoritesOnly ? [...(favoriteIds ?? [])].sort().join(',') : '';
 
   const reload = useCallback(async () => {
     setError(null);
     try {
       const f = (JSON.parse(key) ?? null) as CatalogFilter | null;
+
+      // Prázdne obľúbené — netreba sa pýtať servera na `id in ()`.
+      if (f?.favoritesOnly && favKey === '') {
+        setItems([]);
+        return;
+      }
+
       let q = db().from('property').select('*').eq('status', 'ACTIVE');
+      if (f?.favoritesOnly) q = q.in('id', favKey.split(','));
 
       if (f?.transaction) q = q.eq('transaction_type', f.transaction);
       if (f?.propertyType) q = q.eq('property_type', f.propertyType);
@@ -103,7 +122,7 @@ export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWES
       setError(m);
       setItems([]);
     }
-  }, [key, sort]);
+  }, [key, sort, favKey]);
 
   useEffect(() => {
     void reload();

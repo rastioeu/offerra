@@ -8,12 +8,12 @@
  * `full_name` a `phone` sa načítavajú cez `offerra.my_profile()` — cez
  * tabuľku to nejde, rola `authenticated` na tie stĺpce nemá SELECT.
  */
-import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
+import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
@@ -158,20 +158,11 @@ export default function ProfilScreen() {
           <>
             <Card>
               <View style={styles.identity}>
+                {/* Profilová fotka je kruh v teplom prstenci s rovnakým
+                    podsvietením ako logo v hlavičke — tá istá vizuálna reč
+                    na oboch miestach, kde ide o identitu. */}
                 <Pressable onPress={changePhoto} accessibilityRole="button" disabled={busy}>
-                  {profile.avatar_url ? (
-                    <Image
-                      source={{ uri: profile.avatar_url }}
-                      style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={[styles.avatar, styles.avatarEmpty, { backgroundColor: palette.surfacePressed }]}>
-                      <Text style={[styles.avatarLetter, { color: palette.primary }]}>
-                        {profile.nickname.slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
+                  <Avatar name={profile.nickname} uri={profile.avatar_url} size={72} ring />
                 </Pressable>
                 <View style={styles.identityText}>
                   <Text style={[styles.nick, { color: palette.textPrimary }]}>{profile.nickname}</Text>
@@ -354,9 +345,6 @@ const styles = StyleSheet.create({
   gear: { fontSize: 24, lineHeight: 28 },
   identity: { flexDirection: 'row', gap: Spacing.md, alignItems: 'center' },
   identityText: { flexShrink: 1, gap: 2 },
-  avatar: { width: 72, height: 72, borderRadius: Radius.full },
-  avatarEmpty: { alignItems: 'center', justifyContent: 'center' },
-  avatarLetter: { ...Type.hero, fontWeight: Weight.bold },
   nick: { ...Type.heading, fontWeight: Weight.bold },
   hint: { ...Type.caption },
   link: { ...Type.bodyMd, fontWeight: Weight.semibold, marginTop: 4 },

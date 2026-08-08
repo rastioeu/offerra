@@ -18,17 +18,13 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+
+import { Avatar } from './avatar';
 import { formatAmount, OFFER_STATUS_LABEL, type Offer } from '@/lib/offers';
 import { formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ReportButton } from './report-button';
-
-/** Iniciála prezývky do krúžku. Prázdna prezývka by inak dala prázdny krúžok. */
-function initial(nickname: string | undefined): string {
-  const t = (nickname ?? '?').trim();
-  return (t[0] ?? '?').toUpperCase();
-}
 
 export function OfferList({
   offers,
@@ -76,11 +72,7 @@ export function OfferList({
                 borderWidth: best ? 1.5 : 1,
               },
             ]}>
-            <View style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}>
-              <Text style={[styles.avatarText, { color: palette.accentDeep }]}>
-                {initial(o.bidder?.nickname)}
-              </Text>
-            </View>
+            <Avatar name={o.bidder?.nickname ?? 'neznámy'} size={38} />
 
             <View style={styles.body}>
               <Text style={[styles.nick, { color: palette.textPrimary }]}>
@@ -147,10 +139,8 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.md,
   },
-  avatar: { width: 38, height: 38, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
   // 20px tucne = velky text podla WCAG (prah 3:1). Pri 18px by
   // iniciala na `surfacePressed` neprelezla (4,42:1 pri prahu 4,5).
-  avatarText: { ...Type.title, fontWeight: Weight.bold },
   body: { flex: 1, gap: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
   nick: { ...Type.bodyLg, fontWeight: Weight.semibold },

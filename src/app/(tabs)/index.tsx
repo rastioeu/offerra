@@ -35,10 +35,12 @@ export default function NehnutelnostiScreen() {
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
   // Predvolene VŽDY od najnovšieho, nezávisle od filtrov.
   const [sort, setSort] = useState<CatalogSort>('NEWEST');
-  const { items, error, reload } = useProperties(filter, sort);
-  const [refreshing, setRefreshing] = useState(false);
+  // Obľúbené sa musia načítať PRED katalógom — filter „Obľúbené" ich
+  // potrebuje poslať priamo do dotazu.
   const { session } = useSession();
   const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
+  const { items, error, reload } = useProperties(filter, sort, favorites);
+  const [refreshing, setRefreshing] = useState(false);
   const { shouldShow, dismiss } = useHints(session?.user.id);
   const [view, setView] = useState<'LIST' | 'MAP'>('LIST');
   // Nahlásenie z podržania prstu na karte. Formulár je ten istý ako inde,
@@ -96,7 +98,14 @@ export default function NehnutelnostiScreen() {
         <AppHeader />
         <View style={styles.mapHead}>
           {head}
-          <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
+          <SearchBar
+            filter={filter}
+            onChange={setFilter}
+            sort={sort}
+            onSortChange={setSort}
+            signedIn={Boolean(session)}
+            onNeedSignIn={() => router.push('/login')}
+          />
           <ErrorNote error={error} />
         </View>
         <PropertyMap
@@ -119,7 +128,14 @@ export default function NehnutelnostiScreen() {
 
         {head}
 
-        <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
+        <SearchBar
+          filter={filter}
+          onChange={setFilter}
+          sort={sort}
+          onSortChange={setSort}
+          signedIn={Boolean(session)}
+          onNeedSignIn={() => router.push('/login')}
+        />
 
         <ErrorNote error={error} />
 

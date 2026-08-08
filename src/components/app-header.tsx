@@ -18,7 +18,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { NotificationBell } from '@/components/notification-bell';
 import { useTheme } from '@/hooks/use-theme';
-import { Spacing, Type, Weight } from '@/theme/tokens';
+import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 export function AppHeader({ title }: { title?: string }) {
   const palette = useTheme();
@@ -35,12 +35,17 @@ export function AppHeader({ title }: { title?: string }) {
           paddingTop: insets.top + Spacing.sm,
         },
       ]}>
-      <Image
-        source={require('../../assets/images/wordmark.png')}
-        style={styles.logo}
-        contentFit="contain"
-        accessibilityLabel="Offerra"
-      />
+      {/* Teplý závoj za logom. Nie je to rám ani plocha — je to
+          podsvietenie: farebný tieň bez posunu (`Shadow.glow`) plus veľmi
+          jemná terakotová výplň. Princíp je z MUTARKu, farba naša. */}
+      <View style={[styles.halo, Shadow.glow, { backgroundColor: palette.accentGlow }]}>
+        <Image
+          source={require('../../assets/images/wordmark.png')}
+          style={styles.logo}
+          contentFit="contain"
+          accessibilityLabel="Offerra"
+        />
+      </View>
       <View style={styles.right}>
         {title ? <Text style={[styles.title, { color: palette.textMuted }]}>{title}</Text> : null}
         <NotificationBell />
@@ -57,6 +62,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.lg,
     paddingBottom: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  halo: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.sm,
+    borderRadius: Radius.full,
   },
   logo: { width: 104, height: 26 },
   right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
