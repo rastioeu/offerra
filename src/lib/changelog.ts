@@ -32,6 +32,8 @@ export const CHANGELOG: ChangelogEntry[] = [
       'K adrese pribudol kraj (dopĺňa sa sám podľa obce) a nepovinná ulica.',
       'Dopyt už hovorí rečou toho, kto hľadá — „Kúpim" a „Hľadám prenájom" namiesto „Predaj" a „Prenájom", a pri kúpe sa pýta „Ponúkam do".',
       'Karty a riadky v celej appke sú klikateľné celé, nie len text v nich.',
+      'Dopyty majú vlastné vyhľadávanie a filtre — rovnaké ovládanie ako pri nehnuteľnostiach, len so slovami hľadajúceho („Kúpim", „Hľadám prenájom").',
+      'Dopyt, ktorý berie akýkoľvek typ nehnuteľnosti, sa filtrom nestratí — objaví sa aj keď hľadáš konkrétne byty.',
     ],
   },
   {

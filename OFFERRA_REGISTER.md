@@ -1936,6 +1936,8 @@ v Google Cloud (Maps SDK for iOS) a vložiť do `app.json` ako
 |---|---|
 | `rental_test.py` — polia prenájmu a adresa proti živej DB | **12/12** |
 | `rental_pure_test.js` — dátumy a riadky prenájmu | **18/18** |
+| `demand_filter_test.py` — filtre nad dopytmi proti živej DB | **11/11** |
+| `demand_parse_test.js` — rozbor vety hľadajúceho + popis filtra | **9/9** |
 | `npx tsc --noEmit` | **0 chýb** |
 | `npx expo export --platform ios` | **hotovo**, bundle 4,7 MB |
 
@@ -1954,10 +1956,45 @@ Všetko ostatné z tejto dávky (klávesnica, tlačidlo späť, safe area,
 terminológia dopytov, polia prenájmu, kraj, klikateľné riadky) **IDE OTA** —
 je to čistý JS.
 
-### 7.13 Filter chips naprieč tabmi (bod 7) — 🔴 ČAKÁ NA ROZHODNUTIE RASTIA
+### 7.13 Filter chips naprieč tabmi (bod 7) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
 
-Zadanie výslovne: „napíš mi otázku s návrhom, nerozhoduj sám." Otázka je
-položená, návrh je v `reports/FAZA_7_MAPA_A_OPRAVY.md`.
+**Rozhodnutie Rastia 8.8.2026: možnosť B** — rovnaká lišta a rovnaká
+mechanika ako v Nehnuteľnostiach, len slová prispôsobené dopytu. Možnosť C
+(nechať Dopyty bez filtrov) výslovne odmietnutá.
+
+**Ako je to spravené — jeden komponent, nie dva.** `SearchBar` dostal
+`side: 'PROPERTY' | 'DEMAND'`. Mení sa VÝHRADNE pomenovanie:
+
+| | `PROPERTY` | `DEMAND` |
+|---|---|---|
+| chips smeru | Predaj / Prenájom | **Kúpim / Hľadám prenájom** |
+| príklad vety | „3-izbový byt v Petržalke do 250 tisíc" | „kúpim dom v Nitre do 200 tisíc" |
+| popis sumy | „do 200 000 €" | **„ponúka do 200 000 €"** |
+
+Typy nehnuteľnosti, textové hľadanie, rozbor slovenskej vety aj „Zrušiť"
+sú tie isté. Druhý komponent by sa časom rozišiel a používateľ by sa musel
+ovládanie učiť dvakrát.
+
+**Kde je to netriviálne — NULL znamená „čokoľvek".** Dopyt s
+`property_type = null` je „akýkoľvek typ", `budget_max = null` je „bez
+hornej hranice". Keby ich filter na Byt odstrihol, majiteľ bytu by prišiel
+práve o tých najochotnejších záujemcov. `useRequests` preto pri každom poli
+používa `or (… is null)`:
+
+```
+property_type.eq.APARTMENT , property_type.is.null
+budget_max.lte.200000      , budget_max.is.null
+rooms_min.gte.3            , rooms_min.is.null
+```
+
+Výnimka je smer obchodu — „Kúpim" a „Hľadám prenájom" sa NEPREKRÝVAJÚ,
+tam sa `or` nepoužíva.
+
+**Dôkazy:** `demand_filter_test.py` **11/11** proti živej DB (vrátane troch
+dopytov skonštruovaných presne na túto NULL-otázku), `demand_parse_test.js`
+**9/9** (rozbor vety hľadajúceho + popis filtra pre obe strany).
+
+**IDE OTA** — je to čistý JS, žiadny natívny modul.
 
 ---
 

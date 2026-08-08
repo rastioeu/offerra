@@ -9,6 +9,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import type { BuyerRequest, Offer, Outreach, TenantProfile } from '@/lib/offers';
 import { db } from '@/lib/property';
+import type { CatalogFilter } from '@/lib/search';
 
 function message(e: unknown): string {
   if (e && typeof e === 'object' && 'message' in e) return String((e as { message: unknown }).message);
@@ -115,15 +116,41 @@ export function useMyOffers(userId: string | undefined) {
 }
 
 /** Verejný zoznam dopytov (RLS pustí len ACTIVE), alebo moje vlastné. */
-export function useRequests(mineOf?: string) {
+/**
+ * Dopyty. `filter` je ten ISTÝ objekt ako v katalógu (`CatalogFilter`) —
+ * rozhodnutie Rastia 8.8.2026 (možnosť B): rovnaká mechanika, iné slová.
+ *
+ * Rozdiel oproti katalógu je v NULL-och, a je podstatný: dopyt „akýkoľvek
+ * typ" má `property_type = null` a dopyt bez hornej hranice `budget_max =
+ * null`. Taký dopyt sedí na ČOKOĽVEK, takže ho filter NESMIE odfiltrovať —
+ * inak by človek hľadajúci kupcov na byt prišiel práve o tých, ktorí sú
+ * ochotní vziať čokoľvek. Preto je pri každom poli `or (… is null)`.
+ */
+export function useRequests(mineOf?: string, filter?: CatalogFilter) {
   const [items, setItems] = useState<BuyerRequest[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  // Filter je objekt — bez tohto by sa `reload` menil pri každom rendere.
+  const key = JSON.stringify(filter ?? null);
 
   const reload = useCallback(async () => {
     setError(null);
     try {
+      const f = (JSON.parse(key) ?? null) as CatalogFilter | null;
       let q = db().from('buyer_request').select('*, author:user_id(nickname, avatar_url)');
       q = mineOf ? q.eq('user_id', mineOf) : q.eq('status', 'ACTIVE');
+
+      if (f?.transaction) q = q.eq('transaction_type', f.transaction);
+      if (f?.propertyType) q = q.or(`property_type.eq.${f.propertyType},property_type.is.null`);
+      if (f?.city) q = q.eq('city', f.city);
+      if (f?.roomsMin != null) q = q.or(`rooms_min.gte.${f.roomsMin},rooms_min.is.null`);
+      if (f?.areaMin != null) q = q.or(`area_min.gte.${f.areaMin},area_min.is.null`);
+      if (f?.priceMax != null) q = q.or(`budget_max.lte.${f.priceMax},budget_max.is.null`);
+      if (f?.priceMin != null) q = q.or(`budget_min.gte.${f.priceMin},budget_min.is.null`);
+      if (f?.text) {
+        const t = f.text.replace(/[%,()]/g, ' ').trim();
+        if (t) q = q.or(`description.ilike.*${t}*,city.ilike.*${t}*`);
+      }
+
       const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);
       if (e) throw e;
       setItems((data ?? []) as BuyerRequest[]);
@@ -133,7 +160,7 @@ export function useRequests(mineOf?: string) {
       setError(m);
       setItems([]);
     }
-  }, [mineOf]);
+  }, [mineOf, key]);
 
   useEffect(() => {
     void reload();

@@ -8,30 +8,48 @@
  * Rozbor je v `@/lib/search` a nepoužíva jazykový model — dôvody sú
  * popísané tam. Obec sa dohľadáva v `offerra.city`, takže „Petrzalka"
  * bez diakritiky nájde Petržalku.
+ *
+ * DVE STRANY TRHU, JEDNA LIŠTA (Rastio 8.8.2026, možnosť B). Tá istá
+ * lišta slúži katalógu aj Dopytom — mení sa len `side`, teda SLOVÁ:
+ * „Predaj / Prenájom" vs. „Kúpim / Hľadám prenájom". Zámerne to NIE JE
+ * druhý komponent: dve kópie tej istej mechaniky sa časom rozídu a
+ * používateľ by sa musel ovládanie učiť dvakrát.
  */
 import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
-import { db, PROPERTY_LABEL, type PropertyType, type TransactionType } from '@/lib/property';
-import { describeFilter, EMPTY_FILTER, isFilterEmpty, parseQuery, type CatalogFilter } from '@/lib/search';
+import { db, DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL, type PropertyType } from '@/lib/property';
+import {
+  describeFilter,
+  EMPTY_FILTER,
+  isFilterEmpty,
+  parseQuery,
+  type CatalogFilter,
+  type FilterSide,
+} from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
-const TRANSACTIONS: { value: TransactionType; label: string }[] = [
-  { value: 'SALE', label: 'Predaj' },
-  { value: 'RENT', label: 'Prenájom' },
-];
-
 const TYPES: PropertyType[] = ['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL'];
+
+/** Príklad vety musí sedieť na to, čo sa práve prehľadáva. */
+const PLACEHOLDER: Record<FilterSide, string> = {
+  PROPERTY: 'napr. 3-izbový byt v Petržalke do 250 tisíc',
+  DEMAND: 'napr. kúpim dom v Nitre do 200 tisíc',
+};
 
 export function SearchBar({
   filter,
   onChange,
+  side = 'PROPERTY',
 }: {
   filter: CatalogFilter;
   onChange: (f: CatalogFilter) => void;
+  /** Ktorá strana trhu — mení SLOVÁ, nie mechaniku. */
+  side?: FilterSide;
 }) {
   const palette = useTheme();
+  const label = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
   const [text, setText] = useState('');
   const [understood, setUnderstood] = useState<string[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -99,14 +117,14 @@ export function SearchBar({
     onChange({ ...EMPTY_FILTER });
   }
 
-  const chips = describeFilter(filter);
+  const chips = describeFilter(filter, side);
 
   return (
     <View style={styles.wrap}>
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="napr. 3-izbový byt v Petržalke do 250 tisíc"
+        placeholder={PLACEHOLDER[side]}
         placeholderTextColor={palette.textMuted}
         returnKeyType="search"
         autoCorrect={false}
@@ -125,12 +143,12 @@ export function SearchBar({
       ) : null}
 
       <View style={styles.row}>
-        {TRANSACTIONS.map((t) => (
+        {(['SALE', 'RENT'] as const).map((t) => (
           <Chip
-            key={t.value}
-            label={t.label}
-            active={filter.transaction === t.value}
-            onPress={() => toggle('transaction', t.value)}
+            key={t}
+            label={label[t]}
+            active={filter.transaction === t}
+            onPress={() => toggle('transaction', t)}
           />
         ))}
         {TYPES.map((t) => (

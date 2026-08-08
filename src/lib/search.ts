@@ -14,6 +14,16 @@
  */
 import type { PropertyType, TransactionType } from './property';
 
+/**
+ * Z ktorej strany trhu sa pozeráme. Filter je ÚPLNE ROVNAKÝ objekt —
+ * mení sa len to, ako sa pomenúva a proti akým stĺpcom sa púšťa.
+ *
+ * `PROPERTY` = ponuka (inzeráty), `DEMAND` = dopyt (kto hľadá).
+ * Rozhodnutie Rastia 8.8.2026 (možnosť B): rovnaká lišta a rovnaké
+ * ovládanie, len slová podľa smeru — pri dopyte nesmie stáť „Predaj".
+ */
+export type FilterSide = 'PROPERTY' | 'DEMAND';
+
 export type CatalogFilter = {
   text: string | null;
   transaction: TransactionType | null;
@@ -179,7 +189,8 @@ export function parseQuery(raw: string): Parsed {
   // zvyšok — predložky preč, ostane kandidát na obec + voľný text
   const STOP = new Set([
     'v', 've', 'na', 'pri', 'do', 'od', 'a', 'so', 's', 'z', 'zo', 'okres',
-    'okrese', 'meste', 'obci', 'hladam', 'chcem', 'kupim', 'najdi', 'nieco',
+    'okrese', 'meste', 'obci', 'hladam', 'hlada', 'hladaju', 'chcem', 'kupim',
+    'kupujem', 'najdi', 'nieco',
     'izb', 'izba', 'izby', 'izieb', 'eur', 'e',
   ]);
   const words = s.split(' ').map((w) => w.trim()).filter((w) => w.length > 1 && !STOP.has(w) && !/^\d+$/.test(w));
@@ -197,9 +208,19 @@ export function parseQuery(raw: string): Parsed {
 }
 
 /** Krátky ľudský popis filtra pre lištu nad výsledkami. */
-export function describeFilter(f: CatalogFilter): string[] {
+export function describeFilter(f: CatalogFilter, side: FilterSide = 'PROPERTY'): string[] {
   const out: string[] = [];
-  if (f.transaction) out.push(f.transaction === 'RENT' ? 'Prenájom' : 'Predaj');
+  if (f.transaction) {
+    out.push(
+      side === 'DEMAND'
+        ? f.transaction === 'RENT'
+          ? 'Hľadám prenájom'
+          : 'Kúpim'
+        : f.transaction === 'RENT'
+          ? 'Prenájom'
+          : 'Predaj'
+    );
+  }
   if (f.propertyType) {
     out.push(
       f.propertyType === 'APARTMENT' ? 'Byt'
@@ -211,8 +232,13 @@ export function describeFilter(f: CatalogFilter): string[] {
   if (f.city) out.push(f.city);
   if (f.roomsMin != null) out.push(`od ${f.roomsMin} izieb`);
   if (f.areaMin != null) out.push(`od ${f.areaMin} m²`);
-  if (f.priceMin != null) out.push(`od ${f.priceMin.toLocaleString('sk-SK')} €`);
-  if (f.priceMax != null) out.push(`do ${f.priceMax.toLocaleString('sk-SK')} €`);
+  // Pri dopyte to nie je cena nehnuteľnosti, ale koľko je človek ochotný dať.
+  if (f.priceMin != null) {
+    out.push(`${side === 'DEMAND' ? 'ponúka od' : 'od'} ${f.priceMin.toLocaleString('sk-SK')} €`);
+  }
+  if (f.priceMax != null) {
+    out.push(`${side === 'DEMAND' ? 'ponúka do' : 'do'} ${f.priceMax.toLocaleString('sk-SK')} €`);
+  }
   if (f.text) out.push(`„${f.text}"`);
   return out;
 }

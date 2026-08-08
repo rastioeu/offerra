@@ -138,6 +138,27 @@ Prešiel som appku obrazovka po obrazovke. Väčšina už klikateľná bola;
 vedúci niekam — je to hotová karta so všetkými údajmi a s tlačidlami
 Prijať/Odmietnuť. Ťuknutie by nemalo kam viesť.
 
+### 9. Filtre nad Dopytmi (bod 7) — vybral si **možnosť B**
+
+Hotové. Dopyty majú tú istú lištu ako Nehnuteľnosti — **jeden komponent**,
+nie druhá kópia. Mení sa výhradne pomenovanie:
+
+| | Nehnuteľnosti | Dopyty |
+|---|---|---|
+| chips smeru | Predaj / Prenájom | **Kúpim / Hľadám prenájom** |
+| príklad vety | „3-izbový byt v Petržalke do 250 tisíc" | „kúpim dom v Nitre do 200 tisíc" |
+| popis sumy | „do 200 000 €" | **„ponúka do 200 000 €"** |
+
+Typy nehnuteľnosti, hľadanie vetou, „Rozumiem: …" aj „Zrušiť" sú tie isté —
+ovládanie sa učíš raz.
+
+**Jedna vec, ktorá pri tom nie je zrejmá a stála za pozornosť:** dopyt
+„akýkoľvek typ" má v databáze prázdny typ a dopyt bez hornej hranice prázdny
+rozpočet. Keby ich filter na „Byt" odstrihol, prišiel by si **práve o tých
+záujemcov, ktorí sú ochotní vziať čokoľvek** — teda o najlepších. Filter ich
+preto zámerne necháva prejsť. Overené tromi dopytmi postavenými presne na
+túto otázku.
+
 ---
 
 ## ⚠️ Čo potrebuje teba
@@ -159,24 +180,6 @@ Urobil som to tak, aby mapa fungovala hneď a Google sa zapol bez zmeny kódu:
 Vyrobiť ten kľúč za teba nemôžem — je viazaný na tvoj Google Cloud účet
 a fakturáciu.
 
-### OTÁZKA — filter chips medzi Nehnuteľnosťami a Dopytmi (bod 7)
-
-Výslovne si napísal, aby som nerozhodoval sám. Návrh a tri možnosti sú
-nižšie; vyberáš ty.
-
-**Kontext:** filtre v Nehnuteľnostiach (Predaj/Prenájom/Byt/Dom/…) filtrujú
-**inzeráty**. Dopyty sú opačný smer a majú vlastnú množinu — Kúpim / Hľadám
-prenájom + typ + kraj + rozpočet.
-
-**Môj návrh: B — rovnaká lišta, iné slová.** Dopyty dostanú vlastnú lištu
-chips s rovnakým vzhľadom a správaním, ale s vlastnými slovami (Kúpim /
-Hľadám prenájom / Byt / Dom / …). Naučíš sa ovládanie raz, ale nikdy
-nefiltruješ dopyty slovom „Predaj".
-
-Ostatné dve možnosti: **A** — spoločná lišta a jeden prepínač
-Nehnuteľnosti/Dopyty nad ňou (menej miesta, ale mieša dva rôzne trhy);
-**C** — nechať Dopyty úplne bez filtrov, kým ich nebudú desiatky.
-
 ---
 
 ## Čo mám otestovať ja a čo ty
@@ -187,6 +190,8 @@ Nehnuteľnosti/Dopyty nad ňou (menej miesta, ale mieša dva rôzne trhy);
 |---|---|
 | polia prenájmu a adresa proti živej DB | **12/12** |
 | dátumy a riadky prenájmu (jednotkový) | **18/18** |
+| filtre nad dopytmi proti živej DB | **11/11** |
+| rozbor vety hľadajúceho + popis filtra | **9/9** |
 | `npx tsc --noEmit` | **0 chýb** |
 | `npx expo export --platform ios` | **hotovo**, bundle 4,7 MB |
 
@@ -212,3 +217,6 @@ z terminálu overiť neviem:
       pri Kúpim pole **„Ponúkam do (€)"**.
 - [ ] V **Správe** ťukni na riadok nahlásenia, inzerátu aj používateľa —
       každý musí niečo urobiť.
+- [ ] V **Dopytoch** musí byť hore hľadanie a chips **Kúpim / Hľadám
+      prenájom / Byt / Dom / Pozemok / Komerčný priestor**. Ťukni na
+      „Kúpim" — musia ostať len kupujúci.
