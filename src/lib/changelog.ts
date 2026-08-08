@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '8. augusta 2026',
+    title: 'Uzavretie obchodu a hodnotenia',
+    items: [
+      'Opravené a kritické: katalóg sa prihláseným ľuďom nezobrazoval vôbec — hlásil chybu databázy. Príčina bola v novom pravidle prístupu, ktoré sa zacyklilo samo na seba.',
+      'Keď obchod dopadne, v „Ponuky na inzerát" ho uzavrieš jedným tlačidlom. Inzerát zmizne z katalógu a ostatné čakajúce ponuky sa uzavrú — nikto už nečaká nadarmo.',
+      'Po uzavretí sa obe strany môžu navzájom ohodnotiť 1 až 5 hviezdičkami.',
+      'Hviezdičky vidno pri prezývke v zozname ponúk aj na inzeráte — podľa nich sa dá odhadnúť, s kým máš do činenia.',
+      'Text, ktorý k hodnoteniu napíšeš, číta len ten, komu je určený. Verejný nie je zámerne — verejné odkazy na konkrétnych ľudí sa neustrážia.',
+      'Obchod sa dá uzavrieť aj vtedy, keď ste sa dohodli mimo appky.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '8. augusta 2026',
     title: 'Vzhľad si vyberáš ty + obrana proti realitkám',
     items: [
       'Opravené a dôležité: kto mal na telefóne zapnutý tmavý režim, dostal tmavú Offerru a nemal sa ako vrátiť. V Nastaveniach je teraz na prvom mieste voľba vzhľadu — Svetlý, Tmavý, Podľa telefónu. Predvolený je svetlý, lebo tak je Offerra navrhnutá.',

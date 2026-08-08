@@ -22,6 +22,9 @@ import { formatAmount, OFFER_STATUS_LABEL, type Offer } from '@/lib/offers';
 import { formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
+import { ratingLabel } from '@/lib/rating';
+import { useRatings } from '@/hooks/use-ratings';
+
 import { ReportButton } from './report-button';
 
 /** Iniciála prezývky do krúžku. Prázdna prezývka by inak dala prázdny krúžok. */
@@ -46,6 +49,7 @@ export function OfferList({
   onPressOffer?: (offer: Offer) => void;
 }) {
   const palette = useTheme();
+  const ratings = useRatings(offers.map((o) => o.bidder_id));
 
   if (offers.length === 0) {
     return (
@@ -87,6 +91,13 @@ export function OfferList({
                 {o.bidder?.nickname ?? 'neznámy'}
                 {mine ? ' · ty' : ''}
               </Text>
+              {/* Hviezdičky pri prezývke sú celý zmysel hodnotení — v profile,
+                  kam nikto nechodí, by nikomu nepomohli. */}
+              {ratingLabel(ratings[o.bidder_id]) ? (
+                <Text style={[styles.date, { color: palette.accentDeep }]}>
+                  {ratingLabel(ratings[o.bidder_id])}
+                </Text>
+              ) : null}
               <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
               {/* Správa je tu, LEN ak na ňu volajúci má nárok — `message` je
                   `null` pre všetkých ostatných a rozhodla o tom databáza,

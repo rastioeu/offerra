@@ -57,6 +57,15 @@ export const HOW_STEPS: HowStep[] = [
       'presná adresa je skrytá rovnako ako meno a odkryje sa až po dohode.',
   },
   {
+    icon: 'checkmark.seal',
+    title: 'Uzavretie a hodnotenie',
+    body:
+      'Keď obchod dopadne, predávajúci ho uzavrie — inzerát zmizne z katalógu ' +
+      'a ostatné čakajúce ponuky sa uzavrú tiež. Potom sa obe strany môžu ' +
+      'navzájom ohodnotiť. Hviezdičky vidí každý ako priemer pri prezývke, ' +
+      'napísaný text prečíta LEN ten, komu je určený.',
+  },
+  {
     icon: 'envelope',
     title: 'Hľadať sa dá aj naopak',
     body:

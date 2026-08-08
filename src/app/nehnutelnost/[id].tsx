@@ -44,6 +44,7 @@ import { OfferList } from '@/components/offer-list';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
+import { RatingCard } from '@/components/rating-card';
 import { ViewingCard } from '@/components/viewing-card';
 import { useViewings } from '@/hooks/use-viewings';
 import { useFavoriteIds } from '@/hooks/use-favorites';
@@ -53,6 +54,8 @@ import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount } from '@/lib/offers';
+import { ratingLabel } from '@/lib/rating';
+import { useRatings } from '@/hooks/use-ratings';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
   db,
@@ -63,6 +66,7 @@ import {
   isDeadlinePassed,
   PROPERTY_LABEL,
   buildingRows,
+  closedLabel,
   rentalRows,
   TRANSACTION_LABEL,
 } from '@/lib/property';
@@ -99,6 +103,11 @@ export default function PropertyDetailScreen() {
   const isOwner = Boolean(myId && item && item.owner_id === myId);
   const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
   const closed = isDeadlinePassed(item?.offer_deadline ?? null);
+  // Kto obchod vyhral. Vlastník podľa toho vie, koho hodnotí; ostatní to
+  // nepotrebujú — hodnotiť smú len dvaja a rozhoduje o tom DB.
+  const winnerBidderId = offers?.find((o) => o.id === item?.closed_offer_id)?.bidder_id;
+  const ratings = useRatings(item ? [item.owner_id] : []);
+  const ownerRating = item ? ratingLabel(ratings[item.owner_id]) : null;
   const { ids: favorites, toggle } = useFavoriteIds(myId);
 
   // Živé ponuky = tie, ktoré ešte stoja. Stiahnutá ani odmietnutá ponuka
@@ -123,9 +132,9 @@ export default function PropertyDetailScreen() {
         onPress: () => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } }),
       };
     }
-    // Po uzávierke sa ponuka podať nedá — tlačidlo, ktoré by aj tak
-    // neprešlo, radšej nie je (dôvod píše karta ponúk).
-    if (closed) return null;
+    // Po uzávierke ani po uzavretí obchodu sa ponuka podať nedá —
+    // tlačidlo, ktoré by aj tak neprešlo, radšej nie je.
+    if (closed || item.status === 'CLOSED') return null;
     if (!myId) {
       return { title: 'Prihlás sa a ponúkni', onPress: () => router.push('/login') };
     }
@@ -199,6 +208,11 @@ export default function PropertyDetailScreen() {
 
               <View style={styles.heroBadges}>
                 <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
+                {/* Uzavretý obchod musí byť vidieť HNEĎ, nie až po scrollovaní —
+                    inak človek podá ponuku na niečo, čo je dávno preč. */}
+                {item.status === 'CLOSED' ? (
+                  <Badge text={closedLabel(item.transaction_type).toUpperCase()} tone="warning" />
+                ) : null}
                 {item.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
               </View>
 
@@ -251,6 +265,7 @@ export default function PropertyDetailScreen() {
                     sa objavila až pri ponukách, čo je neskoro. */}
                 <Text style={[styles.place, { color: palette.textMuted }]}>
                   Pridal: {isOwner ? 'ty' : (item.owner?.nickname ?? 'neznámy')}
+                  {ownerRating ? ` · ${ownerRating}` : ''}
                 </Text>
               </View>
 
@@ -359,6 +374,17 @@ export default function PropertyDetailScreen() {
                   </Text>
                 ) : null}
               </Card>
+
+              {/* Hodnotenie sa zobrazí LEN keď to dovolí databáza (`can_rate`),
+                  takže sa obrazovka nemá ako opýtať na niečo, čo server odmietne. */}
+              {item.status === 'CLOSED' ? (
+                <RatingCard
+                  propertyId={item.id}
+                  rateeId={isOwner ? (winnerBidderId ?? null) : item.owner_id}
+                  rateeNickname={isOwner ? 'záujemcom' : (item.owner?.nickname ?? 'predávajúcim')}
+                  myId={myId}
+                />
+              ) : null}
 
               <ViewingCard
                 propertyId={item.id}

@@ -26,6 +26,7 @@ import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
+import { closeDeal } from '@/lib/rating';
 import { useTheme } from '@/hooks/use-theme';
 import {
   fetchOfferContact,
@@ -35,7 +36,7 @@ import {
   type OfferContact,
   type TenantProfile,
 } from '@/lib/offers';
-import { db, formatDate } from '@/lib/property';
+import { closedLabel, db, formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
@@ -43,7 +44,7 @@ export default function ManageOffersScreen() {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { item } = useProperty(id);
+  const { item, reload: reloadProperty } = useProperty(id);
   const { offers, error, reload } = useOffers(id);
   const tenants = useTenantProfiles((offers ?? []).map((o) => o.id));
 
@@ -73,6 +74,33 @@ export default function ManageOffersScreen() {
   // Panel číta ZO ZOZNAMU, nie z vlastnej kópie — po prijatí ponuky sa tak
   // prekreslí sám a nezobrazuje zastaraný stav.
   const selected: Offer | undefined = (offers ?? []).find((o) => o.id === openId);
+
+  /**
+   * Uzavretie obchodu. Všetko robí JEDNA funkcia v databáze — stav
+   * inzerátu, víťazná ponuka, konečná suma aj uzavretie ostatných
+   * čakajúcich ponúk. Keby to appka robila po jednom, pád medzi krokmi
+   * by nechal obchod v polovici.
+   */
+  async function finish(offerId: string) {
+    if (!id) return;
+    setBusy(offerId);
+    try {
+      await closeDeal(id, offerId, null);
+      await reload();
+      await reloadProperty();
+      setOpenId(null);
+      Alert.alert(
+        'Obchod uzavretý',
+        'Inzerát zmizol z katalógu. V jeho detaile teraz môžete jeden druhého ohodnotiť.'
+      );
+    } catch (e: unknown) {
+      const m = errorText(e);
+      console.log(`[PONUKY] Uzavretie zlyhalo: ${m}`);
+      Alert.alert('Uzavretie zlyhalo', m);
+    } finally {
+      setBusy(null);
+    }
+  }
 
   async function decide(offerId: string, status: 'ACCEPTED' | 'REJECTED') {
     setBusy(offerId);
@@ -272,6 +300,30 @@ export default function ManageOffersScreen() {
                       disabled={busy !== null}
                     />
                   </View>
+                ) : null}
+
+                {/* Uzavretie obchodu. Až tu, nie pri prijatí ponuky —
+                    prijatá ponuka znamená „dohodnime sa", uzavretý obchod
+                    znamená „hotovo". Sú to dve rôzne veci a splynúť
+                    nesmú: medzi nimi ide papierovačka, ktorá padne. */}
+                {item.status === 'ACTIVE' &&
+                (selected.status === 'ACCEPTED' || selected.status === 'PENDING') ? (
+                  <Button
+                    title={`${closedLabel(item.transaction_type)} tomuto záujemcovi`}
+                    variant="outline"
+                    disabled={busy !== null}
+                    onPress={() =>
+                      Alert.alert(
+                        `${closedLabel(item.transaction_type)}?`,
+                        `Inzerát zmizne z katalógu, ostatné čakajúce ponuky sa uzavrú a ` +
+                          `vy dvaja sa budete môcť navzájom ohodnotiť. Späť sa to vziať nedá.`,
+                        [
+                          { text: 'Zrušiť', style: 'cancel' },
+                          { text: 'Uzavrieť obchod', onPress: () => void finish(selected.id) },
+                        ]
+                      )
+                    }
+                  />
                 ) : null}
 
                 <Button title="Zavrieť" onPress={() => setOpenId(null)} variant="outline" />
