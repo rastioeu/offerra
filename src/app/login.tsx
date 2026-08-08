@@ -14,7 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
-import { signInWithApple, signInWithEmail, signInWithGoogle, type AuthResult } from '@/lib/auth';
+import { demoEmail, isDemoConfigured, signInWithApple, signInWithDemo, signInWithEmail, signInWithGoogle, type AuthResult } from '@/lib/auth';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 /** Koľko ťuknutí na logo odomkne skrytý e-mail/heslo formulár (ako MUTARK). */
@@ -59,6 +59,18 @@ export default function LoginScreen() {
     handleResult(await fn());
   }
 
+  /**
+   * Jedno ťuknutie = recenzent je dnu. Presne ako MUTARK — bez toho by
+   * sa do appky nedostal, lebo Offerra pustí len cez Apple/Google
+   * a review zariadenie ani jeden účet naviazaný nemá.
+   */
+  async function handleDemoSubmit() {
+    if (busy) return;
+    setBusy('email');
+    setError(null);
+    handleResult(await signInWithDemo());
+  }
+
   async function handleEmailSubmit() {
     if (busy) return;
     setBusy('email');
@@ -70,7 +82,12 @@ export default function LoginScreen() {
     if (emailUnlocked) return;
     const next = taps + 1;
     setTaps(next);
-    if (next >= TAPS_TO_UNLOCK) setEmailUnlocked(true);
+    if (next >= TAPS_TO_UNLOCK) {
+      setEmailUnlocked(true);
+      // E-mail demo účtu tajný nie je — predvyplníme ho, nech recenzent
+      // prepisuje len heslo z review notes (ak by nešlo tlačidlo nižšie).
+      if (!email) setEmail(demoEmail());
+    }
   }
 
   return (
@@ -164,7 +181,29 @@ export default function LoginScreen() {
             {emailUnlocked ? (
               <View style={[styles.hidden, { borderTopColor: palette.border }]}>
                 <Text style={[styles.label, { color: palette.textMuted }]}>
-                  Testovacie prihlásenie
+                  Prístup pre recenziu App Store
+                </Text>
+
+                {isDemoConfigured() ? (
+                  <Pressable
+                    onPress={handleDemoSubmit}
+                    disabled={busy !== null}
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.button,
+                      {
+                        backgroundColor: palette.accentDeep,
+                        opacity: busy !== null ? 0.5 : pressed ? 0.9 : 1,
+                      },
+                    ]}>
+                    <Text style={[styles.buttonText, { color: palette.onPrimary }]}>
+                      {busy === 'email' ? 'Prihlasujem…' : 'Prihlásiť sa ako recenzent'}
+                    </Text>
+                  </Pressable>
+                ) : null}
+
+                <Text style={[styles.label, { color: palette.textMuted }]}>
+                  alebo ručne e-mailom
                 </Text>
                 <TextInput
                   value={email}

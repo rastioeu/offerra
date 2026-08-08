@@ -28,6 +28,12 @@ import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
+/**
+ * Sú denný a týždenný súhrn už funkčné? Kým nie, výber frekvencie sa
+ * vôbec nezobrazuje — jedna možnosť nie je výber a „(čoskoro)" je výplň.
+ */
+const DIGEST_READY = false;
+
 export default function NastaveniaScreen() {
   const palette = useTheme();
   const router = useRouter();
@@ -127,33 +133,27 @@ export default function NastaveniaScreen() {
                   />
                 </View>
 
-                {/* Frekvencia dáva zmysel len pri zapnutom type. */}
-                {enabled && !t.system ? (
+                {/* Frekvencia sa NEZOBRAZUJE, kým funguje jediná možnosť.
+                    Denný a týždenný súhrn potrebujú plánovanú úlohu na
+                    serveri, ktorú Offerra nemá — chip so štítkom „(čoskoro)"
+                    je presne ten druh nefunkčnej výplne, ktorý Apple pri
+                    recenzii odmieta (App Review 2.1). Až budú súhrny reálne
+                    fungovať, stačí prepnúť `DIGEST_READY`. */}
+                {DIGEST_READY && enabled && !t.system ? (
                   <View style={styles.freqRow}>
                     {(['IHNED', 'DENNY_SUHRN', 'TYZDENNY_SUHRN'] as NotificationFrequency[]).map((f) => {
                       const active = frequency === f;
-                      const ready = f === 'IHNED';
                       return (
                         <Pressable
                           key={f}
-                          onPress={() =>
-                            ready
-                              ? save(t.type, { frequency: f })
-                              : Alert.alert(
-                                  'Súhrny zatiaľ nefungujú',
-                                  'Denný a týždenný súhrn potrebuje plánovanú úlohu na serveri, ' +
-                                    'ktorú Offerra ešte nemá. Nastavenie by sa uložilo, ale nič by ho nečítalo — ' +
-                                    'preto ho zatiaľ nepúšťam.'
-                                )
-                          }
+                          onPress={() => save(t.type, { frequency: f })}
                           accessibilityRole="button"
-                          accessibilityState={{ selected: active, disabled: !ready }}
+                          accessibilityState={{ selected: active }}
                           style={[
                             styles.freq,
                             {
                               backgroundColor: active ? palette.primary : palette.surface,
                               borderColor: active ? palette.primary : palette.border,
-                              opacity: ready ? 1 : 0.45,
                             },
                           ]}>
                           <Text
@@ -162,7 +162,6 @@ export default function NastaveniaScreen() {
                               { color: active ? palette.onPrimary : palette.textSecondary },
                             ]}>
                             {FREQUENCY_LABEL[f]}
-                            {ready ? '' : ' (čoskoro)'}
                           </Text>
                         </Pressable>
                       );

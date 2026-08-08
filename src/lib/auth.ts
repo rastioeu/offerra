@@ -194,3 +194,46 @@ export async function signOut(): Promise<void> {
   }
   console.log('[AUTH] Odhlásený.');
 }
+
+/**
+ * Demo prihlásenie pre Apple Review — vzor MUTARK (`signInWithDemo`).
+ *
+ * PREČO VÔBEC: Offerra pustí dnu len cez Apple alebo Google. Recenzent
+ * App Store nemá na svojom review zariadení naviazaný ani jeden z nich,
+ * takže by sa do appky nedostal a odmietol by ju. Skrytý prístup sa
+ * odomkne **piatimi ťuknutiami na logo** na prihlasovacej obrazovke —
+ * bežný používateľ naň nikdy náhodou nenarazí.
+ *
+ * ROZDIEL OPROTI MUTARKU, A JE PODSTATNÝ: MUTARK má heslo natvrdo
+ * v zdrojáku, lebo jeho repozitár je **private**. Repozitár Offerry je
+ * **VEREJNÝ** a `CLAUDE.md` §4 zakazuje dostať doň heslá demo účtov.
+ * Heslo preto ide cez `EXPO_PUBLIC_DEMO_PASSWORD` (EAS Environment
+ * Variables) — do gitu sa nedostane. Do bundlu áno, ale to je pri účte
+ * s výhradne ukážkovými dátami prijateľné a stále o triedu lepšie než
+ * verejný commit.
+ *
+ * Keď premenná chýba, `signInWithDemo` to POVIE — netvári sa, že nič.
+ */
+const DEMO_EMAIL = process.env.EXPO_PUBLIC_DEMO_EMAIL ?? 'applereview@offerra.app';
+
+/** Je demo prihlásenie v tomto builde vôbec nakonfigurované? */
+export function isDemoConfigured(): boolean {
+  return Boolean(process.env.EXPO_PUBLIC_DEMO_PASSWORD);
+}
+
+export function demoEmail(): string {
+  return DEMO_EMAIL;
+}
+
+export async function signInWithDemo(): Promise<AuthResult> {
+  const password = process.env.EXPO_PUBLIC_DEMO_PASSWORD;
+  if (!password) {
+    return {
+      ok: false,
+      message:
+        'Demo prihlásenie nie je v tejto verzii nastavené (chýba EXPO_PUBLIC_DEMO_PASSWORD). ' +
+        'Použi e-mail a heslo z App Store Connect review notes.',
+    };
+  }
+  return signInWithEmail(DEMO_EMAIL, password);
+}
