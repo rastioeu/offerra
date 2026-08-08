@@ -14,7 +14,7 @@ export const db = () => supabase.schema('offerra');
 
 export type TransactionType = 'SALE' | 'RENT';
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'LAND' | 'COMMERCIAL' | 'OTHER';
-export type PropertyStatus = 'DRAFT' | 'ACTIVE' | 'REJECTED' | 'ARCHIVED';
+export type PropertyStatus = 'DRAFT' | 'ACTIVE' | 'REJECTED' | 'ARCHIVED' | 'CLOSED';
 
 /** Zariadenie bytu — bežné delenie na slovenských realitných portáloch. */
 export type Furnishing = 'FURNISHED' | 'PARTIAL' | 'UNFURNISHED';
@@ -74,6 +74,14 @@ export type Property = {
    */
   internet_included: boolean | null;
   pets_allowed: boolean | null;
+
+  // ── uzavretie obchodu (8.8.2026) ──────────────────────────────────
+  /** Kedy vlastník obchod uzavrel. `null` = beží ďalej. */
+  closed_at: string | null;
+  /** Víťazná ponuka. `null` znamená obchod uzavretý mimo Offerry. */
+  closed_offer_id: string | null;
+  /** Suma, za ktorú sa to naozaj stalo — nemusí sedieť s ponukou. */
+  final_amount: number | null;
 
   view_count: number;
   is_seed: boolean;
@@ -168,7 +176,15 @@ export const STATUS_LABEL: Record<PropertyStatus, string> = {
   ACTIVE: 'Zverejnené',
   REJECTED: 'Skryté správcom',
   ARCHIVED: 'Archivované',
+  // Jeden stav pre predaj aj prenájom. Slovo vyrobí `transaction_type` —
+  // dva stavy by boli dve miesta, kde sa dá zabudnúť na jedno z nich.
+  CLOSED: 'Uzavreté',
 };
+
+/** „Predané" alebo „Prenajaté" — podľa toho, o aký obchod išlo. */
+export function closedLabel(t: TransactionType): string {
+  return t === 'RENT' ? 'Prenajaté' : 'Predané';
+}
 
 /**
  * Prenájom má cenu za mesiac, predaj celkovú — nie je to ten istý údaj

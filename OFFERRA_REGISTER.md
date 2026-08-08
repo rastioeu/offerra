@@ -2575,6 +2575,80 @@ teraz robí tou istou cestou ako appka.
 
 ---
 
+## Fáza 10 — Uzavretie obchodu a hodnotenia (8.8.2026)
+
+### 10.0 🔴→✅ BLOKUJÚCE: katalóg padal na RLS rekurziu
+
+Hlásil Rastio zo screenshotu: `42P17 infinite recursion detected in
+policy for relation "property"`, celý katalóg prázdny.
+
+**Príčinou NEBOL limit inzerátov**, ako znel tip — ten je trigger, nie
+politika. Vinník bola politika `property_select_closed_parties` z tejto
+istej fázy (mig 20):
+
+```
+property        → politika sa pýta property_offer
+property_offer  → offer_select_public sa pýta property
+property        → tá istá politika znova → cyklus
+```
+
+Cyklus vedie **cez druhú tabuľku**, preto nie je vidieť pri čítaní jednej
+politiky.
+
+Oprava: vnútorné čítanie vytiahnuté do `SECURITY DEFINER` funkcie
+`i_have_offer_on()` — beží ako vlastník tabuľky, RLS sa naň neuplatňuje.
+Rovnaký vzor ako `is_admin()` a `offer_contact()` od Fázy 2.
+
+**Do aplikačnej logiky sa to NEPRESÚVALO** (Rastio to ponúkal ako
+možnosť): nie je to kontrola limitu, ale otázka „smie tento človek vidieť
+tento riadok?", a tá do RLS patrí. Odstrániť treba cyklus, nie pravidlo.
+
+**Prečo to neodhalili testy — a je to to podstatné.** Po migrácii som
+overil dotaz **anonymne** a dostal 200. Politika mieri na `authenticated`,
+takže anonymný dotaz sa k nej vôbec nedostane. Overil som teda niečo iné,
+než čo bolo treba.
+
+> **PRAVIDLO:** každú novú RLS politiku overiť identitou, na ktorú MIERI.
+> „Funguje neprihlásenému" nedokazuje „funguje prihlásenému".
+
+Nový trvalý test `rls_recursion_test.py` — **21/21**: všetkých 16 tabuliek
+× 3 identity + 3 zápisy + menovite katalóg. Previerka ostatných politík
+z predošlej dávky: `report_insert_own` a `config_read` bez podotázky,
+`rating_insert_party` ide cez `can_rate()` (SECURITY DEFINER),
+`viewing_*` sa pýta `property`, ale `property` sa na `viewing` nepýta —
+cyklus nikde.
+
+### 10.1 Uzavretie obchodu — ✅ OVERENÉ RUNTIME (dáta)
+
+Jeden stav `CLOSED` pre predaj aj prenájom; slovo („Predané"/„Prenajaté")
+vyrába `transaction_type`. Dva stavy by boli dve miesta, kde sa dá
+zabudnúť na jedno z nich.
+
+`offerra.close_deal(property, offer, final_amount)` — jedna funkcia, nie
+štyri dotazy z appky: mení stav inzerátu, víťaznú ponuku, konečnú sumu
+a **uzavrie ostatné čakajúce ponuky**. Pád medzi dotazmi by nechal obchod
+v polovici a ľudí čakať na rozhodnutie, ktoré už padlo.
+
+`p_offer_id` smie byť `null` — obchod sa dá uzavrieť aj mimo Offerry
+a zamlčať to by znamenalo, že inzerát visí naveky.
+
+### 10.2 Hodnotenia — ✅ OVERENÉ RUNTIME (dáta)
+
+`offerra.rating`, jedno hodnotenie na obchod (`unique (property_id,
+rater_id)`), 1–5 hviezdičiek, komentár do 500 znakov.
+
+**Rozhodnutie, ktoré som spravil sám:** hviezdičky sú verejné (priemer
++ počet cez `user_ratings()`), **text komentára vidí len ten, koho sa
+týka, a jeho autor**. Verejné voľné pole pripnuté k menovanému človeku je
+priestor na osočovanie, ktorý Offerra pri svojej veľkosti neustráži.
+Dôveru nesie priemer, nie cudzie vety.
+
+`can_rate()` je SECURITY DEFINER a rozhoduje DB, nie appka — obrazovka sa
+nepýta „som vlastník?", takže sa nedá dostať do stavu, keď ponúka niečo,
+čo server odmietne.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
