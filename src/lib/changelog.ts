@@ -19,7 +19,17 @@ export type ChangelogEntry = {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: '1.2.0',
+    version: '1.3.0',
+    date: '9. augusta 2026',
+    title: 'Upozornenia chodia aj so zavretou appkou',
+    items: [
+      'Offerra ti po novom vie poslať upozornenie na telefón — o novej ponuke, o jej prijatí, o záujme o obhliadku aj o inzeráte, ktorý sedí na tvoje uložené hľadanie.',
+      'Pýtame si to až vtedy, keď to dáva zmysel — po tvojej prvej ponuke alebo prvom inzeráte, nie hneď pri prvom otvorení.',
+      'Zapnúť či vypnúť sa to dá kedykoľvek v Nastaveniach, aj po jednotlivých typoch. Vypnutý typ neposiela nič — ani v appke, ani na telefón.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Zástupcovia správcu',
     items: [
@@ -29,7 +39,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Telefón je povinný',
     items: [
@@ -39,7 +49,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Počet ponúk na karte a výraznejšie srdiečko',
     items: [
@@ -49,7 +59,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Vlastné inzeráty na prvý pohľad',
     items: [
@@ -58,7 +68,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Hodnotenia sú verejné + podrobné „Ako funguje"',
     items: [
@@ -69,7 +79,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Ponuky rovno v Moje + prehľadnejšie usporiadanie',
     items: [
@@ -80,7 +90,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Avatary, časová os ceny a návrat dátumu na kartu',
     items: [
@@ -91,7 +101,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Logo v tmavom režime, skloňovanie a Obľúbené',
     items: [
@@ -104,7 +114,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Ulice ti appka našepká',
     items: [
@@ -116,7 +126,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Overený používateľ',
     items: [
@@ -126,7 +136,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'História ceny',
     items: [
@@ -137,7 +147,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Uložené vyhľadávanie',
     items: [
@@ -148,7 +158,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Appka ti odteraz povie, čo sa stalo',
     items: [
@@ -158,7 +168,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     ],
   },
   {
-    version: '1.2.0',
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Moje inzeráty po novom + opravené hlavičky',
     items: [
