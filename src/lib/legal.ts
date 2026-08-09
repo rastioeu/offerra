@@ -48,12 +48,16 @@ export const PRIVACY: LegalDoc = {
           'Ak pri prihlásení cez Apple zvolíš skrytie e-mailu, Offerra dostane len preposielaciu adresu Apple.',
         'Prezývka. Je VEREJNÁ — vidí ju každý pri tvojich inzerátoch a ponukách, aj neprihlásený návštevník. ' +
           'Vyberáš si ju sám a nemusí obsahovať tvoje meno.',
-        'Meno, priezvisko a telefónne číslo. Sú NEPOVINNÉ a NEVEREJNÉ. Odkryjú sa výhradne vtedy, keď ' +
-          'predávajúci prijme konkrétnu ponuku — vtedy sa sprístupnia obom stranám tejto ponuky, aby sa vedeli ' +
-          'dohodnúť. Nikomu inému ich systém nevydá, ani technicky.',
+        'Meno, priezvisko a telefónne číslo. Sú NEPOVINNÉ a NEVEREJNÉ. Odkryjú sa v DVOCH prípadoch, ' +
+          'v oboch obom stranám naraz a nikomu inému: (1) keď predávajúci prijme konkrétnu ponuku, ' +
+          'a (2) keď záujemca požiada o obhliadku — vtedy sa kontakt odkryje okamžite, aby sa dalo dohodnúť ' +
+          'stretnutie. O odkrytí pri obhliadke je používateľ vopred výslovne informovaný a potvrdzuje ho. ' +
+          'Nikomu inému ich systém nevydá, ani technicky.',
         'Profilová fotka. Nepovinná, verejná.',
         'Obsah, ktorý sám pridáš. Inzeráty vrátane fotografií, obce, kraja, prípadnej ulice, výmery, počtu izieb, ' +
           'orientačnej ceny a podmienok prenájmu; ponuky vrátane sumy a správy; dopyty. Tento obsah je verejný.',
+        'Hodnotenia po uzavretom obchode. Hviezdičky aj napísaný text sú VEREJNÉ a zobrazujú sa pri ' +
+          'prezývke hodnoteného. Hodnotiť môžu len strany uzavretého obchodu.',
         'Dotazník nájomcu pri prenájme (počet osôb, zvieratá, dĺžka nájmu, zamestnanie, orientačný príjem). ' +
           'NIE JE verejný — sprístupní sa len majiteľovi inzerátu, ku ktorému si podal ponuku.',
         'Prevádzkové údaje. Obľúbené inzeráty, uložené vyhľadávania, predvoľby upozornení, zavreté tipy, ' +
