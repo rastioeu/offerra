@@ -2637,11 +2637,24 @@ a zamlčať to by znamenalo, že inzerát visí naveky.
 `offerra.rating`, jedno hodnotenie na obchod (`unique (property_id,
 rater_id)`), 1–5 hviezdičiek, komentár do 500 znakov.
 
-**Rozhodnutie, ktoré som spravil sám:** hviezdičky sú verejné (priemer
-+ počet cez `user_ratings()`), **text komentára vidí len ten, koho sa
-týka, a jeho autor**. Verejné voľné pole pripnuté k menovanému človeku je
-priestor na osočovanie, ktorý Offerra pri svojej veľkosti neustráži.
-Dôveru nesie priemer, nie cudzie vety.
+**Rozhodnutie — PREHODNOTENÉ Rastiom 9.8.2026.** Navrhoval som text ako
+súkromný (obava z osočovania). Rastio rozhodol, že **hodnotenie je celé
+verejné — hviezdičky aj text**, a jeho dôvod je silnejší: zmyslom
+hodnotení je dôvera pre BUDÚCICH záujemcov, ktorí zvažujú obchod
+s konkrétnym človekom. Tým priemer sám nestačí; potrebujú kontext, nie
+číslo.
+
+Proti osočovaniu stojí **nahlasovanie a moderovanie**, nie skrývanie —
+appka oboje má.
+
+Prepnutie bolo čisté: v tabuľke bolo **NULA hodnotení**, takže nikto nič
+nenapísal pod predošlým sľubom súkromia. Overil som to PRED zmenou; keby
+tam niečo bolo, spätné zverejnenie by nebolo prijateľné a riešilo by sa
+inak.
+
+Zobrazujú sa v novej karte **`Reviews`** pri inzeráte — teda tam, kde sa
+niekto rozhoduje, či s tým človekom obchodovať. V profile, kam cudzí
+nechodí, by nikomu nepomohli.
 
 `can_rate()` je SECURITY DEFINER a rozhoduje DB, nie appka — obrazovka sa
 nepýta „som vlastník?", takže sa nedá dostať do stavu, keď ponúka niečo,
@@ -3067,6 +3080,27 @@ celé:
   overuje ním — je to rýchle a smerodajné.
 
 Na prepínanie natívnej časti je `scripts/push-native.sh on|off`.
+
+### 11.17 „Ako funguje Offerra" v plnej podrobnosti — ✅ 15/15
+
+Zadanie Rastia: maximálna podrobnosť teraz, skrátiť sa dá neskôr — testuje
+to rodina a nemá pravidlá objavovať pokusom.
+
+Text sa rozdelil na dve úrovne:
+
+| | Kde | Čo |
+|---|---|---|
+| `HOW_LEAD` + `HOW_STEPS` | karta na hlavnej obrazovke | jedna veta + 4 body, „Čítať ďalej →" |
+| `HOW_SECTIONS` | obrazovka „Ako funguje Offerra" | **13 sekcií, cez 900 slov** |
+
+Pokrytých je všetkých 11 vyžiadaných tém. **Nová je celá sekcia
+„Nahlasovanie, moderovanie a blokovanie"** — dovtedy v texte nebola vôbec:
+konkrétne dôvody nahlásenia, že nič sa nemaže automaticky, čo znamená
+skrytie inzerátu a čo zablokovanie účtu (a že to nie je zmazanie),
+a že appka je len pre fyzické osoby vrátane dôsledkov.
+
+Test `akofunguje_test.js` stráži pokrytie po jednotlivých témach — padne,
+keď sa niektorá z nich z textu vytratí.
 
 ---
 

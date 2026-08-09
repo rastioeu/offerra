@@ -97,8 +97,9 @@ export function RatingCard({
       {allowed ? (
         <>
           <Text style={[styles.note, { color: palette.textSecondary }]}>
-            Ako sa ti jednalo s {rateeNickname}? Hviezdičky uvidia ostatní ako priemer
-            pri jeho prezývke. Text prečíta len on — verejný nebude.
+            Ako sa ti jednalo s {rateeNickname}? Hodnotenie je VEREJNÉ — hviezdičky
+            aj text uvidí každý, kto o obchod s ním uvažuje. Píš tak, aby to
+            pomohlo ďalšiemu človeku.
           </Text>
 
           <View style={styles.stars}>
@@ -116,7 +117,7 @@ export function RatingCard({
 
           <Field
             label="Pár slov (nepovinné)"
-            hint="Číta to len druhá strana. Verejne sa nezobrazí."
+            hint="Uvidí to každý pri jeho prezývke. Píš vecne — je to o obchode, nie o človeku."
             value={comment}
             onChangeText={setComment}
             placeholder="napr. dohoda bez problémov, prišiel načas"

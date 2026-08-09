@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Icon, type IconName } from '@/components/icon';
 import { Card } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
-import { HOW_LEAD, HOW_STEPS } from '@/lib/how-it-works';
+import { HOW_LEAD, HOW_SECTIONS } from '@/lib/how-it-works';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function AkoFungujeScreen() {
@@ -27,7 +27,9 @@ export default function AkoFungujeScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.lead, { color: palette.textPrimary }]}>{HOW_LEAD}</Text>
 
-        {HOW_STEPS.map((s, i) => (
+        {/* PLNÁ verzia, nie krátka karta z hlavnej obrazovky. Testuje to
+            rodina a nemá pravidlá objavovať pokusom (Rastio, 9.8.2026). */}
+        {HOW_SECTIONS.map((s, i) => (
           <Card key={s.title}>
             <View style={styles.head}>
               <View style={[styles.badge, { backgroundColor: palette.surfacePressed }]}>
@@ -37,7 +39,11 @@ export default function AkoFungujeScreen() {
                 {i + 1}. {s.title}
               </Text>
             </View>
-            <Text style={[styles.body, { color: palette.textSecondary }]}>{s.body}</Text>
+            {s.paragraphs.map((para) => (
+              <Text key={para.slice(0, 24)} style={[styles.body, { color: palette.textSecondary }]}>
+                {para}
+              </Text>
+            ))}
           </Card>
         ))}
       </ScrollView>

@@ -6,105 +6,232 @@
  * ISTOM kroku, nie dodatočne. Text, ktorý klame o tom, ako appka
  * funguje, je horší než žiadny.
  *
- * Aktuálne zohľadňuje: otvorené pseudonymné ponuky (nie slepé),
- * povinnú prezývku, odkrytie kontaktu až po akceptácii, dopyty ako
- * druhú stranu trhu, uzávierku ponúk, moderovanie správcom a — od
- * 8.8.2026 — presnosť polohy na mape (obec, nie adresa), súkromie správy
- * pri ponuke a obhliadku ako okamžité odkrytie kontaktu.
+ * DVE ÚROVNE (Rastio 9.8.2026):
+ *  - `HOW_LEAD` + `HOW_STEPS` — krátka karta na hlavnej obrazovke,
+ *  - `HOW_SECTIONS` — PLNÁ verzia na obrazovke „Ako funguje Offerra".
+ *
+ * Plná verzia je zámerne podrobná: testuje to rodina a nemá objavovať
+ * pravidlá pokusom. Skrátiť sa dá neskôr, keď bude jasné, čo je zbytočné.
  */
 export type HowStep = { icon: string; title: string; body: string };
+export type HowSection = { icon: string; title: string; paragraphs: string[] };
 
 export const HOW_LEAD =
   'Offerra je obrátený trh s nehnuteľnosťami. Predávajúci nemusí povedať cenu — ' +
   'záujemcovia predkladajú vlastné ponuky a všetci vidia, ako to ide.';
 
+/**
+ * Plná verzia. Poradie sleduje cestu človeka appkou: čo to je, ako sa
+ * ponúka, ako sa stretnete, ako sa to uzavrie, a nakoniec pravidlá.
+ */
+export const HOW_SECTIONS: HowSection[] = [
+  {
+    icon: 'house',
+    title: 'Obrátený trh — cena je nepovinná',
+    paragraphs: [
+      'Na bežnom portáli predávajúci určí cenu a kupujúci ju buď prijme, alebo odíde. ' +
+        'V Offerre to ide naopak: cenu uvádzať NEMUSÍŠ. Napíšeš, čo ponúkaš, a ľudia ti ' +
+        'povedia, koľko sú ochotní dať.',
+      'Ak orientačnú cenu uvedieš, je to len vodidlo — ponuky môžu byť vyššie aj nižšie. ' +
+        'Keď ju po zverejnení zmeníš, na inzeráte je vidieť o koľko. Cena sa nedá upraviť ticho.',
+      'Pri prenájme sú všetky sumy MESAČNÉ, pri predaji celkové.',
+    ],
+  },
+  {
+    icon: 'person.circle',
+    title: 'Ponuky sú verejné, ľudia nie',
+    paragraphs: [
+      'Sumu, prezývku, dátum a stav každej ponuky vidí ktokoľvek — aj neprihlásený. ' +
+        'Vďaka tomu vieš, či ideš do dražby, alebo si jediný záujemca.',
+      'Kto za prezývkou stojí, sa nedozvie nikto. Meno a telefón sú chránené priamo ' +
+        'v databáze — nevydá ich ani technicky, kým nenastane dôvod.',
+      'Správa, ktorú k ponuke priložíš, verejná NIE JE. Prečíta ju len predávajúci a ty.',
+      'Na jeden inzerát máš jednu živú ponuku. Zvýšenie je úprava tej istej, nie nová — ' +
+        'inak by sa zoznam dal zaplaviť.',
+      'Pri prenájme sa k ponuke pridáva krátky dotazník (počet osôb, zvieratá, dĺžka nájmu, ' +
+        'zamestnanie). Vidí ho LEN majiteľ inzerátu. Počet osôb je povinný.',
+    ],
+  },
+  {
+    icon: 'checkmark.seal',
+    title: 'Kedy sa odkryje skutočná identita',
+    paragraphs: [
+      'Keď predávajúci ponuku PRIJME, meno, telefón a e-mail sa odkryjú OBOM stranám naraz. ' +
+        'Predtým ich nemá ani jeden z nich.',
+      'Odkryje sa len dvojica, ktorej sa to týka. Ostatní záujemcovia sa nedozvedia nič.',
+      'Preto sa oplatí meno a telefón vyplniť v Nastaveniach — bez nich sa ti druhá strana ' +
+        'po prijatí ponuky nemá ako ozvať.',
+    ],
+  },
+  {
+    icon: 'key',
+    title: 'Obhliadka je jedno kliknutie',
+    paragraphs: [
+      'Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku" sa kontakt odkryje ' +
+        'OBOM stranám okamžite.',
+      'Appka termíny NENAVRHUJE ani nepotvrdzuje. Kedy a kde sa stretnete, si dohodnete ' +
+        'telefonicky — je to rýchlejšie než akékoľvek klikanie.',
+      'Čo sa stane, je napísané NAD tlačidlom, nie až po ňom. A späť sa to vziať nedá — ' +
+        'kontakt, ktorý druhá strana videla, sa nezmaže.',
+      'Po stretnutí to označ ako „Bol som na obhliadke".',
+    ],
+  },
+  {
+    icon: 'checkmark.seal',
+    title: 'Uzavretie obchodu',
+    paragraphs: [
+      'Prijatie ponuky a uzavretie obchodu sú DVE rôzne veci. Prijatie znamená „dohodnime sa", ' +
+        'uzavretie znamená „hotovo" — medzi nimi býva papierovačka, ktorá občas padne.',
+      'Po prijatí ponuky sa inzerát UZAMKNE: cena, výmera ani podmienky sa už nedajú zmeniť. ' +
+        'To, na čom ste sa dohodli, musí ostať také, aké bolo v tej chvíli. Ďalšie fotky ' +
+        'pridať môžeš, existujúce zmazať nie — sú dôkazom o stave veci.',
+      'Keď obchod uzavrieš, inzerát zmizne z katalógu a všetky ostatné čakajúce ponuky sa ' +
+        'uzavrú. Ich autori dostanú oznámenie, že inzerát už má kupca — bez mena a bez sumy ' +
+        'víťaza.',
+      'Obchod sa dá uzavrieť aj vtedy, keď ste sa dohodli mimo appky.',
+    ],
+  },
+  {
+    icon: 'checkmark.seal',
+    title: 'Hodnotenia sú verejné',
+    paragraphs: [
+      'Po uzavretí obchodu sa obe strany môžu navzájom ohodnotiť jednou až piatimi ' +
+        'hviezdičkami a pár vetami.',
+      'Hodnotenie je CELÉ VEREJNÉ — hviezdičky aj text. Vidno ho pri prezývke a pri inzeráte.',
+      'Je to tak zámerne: kto zvažuje obchod s konkrétnym človekom, potrebuje kontext, nie ' +
+        'len číslo. „4,6 hviezdičky" nepovie, či druhá strana chodila načas.',
+      'Hodnotiť môžu LEN tí dvaja, ktorých sa obchod týkal, a len raz. Neúspešný záujemca ' +
+        'hodnotiť nemôže — inak by sa dalo pomstiť za odmietnutie.',
+      'Zmeniť svoje hodnotenie sa dá kedykoľvek.',
+    ],
+  },
+  {
+    icon: 'envelope',
+    title: 'Dopyty — hľadanie naopak',
+    paragraphs: [
+      'V tabe Dopyty napíšeš, čo hľadáš. Majitelia ťa potom môžu osloviť svojím inzerátom.',
+      'Dopyt hovorí rečou HĽADAJÚCEHO: „Kúpim" a „Hľadám prenájom" namiesto „Predaj" ' +
+        'a „Prenájom", ktoré sú na inzerátoch. Je to tá istá dvojica, len z druhej strany.',
+      'Rozpočet je orientačný, nie záväzok. Tvoje meno ani telefón sa v dopyte nezobrazia — ' +
+        'rovnako ako pri ponukách.',
+    ],
+  },
+  {
+    icon: 'flag',
+    title: 'Nahlasovanie, moderovanie a blokovanie',
+    paragraphs: [
+      'Nahlásiť sa dá inzerát, ponuka aj používateľ. Dôvody sú: falošný inzerát ' +
+        '(nehnuteľnosť neexistuje), podvod (pýta zálohu, nechce obhliadku), spam alebo ' +
+        'reklama, nevhodný obsah, podozrenie na realitku, a Iné.',
+      'NIČ sa nemaže automaticky. Každé nahlásenie si pozrie človek a rozhodne. Automat by ' +
+        'zmazal aj to, čo zmazať nemal.',
+      'Ak sa pravidlá porušili, správca môže inzerát skryť z katalógu alebo zmazať. Skrytý ' +
+        'inzerát vlastník ďalej vidí, aj s dôvodom.',
+      'Používateľa možno zablokovať. Zablokovaný účet sa nevie prihlásiť ani nič pridať; ' +
+        'doterajšie dáta mu ostanú a odblokovaním sa všetko vráti. Nie je to zmazanie.',
+      'Offerra je trh MEDZI ĽUĎMI a je určená LEN pre fyzické osoby konajúce vo vlastnom ' +
+        'mene — vlastníka, spoluvlastníka, nájomcu alebo záujemcu. Realitné kancelárie, ' +
+        'sprostredkovatelia a makléri ju používať NESMÚ, a to ani cez účet vedený na fyzickú ' +
+        'osobu. Pri registrácii to každý výslovne potvrdzuje a čas potvrdenia sa uchováva.',
+      'Nepravdivé potvrdenie je porušením podmienok a dôvodom na okamžité zablokovanie účtu ' +
+        'a zmazanie inzerátov. Ak máš podozrenie, je na to vlastné tlačidlo „Nahlásiť ' +
+        'realitku" priamo pri prezývke.',
+    ],
+  },
+  {
+    icon: 'house',
+    title: 'Limit inzerátov na jeden účet',
+    paragraphs: [
+      'Jeden účet môže mať naraz zverejnených najviac päť inzerátov.',
+      'Je to obrana pred zaplavením katalógu. Kto inzeruje desiatky nehnuteľností, nie je ' +
+        'sused, ktorý predáva byt — a presne pre suseda je Offerra postavená.',
+      'Rozpracované inzeráty sa do limitu nepočítajú a archivovaním alebo uzavretím obchodu ' +
+        'sa miesto uvoľní. Ak limit narazíš, appka ti povie prečo a koľko ich máš.',
+    ],
+  },
+  {
+    icon: 'magnifyingglass',
+    title: 'Uložené vyhľadávanie a upozornenia na zhodu',
+    paragraphs: [
+      'Nastavené filtre si uložíš jedným ťuknutím a nabudúce ich vyvoláš z lišty nad katalógom.',
+      'Pri každom uloženom hľadaní vidíš číslo — koľko inzerátov mu vyhovuje a pribudlo ' +
+        'odvtedy, čo si ho naposledy otvoril. Keď ho otvoríš, číslo sa vynuluje.',
+      'Keď pribudne inzerát, ktorý hľadaniu zodpovedá, dostaneš oznámenie.',
+      'Uložené hľadanie je SÚKROMNÉ. To, čo hľadáš, nevidí nikto okrem teba. Zmažeš ho ' +
+        'podržaním prsta.',
+      'Vyhľadávanie rozumie slovenčine bez diakritiky aj skloňovaniu — „Banskej" nájde ' +
+        'Banskú Bystricu, „Košiciach" Košice.',
+    ],
+  },
+  {
+    icon: 'bell',
+    title: 'Upozornenia si nastavuješ ty',
+    paragraphs: [
+      'V Nastaveniach si pri každom type oznámenia zvolíš, či ho chceš: nová ponuka na tvoj ' +
+        'inzerát, prijatie či odmietnutie tvojej ponuky, nový dopyt, ktorý sedí na tvoj ' +
+        'inzerát, zhoda s uloženým hľadaním, záujem o obhliadku.',
+      'Vypnutý typ neposiela nič — ani v appke, ani na telefón.',
+      'Systémové a bezpečnostné oznámenia (napríklad zablokovanie účtu) sa vypnúť nedajú. ' +
+        'Musia doraziť vždy.',
+      'Upozornenia na telefón sa pýtajú až vtedy, keď dávajú zmysel — po tvojej prvej ponuke ' +
+        'alebo prvom inzeráte. Nikdy hneď pri prvom otvorení appky.',
+    ],
+  },
+  {
+    icon: 'checkmark.seal',
+    title: 'Overený používateľ',
+    paragraphs: [
+      'Pri niektorých ľuďoch je odznak OVERENÝ a vedľa neho veta, ČO presne správca overil — ' +
+        'napríklad doklad totožnosti a list vlastníctva.',
+      'Odznak sa NEDÁ získať automaticky ani si ho nastaviť sám. Udeľuje ho výhradne správca ' +
+        'a bez uvedenia dôvodu ho systém neprijme. Odznak, ktorý nevie povedať, na základe ' +
+        'čoho vznikol, by bol len ozdoba.',
+      'Odznak nič neodkrýva — meno a telefón ostávajú skryté rovnako ako u ostatných.',
+    ],
+  },
+  {
+    icon: 'house',
+    title: 'Adresa, mapa a súkromie',
+    paragraphs: [
+      'Inzeráty sa dajú prezerať aj na mape. Pin však stojí na OBCI, nie na dome.',
+      'Ulicu môže predávajúci uviesť a appka mu ju našepká z Registra adries Ministerstva ' +
+        'vnútra, ale bez čísla domu. Presná adresa sa dohaduje až osobne.',
+      'Appka nepristupuje k tvojej polohe. Poloha na mape je poloha obce z verejného číselníka.',
+    ],
+  },
+];
+
+/**
+ * Krátka verzia na kartu. ZÁMERNE len štyri body — karta má povedať,
+ * o čom appka je, nie ju vysvetliť. Zvyšok je za „Čítať ďalej".
+ */
 export const HOW_STEPS: HowStep[] = [
   {
     icon: 'house',
     title: 'Cena je nepovinná',
     body:
       'Kto ponúka nehnuteľnosť, môže uviesť orientačnú sumu — alebo nechať pole prázdne ' +
-      'a počkať, čo mu ľudia ponúknu. Ak ju po zverejnení zmení, na inzeráte je ' +
-      'vidieť o koľko — cena sa nedá upraviť ticho.',
+      'a počkať, čo mu ľudia ponúknu.',
   },
   {
     icon: 'person.circle',
     title: 'Ponuky sú verejné, ľudia nie',
     body:
-      'Sumu, prezývku aj dátum každej ponuky vidí ktokoľvek, aj neprihlásený. ' +
-      'Kto za prezývkou stojí, sa nedozvie nikto — dovtedy. Správa priložená ' +
-      'k ponuke verejná NIE JE: číta ju len predávajúci a ten, kto ju napísal.',
+      'Sumu, prezývku aj dátum každej ponuky vidí ktokoľvek. Kto za prezývkou stojí, ' +
+      'sa nedozvie nikto — dovtedy.',
   },
   {
     icon: 'checkmark.seal',
     title: 'Kontakt až po dohode',
     body:
-      'Keď predávajúci niektorú ponuku prijme, meno, telefón a e-mail sa odkryjú ' +
-      'OBOM stranám naraz. Predtým ich nemá ani jeden z nich.',
-  },
-  {
-    icon: 'key',
-    title: 'Obhliadka je jedno kliknutie',
-    body:
-      'Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku" sa kontakt ' +
-      'odkryje OBOM stranám okamžite a termín si dohodnete telefonicky. Appka ' +
-      'termíny nenavrhuje ani nepotvrdzuje — a späť sa to vziať nedá.',
-  },
-  {
-    icon: 'house',
-    title: 'Na mape vidíš obec, nie adresu',
-    body:
-      'Inzeráty sa dajú prezerať aj na mape. Pin však stojí na obci, nie na dome — ' +
-      'presná adresa je skrytá rovnako ako meno a odkryje sa až po dohode. ' +
-      'Ulicu si predávajúci môže uviesť (appka ju našepká z Registra adries), ' +
-      'ale bez čísla domu.',
-  },
-  {
-    icon: 'checkmark.seal',
-    title: 'Uzavretie a hodnotenie',
-    body:
-      'Po prijatí ponuky sa inzerát UZAMKNE — cena, výmera ani podmienky sa už ' +
-      'nedajú zmeniť, aby dohoda ostala taká, aká bola v tej chvíli. ' +
-      'Keď obchod dopadne, predávajúci ho uzavrie — inzerát zmizne z katalógu ' +
-      'a ostatné čakajúce ponuky sa uzavrú tiež. Potom sa obe strany môžu ' +
-      'navzájom ohodnotiť. Hviezdičky vidí každý ako priemer pri prezývke, ' +
-      'napísaný text prečíta LEN ten, komu je určený.',
-  },
-  {
-    icon: 'magnifyingglass',
-    title: 'Hľadanie si appka zapamätá',
-    body:
-      'Nastavené filtre si uložíš jedným ťuknutím a nabudúce ich vyvoláš z lišty ' +
-      'nad katalógom. Pri každom uloženom hľadaní vidíš, koľko inzerátov pribudlo ' +
-      'odvtedy, čo si ho naposledy otvoril. Vidíš ho len ty.',
-  },
-  {
-    icon: 'envelope',
-    title: 'Hľadať sa dá aj naopak',
-    body:
-      'V tabe Dopyty napíšeš, čo hľadáš. Majitelia ťa potom môžu osloviť sami ' +
-      'svojím inzerátom.',
-  },
-  {
-    icon: 'bell',
-    title: 'Uzávierka a rozhodnutie',
-    body:
-      'K inzerátu sa dá nastaviť termín, dokedy sa ponuky prijímajú. Po ňom už ' +
-      'nikto nepridá ani nezvýši. Rozhodnutie je vždy na predávajúcom.',
-  },
-  {
-    icon: 'checkmark.seal',
-    title: 'Overený používateľ',
-    body:
-      'Pri niektorých ľuďoch je odznak OVERENÝ a vedľa neho veta, čo správca ' +
-      'overil. Nedá sa získať automaticky ani si ho nastaviť sám — a nič ' +
-      'neodkrýva, meno a telefón ostávajú skryté ako u ostatných.',
+      'Keď predávajúci ponuku prijme, meno, telefón a e-mail sa odkryjú OBOM stranám naraz. ' +
+      'Alebo hneď, ak si vypýtaš obhliadku.',
   },
   {
     icon: 'flag',
-    title: 'Keď niečo nesedí',
+    title: 'Len medzi ľuďmi',
     body:
-      'Inzerát, ponuku aj používateľa sa dá nahlásiť. Nič sa nemaže automaticky — ' +
-      'pozrie sa na to človek.',
+      'Offerra je pre fyzické osoby, nie pre realitky. Inzerát, ponuku aj používateľa ' +
+      'sa dá nahlásiť a pozrie sa na to človek.',
   },
 ];

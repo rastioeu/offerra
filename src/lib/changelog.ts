@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Hodnotenia sú verejné + podrobné „Ako funguje"',
+    items: [
+      'Hodnotenia sú teraz celé verejné — hviezdičky aj text. Kto zvažuje obchod s konkrétnym človekom, potrebuje kontext, nie len číslo.',
+      'Pri inzeráte vidíš hodnotenia predávajúceho aj s tým, čo o ňom ľudia napísali.',
+      '„Ako funguje Offerra" je podrobné — 13 sekcií, ktoré vysvetlia všetko od cien cez obhliadky až po pravidlá. Krátka karta na hlavnej obrazovke ostáva stručná a odkazuje na plnú verziu.',
+      'Nová sekcia o nahlasovaní a moderovaní: čo sa stane, keď niečo nahlásiš, aké dôvody existujú, a prečo je appka len pre fyzické osoby.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Ponuky rovno v Moje + prehľadnejšie usporiadanie',
     items: [
       'Ponuky na tvoj inzerát sa teraz rozbalia priamo v „Moje" — aj s tlačidlami Prijať, Odmietnuť a Uzavrieť obchod. Nikam nemusíš chodiť.',

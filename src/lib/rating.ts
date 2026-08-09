@@ -1,14 +1,18 @@
 /**
  * OFFERRA — uzavretie obchodu a hodnotenia.
  *
- * PREČO JE TEXT HODNOTENIA NEVEREJNÝ:
- * hviezdičky sú verejné (priemer + počet), samotný komentár vidí len ten,
- * koho sa týka, a jeho autor. Verejné voľné pole pripnuté k menovanému
- * človeku je priestor na osočovanie, ktorý Offerra pri svojej veľkosti
- * neustráži — a nepravdivá veta o konkrétnom človeku napácha viac škody
- * než koľko úžitku prinesie. Dôveru nesie PRIEMER, nie cudzie vety.
+ * HODNOTENIA SÚ CELÉ VEREJNÉ — hviezdičky aj text.
  *
- * Rozhodol som o tom sám (8.8.2026) a je to zapísané aj v reporte.
+ * Navrhoval som text ako súkromný (obava z osočovania). Rastio rozhodol
+ * inak 9.8.2026 a jeho dôvod je silnejší: zmyslom hodnotení je dôvera pre
+ * BUDÚCICH záujemcov, ktorí zvažujú obchod s konkrétnym človekom — a tým
+ * priemer sám nestačí. Potrebujú kontext, nie číslo.
+ *
+ * Prepnutie bolo čisté: v tabuľke bolo NULA hodnotení, takže nikto nič
+ * nenapísal pod predošlým sľubom súkromia. Keby tam niečo bolo, spätné
+ * zverejnenie by nebolo prijateľné.
+ *
+ * Proti osočovaniu stojí nahlasovanie a moderovanie — nie skrývanie.
  */
 import { db } from './property';
 
@@ -107,4 +111,32 @@ export async function fetchRatings(userIds: string[]): Promise<Record<string, Ra
 export function ratingLabel(s: RatingSummary | undefined): string | null {
   if (!s || !s.rating_count) return null;
   return `${String(s.stars_avg).replace('.', ',')} ★ (${s.rating_count})`;
+}
+
+
+/** Hodnotenie aj s prezývkou toho, kto ho napísal — na verejné zobrazenie. */
+export type Review = {
+  id: string;
+  stars: number;
+  comment: string | null;
+  created_at: string;
+  rater: { nickname: string; avatar_url: string | null } | null;
+};
+
+/**
+ * Verejné hodnotenia jedného človeka.
+ *
+ * Ťahajú sa len tie S TEXTOM — hviezdičky bez slov už hovorí priemer pri
+ * prezývke a zoznam prázdnych riadkov by nikomu nepomohol.
+ */
+export async function fetchReviews(userId: string, limit = 10): Promise<Review[]> {
+  const { data, error } = await db()
+    .from('rating')
+    .select('id, stars, comment, created_at, rater:rater_id(nickname, avatar_url)')
+    .eq('ratee_id', userId)
+    .not('comment', 'is', null)
+    .order('created_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as Review[];
 }

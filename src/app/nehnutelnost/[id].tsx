@@ -46,6 +46,7 @@ import { ReportButton } from '@/components/report-button';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
 import { PriceTimeline } from '@/components/price-timeline';
 import { RatingCard } from '@/components/rating-card';
+import { Reviews } from '@/components/reviews';
 import { ViewingCard } from '@/components/viewing-card';
 import { useViewings } from '@/hooks/use-viewings';
 import { useFavoriteIds } from '@/hooks/use-favorites';
@@ -380,6 +381,16 @@ export default function PropertyDetailScreen() {
 
               {/* Jednoriadkové zhrnutie je hore pri cene (rýchla odpoveď),
                   tu je celý priebeh vrátane rastu ponúk (podrobná). */}
+              {/* Hodnotenia predávajúceho sú TU, nie v jeho profile —
+                  rozhoduje sa práve tu, či s ním obchodovať. */}
+              {!isOwner ? (
+                <Reviews
+                  userId={item.owner_id}
+                  nickname={item.owner?.nickname ?? 'predávajúci'}
+                  summary={ratings[item.owner_id]}
+                />
+              ) : null}
+
               <PriceTimeline propertyId={item.id} offers={offers ?? []} transaction={item.transaction_type} />
 
               {/* O byte a budove — pri predaji ROVNAKO ako pri prenájme. */}
