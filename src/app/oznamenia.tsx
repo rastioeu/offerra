@@ -1,9 +1,14 @@
 /**
  * Zvonček — oznámenia v appke.
  *
- * ZÁMERNE „in-app", nie push: push potrebuje `expo-notifications`, ktoré
- * v builde nie je. Obrazovka to o sebe hovorí nahlas — sľubovať pípnutie,
- * ktoré nepríde, je horšie než nesľúbiť nič.
+ * OD BUILDU 1.3.0 (#5) k tomu chodí aj SKUTOČNÝ push na telefón. Zvonček
+ * ostáva, lebo je to úplný záznam: kto push nepovolil, alebo si ho
+ * odklikol, nájde všetko tu. Riadok do zvončeka aj push zakladá jedna
+ * funkcia `offerra.push_notification()`, takže sa nemôžu rozísť.
+ *
+ * Kam klik vedie, rozhoduje `notificationRoute()` — spoločne s klikom na
+ * push notifikáciu. Dve cesty k tomu istému oznámeniu musia skončiť na
+ * tej istej obrazovke.
  */
 import { Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -14,6 +19,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Card, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useTheme } from '@/hooks/use-theme';
+import { notificationRoute } from '@/lib/notification-route';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -58,13 +64,19 @@ export default function OznameniaScreen() {
         {items.map((n) => (
           <Pressable
             key={n.id}
-            disabled={!n.property_id}
-            onPress={() =>
-              n.property_id
-                ? router.push({ pathname: '/nehnutelnost/[id]', params: { id: n.property_id } })
-                : undefined
+            disabled={!notificationRoute(n.type, { propertyId: n.property_id, offerId: n.offer_id })}
+            onPress={() => {
+              const route = notificationRoute(n.type, {
+                propertyId: n.property_id,
+                offerId: n.offer_id,
+              });
+              if (route) router.push(route as never);
+            }}
+            accessibilityRole={
+              notificationRoute(n.type, { propertyId: n.property_id, offerId: n.offer_id })
+                ? 'button'
+                : 'text'
             }
-            accessibilityRole={n.property_id ? 'button' : 'text'}
             style={({ pressed }) => [
               styles.row,
               {

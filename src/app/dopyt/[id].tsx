@@ -1,11 +1,13 @@
 /**
  * Detail dopytu + tlačidlo „Osloviť".
  *
- * NOTIFIKÁCIE V OFFERRE NEEXISTUJÚ (overené v registri — appka nemá
- * `expo-notifications` ani push token). Oslovenie preto zatiaľ nie je
- * push ani DM, ale ZÁZNAM: adresát ho vidí vo svojom profile pri danom
- * dopyte. Je to vedomý medzikrok, nie nedopatrenie — a hlavne sa pri ňom
- * nič nestratí, keď notifikácie pribudnú.
+ * Oslovenie nie je DM, ale ZÁZNAM: adresát ho vidí vo svojom profile pri
+ * danom dopyte. Je to vedomý medzikrok, nie nedopatrenie — appka nemá
+ * súkromné správy a nechceme, aby sa ňou dalo obťažovať.
+ *
+ * (Do 9.8.2026 tu stálo, že notifikácie v Offerre neexistujú. Od buildu
+ * 1.3.0 existujú — push aj zvonček. Komentár, ktorý klame o mechanike,
+ * je horší než žiadny.)
  */
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';

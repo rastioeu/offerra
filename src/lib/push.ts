@@ -32,10 +32,17 @@ export type PushStatus = 'granted' | 'denied' | 'undetermined' | 'unavailable';
  * viseli typy, projekt by sa medzitým nedal ani skompilovať — a tento
  * súbor je písaný práve tak, aby bez modulu len ticho nefungoval.
  */
+type PushResponse = {
+  notification: { request: { content: { data?: unknown } } };
+};
+
 type NotificationsApi = {
   getPermissionsAsync: () => Promise<{ status: string }>;
   requestPermissionsAsync: () => Promise<{ status: string }>;
   getExpoPushTokenAsync: (o: { projectId: string }) => Promise<{ data: string }>;
+  addNotificationResponseReceivedListener: (cb: (r: PushResponse) => void) => { remove: () => void };
+  getLastNotificationResponseAsync: () => Promise<PushResponse | null>;
+  setNotificationHandler: (h: unknown) => void;
 };
 
 /** `null`, keď modul v tomto builde nie je. */
@@ -119,5 +126,77 @@ export async function disablePushOnThisDevice(): Promise<void> {
   } catch (e: unknown) {
     console.log(`[PUSH] Vypnutie zlyhalo: ${errorText(e)}`);
     throw e;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * KLIK NA NOTIFIKÁCIU
+ *
+ * CHYBA (Rastio, 9.8.2026, build #5): „ked som otvoril notifikaciu tak
+ * otvorilo appku tam kde bola otvorena". Nešlo o zlé smerovanie — appka
+ * na klik NEPOČÚVALA VÔBEC. Push doručený, ale slepý.
+ *
+ * Sú to dva rôzne prípady a treba oba, inak polovica klikov nespraví nič:
+ *  - appka BEŽÍ (aj na pozadí) → `addNotificationResponseReceivedListener`
+ *  - appka bola ZABITÁ a klik ju spustil → `getLastNotificationResponseAsync`,
+ *    lebo listener sa v tej chvíli ešte nestihol zaregistrovať.
+ * ------------------------------------------------------------------ */
+
+/** Vráti odhlasovaciu funkciu. Bez modulu je to no-op, nie chyba. */
+export function onPushTap(handler: (data: unknown) => void): () => void {
+  const N = notificationsModule();
+  if (!N) return () => {};
+  try {
+    const sub = N.addNotificationResponseReceivedListener((r) => {
+      handler(r?.notification?.request?.content?.data);
+    });
+    return () => sub.remove();
+  } catch (e: unknown) {
+    console.log(`[PUSH] Listener sa nepodarilo nasadiť: ${errorText(e)}`);
+    return () => {};
+  }
+}
+
+/**
+ * Notifikácia, ktorou bola appka SPUSTENÁ zo zabitého stavu — alebo `null`.
+ *
+ * POZOR: systém ju vracia opakovane, kým beží proces. Volajúci si preto
+ * musí pamätať, že ju už spracoval, inak by pri každom prekreslení skočil
+ * na tú istú obrazovku znova.
+ */
+export async function initialPushTap(): Promise<unknown | null> {
+  const N = notificationsModule();
+  if (!N) return null;
+  try {
+    const r = await N.getLastNotificationResponseAsync();
+    return r?.notification?.request?.content?.data ?? null;
+  } catch (e: unknown) {
+    console.log(`[PUSH] Úvodnú notifikáciu sa nepodarilo prečítať: ${errorText(e)}`);
+    return null;
+  }
+}
+
+/**
+ * Notifikácia doručená, KÝM sa človek pozerá do appky, sa má tiež ukázať.
+ *
+ * Bez tohto ju iOS v popredí zahodí bez slova. To by bolo „nestane sa
+ * nič" (CLAUDE.md §2) v prípade, keď server prácu naozaj spravil.
+ */
+export function setupForegroundPush(): void {
+  const N = notificationsModule();
+  if (!N) return;
+  try {
+    N.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowBanner: true,
+        shouldShowList: true,
+        shouldPlaySound: true,
+        shouldSetBadge: false,
+        // staršie názvy tých istých polí — expo ich číta podľa verzie
+        shouldShowAlert: true,
+      }),
+    });
+  } catch (e: unknown) {
+    console.log(`[PUSH] Správanie v popredí sa nepodarilo nastaviť: ${errorText(e)}`);
   }
 }

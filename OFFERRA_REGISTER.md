@@ -3309,9 +3309,69 @@ priradenie kľúča, ktorý na Expo účte už bol, a dá sa vrátiť.
 | Expo prijalo | `{"status":"ok","id":"019fe620-497c-7028-9051-2b820a7988c2"}` |
 | **potvrdenka od Expa** | `{"019fe620…":{"status":"ok"}}` — **Apple správu prijalo** |
 
-🟡 **Posledný článok — či sa notifikácia zobrazila na zamknutej
-obrazovke — potvrdí Rastio.** Potvrdenka `ok` dokazuje, že APNs správu
-prevzalo; nedokazuje, čo telefón zobrazil.
+✅ **Rastio potvrdil: notifikácia prišla.** Reťaz databáza → Expo →
+APNs → telefón je tým celá overená.
+
+### 11.26 Dve veci, ktoré Rastio nahlásil hneď po doručení
+
+**(a) „neni v zvončeku" — NIE JE to chyba appky, spôsobil som ju testom.**
+
+Volal som `send_expo_push()`, čo je surový odosielateľ. Riadok do
+zvončeka zakladá až `push_notification()`, ktorá volá oboje:
+
+```sql
+insert into offerra.notification (...);
+perform offerra.send_expo_push(...);
+```
+
+Ostré oznámenia idú výhradne cez `push_notification()`, takže sa zvonček
+a push rozísť nemôžu. Nič som „neopravoval" — nebolo čo. Napísané sem,
+aby to nezmizlo ako domnelá chyba.
+
+**(b) „otvorilo appku tam kde bola otvorená" — SKUTOČNÁ chyba, opravená.**
+
+Nešlo o zlé smerovanie. `grep` na `addNotificationResponseReceivedListener`
+v celom `src/` nevrátil **nič** — appka na klik nepočúvala vôbec. Push
+doručený, ale slepý.
+
+Oprava:
+
+| súbor | čo robí |
+|---|---|
+| `src/lib/notification-route.ts` (NOVÝ) | čistá funkcia „kam vedie oznámenie" |
+| `src/lib/push.ts` | `onPushTap()`, `initialPushTap()`, `setupForegroundPush()` |
+| `src/hooks/use-push-tap.ts` (NOVÝ) | zapojenie na router |
+| `src/app/_layout.tsx` | hook nasadený, čaká na `pushReady` |
+| `src/app/oznamenia.tsx` | zvonček používa TÚ ISTÚ funkciu |
+
+**Smerovanie vedie tam, kde sa dá niečo SPRAVIŤ**, nie kde sa to dá
+prečítať: `NOVA_PONUKA` → `/ponuky/[id]` (majiteľ rozhoduje),
+akceptovaná/zamietnutá/obhliadka/zhoda → `/nehnutelnost/[id]` (na
+`/ponuky` by sa záujemca ani nedostal), `SYSTEMOVE` → zvonček.
+
+Tri veci, ktoré museli byť ošetrené, inak by to robilo neplechu:
+
+1. **Príliš skoro** — pri štarte zo zabitého stavu beží brána
+   (`router.replace`), ktorá by skok na detail vzápätí prebila. Preto
+   `pushReady` a odložený klik.
+2. **Dvakrát to isté** — `getLastNotificationResponseAsync()` vracia tú
+   istú notifikáciu opakovane, kým beží proces. Bez `handledRef` by sa
+   obrazovka otvárala pri každom prekreslení.
+3. **Neznámy typ zo servera** nesmie skončiť pádom ani tichým nič.
+
+**Navyše:** `setNotificationHandler` — notifikácia doručená, kým je appka
+v popredí, sa predtým potichu zahodila. To je „nestane sa nič" v prípade,
+keď server prácu spravil (§2).
+
+**Opravené aj dva komentáre, ktoré po pridaní pushu klamali** (§8):
+`src/lib/notifications.ts` a `src/app/dopyt/[id].tsx` obe tvrdili, že
+notifikácie v Offerre neexistujú.
+
+**Dôkaz:** `push_route_test.js` **18/18** — vrátane toho, že zvonček aj
+push vedú pri každom type na tú istú obrazovku, a že poškodené `data` zo
+siete nespôsobia pád. `npx tsc --noEmit` čistý.
+
+**IDE OTA** — `expo-notifications` je v builde #5, pribudol len JS.
 
 ### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
 (vyriešené, viď 11.24)

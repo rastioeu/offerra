@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '9. augusta 2026',
+    title: 'Klik na upozornenie ťa konečne niekam zoberie',
+    items: [
+      'Keď klikneš na upozornenie na zamknutej obrazovke, appka otvorí presne to, čoho sa týka — nie tam, kde si ju naposledy nechal.',
+      'Vedie ťa tam, kde sa s tým dá niečo spraviť: pri novej ponuke rovno na správu ponúk, pri prijatej ponuke na inzerát, kde máš kontakt.',
+      'Funguje to, aj keď bola appka úplne zavretá — klik ju spustí a otvorí správnu obrazovku.',
+      'Upozornenie, ktoré príde, kým sa pozeráš do appky, sa už tiež ukáže. Predtým ho telefón potichu zahodil.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '9. augusta 2026',
     title: 'Upozornenia chodia aj so zavretou appkou',
     items: [
       'Offerra ti po novom vie poslať upozornenie na telefón — o novej ponuke, o jej prijatí, o záujme o obhliadku aj o inzeráte, ktorý sedí na tvoje uložené hľadanie.',

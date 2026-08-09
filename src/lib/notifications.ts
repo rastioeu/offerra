@@ -1,12 +1,14 @@
 /**
  * Typy notifikácií a ich nastavenia.
  *
- * DÔLEŽITÉ: Offerra zatiaľ **nemá čím notifikáciu poslať** — nie je tu
- * `expo-notifications` ani nič, čo by push odosielalo. Tieto preferencie
- * sú pripravené miesto, ktoré musí každý budúci odosielateľ rešpektovať
- * (`offerra.should_notify()`), nie hotová funkcia. Nastavenia to o sebe
- * píšu nahlas — prepínač, ktorý sa tvári, že niečo robí, je horší než
- * žiadny.
+ * OD BUILDU 1.3.0 (#5) to nie je len pripravené miesto: `expo-notifications`
+ * je v builde, token sa ukladá do `offerra.push_token` a databáza odosiela
+ * cez Expo Push API. Tieto preferencie teda naozaj RIADIA, čo príde —
+ * `offerra.push_notification()` sa každý raz spýta `should_notify()`.
+ *
+ * (Do 9.8.2026 tu stálo, že Offerra nemá čím notifikáciu poslať. Bola to
+ * pravda, kým push neexistoval; po jeho pridaní by to bol komentár, ktorý
+ * klame o tom, ako appka funguje.)
  */
 export type NotificationType =
   | 'NOVA_PONUKA'

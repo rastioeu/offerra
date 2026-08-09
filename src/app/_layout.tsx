@@ -13,6 +13,7 @@ import { NotificationsProvider } from '@/hooks/use-notifications';
 import { ThemeProvider as AppThemeProvider, useThemeMode } from '@/hooks/use-theme';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
+import { usePushTap } from '@/hooks/use-push-tap';
 import { decideRoute } from '@/lib/gate';
 import { Colors } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -112,6 +113,12 @@ function RootLayoutInner() {
     });
     if (target) router.replace(target);
   }, [session, profile, profileError, segments, router]);
+
+  // Klik na push notifikáciu smie skočiť na obrazovku až vtedy, keď brána
+  // vyššie dorozhodla — inak by ju `router.replace()` okamžite prebil.
+  // „Pripravené" = vieme, či je prihlásený, a ak áno, máme jeho profil.
+  const pushReady = session !== undefined && (!session || profile !== undefined || Boolean(profileError));
+  usePushTap(pushReady);
 
   const navTheme = {
     ...(isDark ? DarkTheme : DefaultTheme),
