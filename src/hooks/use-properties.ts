@@ -106,6 +106,21 @@ export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWES
       // Server radí od najnovšieho — to je predvolené poradie katalógu.
       // „Čoskoro končí" sa dorovná v `sortProperties`, lebo SQL by dalo
       // hore inzeráty, ktorým termín DÁVNO vypršal (viď komentár tam).
+      // Obľúbené: id-čka sa najprv vytiahnu a dotaz sa nimi obmedzí.
+      // Robí sa to TU a nie filtrovaním výsledku, aby limit 200 platil
+      // na obľúbené, nie na celý katalóg — inak by sa obľúbený inzerát
+      // na 300. mieste stratil.
+      if (f?.onlyFavorites) {
+        const { data: favs, error: fe } = await db().from('favorite').select('property_id');
+        if (fe) throw fe;
+        const ids = (favs ?? []).map((x) => (x as { property_id: string }).property_id);
+        if (ids.length === 0) {
+          setItems([]);
+          return;
+        }
+        q = q.in('id', ids);
+      }
+
       const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);
       if (e) throw e;
       const rows = await attachOfferStats(await attachMedia((data ?? []) as Property[]));

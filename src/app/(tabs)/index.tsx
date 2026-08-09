@@ -98,7 +98,7 @@ export default function NehnutelnostiScreen() {
         <AppHeader />
         <View style={styles.mapHead}>
           {head}
-          <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
+          <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} canFavorite={Boolean(myId)} />
           <SavedSearches
             myId={myId}
             filter={filter}
@@ -130,7 +130,7 @@ export default function NehnutelnostiScreen() {
 
         {head}
 
-        <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
+        <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} canFavorite={Boolean(myId)} />
 
         <ErrorNote error={error} />
 

@@ -33,6 +33,14 @@ export type CatalogFilter = {
   priceMax: number | null;
   roomsMin: number | null;
   areaMin: number | null;
+  /**
+   * Len obľúbené. `null` = bez obmedzenia, `true` = iba tie so srdiečkom.
+   *
+   * Je to súčasť FILTRA, nie samostatná obrazovka — inak by sa obľúbené
+   * nedali kombinovať s „Prenájom" ani s hľadaním, čo je presne to, na čo
+   * ich človek chce.
+   */
+  onlyFavorites: true | null;
 };
 
 export const EMPTY_FILTER: CatalogFilter = {
@@ -44,6 +52,7 @@ export const EMPTY_FILTER: CatalogFilter = {
   priceMax: null,
   roomsMin: null,
   areaMin: null,
+  onlyFavorites: null,
 };
 
 export function isFilterEmpty(f: CatalogFilter): boolean {
@@ -279,6 +288,7 @@ export function parseQuery(raw: string): Parsed {
 /** Krátky ľudský popis filtra pre lištu nad výsledkami. */
 export function describeFilter(f: CatalogFilter, side: FilterSide = 'PROPERTY'): string[] {
   const out: string[] = [];
+  if (f.onlyFavorites) out.push('Obľúbené');
   if (f.transaction) {
     out.push(
       side === 'DEMAND'

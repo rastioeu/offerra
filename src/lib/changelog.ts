@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Logo v tmavom režime, skloňovanie a Obľúbené',
+    items: [
+      'Opravené: v tmavom režime logo splývalo s pozadím. Má teraz vlastnú svetlú verziu — kontrast stúpol z 1,5:1 na 15:1.',
+      'Okolo loga je jemný teplý svit. V tmavom režime vynikne najviac.',
+      'Vyhľadávanie rozumie skloňovaniu: „Banskej" nájde Banskú Bystricu, „Košiciach" Košice, „Trnavou" Trnavu.',
+      'Opravené: hľadanie viacerých slov naraz („byt Nitra") predtým nenašlo nič — hľadala sa celá fráza vcelku.',
+      'Nový filter „♥ Obľúbené" v katalógu — dá sa skombinovať s ostatnými filtrami aj s hľadaním.',
+      'V správcovskej konzole sú dlaždice štatistiky klikateľné a vedú rovno do vyfiltrovaného zoznamu.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Ulice ti appka našepká',
     items: [
       'Pri zadávaní inzerátu stačí napísať dve písmená ulice a appka ponúkne názvy z Registra adries Ministerstva vnútra — 31 314 ulíc v 767 obciach.',

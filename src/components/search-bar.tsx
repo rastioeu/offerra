@@ -45,6 +45,7 @@ export function SearchBar({
   side = 'PROPERTY',
   sort,
   onSortChange,
+  canFavorite,
 }: {
   filter: CatalogFilter;
   onChange: (f: CatalogFilter) => void;
@@ -57,6 +58,8 @@ export function SearchBar({
    */
   sort?: CatalogSort;
   onSortChange?: (s: CatalogSort) => void;
+  /** Prihlásený? Neprihlásenému sa „Obľúbené" neponúka — nemá ich kam uložiť. */
+  canFavorite?: boolean;
 }) {
   const palette = useTheme();
   const label = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
@@ -188,6 +191,17 @@ export function SearchBar({
             onPress={() => toggle('propertyType', t)}
           />
         ))}
+        {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
+            nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
+            to, na čo ich človek chce. Neprihlásenému sa neukazuje:
+            srdiečko si nemá kam uložiť. */}
+        {side === 'PROPERTY' && canFavorite ? (
+          <Chip
+            label="♥ Obľúbené"
+            active={filter.onlyFavorites === true}
+            onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
+          />
+        ) : null}
       </View>
 
       {!isFilterEmpty(filter) ? (

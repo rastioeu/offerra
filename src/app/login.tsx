@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Logo } from '@/components/logo';
 import { useTheme } from '@/hooks/use-theme';
 import { demoEmail, isDemoConfigured, signInWithApple, signInWithDemo, signInWithEmail, signInWithGoogle, type AuthResult } from '@/lib/auth';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -104,15 +105,11 @@ export default function LoginScreen() {
           keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
           <Pressable onPress={handleLogoTap} style={styles.header} accessibilityRole="header">
-            {/* FÁZA 1 — skutočný wordmark identity A (Navy & Azure) namiesto
-                dočasného textu. Je to obrázok, nie font: značka je kreslená
-                abeceda a nesmie sa meniť podľa toho, čo má telefón. */}
-            <Image
-              source={require('../../assets/images/wordmark.png')}
-              style={styles.wordmark}
-              contentFit="contain"
-              accessibilityLabel="Offerra"
-            />
+            {/* Ten istý komponent ako v hlavičke — vrátane tmavého variantu
+                a glow. Prihlasovacia obrazovka bola JEDINÉ miesto, kde sa
+                wordmark vkladal natvrdo, a presne tam by tmavý variant
+                chýbal. */}
+            <Logo width={200} height={50} />
             <Text style={[styles.subtitle, { color: palette.textMuted }]}>
               Nehnuteľnosti na predaj aj prenájom
             </Text>

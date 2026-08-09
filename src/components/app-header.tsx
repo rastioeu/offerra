@@ -12,10 +12,10 @@
  * niektorých obrazovkách a len na niektorých telefónoch. Takto sa farba
  * hlavičky natiahne až pod ostrovček a jej obsah je vždy pod ním.
  */
-import { Image } from 'expo-image';
 import { StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import { Logo } from '@/components/logo';
 import { NotificationBell } from '@/components/notification-bell';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, Type, Weight } from '@/theme/tokens';
@@ -35,12 +35,10 @@ export function AppHeader({ title }: { title?: string }) {
           paddingTop: insets.top + Spacing.sm,
         },
       ]}>
-      <Image
-        source={require('../../assets/images/wordmark.png')}
-        style={styles.logo}
-        contentFit="contain"
-        accessibilityLabel="Offerra"
-      />
+      {/* Logo si variant aj glow rieši samo — hlavička o téme nič vedieť
+          nemusí. Keby to bolo tu, pri ďalšej zmene témy by sa na to
+          zabudlo presne tak, ako sa zabudlo teraz. */}
+      <Logo />
       <View style={styles.right}>
         {title ? <Text style={[styles.title, { color: palette.textMuted }]}>{title}</Text> : null}
         <NotificationBell />
@@ -58,7 +56,6 @@ const styles = StyleSheet.create({
     paddingBottom: Spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
-  logo: { width: 104, height: 26 },
   right: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   title: { ...Type.caption, fontWeight: Weight.semibold, letterSpacing: 0.4 },
 });
