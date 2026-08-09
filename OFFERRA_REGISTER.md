@@ -3219,6 +3219,39 @@ grant, overené). Cudzí kľúč je `on delete set null`, aby zmazanie účtu
 nezmazalo stopu a zároveň účet nespravilo nezmazateľným — tá istá lekcia
 ako pri `app_config.updated_by`.
 
+### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
+
+Build `9f6e8fc7` spadol vo fáze Xcode:
+
+```
+Provisioning profile "*[expo] com.offerra.app AppStore 2026-08-07…"
+  doesn't include the Push Notifications capability
+  doesn't include the aps-environment entitlement
+```
+
+Profil je zo 7.8., teda z čias pred pushom. `expo-notifications` pridáva
+entitlement `aps-environment` a Xcode odmietne podpísať niečo, na čo
+profil neznie.
+
+**Skúsil som to doriešiť sám, dvomi cestami, obe zlyhali:**
+
+1. Build s automatickou synchronizáciou — EAS vypísal *„All credentials
+   are ready"* a profil ani nepozrel. Schopnosti synchronizuje len keď
+   profil VYTVÁRA. Druhý build som hneď zrušil.
+2. `eas credentials` je výhradne interaktívny (overené cez `--help`).
+
+`.p8` na stroji je pre **Sign in with Apple**, nie App Store Connect API —
+na správu kredenciálov sa použiť nedá. Je to teda prístup k Apple účtu,
+a to je Rastiova strana.
+
+Postup je v `reports/BUILD_1_3_0_APNS_BLOKATOR.md`.
+
+> **PRAVIDLO:** pridanie natívneho modulu, ktorý žiada iOS entitlement,
+> vyžaduje **regeneráciu provisioning profilu**. EAS to sám neurobí, ak
+> profil už existuje — a chyba sa prejaví až vo fáze Xcode, teda po dvoch
+> minútach buildu, nie pri kontrole kredenciálov. Kontrola kredenciálov
+> povie „ready" aj vtedy, keď ready nie sú.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
