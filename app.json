@@ -53,14 +53,7 @@
         }
       ],
       "expo-web-browser",
-      "react-native-maps",
-      [
-        "expo-notifications",
-        {
-          "color": "#C9703B",
-          "defaultChannel": "default"
-        }
-      ]
+      "react-native-maps"
     ],
     "experiments": {
       "typedRoutes": true,

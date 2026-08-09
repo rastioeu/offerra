@@ -24,8 +24,22 @@ import { supabase } from './supabase';
 
 export type PushStatus = 'granted' | 'denied' | 'undetermined' | 'unavailable';
 
+/**
+ * Minimálny tvar toho, čo z `expo-notifications` naozaj používame.
+ *
+ * ZÁMERNE sa nepíše `typeof import('expo-notifications')`: modul sa do
+ * `package.json` pridáva až spolu s buildom, ktorý ho vie. Keby na ňom
+ * viseli typy, projekt by sa medzitým nedal ani skompilovať — a tento
+ * súbor je písaný práve tak, aby bez modulu len ticho nefungoval.
+ */
+type NotificationsApi = {
+  getPermissionsAsync: () => Promise<{ status: string }>;
+  requestPermissionsAsync: () => Promise<{ status: string }>;
+  getExpoPushTokenAsync: (o: { projectId: string }) => Promise<{ data: string }>;
+};
+
 /** `null`, keď modul v tomto builde nie je. */
-function notificationsModule(): typeof import('expo-notifications') | null {
+function notificationsModule(): NotificationsApi | null {
   try {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     return require('expo-notifications');
