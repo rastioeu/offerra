@@ -3246,6 +3246,15 @@ a to je Rastiova strana.
 
 Postup je v `reports/BUILD_1_3_0_APNS_BLOKATOR.md`.
 
+**Využité okno:** `.claude/` presunuté z `.git/info/exclude` do
+`.gitignore` — ✅ OVERENÉ RUNTIME, `.claude/` sa v `git status`
+nezobrazuje. Odkladal som to, lebo zmena `.gitignore` mení runtime
+a odstrihla by existujúci build od OTA; teraz je to zadarmo, lebo nový
+build ešte neexistuje. Runtime buildu #5 sa tým posunul z `b9c2ff9e…`
+na **`24919867e1bcc84715b1b4d6998cb6b27886e5d9`** (`eas
+fingerprint:generate --platform ios`). Tretie meranie potvrdzujúce, že
+`.gitignore` je vstup do fingerprintu.
+
 > **PRAVIDLO:** pridanie natívneho modulu, ktorý žiada iOS entitlement,
 > vyžaduje **regeneráciu provisioning profilu**. EAS to sám neurobí, ak
 > profil už existuje — a chyba sa prejaví až vo fáze Xcode, teda po dvoch

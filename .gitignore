@@ -42,3 +42,6 @@ example
 # generated native folders
 /ios
 /android
+
+# pracovne subory agenta (nepatria do verejneho repa)
+.claude/

@@ -98,6 +98,28 @@ Repozitár je pripravený a čistý:
 
 ---
 
+## Jedna vec, ktorú som medzitým využil
+
+Kým je build zastavený, presunul som `.claude/` z lokálneho
+`.git/info/exclude` **do `.gitignore`** — tam patrí, lebo repozitár je
+verejný a pracovné súbory agenta v ňom nemajú čo robiť.
+
+Presne toto som **odkladal**, lebo zmena `.gitignore` mení runtime, a to
+by odstrihlo existujúci build od OTA. Teraz je jediné okno, keď je to
+zadarmo: nový build ešte neexistuje, takže niet čo odstrihnúť.
+
+Runtime buildu 1.3.0 sa tým posunul:
+
+| | |
+|---|---|
+| pôvodne dokumentovaný | `b9c2ff9e…` |
+| **skutočný runtime buildu #5** | **`24919867e1bcc84715b1b4d6998cb6b27886e5d9`** |
+
+Je to zároveň **tretie meranie**, ktoré potvrdzuje, že `.gitignore` je
+vstupom do EAS fingerprintu. Zapamätané, nie odhadnuté.
+
+---
+
 ## Čo to NEohrozuje
 
 - **Tvoj build #4 beží ďalej normálne.** Runtime `451767ea` sa nemení
