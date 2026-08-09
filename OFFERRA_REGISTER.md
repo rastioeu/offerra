@@ -3261,6 +3261,58 @@ strana; e-mail príde Rastiovi.
 > ⚠️ Ďalšie OTA musia ísť na runtime `24919867…`. Build #4
 > (`451767ea…`) je od nich odstrihnutý — zámerne, všetko svoje už dostal.
 
+### 11.25 Push na zariadení — ✅ OVERENÉ RUNTIME (posledný článok potvrdí Rastio)
+
+Po inštalácii #5 Rastio zapol upozornenia v Nastaveniach. Token dosadol:
+
+```
+user_id 33fadff3… (profil „Rastio") · platform ios
+ExponentPushToken[FezBw_E…  (41 znakov)  · 10:43:06
+```
+
+**Prvý pokus o odoslanie zlyhal, hoci HTTP bolo 200:**
+
+```json
+{"data":{"status":"error",
+ "message":"Could not find APNs credentials for com.offerra.app",
+ "details":{"error":"InvalidCredentials"}}}
+```
+
+> **PRAVIDLO — entitlement a APNs kľúč sú DVE RÔZNE veci.**
+> `aps-environment` v provisioning profile hovorí, že appka **smie**
+> prijímať push. **APNs kľúč (.p8) nahratý na Expo projekte** je to, čím
+> Expo push **odosiela**. Build môže prejsť, entitlement môže byť
+> v podpísanej appke — a push aj tak nefunguje. Dvakrát som v tomto
+> vydaní predpokladal, že „kľúč je per-tím, takže sa nájde sám".
+> Nenašiel. **Per-tím znamená, že sa dá znovupoužiť, nie že sa priradí
+> sám.**
+
+**Oprava bez akéhokoľvek nového kľúča od Apple:** na účte `rastio_eu`
+už existoval APNs kľúč `XW4HG74H5R` na tíme `TC4V762X67` (ten istý ako
+Offerra), priradený k **famiglia** a **mutark**. Priradil som ho aj
+k Offerre cez Expo GraphQL:
+
+```
+mutation { iosAppCredentials { setPushKey(
+  id: "9377cd2c…",          # iOS credentials Offerry
+  pushKeyId: "e3b896e6…"    # existujúci kľúč XW4HG74H5R
+) } }
+```
+
+Robil som to sám, lebo to **nie je** prístup k Apple účtu — je to
+priradenie kľúča, ktorý na Expo účte už bol, a dá sa vrátiť.
+
+**Druhé odoslanie:**
+
+| krok | dôkaz |
+|---|---|
+| Expo prijalo | `{"status":"ok","id":"019fe620-497c-7028-9051-2b820a7988c2"}` |
+| **potvrdenka od Expa** | `{"019fe620…":{"status":"ok"}}` — **Apple správu prijalo** |
+
+🟡 **Posledný článok — či sa notifikácia zobrazila na zamknutej
+obrazovke — potvrdí Rastio.** Potvrdenka `ok` dokazuje, že APNs správu
+prevzalo; nedokazuje, čo telefón zobrazil.
+
 ### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
 (vyriešené, viď 11.24)
 
