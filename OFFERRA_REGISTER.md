@@ -3239,7 +3239,27 @@ Build `57ca9b23-1424-46ca-a5bb-0507b322e49b` dobehol **FINISHED** za 5 minút
 Názov profilu ostal starý (`…AppStore 2026-08-07…`) — Apple meno
 nemení pri regenerácii. Rozhoduje `CreationDate` a obsah, nie meno.
 
-**`eas submit` NESPUSTENÝ** — čaká na výslovné slovo od Rastia (§3).
+**`eas submit` spustený na Rastiovo výslovné „ok submit"** — ✅ OVERENÉ
+RUNTIME, binárka nahraná do App Store Connect.
+
+```
+ASC App ID: 6799028421 · submission 26f3a580-4d15-4f78-8038-ffee4532713e
+✔ Submitted your app to Apple App Store Connect!
+```
+
+🟡 **Čaká na Apple** — spracovanie binárky trvá 5–10 minút, potom sa build
+objaví v TestFlighte. To, že Apple binárku prijal a spracoval, je jeho
+strana; e-mail príde Rastiovi.
+
+**Na overenie na zariadení po inštalácii #5:**
+1. prepínanie tabov 5× bez pádu,
+2. žiadny orezaný text,
+3. onboarding sa zobrazí len raz,
+4. **doručenie push notifikácie na zamknutú obrazovku** — prvýkrát
+   overiteľné, reťaz je otestovaná len po Expo.
+
+> ⚠️ Ďalšie OTA musia ísť na runtime `24919867…`. Build #4
+> (`451767ea…`) je od nich odstrihnutý — zámerne, všetko svoje už dostal.
 
 ### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
 (vyriešené, viď 11.24)
