@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Telefón je povinný',
+    items: [
+      'Pri zakladaní účtu je telefón povinný. Appka stojí na tom, že sa dvaja ľudia dohodnú telefonicky — pri obhliadke aj po prijatí ponuky.',
+      'Meno ostáva nepovinné a doplniť sa dá kedykoľvek v Nastaveniach.',
+      'Telefón sa nikde nezobrazuje — odkryje sa výhradne druhej strane, a to až pri obhliadke alebo po prijatí ponuky.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Počet ponúk na karte a výraznejšie srdiečko',
     items: [
       'Na karte v katalógu vidíš aj počet ponúk — „Pridané 7. augusta · 14 zobrazení · 3 ponuky". Hneď je jasné, či je o inzerát záujem, bez otvárania.',

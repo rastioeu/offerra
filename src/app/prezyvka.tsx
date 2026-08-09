@@ -14,6 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
 import { Button, CheckRow, ErrorNote, Field } from '@/components/ui';
+import { isUsablePhone } from '@/lib/phone';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -44,6 +45,16 @@ export default function PrezyvkaScreen() {
     }
     if (!adult) {
       setError('Bez potvrdenia veku sa registrovať nedá — inzerovať a podávať ponuky môžu len plnoletí.');
+      return;
+    }
+    // Telefón je POVINNÝ (Rastio, 9.8.2026): appka stojí na tom, že sa
+    // dvaja ľudia dohodnú telefonicky — pri obhliadke aj po prijatí
+    // ponuky. Bez neho stráca hlavnú funkciu.
+    if (!isUsablePhone(phone)) {
+      setError(
+        'Zadaj telefónne číslo. Bez neho sa s tebou druhá strana nemá ako spojiť ' +
+          'pri obhliadke ani po prijatí ponuky.'
+      );
       return;
     }
     if (!ownName) {
@@ -86,7 +97,7 @@ export default function PrezyvkaScreen() {
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
           Pod prezývkou budú tvoje ponuky vidieť všetci — aj neprihlásení.
           Tvoje skutočné meno a telefón ostávajú skryté a odkryjú sa až vtedy,
-          keď niekto tvoju ponuku prijme.
+          keď niekto tvoju ponuku prijme alebo si vypýta obhliadku.
         </Text>
 
         <Field
@@ -106,21 +117,24 @@ export default function PrezyvkaScreen() {
           SKRYTÉ ÚDAJE — ODKRYJÚ SA AŽ PRI DOHODE
         </Text>
         <Text style={[styles.note, { color: palette.textMuted }]}>
-          Môžeš ich doplniť aj neskôr v Profile. Bez nich sa však druhá strana
-          po prijatí ponuky nemá ako ozvať.
+          Nevidí ich nikto — odkryjú sa výhradne druhej strane, a to až keď
+          si vypýta obhliadku alebo keď sa prijme ponuka.
         </Text>
 
         <Field
           label="Meno a priezvisko (nepovinné)"
+          hint="Doplniť sa dá aj neskôr v Nastaveniach."
           value={fullName}
           onChangeText={setFullName}
           placeholder="Ján Novák"
         />
         <Field
-          label="Telefón (nepovinné)"
+          label="Telefón — povinné"
+          hint="Bez neho sa s tebou druhá strana nemá ako dohodnúť na obhliadke ani po prijatí ponuky. Zostáva skrytý, kým na to nepríde čas."
           value={phone}
           onChangeText={setPhone}
           placeholder="+421 9xx xxx xxx"
+          keyboardType="numbers-and-punctuation"
         />
 
         <View style={[styles.divider, { borderTopColor: palette.border }]} />
