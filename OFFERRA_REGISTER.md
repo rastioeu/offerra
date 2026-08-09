@@ -2882,6 +2882,72 @@ niekom, koho nikto neoveril, je LOŽ. Preto sa nedá získať automaticky
 Overené, že si ho nenastaví ani sám používateľ, ani cudzí, ani cez admin
 funkciu bez roly ADMIN.
 
+### 11.9 Ulice z Registra adries MV SR — ✅ OVERENÉ RUNTIME (15/15)
+
+Rastio nechal výber zdroja na mne. **Nerobil som prieskum druhýkrát** —
+paralelná vetva (worktree `ulice-ra-import`, commit `566ccc1`) ho už mala
+spravený a bol dôkladný. Meraním som zistil, že **tabuľka `street`
+v databáze neexistovala** — teda prieskum a importér existovali, ale import
+nikdy nebežal. Prácu som prevzal a dotiahol.
+
+**Zvolený zdroj: Register adries MV SR** (`data.slovensko.sk`), nie OSM.
+Dôvod z prieskumu, ktorý som overil: slovenské adresy v OSM **pochádzajú
+z toho istého registra** (import `Sk:MinvSKAddress`), takže OSM je tá istá
+pravda z druhej ruky a o krok staršia. Nominatim za behu je vylúčený —
+limit 1 dotaz/s a autocomplete majú priamo v zakázaných spôsoboch použitia.
+
+```
+31 314 ulíc · 767 obcí · Bratislava 1 991 · Košice 953
+```
+
+Čísla sedia s prieskumom presne (31 165 + 149 ulíc z piatich doplnených
+obcí).
+
+**Bratislava a Košice sa zrkadlia:** register vedie ulice pod mestskými
+časťami, náš číselník má aj mesto ako celok. Bez zrkadlenia by mala
+Bratislava **0 ulíc** a človek, ktorý si vyberie „Bratislava", by nedostal
+nič.
+
+**Vedľajší nález:** v `offerra.city` chýbalo **päť platných obcí** —
+Bojnice, Dudince, Sklené Teplice, Mužla, Veľké Kapušany. **V nich sa
+nedal založiť inzerát vôbec.** Doplnené, súradnice z Wikidata (ten istý
+zdroj ako zvyšok číselníka).
+
+Appka pri písaní **nechodí na žiadne externé API** — číta len vlastnú
+tabuľku, cez prefixový index `text_pattern_ops` (overené `explain`:
+Index Scan, nie seq scan).
+
+Ulica ostáva **nepovinná a voľne písateľná** — číselník ju nemusí poznať
+(nová ulica, dedina bez pomenovaných ulíc). Našeptávanie je skratka, nie
+zámok. Preto pole, nie modál ako pri obci.
+
+### 11.10 ⚠️ ROZPOR: paralelná vetva s prácou, ktorá nie je na `main`
+
+Pri hľadaní ulíc som našiel worktree `.claude/worktrees/ulice-ra-import`
+so **štyrmi commitmi, ktoré na `main` nie sú**:
+
+```
+21a5d93  obhliadky (cely flow) + explainer, ikona a oznamenia
+886fc8a  filter Oblubene, podsvietenie loga a vygenerovane avatary
+21df3bb  orezany text v mriezke + sklonovanie pri hladani obce
+566ccc1  ulice z Registra adries          ← toto som prevzal
+```
+
+**Obhliadky, uzavretie obchodu a hodnotenia sú tam spravené DRUHÝKRÁT,
+inak než na `main`** (`lib/viewings.ts` vs. moje `lib/viewing.ts`,
+`lib/ratings.ts` vs. `lib/rating.ts`, `components/my-property-row.tsx`
+vs. moje `my-listing-row.tsx`). Ich SQL sa do databázy **nikdy
+neaplikovalo** — moje migrácie `create table` prešli, čo dokazuje, že tie
+tabuľky predtým neexistovali.
+
+**Nezlučoval som to sám** — je to presne ten prípad rozporu medzi dvoma
+vetvami práce, pri ktorom mám podľa zadania napísať a nehádať.
+
+Čo je vo vetve navyše a na `main` chýba: **filter Obľúbené**, **generované
+avatary**, **podsvietenie loga**, **skloňovanie pri hľadaní obce**
+(„v Petržalke" → „petrzalka") a **časová os cien**. To sú veci, ktoré
+duplicitné nie sú a stálo by za to ich prebrať.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

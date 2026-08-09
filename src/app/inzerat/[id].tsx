@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AvailableFromPicker } from '@/components/available-from-picker';
 import { CityPicker } from '@/components/city-picker';
+import { StreetPicker } from '@/components/street-picker';
 import { DeadlinePicker } from '@/components/deadline-picker';
 import { FormScreen } from '@/components/form-screen';
 import { Badge, Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
@@ -411,12 +412,11 @@ export default function PropertyEditorScreen() {
               onChange={(v) => patch({ region: v })}
             />
 
-            <Field
-              label="Ulica (nepovinné)"
-              hint="Bez čísla domu. Presnú adresu si dohodnete až po prijatí ponuky."
-              value={draft.street ?? ''}
-              onChangeText={(v) => patch({ street: v })}
-              placeholder="napr. Šancová"
+            <StreetPicker
+              city={draft.city}
+              district={draft.district}
+              street={draft.street}
+              onChange={(v) => patch({ street: v })}
             />
 
             {!isLand ? (

@@ -55,7 +55,9 @@ export const HOW_STEPS: HowStep[] = [
     title: 'Na mape vidíš obec, nie adresu',
     body:
       'Inzeráty sa dajú prezerať aj na mape. Pin však stojí na obci, nie na dome — ' +
-      'presná adresa je skrytá rovnako ako meno a odkryje sa až po dohode.',
+      'presná adresa je skrytá rovnako ako meno a odkryje sa až po dohode. ' +
+      'Ulicu si predávajúci môže uviesť (appka ju našepká z Registra adries), ' +
+      'ale bez čísla domu.',
   },
   {
     icon: 'checkmark.seal',

@@ -21,6 +21,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Ulice ti appka našepká',
+    items: [
+      'Pri zadávaní inzerátu stačí napísať dve písmená ulice a appka ponúkne názvy z Registra adries Ministerstva vnútra — 31 314 ulíc v 767 obciach.',
+      'Funguje aj bez diakritiky: „sanc" nájde Šancovú.',
+      'V Bratislave a Košiciach sa ponúkajú ulice celého mesta, nielen mestskej časti — nemusíš vedieť, do ktorej patríš.',
+      'Ulica ostáva nepovinná a napísať sa dá aj taká, ktorú register nepozná.',
+      'Pri tom sa našlo, že v číselníku chýbalo päť obcí — Bojnice, Dudince, Sklené Teplice, Mužla a Veľké Kapušany. V nich sa doteraz nedal založiť inzerát vôbec. Doplnené.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Overený používateľ',
     items: [
       'Pri inzeráte môže byť odznak OVERENÝ — a vedľa neho veta, čo presne správca overil (napríklad „Doklad totožnosti a list vlastníctva").',

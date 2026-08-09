@@ -47,6 +47,27 @@ function text(v: unknown): string | null {
   return typeof v === 'string' && v.trim() ? v.trim() : null;
 }
 
+/**
+ * Chýba tabuľka/funkcia, ktorá ešte nie je nasadená?
+ *
+ * Appka ide OTA rýchlejšie než migrácie DB. Nová obrazovka sa teda môže
+ * dostať na telefón skôr, než tabuľka, ktorú číta, existuje. Volajúci
+ * vtedy sekciu SKRYJE — nie „nespraví nič potichu" — a do logu to ide
+ * vždy, takže sa to nedá prehliadnuť pri diagnostike.
+ *
+ * Skutočné chyby (RLS, sieť, neplatné dáta) sem nespadnú.
+ */
+export function isNotDeployedYet(e: unknown): boolean {
+  const code = (e as { code?: unknown } | null)?.code;
+  return (
+    code === 'PGRST205' || // tabuľka nie je v schema cache
+    code === 'PGRST202' || // funkcia (RPC) neexistuje
+    code === '42P01' ||    // undefined_table
+    code === '42883' ||    // undefined_function
+    code === '42703'       // undefined_column
+  );
+}
+
 export function errorText(e: unknown): string {
   if (e == null) return 'Neznáma chyba.';
 
