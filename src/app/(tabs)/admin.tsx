@@ -211,6 +211,38 @@ export default function AdminScreen() {
     );
   }
 
+  /**
+   * Povýšenie a odobratie práv správcu.
+   *
+   * Príkaz vykonáva DATABÁZA (`admin_set_role`), nie táto obrazovka —
+   * kontroluje si sama, či volajúci je správca, či nemení vlastnú rolu
+   * a či po odobratí ostane aspoň jeden správca. Obrazovka len pýta
+   * potvrdenie; keby sa dala obísť, na pravidlách sa nezmení nič.
+   */
+  function toggleAdmin(u: AdminUser) {
+    const granting = u.role !== 'ADMIN';
+    Alert.alert(
+      granting ? 'Urobiť správcom?' : 'Odobrať práva správcu?',
+      granting
+        ? `Naozaj urobiť ${u.nickname} správcom? Získa plný prístup do tejto konzoly — ` +
+          'uvidí nahlásenia, môže skrývať inzeráty a blokovať účty.'
+        : `${u.nickname} stratí prístup do konzoly. Jeho účet a dáta ostanú nedotknuté.`,
+      [
+        { text: 'Zrušiť', style: 'cancel' },
+        {
+          text: granting ? 'Urobiť správcom' : 'Odobrať',
+          style: granting ? 'default' : 'destructive',
+          onPress: () =>
+            call(
+              'admin_set_role',
+              { p_user_id: u.id, p_admin: granting },
+              granting ? `${u.nickname} je správca.` : `${u.nickname} už správcom nie je.`
+            ),
+        },
+      ]
+    );
+  }
+
   function toggleBlock(u: AdminUser) {
     const blocking = !u.is_blocked;
     Alert.alert(
@@ -530,6 +562,10 @@ export default function AdminScreen() {
             Zablokovaný používateľ sa nevie prihlásiť ani nič pridať a jeho účet
             neprijíma oznámenia. Doterajšie inzeráty a ponuky mu ostanú a
             odblokovaním sa vráti všetko naspäť — nie je to zmazanie.
+            {'\n\n'}
+            Správcu môže urobiť len iný správca. Vlastnú rolu si zmeniť nevieš
+            a posledného správcu appka odobrať nedovolí — inak by ostala bez
+            neho. Každá zmena roly sa zapisuje.
           </Text>
         ) : null}
 
@@ -558,6 +594,7 @@ export default function AdminScreen() {
                   {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="accent" /> : null}
                   {u.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="warning" /> : null}
                 {u.verified_at ? <Badge text="OVERENÝ" tone="accent" /> : null}
+                {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="navy" /> : null}
                 </View>
                 <Text style={[styles.meta, { color: palette.textMuted }]}>
                   {u.email} · {u.inzeraty} inzerátov · od {formatDate(u.created_at)}
@@ -572,6 +609,16 @@ export default function AdminScreen() {
                   onPress={() => toggleVerified(u)}
                   variant="outline"
                 />
+                {/* Vlastnú rolu meniť nemožno — tlačidlo pri sebe samom
+                    preto nie je vôbec, nie len zašednuté. Tlačidlo, ktoré
+                    by aj tak neprešlo, je horšie než jeho absencia. */}
+                {u.id !== session?.user.id ? (
+                  <Button
+                    title={u.role === 'ADMIN' ? 'Odobrať práva správcu' : 'Urobiť správcom'}
+                    onPress={() => toggleAdmin(u)}
+                    variant="outline"
+                  />
+                ) : null}
                 {u.id !== session?.user.id ? (
                   <Button
                     title={u.is_blocked ? 'Odblokovať' : 'Zablokovať'}

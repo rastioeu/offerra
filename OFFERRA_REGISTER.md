@@ -3152,6 +3152,73 @@ interiér, trávnik, obloha, tehla, večer, čierna).
 
 Vizuálny dôkaz: `reports/srdiecko.png`.
 
+### 11.20 Tri audity pred buildom 1.3.0 — ✅ security 33/33 · funkčnosť 39/39
+
+Celý report: `reports/AUDIT_PRED_BUILDOM_1_3_0.md`.
+
+**Dve diery, ktoré audit našiel na webe** (a opravil): Privacy Policy bola
+na webe z 8.8. (zmena o push sa nikdy nepushla), a **odkrytie kontaktu
+pri OBHLIADKE v nej nebolo vôbec** — hoci appka to robí od 8.8. Presne
+to, na čo sa Rastio pýtal.
+
+**Chyba v mojom vlastnom audite:** storage test posielal `text/plain`,
+ktorý bucket odmietne EŠTE PRED kontrolou oprávnení — test na izoláciu
+zložiek teda „prešiel" bez toho, aby izoláciu overil. Prerobené so
+skutočným JPEG-om; odpovede teraz hovoria `row-level security policy`.
+
+**Jediný 🟡 nález:** `EXPO_PUBLIC_DEMO_PASSWORD` je v balíku appky.
+Nie je v repe (§4 splnené), ale „nie je v repe" ≠ „nedá sa získať". Demo
+účet je bežný účet bez práv navyše, takže pre TestFlight to blokujúce
+nie je; do verejného vydania heslo zmeniť alebo demo prihlásenie zapínať
+len pre review buildy.
+
+### 11.21 Telefón povinný, overenie odložené — ✅ 18/18 / 🔴 SMS
+
+Telefón je v onboardingu povinný. Kontrola je zámerne mierna (9+ číslic,
+prijme aj zahraničné) — **číslo, ktoré appka odmietne, je horšie než
+číslo v inom tvare**.
+
+**Overenie SMS je odložené a je to zmerané, nie odhadnuté:**
+
+```
+external_phone_enabled = False
+sms_twilio_account_sid = None      (a rovnako Vonage aj Textlocal)
+```
+
+Appková časť by veľká nebola — Supabase vie pridať telefón k existujúcemu
+Apple/Google účtu cez `updateUser` + `verifyOtp({type:'phone_change'})`,
+auth flow sa prestavovať nemusí. Odhad 2–3 hodiny. **Blokátor je mimo
+appky:** platený SMS poskytovateľ, ktorý projekt nemá.
+
+Odznak „overený telefón" ZÁMERNE nepridaný — tvrdil by nepravdu.
+
+### 11.22 Zástupcovia správcu — ✅ 19/19
+
+**Východisko bolo bezpečné:** `profile.role` nemá pre `authenticated`
+UPDATE grant vôbec, takže sa nikto povýšiť sám nevedel. Migrácia to
+nemenila — pridala jedinú povolenú cestu, ktorá sa pýta, kto volá.
+
+Štyri poistky vo `admin_set_role()`:
+
+| Poistka | Stav |
+|---|---|
+| volajúci musí byť správca | ✅ overené |
+| vlastnú rolu meniť nemožno | ✅ overené |
+| posledný správca sa neodstrihne | ⚠️ **v kóde je, ale dnes je nedosiahnuteľná** |
+| každá zmena sa zapíše | ✅ overené |
+
+Tú tretiu hlásim presne: pri zákaze „sám sebe" sa k nej nedá dostať —
+odobrať posledného správcu by musel niekto, kto sám správcom nie je,
+a toho zastaví prvá poistka. Nechal som ju tam ako **druhú líniu**, keby
+sa pravidlá časom zmenili; je to stav, z ktorého niet cesty späť bez
+zásahu do databázy. Overil som aspoň, že tá vetva v kóde existuje.
+
+**Audit log** `admin_action_log`: kto, komu, kedy. Číta ho len správca,
+zapisuje výhradne funkcia — **ani správca ho nepodvrhne** (žiadny insert
+grant, overené). Cudzí kľúč je `on delete set null`, aby zmazanie účtu
+nezmazalo stopu a zároveň účet nespravilo nezmazateľným — tá istá lekcia
+ako pri `app_config.updated_by`.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

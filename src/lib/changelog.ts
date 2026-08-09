@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Zástupcovia správcu',
+    items: [
+      'V správcovskej konzole vieš urobiť správcom niekoho iného — a rovnako mu práva odobrať. Netreba na to siahať do databázy.',
+      'Vlastnú rolu si zmeniť nemôžeš a posledného správcu appka odobrať nedovolí, aby neostala bez neho.',
+      'Každá zmena roly sa zapisuje — kto, komu a kedy. Vidia to len správcovia a prepísať sa to nedá.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Telefón je povinný',
     items: [
       'Pri zakladaní účtu je telefón povinný. Appka stojí na tom, že sa dvaja ľudia dohodnú telefonicky — pri obhliadke aj po prijatí ponuky.',
