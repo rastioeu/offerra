@@ -44,6 +44,7 @@ import {
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 import { LEGAL_CONTACT_EMAIL } from '@/lib/legal';
+import { maybeOfferPush } from '@/lib/push-prompt';
 
 /** Číslo z poľa. Prázdne → `null` (stĺpec je nullable, 0 by bola lož). */
 function num(text: string): number | null {
@@ -204,6 +205,7 @@ export default function PropertyEditorScreen() {
     }
     if (await save({ status: 'ACTIVE' })) {
       toast('Zverejnené — inzerát je v katalógu');
+      void maybeOfferPush(session?.user.id, 'LISTING');
     }
   }
 

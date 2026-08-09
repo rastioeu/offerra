@@ -57,7 +57,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profil"
         options={{
-          title: 'Profil',
+          title: 'Moje',
           tabBarIcon: ({ color }) => <TabGlyph name="person.circle" color={color} />,
         }}
       />

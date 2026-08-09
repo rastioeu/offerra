@@ -11,7 +11,13 @@ import { useCallback, useEffect, useState } from 'react';
 import { db } from '@/lib/property';
 import { errorText } from '@/lib/errors';
 
-export type HintKey = 'HOW_IT_WORKS' | 'ADD_PROPERTY' | 'MAKE_OFFER' | 'ADMIN';
+export type HintKey =
+  | 'HOW_IT_WORKS'
+  | 'ADD_PROPERTY'
+  | 'MAKE_OFFER'
+  | 'ADMIN'
+  /** Jednorazová ponuka zapnúť push. Zavretá = už sa nepýtame. */
+  | 'PUSH_OFFER';
 
 export function useHints(userId: string | undefined) {
   const [dismissed, setDismissed] = useState<Set<HintKey> | undefined>(undefined);

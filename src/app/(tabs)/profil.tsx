@@ -23,6 +23,7 @@ import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
+import { InlineOffers } from '@/components/inline-offers';
 import { MyListingRow } from '@/components/my-listing-row';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
@@ -40,7 +41,7 @@ export default function ProfilScreen() {
   const userId = session?.user.id;
 
   const { profile, error, reload } = useProfile();
-  const { items: properties } = useMyProperties(userId);
+  const { items: properties, reload: reloadProperties } = useMyProperties(userId);
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
   const { items: favorites } = useFavoriteProperties(userId);
@@ -49,6 +50,8 @@ export default function ProfilScreen() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [editing, setEditing] = useState(false);
+  /** Ktorý inzerát má rozbalené ponuky. `null` = žiadny. */
+  const [openListing, setOpenListing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -146,16 +149,9 @@ export default function ProfilScreen() {
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="interactive"
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
-        <View style={styles.topRow}>
-          <Text style={[styles.title, { color: palette.textPrimary }]}>Profil</Text>
-          <Pressable
-            onPress={() => router.push('/nastavenia')}
-            accessibilityRole="button"
-            accessibilityLabel="Nastavenia"
-            hitSlop={12}>
-            <Icon name="gearshape" size={24} color={palette.textSecondary} />
-          </Pressable>
-        </View>
+        {/* Ozubené koliesko tu ZÁMERNE nie je — je v hornej lište, teda
+            na všetkých obrazovkách. Dve by boli duplicita. */}
+        <Text style={[styles.title, { color: palette.textPrimary }]}>Moje</Text>
 
         <ErrorNote error={error ?? saveError} />
         {profile === undefined ? <ActivityIndicator color={palette.primary} /> : null}
@@ -185,65 +181,36 @@ export default function ProfilScreen() {
 
             <Card>
               <Text style={[styles.section, { color: palette.textMuted }]}>
-                SKRYTÉ ÚDAJE — VIDÍ ICH LEN PROTISTRANA PRIJATEJ PONUKY
-              </Text>
-
-              {editing ? (
-                <>
-                  <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
-                  <Text style={[styles.hint, { color: palette.textMuted }]}>
-                    E-mail sa mení cez prihlásenie, nie tu.
-                  </Text>
-                  <Field label="Prezývka" value={nickname} onChangeText={setNickname} />
-                  <Field label="Meno a priezvisko" value={fullName} onChangeText={setFullName} />
-                  <Field label="Telefón" value={phone} onChangeText={setPhone} />
-                  <Button title={busy ? 'Ukladám…' : 'Uložiť'} onPress={save} disabled={busy} />
-                  <Button title="Zrušiť" onPress={() => setEditing(false)} variant="outline" disabled={busy} />
-                </>
-              ) : (
-                <>
-                  {/* E-mail sa NEDÁ upraviť tu. Zmena e-mailu má vlastný
-                      overovací tok cez Supabase Auth (potvrdzovací odkaz na
-                      starú aj novú adresu) a pole, ktoré sa tvári
-                      upraviteľne a nič neuloží, je horšie než read-only. */}
-                  <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
-                  <Row label="Meno" value={profile.full_name ?? 'nevyplnené'} />
-                  <Row label="Telefón" value={profile.phone ?? 'nevyplnený'} />
-                  {missingContact ? (
-                    <Text style={[styles.warn, { color: palette.warning }]}>
-                      Bez mena a telefónu sa ti druhá strana po prijatí ponuky nemá ako ozvať.
-                    </Text>
-                  ) : null}
-                  <Button title="Upraviť údaje" onPress={() => setEditing(true)} variant="outline" />
-                </>
-              )}
-            </Card>
-
-            <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>
                 {`MOJE INZERÁTY (${properties?.length ?? 0})`}
               </Text>
               {(properties ?? []).length === 0 ? (
                 <Text style={[styles.hint, { color: palette.textMuted }]}>Zatiaľ žiadne.</Text>
               ) : null}
               {(properties ?? []).map((p) => (
+                <View key={p.id}>
                 <MyListingRow
-                  key={p.id}
                   item={p}
                   // Kam ťuknutie vedie, závisí od toho, čo sa na inzeráte
                   // dá ROBIŤ. Pri zverejnenom a uzavretom sú to ponuky
                   // (prijať, odmietnuť, uzavrieť obchod, hodnotiť); pri
                   // koncepte niet čo spravovať, tam patrí úprava.
+                  // Ťuknutie ROZBALÍ ponuky na mieste, nikam neodnaviguje.
+                  // Koncept ponuky nemá, tam vedie rovno do úpravy.
                   onPress={() =>
-                    p.status === 'ACTIVE' || p.status === 'CLOSED'
-                      ? router.push({ pathname: '/ponuky/[id]', params: { id: p.id } })
-                      : router.push({ pathname: '/inzerat/[id]', params: { id: p.id } })
+                    p.status === 'DRAFT' || p.status === 'REJECTED'
+                      ? router.push({ pathname: '/inzerat/[id]', params: { id: p.id } })
+                      : setOpenListing((cur) => (cur === p.id ? null : p.id))
                   }
                 />
+                {openListing === p.id ? (
+                  <InlineOffers item={p} onChanged={reloadProperties} />
+                ) : null}
+                </View>
               ))}
               {(properties ?? []).some((p) => p.status === 'ACTIVE' || p.status === 'CLOSED') ? (
                 <Text style={[styles.hint, { color: palette.textMuted }]}>
-                  Ťuknutím sa dostaneš k ponukám. Upraviť inzerát sa dá tlačidlom v ich hlavičke.
+                  Ťuknutím rozbalíš ponuky aj s tlačidlami — netreba nikam chodiť.
+                  Celý inzerát aj s fotkami otvoríš cez „Upraviť" v ňom.
                 </Text>
               ) : null}
             </Card>

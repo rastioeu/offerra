@@ -12,16 +12,19 @@
  * niektorých obrazovkách a len na niektorých telefónoch. Takto sa farba
  * hlavičky natiahne až pod ostrovček a jej obsah je vždy pod ním.
  */
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 
 import { Logo } from '@/components/logo';
+import { Icon } from '@/components/icon';
 import { NotificationBell } from '@/components/notification-bell';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export function AppHeader({ title }: { title?: string }) {
   const palette = useTheme();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   return (
     <View
@@ -42,6 +45,16 @@ export function AppHeader({ title }: { title?: string }) {
       <View style={styles.right}>
         {title ? <Text style={[styles.title, { color: palette.textMuted }]}>{title}</Text> : null}
         <NotificationBell />
+        {/* Nastavenia sú GLOBÁLNE, nie na jednej obrazovke. Predtým boli
+            len v rohu Profilu — kto bol v katalógu, musel najprv prejsť
+            inam. Hlavička je na všetkých hlavných taboch, takže patria sem. */}
+        <Pressable
+          onPress={() => router.push('/nastavenia')}
+          accessibilityRole="button"
+          accessibilityLabel="Nastavenia"
+          hitSlop={12}>
+          <Icon name="gearshape" size={24} color={palette.textSecondary} />
+        </Pressable>
       </View>
     </View>
   );

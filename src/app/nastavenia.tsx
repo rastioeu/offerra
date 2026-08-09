@@ -9,13 +9,15 @@
  * fotky, ponuky aj dopyty.
  */
 import { Stack, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, ChoiceRow, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
 import { useSession } from '@/hooks/use-session';
+import { ContactCard } from '@/components/contact-card';
+import { useToast } from '@/components/toast';
 import { useTheme, useThemeMode, THEME_MODE_LABEL, type ThemeMode } from '@/hooks/use-theme';
 import {
   FREQUENCY_LABEL,
@@ -23,6 +25,7 @@ import {
   type NotificationFrequency,
 } from '@/lib/notifications';
 import { signOut } from '@/lib/auth';
+import { disablePushOnThisDevice, enablePush, getPushStatus, type PushStatus } from '@/lib/push';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -37,10 +40,45 @@ const DIGEST_READY = false;
 export default function NastaveniaScreen() {
   const palette = useTheme();
   const { mode: themeMode, setMode: setThemeMode, effective: effectiveTheme } = useThemeMode();
+  const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
   const { prefs, error: prefError, save } = useNotificationPrefs(session?.user.id);
   const [busy, setBusy] = useState(false);
+  const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
+  const [pushBusy, setPushBusy] = useState(false);
+
+  useEffect(() => {
+    void getPushStatus().then(setPushStatus);
+  }, []);
+
+  async function togglePush(on: boolean) {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (on) {
+        const result = await enablePush();
+        setPushStatus(result);
+        if (result === 'granted') toast('Upozornenia zapnuté');
+        else if (result === 'denied') {
+          Alert.alert(
+            'Systém to nepovolil',
+            'Zapnúť sa to dá už len v nastaveniach telefónu: Nastavenia → Offerra → Oznámenia.'
+          );
+        }
+      } else {
+        await disablePushOnThisDevice();
+        setPushStatus('undetermined');
+        toast('Upozornenia na tomto zariadení vypnuté', 'info');
+      }
+    } catch (e: unknown) {
+      const m = errorText(e);
+      console.log(`[PUSH] Prepnutie zlyhalo: ${m}`);
+      Alert.alert('Nepodarilo sa to', m);
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function handleSignOut() {
     if (busy) return;
@@ -104,7 +142,11 @@ export default function NastaveniaScreen() {
       />
 
       <ScrollView contentContainerStyle={styles.scroll}>
-        {/* Vzhľad je PRVÝ. Kto sa sem prišiel dostať z tmavej appky späť na
+        {/* Kontaktné údaje sú PRVÉ — je to jediná vec tu, ktorú si človek
+            príde naozaj nastaviť. Presunuté z „Moje" (Rastio, 9.8.2026). */}
+        <ContactCard />
+
+        {/* Vzhľad je druhý. Kto sa sem prišiel dostať z tmavej appky späť na
             svetlú, nemá čo hľadať pod tromi kartami upozornení. */}
         <Card>
           <SectionLabel>VZHĽAD</SectionLabel>
@@ -130,10 +172,37 @@ export default function NastaveniaScreen() {
         <Card>
           <SectionLabel>UPOZORNENIA</SectionLabel>
           <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Offerra zatiaľ push upozornenia NEPOSIELA. Toto je predvoľba, ktorú
-            bude musieť rešpektovať každé budúce odosielanie — nastav si ju už
-            teraz.
+            Prepínače nižšie platia pre oznámenia v appke aj pre push na telefón.
+            Vypnutý typ neposiela ani jedno.
           </Text>
+
+          {/* Povolenie sa pýta VÝHRADNE odtiaľto, z akcie používateľa.
+              Kto ho raz odmietne, systém sa ho druhýkrát nespýta — takže
+              agresívne pýtanie na úvod by tú možnosť natrvalo spálilo. */}
+          <View style={[styles.notifRow, { borderTopColor: palette.border }]}>
+            <View style={styles.switchRow}>
+              <View style={styles.switchText}>
+                <Text style={[styles.label, { color: palette.textPrimary }]}>
+                  Upozornenia na telefóne
+                </Text>
+                <Text style={[styles.hint, { color: palette.textMuted }]}>
+                  {pushStatus === 'granted'
+                    ? 'Zapnuté. Oznámenia chodia aj keď máš appku zavretú.'
+                    : pushStatus === 'denied'
+                      ? 'Zakázané v nastaveniach telefónu. Povoliť sa to dá už len tam: Nastavenia → Offerra → Oznámenia.'
+                      : pushStatus === 'unavailable'
+                        ? 'Táto verzia appky ich ešte nevie — pribudnú s najbližšou aktualizáciou z TestFlightu.'
+                        : 'Zapni, ak chceš vedieť o novej ponuke aj so zavretou appkou.'}
+                </Text>
+              </View>
+              <Switch
+                value={pushStatus === 'granted'}
+                disabled={pushBusy || pushStatus === 'unavailable' || pushStatus === 'denied'}
+                onValueChange={togglePush}
+                trackColor={{ true: palette.secondary, false: palette.border }}
+              />
+            </View>
+          </View>
           <ErrorNote error={prefError} />
 
           {NOTIFICATION_TYPES.map((t) => {

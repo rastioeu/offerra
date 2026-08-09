@@ -11,13 +11,13 @@
  *  - prezývka je verejná, meno a telefón nie a odkryjú sa len stranám
  *    prijatej ponuky (stĺpcové granty + `offer_contact()`),
  *  - dotazník nájomcu vidí len majiteľ inzerátu,
- *  - appka nemá reklamu, analytiku ani push notifikácie.
+ *  - appka nemá reklamu ani analytiku; push posiela LEN po povolení.
  */
 
 /** Zmena kontaktu = zmena na JEDNOM mieste, aj pre web aj pre appku. */
 export const LEGAL_CONTACT_EMAIL = 'rastioeu@protonmail.com';
 export const LEGAL_OPERATOR = 'Rastislav Janek';
-export const LEGAL_UPDATED = '8. augusta 2026';
+export const LEGAL_UPDATED = '9. augusta 2026';
 
 export type LegalSection = { heading: string; paragraphs: string[] };
 export type LegalDoc = {
@@ -56,8 +56,11 @@ export const PRIVACY: LegalDoc = {
           'orientačnej ceny a podmienok prenájmu; ponuky vrátane sumy a správy; dopyty. Tento obsah je verejný.',
         'Dotazník nájomcu pri prenájme (počet osôb, zvieratá, dĺžka nájmu, zamestnanie, orientačný príjem). ' +
           'NIE JE verejný — sprístupní sa len majiteľovi inzerátu, ku ktorému si podal ponuku.',
-        'Prevádzkové údaje. Obľúbené inzeráty, predvoľby upozornení, zavreté tipy, počet zobrazení inzerátu ' +
-          'a záznamy o nahlásení obsahu.',
+        'Prevádzkové údaje. Obľúbené inzeráty, uložené vyhľadávania, predvoľby upozornení, zavreté tipy, ' +
+          'počet zobrazení inzerátu a záznamy o nahlásení obsahu.',
+        'Identifikátor zariadenia pre upozornenia (push token). Ukladá sa LEN ak upozornenia sám povolíš, ' +
+          'a slúži výhradne na doručenie oznámení, ktoré by si aj tak dostal v aplikácii. Vypnutím ' +
+          'upozornení v Nastaveniach sa zmaže.',
       ],
     },
     {
@@ -67,7 +70,6 @@ export const PRIVACY: LegalDoc = {
         'Nemá analytické ani sledovacie nástroje tretích strán a nesleduje ťa naprieč inými aplikáciami.',
         'Nepristupuje k tvojej polohe. Poloha na mape je poloha OBCE z verejného číselníka, nie tvoja ani ' +
           'presná adresa nehnuteľnosti.',
-        'Neposiela push notifikácie. Oznámenia sa zobrazujú len vnútri aplikácie.',
         'Nepredáva ani neprenajíma osobné údaje nikomu.',
       ],
     },
@@ -90,13 +92,16 @@ export const PRIVACY: LegalDoc = {
           'zásadami ochrany súkromia.',
         'Aktualizácie aplikácie doručuje služba Expo (EAS Update). Prenáša sa pri tom len obsah aplikácie, ' +
           'nie tvoje osobné údaje.',
+        'Upozornenia na telefón doručuje Expo Push Service a ďalej Apple (APNs). Odovzdáva sa im nadpis, ' +
+          'text oznámenia a identifikátor zariadenia — teda to isté, čo vidíš v aplikácii. Ak upozornenia ' +
+          'nepovolíš, neodovzdáva sa nič.',
       ],
     },
     {
       heading: 'Ako dlho sa uchovávajú',
       paragraphs: [
         'Kým máš účet. Po jeho zmazaní sa odstráni profil, inzeráty, fotografie, ponuky a dopyty.',
-        'Účet zmažeš priamo v aplikácii: Profil → Nastavenia → Zmazať účet. Nie je na to potrebná žiadna žiadosť.',
+        'Účet zmažeš priamo v aplikácii: Nastavenia (ozubené koliesko v hornej lište) → Zmazať účet. Nie je na to potrebná žiadna žiadosť.',
         'Záznamy o nahlásení obsahu môžu byť uchované aj po zmazaní účtu v rozsahu nevyhnutnom na ochranu ' +
           'ostatných používateľov.',
       ],
@@ -106,7 +111,7 @@ export const PRIVACY: LegalDoc = {
       paragraphs: [
         'Máš právo na prístup k údajom, ich opravu, vymazanie, obmedzenie spracúvania, prenosnosť ' +
           'a právo namietať proti spracúvaniu.',
-        'Väčšinu z toho spravíš priamo v aplikácii — údaje si upravíš v Profile a účet zmažeš v Nastaveniach.',
+        'Väčšinu z toho spravíš priamo v aplikácii — kontaktné údaje aj zmazanie účtu nájdeš v Nastaveniach.',
         `V ostatných prípadoch napíš na ${LEGAL_CONTACT_EMAIL}.`,
         'Ak si myslíš, že sa s tvojimi údajmi nakladá nesprávne, máš právo podať sťažnosť na Úrad na ochranu ' +
           'osobných údajov Slovenskej republiky, Hraničná 12, 820 07 Bratislava.',

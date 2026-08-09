@@ -10,6 +10,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { AppHeader } from '@/components/app-header';
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSession } from '@/hooks/use-session';
@@ -262,7 +263,8 @@ export default function AdminScreen() {
   }, {});
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['top', 'left', 'right']}>
+    <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
+      <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.title, { color: palette.textPrimary }]}>Správa</Text>
 

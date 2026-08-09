@@ -20,6 +20,7 @@ import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
+import { maybeOfferPush } from '@/lib/push-prompt';
 import { useTheme } from '@/hooks/use-theme';
 import { EMPLOYMENT_OPTIONS, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
@@ -167,6 +168,8 @@ export default function OfferFormScreen() {
 
       await reloadOffers();
       toast(mine ? 'Ponuka upravená' : 'Ponuka odoslaná');
+      // Až TERAZ má otázka o upozorneniach zmysel — človek čaká odpoveď.
+      if (!mine) void maybeOfferPush(myId, 'OFFER');
       router.back();
     } catch (e: unknown) {
       const m = errorText(e);

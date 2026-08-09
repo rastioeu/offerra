@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Ponuky rovno v Moje + prehľadnejšie usporiadanie',
+    items: [
+      'Ponuky na tvoj inzerát sa teraz rozbalia priamo v „Moje" — aj s tlačidlami Prijať, Odmietnuť a Uzavrieť obchod. Nikam nemusíš chodiť.',
+      'Tab „Profil" sa volá „Moje" — je to o tom, čo tu máš, nie o vypĺňaní údajov.',
+      'Meno, telefón a e-mail sa presunuli do Nastavení. „Moje" ostáva na prezývku a tvoje veci.',
+      'Ozubené koliesko je v hornej lište vedľa zvončeka, takže sa do Nastavení dostaneš z každej obrazovky.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Avatary, časová os ceny a návrat dátumu na kartu',
     items: [
       'Opravené: pri redizajne vypadol z karty dátum pridania. Je späť — „visí tu tri mesiace" hovorí o cene viac než samotná cena.',

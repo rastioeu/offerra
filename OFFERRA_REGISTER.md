@@ -2987,6 +2987,57 @@ Rendery oboch tém: `reports/hdr_light.png`, `reports/hdr_dark.png`.
 Test stráži, že wordmark sa vkladá **len** v `logo.tsx` — pri ďalšej
 zmene témy sa na variant nedá zabudnúť.
 
+### 11.13 Zrovnanie s paralelnou vetvou — ✅ UZAVRETÉ
+
+| Čo | Rozhodnutie | Dôvod |
+|---|---|---|
+| obhliadky | **zahodené** | mala `proposed_time`/`confirmed_time` a stavy CONFIRMED/DECLINED — presne to navrhovanie termínov, ktoré Rastio zrušil. Kontakt sa odkrýval až po CONFIRMED, nie hneď. |
+| uzavretie obchodu | **zahodené** | `close_deal(offer)` vyžadovala UŽ PRIJATÚ ponuku, neuchovávala `closed_offer_id` ani `final_amount` a nevedela uzavrieť obchod dohodnutý mimo appky |
+| ulice z Registra adries | **prebraté** | prieskum bol dôkladný, import nikdy nebežal |
+| generované avatary | **prebraté** | CC0 DiceBear, pribalené, deterministické |
+| časová os cien | **prebraté** | schémy boli identické, prenieslo sa čisto (9/9) |
+| `Shadow.glow` | **prebraté** | mal som tie isté hodnoty napísané v komponente |
+
+**Rozdiel na rozhodnutie Rastia (NEZLUČOVAL som):** vetva má text
+hodnotenia **verejný** (`using (true)`), main ho má súkromný. Zdôvodnenie
+môjho rozhodnutia je v 10.2.
+
+Vetva je archivovaná tagom `archiv/paralelna-vetva-8-8-2026` a worktree
+odstránený, aby nevznikla tretia verzia.
+
+### 11.14 Push notifikácie — 🔴 ČAKÁ NA BUILD
+
+Celý report: `reports/PUSH_NOTIFIKACIE.md`. Overené 16/16 vrátane toho, že
+**Expo Push API našu správu prijalo a spracovalo** (HTTP 200,
+`DeviceNotRegistered` na vymyslený token). Neoverený ostáva posledný
+článok Expo → APNs → telefón.
+
+**Napojené jedným riadkom** v `push_notification()` — push tým dostal
+každý typ oznámenia vrátane budúcich, a `notification_preference` platí
+bez ďalšej práce.
+
+**APNs:** MUTARK aj Offerra sú v tíme `TC4V762X67` a APNs kľúč je
+per-TÍM. Nový pravdepodobne netreba.
+
+⚠️ **OTA je odteraz zablokovaná** — fingerprint sa zmenil pridaním
+natívneho modulu. Rozhodnutie (build vs. dočasné vybratie) je na Rastiovi.
+
+### 11.15 Ponuky rozbalené na mieste + Profil → Moje — ✅ 20/20
+
+**Zvolený vzor: expand-in-place, nie spodný panel.** Vlastník má najviac
+päť inzerátov (drží to limit), takže „dlhé zoznamy" tu nevznikajú; panel
+by prekryl obrazovku a znemožnil porovnanie dvoch inzerátov; a panel už
+v appke je na obrazovke „Ponuky na inzerát" — dva panely s dvoma stavmi
+sú tá istá trieda chyby ako zvonček.
+
+Plná obrazovka detailu **ostala**, len už nie je jedinou cestou.
+
+Ďalej: tab premenovaný na **Moje**, kontaktné údaje presunuté do
+Nastavení (prezývka ostala — je to identita, nie skrytý údaj), ozubené
+koliesko presunuté do hlavičky, teda na **5 z 5** hlavných obrazoviek.
+
+`legal.ts` opravený: cesta „Profil → Nastavenia" už neplatila.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
