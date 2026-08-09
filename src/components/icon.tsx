@@ -30,7 +30,9 @@ export type IconName =
   | 'envelope'
   | 'plus.circle'
   | 'person.circle'
-  | 'checkmark.seal';
+  | 'checkmark.seal'
+  | 'chevron.left'
+  | 'key';
 
 /** Textová náhrada, keď natívny modul chýba (starý build, web). */
 const FALLBACK: Record<IconName, string> = {
@@ -47,6 +49,8 @@ const FALLBACK: Record<IconName, string> = {
   'plus.circle': '＋',
   'person.circle': '☺',
   'checkmark.seal': '✓',
+  'chevron.left': '‹',
+  key: '⚿',
 };
 
 export function Icon({

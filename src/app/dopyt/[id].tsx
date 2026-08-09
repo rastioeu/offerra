@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ModalScreen } from '@/components/modal-screen';
+
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar } from '@/components/ui';
 import { useOutreach, useRequest } from '@/hooks/use-offers';
 import { useMyProperties } from '@/hooks/use-properties';
@@ -165,15 +167,7 @@ export default function RequestDetailScreen() {
         ) : null}
       </ScrollView>
 
-      <Modal visible={pickerOpen} animationType="slide" onRequestClose={() => setPickerOpen(false)}>
-        <SafeAreaView style={[styles.safe, styles.modal, { backgroundColor: palette.background }]}>
-          <View style={styles.modalHead}>
-            <Text style={[styles.modalTitle, { color: palette.textPrimary }]}>Ktorým inzerátom?</Text>
-            <Pressable onPress={() => setPickerOpen(false)} hitSlop={12} accessibilityRole="button">
-              <Text style={[styles.close, { color: palette.link }]}>Zavrieť</Text>
-            </Pressable>
-          </View>
-
+      <ModalScreen visible={pickerOpen} onClose={() => setPickerOpen(false)} title="Ktorým inzerátom?">
           <ScrollView
             contentContainerStyle={styles.modalScroll}
             keyboardShouldPersistTaps="handled"
@@ -220,8 +214,7 @@ export default function RequestDetailScreen() {
             />
           </ScrollView>
           <KeyboardDoneBar />
-        </SafeAreaView>
-      </Modal>
+      </ModalScreen>
     </SafeAreaView>
   );
 }

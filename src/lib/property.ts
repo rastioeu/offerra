@@ -106,6 +106,8 @@ export type PropertyWithMedia = Property & {
   /** Najvyššia ŽIVÁ ponuka. Dopĺňa katalóg, v detaile sa počíta zo zoznamu. */
   top_offer?: number | null;
   offer_count?: number;
+  /** Koľko ponúk ešte ČAKÁ na rozhodnutie. Podľa toho sa zvýrazní riadok. */
+  pending_count?: number;
 };
 
 export type City = {

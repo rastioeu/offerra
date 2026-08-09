@@ -11,8 +11,7 @@
  * adresu totiž zámerne nepýtame.
  */
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { db, type City } from '@/lib/property';
@@ -20,6 +19,7 @@ import { normalizeText } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
+import { ModalScreen } from './modal-screen';
 import { errorText } from '@/lib/errors';
 
 /** Čo sa o obci dozvie formulár. Súradnice môžu chýbať — obec bez nich sa
@@ -101,15 +101,8 @@ export function CityPicker({
         </Text>
       </Pressable>
 
-      <Modal visible={open} animationType="slide" onRequestClose={() => setOpen(false)}>
-        <SafeAreaView style={[styles.modal, { backgroundColor: palette.background }]}>
-          <View style={styles.modalHead}>
-            <Text style={[styles.modalTitle, { color: palette.textPrimary }]}>Vyber obec</Text>
-            <Pressable onPress={() => setOpen(false)} accessibilityRole="button" hitSlop={12}>
-              <Text style={[styles.close, { color: palette.link }]}>Zavrieť</Text>
-            </Pressable>
-          </View>
-
+      <ModalScreen visible={open} onClose={() => setOpen(false)} title="Vyber obec">
+        <View style={styles.modalBody}>
           <TextInput
             value={query}
             onChangeText={setQuery}
@@ -159,8 +152,8 @@ export function CityPicker({
               </Pressable>
             ))}
           </ScrollView>
-        </SafeAreaView>
-      </Modal>
+        </View>
+      </ModalScreen>
     </View>
   );
 }
@@ -169,7 +162,7 @@ const styles = StyleSheet.create({
   group: { gap: Spacing.sm },
   select: { borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.md },
   selectText: { ...Type.bodyLg },
-  modal: { flex: 1, padding: Spacing.lg, gap: Spacing.md },
+  modalBody: { flex: 1, padding: Spacing.lg, gap: Spacing.md },
   modalHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   modalTitle: { ...Type.title, fontWeight: Weight.bold },
   close: { ...Type.bodyLg, fontWeight: Weight.semibold },

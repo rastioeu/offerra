@@ -109,6 +109,16 @@ export function OfferList({
                 <View style={styles.reports}>
                   <ReportButton targetType="OFFER" targetId={o.id} label="Nahlásiť ponuku" compact />
                   <ReportButton targetType="USER" targetId={o.bidder_id} label="Nahlásiť používateľa" compact />
+                  {/* Vlastné tlačidlo, nie položka v zozname dôvodov. Kto ho
+                      stlačí, dôvod už povedal — hľadať ho ešte raz je krok
+                      navyše presne tam, kde na ňom záleží. */}
+                  <ReportButton
+                    targetType="USER"
+                    targetId={o.bidder_id}
+                    label="Nahlásiť realitku"
+                    presetReason="REALITKA"
+                    compact
+                  />
                 </View>
               ) : null}
             </View>

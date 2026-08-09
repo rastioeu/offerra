@@ -15,7 +15,7 @@
  * aj tlačidlami — pri piatich ponukách sa v tom nedalo zorientovať a
  * porovnať sumy na jednej obrazovke bolo nemožné.
  */
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -43,6 +43,7 @@ import { errorText } from '@/lib/errors';
 export default function ManageOffersScreen() {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, reload: reloadProperty } = useProperty(id);
   const { offers, error, reload } = useOffers(id);
@@ -152,6 +153,17 @@ export default function ManageOffersScreen() {
           title: 'Ponuky na inzerát',
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
+          // Z profilu sa ťuknutím ide sem, nie do úpravy — inzerát sa
+          // preto musí dať upraviť odtiaľto, inak by k nemu po zverejnení
+          // neviedla žiadna cesta.
+          headerRight: () => (
+            <Pressable
+              onPress={() => router.push({ pathname: '/inzerat/[id]', params: { id: String(id) } })}
+              accessibilityRole="button"
+              hitSlop={12}>
+              <Text style={[styles.headerAction, { color: palette.primary }]}>Upraviť</Text>
+            </Pressable>
+          ),
         }}
       />
 
@@ -338,6 +350,7 @@ export default function ManageOffersScreen() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+  headerAction: { ...Type.bodyLg, fontWeight: Weight.semibold },
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   spinner: { marginTop: Spacing.xxl },
   title: { ...Type.title, fontWeight: Weight.bold },

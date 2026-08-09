@@ -2649,6 +2649,99 @@ nepýta „som vlastník?", takže sa nedá dostať do stavu, keď ponúka nieč
 
 ---
 
+## Fáza 11 — Modály, Moje inzeráty, nahlásenie realitky (9.8.2026)
+
+### 11.0 PROCESNÉ ZLYHANIE — zadanie, ktoré neskončilo v registri
+
+Rastio sa pýtal, prečo špecifikácia „Moje inzeráty" (5 bodov) prešla ako
+hotová, keď hotová nebola.
+
+**Odpoveď faktom:** tá špecifikácia v registri **nie je vôbec** a
+v prepise session sa nenašla ani doslovným hľadaním („miniatúra",
+„ostáva X dní", „pomer ponúk" → 0 zhôd). Nikdy nebola označená za hotovú
+— dnešný report hovoril výslovne len o počte zobrazení a ponúk. Najbližšie
+tomu je moja vlastná návrhová poznámka v
+`reports/MUTARK_PRIESKUM_VEK_A_WEB.md:147`.
+
+**Príčina je moja:** §6 hovorí, že register sa dopĺňa priebežne. Zadanie,
+ktoré do registra nezapíšem, sa pri kompakcii kontextu stratí a niet ho
+kde nájsť.
+
+> **PRAVIDLO:** každé prijaté zadanie dostane riadok v registri HNEĎ, pred
+> začiatkom práce — nie až s výsledkom. Register je jediná pamäť, ktorá
+> prežije kompakciu.
+
+### 11.1 Hlavička modálov pod dynamic islandom — ✅ KOREŇOVÁ PRÍČINA
+
+Rastio to hlásil **druhýkrát**, na inej obrazovke. Predošlá oprava bola
+lokálna, preto sa to vrátilo.
+
+**Koreňová príčina:** `SafeAreaView` z `react-native-safe-area-context`
+**vnútri `<Modal>` nedostane správne odsadenie** — modál sa na iOS
+vykresľuje vo vlastnej natívnej hierarchii MIMO `SafeAreaProvider`,
+kontext k nemu nedosiahne a insety vyjdú nula. A keďže je „Zavrieť"
+prekryté, nedá sa naň ani ťuknúť — čo bola Rastiova druhá otázka. Jedna
+príčina, dva symptómy.
+
+Netýkalo sa to jednej obrazovky: **tri modály** (nahlásenie vo všetkých
+troch podobách, výber obce, oslovenie k dopytu) mali každý vlastnú
+hlavičku a rovnakú chybu.
+
+Oprava: jeden zdieľaný **`ModalScreen`**. Odsadenie berie z
+`useSafeAreaInsets()` volaného v bežnom strome (pod providerom) a do
+modálu ho odovzdá ako obyčajný `paddingTop`. Hlavička má **dve cesty
+von** — šípku vľavo a „Zavrieť" vpravo.
+
+Zvyšné dva `<Modal>` sú priehľadné prekrytia (podržanie prsta, spodný
+panel), hlavičku hore nemajú a spodný panel insety už čítal správne.
+
+Dôkaz je **štrukturálny** (`modaly_test.js`, 16/16): žiadny `<Modal>` už
+neobsahuje vlastný `SafeAreaView`, všetky tri celoobrazovkové používajú
+`ModalScreen`. Test padne aj vtedy, keď niekto v budúcnosti pridá štvrtý
+modál po starom. **Vizuálne overenie je na Rastiovi** — že hlavička sedí
+pod ostrovčekom, sa z kódu dokázať nedá.
+
+### 11.2 „Moje inzeráty" — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Riadok doteraz ukazoval „názov · mesto · N fotiek" — teda MENEJ, než vidí
+cudzí človek v katalógu. Nový `MyListingRow` nesie:
+
+| | |
+|---|---|
+| miniatúra | prvá fotka, alebo náhrada „bez fotky" |
+| peniaze | najvyššia ponuka (terakota) — inak orientačná cena, pri uzavretom konečná suma |
+| ponuky | „3 ponuky" / „Zatiaľ žiadne ponuky" + „N čaká na teba" |
+| zvýraznenie | čakajúce ponuky → terakotový obrys a podfarbenie |
+| odpočet | `deadlineLabel` + farba podľa naliehavosti |
+| štatistika navyše | počet zobrazení **a konverzia** „X % z pozretí ponúklo" |
+
+**Rozhodnutia, ktoré som spravil sám:**
+- Konverzia sa pri menej než 5 pozretiach **nezobrazuje** — z troch
+  návštev percento nič nehovorí. Je to jediné číslo, ktoré vlastníkovi
+  povie, či je problém v návštevnosti alebo v cene.
+- Ťuknutie vedie k **ponukám** pri `ACTIVE`/`CLOSED` a k **úprave** pri
+  koncepte — na koncepte niet čo spravovať.
+- Preto do hlavičky „Ponuky na inzerát" pribudlo **„Upraviť"**; bez neho
+  by k zverejnenému inzerátu neviedla žiadna cesta.
+
+`attachOfferStats` počíta navyše `pending_count` — prijatá ponuka už nič
+nečaká a zvýraznenie si nezaslúži.
+
+Dôkaz čistých funkcií: `riadky_test.js` **11/11** (slovenské skloňovanie
+1/2/5 ponúk, prah konverzie).
+
+### 11.3 Tlačidlo „Nahlásiť realitku" — 🟡 KÓD HOTOVÝ
+
+`ReportButton` dostal `presetReason`. Tlačidlo je pri prezývke v zozname
+ponúk aj na detaile inzerátu a mieri na POUŽÍVATEĽA, nie na inzerát —
+realitka sa pozná podľa toho, kto inzeruje.
+
+Každé otvorenie sa vracia na predvolený dôvod, nie na ten, čo ostal
+z predošlého nahlásenia v tej istej relácii. Prepnúť sa dá naďalej;
+je to predvoľba, nie zámok.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

@@ -402,6 +402,16 @@ export default function PropertyDetailScreen() {
               {!isOwner ? (
                 <View style={styles.reportRow}>
                   <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
+                  <ReportButton targetType="USER" targetId={item.owner_id} label="Nahlásiť používateľa" compact />
+                  {/* Realitka sa pozná podľa toho, KTO inzeruje, nie podľa
+                      jedného inzerátu — preto mieri na používateľa. */}
+                  <ReportButton
+                    targetType="USER"
+                    targetId={item.owner_id}
+                    label="Nahlásiť realitku"
+                    presetReason="REALITKA"
+                    compact
+                  />
                 </View>
               ) : null}
             </View>
@@ -501,7 +511,7 @@ const styles = StyleSheet.create({
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
   added: { ...Type.caption },
-  reportRow: { alignItems: 'flex-end' },
+  reportRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: Spacing.md },
 
   sticky: {
     position: 'absolute',

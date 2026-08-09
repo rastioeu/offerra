@@ -7,8 +7,7 @@
  * proti konkurencii, čo je pri realitnom trhu reálne riziko.
  */
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
@@ -17,6 +16,7 @@ import { REPORT_REASONS, type ReportTarget, type ReportReason } from '@/lib/repo
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Button, ErrorNote, Field, KeyboardDoneBar } from './ui';
+import { ModalScreen } from './modal-screen';
 import { errorText } from '@/lib/errors';
 
 export function ReportButton({
@@ -27,6 +27,7 @@ export function ReportButton({
   hideTrigger,
   openExternally,
   onExternalClose,
+  presetReason,
 }: {
   targetType: ReportTarget;
   targetId: string;
@@ -41,6 +42,14 @@ export function ReportButton({
   hideTrigger?: boolean;
   openExternally?: boolean;
   onExternalClose?: () => void;
+  /**
+   * Dôvod predvyplnený už pri otvorení. Používa to tlačidlo „Nahlásiť
+   * realitku": kto naň ťukol, už dôvod povedal — nechať ho hľadať ten
+   * istý riadok ešte raz v zozname je zbytočný krok.
+   *
+   * Prepnúť sa dá naďalej; nie je to zámok, je to predvoľba.
+   */
+  presetReason?: ReportReason;
 }) {
   const palette = useTheme();
   const { session } = useSession();
@@ -52,8 +61,16 @@ export function ReportButton({
     setOpen(false);
     onExternalClose?.();
   };
+  /** Otvorenie VŽDY začína na predvolenom dôvode — nie na tom, čo ostalo
+   *  z predošlého nahlásenia v tej istej relácii. */
+  const openForm = () => {
+    setReason(presetReason ?? 'SPAM');
+    setNote('');
+    setError(null);
+    setOpen(true);
+  };
   const [already, setAlready] = useState(false);
-  const [reason, setReason] = useState<ReportReason>('SPAM');
+  const [reason, setReason] = useState<ReportReason>(presetReason ?? 'SPAM');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,7 +145,7 @@ export function ReportButton({
     <>
       {hideTrigger ? null : (
         <Pressable
-          onPress={() => (already ? Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.') : setOpen(true))}
+          onPress={() => (already ? Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.') : openForm())}
           accessibilityRole="button"
           hitSlop={8}>
           <Text
@@ -141,15 +158,7 @@ export function ReportButton({
         </Pressable>
       )}
 
-      <Modal visible={visible} animationType="slide" onRequestClose={close}>
-        <SafeAreaView style={[styles.modal, { backgroundColor: palette.background }]}>
-          <View style={styles.head}>
-            <Text style={[styles.title, { color: palette.textPrimary }]}>{label}</Text>
-            <Pressable onPress={close} hitSlop={12} accessibilityRole="button">
-              <Text style={[styles.close, { color: palette.link }]}>Zavrieť</Text>
-            </Pressable>
-          </View>
-
+      <ModalScreen visible={visible} onClose={close} title={label}>
           <ScrollView
             contentContainerStyle={styles.scroll}
             keyboardShouldPersistTaps="handled"
@@ -198,8 +207,7 @@ export function ReportButton({
             <Button title={busy ? 'Odosielam…' : 'Odoslať nahlásenie'} onPress={submit} disabled={busy} />
           </ScrollView>
           <KeyboardDoneBar />
-        </SafeAreaView>
-      </Modal>
+      </ModalScreen>
     </>
   );
 }

@@ -20,6 +20,18 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
+    date: '9. augusta 2026',
+    title: 'Moje inzeráty po novom + opravené hlavičky',
+    items: [
+      'Opravené: nadpis a „Zavrieť" sa v nahlasovacom okne prelínali s dynamic islandom, takže sa naň nedalo ani ťuknúť. Rovnaká chyba bola aj vo výbere obce a pri oslovení k dopytu — všetky tri majú teraz jednu spoločnú hlavičku so šípkou späť aj s „Zavrieť".',
+      'Profil → Moje inzeráty ukazuje pri každom inzeráte miniatúru, najvyššiu ponuku (alebo cenu), počet ponúk, počet zobrazení, koľko percent z pozretí skončilo ponukou, a odpočet do uzávierky.',
+      'Inzeráty, kde na teba čaká ponuka, sú zvýraznené — vidíš na prvý pohľad, kde treba rozhodnúť.',
+      'Ťuknutie na zverejnený inzerát ide rovno k ponukám (prijať, odmietnuť, uzavrieť obchod). Upraviť sa dá tlačidlom v hlavičke.',
+      'Nové tlačidlo „Nahlásiť realitku" pri prezývke — dôvod je predvyplnený, nemusíš ho hľadať v zozname.',
+    ],
+  },
+  {
+    version: '1.2.0',
     date: '8. augusta 2026',
     title: 'Uzavretie obchodu a hodnotenia',
     items: [

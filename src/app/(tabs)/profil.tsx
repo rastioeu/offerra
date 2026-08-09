@@ -22,6 +22,7 @@ import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
+import { MyListingRow } from '@/components/my-listing-row';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
@@ -223,26 +224,34 @@ export default function ProfilScreen() {
               )}
             </Card>
 
-            <SectionList
-              label={`MOJE INZERÁTY (${properties?.length ?? 0})`}
-              empty="Zatiaľ žiadne."
-              rows={(properties ?? []).map((p) => ({
-                key: p.id,
-                title: p.title.trim() || 'Bez názvu',
-                // Počet zobrazení patrí sem, k VLASTNÍKOVI — v katalógu by
-                // to bola informácia pre cudzích ľudí, ktorých sa netýka.
-                meta: [
-                  p.city,
-                  `${p.media.length} fotiek`,
-                  `${p.view_count} zobrazení`,
-                  p.offer_count ? `${p.offer_count} ponúk` : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · '),
-                badge: STATUS_LABEL[p.status],
-                onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
-              }))}
-            />
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>
+                {`MOJE INZERÁTY (${properties?.length ?? 0})`}
+              </Text>
+              {(properties ?? []).length === 0 ? (
+                <Text style={[styles.hint, { color: palette.textMuted }]}>Zatiaľ žiadne.</Text>
+              ) : null}
+              {(properties ?? []).map((p) => (
+                <MyListingRow
+                  key={p.id}
+                  item={p}
+                  // Kam ťuknutie vedie, závisí od toho, čo sa na inzeráte
+                  // dá ROBIŤ. Pri zverejnenom a uzavretom sú to ponuky
+                  // (prijať, odmietnuť, uzavrieť obchod, hodnotiť); pri
+                  // koncepte niet čo spravovať, tam patrí úprava.
+                  onPress={() =>
+                    p.status === 'ACTIVE' || p.status === 'CLOSED'
+                      ? router.push({ pathname: '/ponuky/[id]', params: { id: p.id } })
+                      : router.push({ pathname: '/inzerat/[id]', params: { id: p.id } })
+                  }
+                />
+              ))}
+              {(properties ?? []).some((p) => p.status === 'ACTIVE' || p.status === 'CLOSED') ? (
+                <Text style={[styles.hint, { color: palette.textMuted }]}>
+                  Ťuknutím sa dostaneš k ponukám. Upraviť inzerát sa dá tlačidlom v ich hlavičke.
+                </Text>
+              ) : null}
+            </Card>
 
             <Card>
               <SectionLabel>ČASOVÁ OS</SectionLabel>
