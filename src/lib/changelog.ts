@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Overený používateľ',
+    items: [
+      'Pri inzeráte môže byť odznak OVERENÝ — a vedľa neho veta, čo presne správca overil (napríklad „Doklad totožnosti a list vlastníctva").',
+      'Odznak si nedá nastaviť nikto sám a nedá sa získať automaticky. Udeľuje ho len správca a bez uvedenia dôvodu ho databáza neprijme.',
+      'Odznak nič neodkrýva — meno a telefón ostávajú skryté rovnako ako doteraz.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'História ceny',
     items: [
       'Ak predávajúci po zverejnení zmenil orientačnú cenu, na inzeráte to je vidieť — napríklad „Znížená z 200 000 € o 20 %".',

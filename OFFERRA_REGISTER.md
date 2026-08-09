@@ -2865,6 +2865,23 @@ nie história.
 Na detaile je **jedna veta pri cene**, nie zoznam: „Znížená z 200 000 €
 o 20 % · 3× menená". Zníženie zelené, zvýšenie oranžové.
 
+### 11.8 Overený odznak — ✅ OVERENÉ RUNTIME (9/9)
+
+**Rozhodnutie, ktoré tu bolo treba spraviť:** odznak „overený" pri
+niekom, koho nikto neoveril, je LOŽ. Preto sa nedá získať automaticky
+(počtom obchodov, vekom účtu) ani si ho nastaviť sám.
+
+- Udeľuje ho **výhradne správca** cez `admin_set_verified()`.
+- **Bez poznámky ho DB neprijme** — musí byť napísané, ČO bolo overené.
+- Tá veta sa zobrazuje ľuďom **vedľa odznaku**. Odznak, ktorý nevie
+  povedať, na základe čoho vznikol, je pri nehnuteľnostiach nebezpečná
+  ozdoba.
+- Odznak **nič neodkrýva** — overené, že meno a telefón ostávajú
+  chránené stĺpcovým grantom rovnako ako predtým.
+
+Overené, že si ho nenastaví ani sám používateľ, ani cudzí, ani cez admin
+funkciu bez roly ADMIN.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

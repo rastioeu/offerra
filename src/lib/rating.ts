@@ -27,6 +27,26 @@ export type Rating = {
 export type RatingSummary = { user_id: string; stars_avg: number; rating_count: number };
 
 /**
+ * Overený používateľ.
+ *
+ * Odznak „overený" pri niekom, koho nikto neoveril, je LOŽ — preto sa
+ * nedá získať automaticky ani si ho nastaviť sám. Udeľuje ho VÝHRADNE
+ * správca a spolu s ním sa ukladá, ČO presne overil. Tú vetu appka
+ * ukazuje, takže odznak nikdy netvrdí viac, než sa naozaj stalo.
+ */
+export type Verified = { verified_at: string | null; verified_note: string | null };
+
+export async function fetchVerified(userId: string): Promise<Verified | null> {
+  const { data, error } = await db()
+    .from('profile')
+    .select('verified_at, verified_note')
+    .eq('id', userId)
+    .maybeSingle();
+  if (error) throw error;
+  return (data as Verified) ?? null;
+}
+
+/**
  * Uzavretie obchodu. `offerId` môže byť `null` — obchod sa dá uzavrieť aj
  * mimo Offerry a zamlčať to by znamenalo, že inzerát visí naveky.
  *

@@ -169,6 +169,43 @@ export default function AdminScreen() {
     ]);
   }
 
+  /**
+   * Overenie. VYŽADUJE poznámku, čo presne bolo overené — odznak, ktorý
+   * nevie povedať na základe čoho vznikol, je len ozdoba, a pri
+   * nehnuteľnostiach nebezpečná. Drží to aj databáza.
+   */
+  function toggleVerified(u: AdminUser) {
+    if (u.verified_at) {
+      Alert.alert('Odobrať overenie?', `${u.nickname} stratí odznak.`, [
+        { text: 'Zrušiť', style: 'cancel' },
+        {
+          text: 'Odobrať',
+          style: 'destructive',
+          onPress: () => call('admin_set_verified', { p_user_id: u.id, p_verified: false }, 'Overenie odobraté.'),
+        },
+      ]);
+      return;
+    }
+    Alert.prompt?.(
+      'Overiť používateľa',
+      'Napíš, ČO si overil — táto veta sa zobrazí ľuďom pri jeho odznaku.',
+      [
+        { text: 'Zrušiť', style: 'cancel' },
+        {
+          text: 'Overiť',
+          onPress: (note?: string) =>
+            call(
+              'admin_set_verified',
+              { p_user_id: u.id, p_verified: true, p_note: note ?? '' },
+              'Používateľ je overený.'
+            ),
+        },
+      ],
+      'plain-text',
+      'Doklad totožnosti a list vlastníctva'
+    );
+  }
+
   function toggleBlock(u: AdminUser) {
     const blocking = !u.is_blocked;
     Alert.alert(
@@ -470,10 +507,21 @@ export default function AdminScreen() {
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{u.nickname}</Text>
                   {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="accent" /> : null}
                   {u.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="warning" /> : null}
+                {u.verified_at ? <Badge text="OVERENÝ" tone="accent" /> : null}
                 </View>
                 <Text style={[styles.meta, { color: palette.textMuted }]}>
                   {u.email} · {u.inzeraty} inzerátov · od {formatDate(u.created_at)}
                 </Text>
+                {u.verified_note ? (
+                  <Text style={[styles.meta, { color: palette.textMuted }]}>
+                    Overené: {u.verified_note}
+                  </Text>
+                ) : null}
+                <Button
+                  title={u.verified_at ? 'Odobrať overenie' : 'Overiť používateľa'}
+                  onPress={() => toggleVerified(u)}
+                  variant="outline"
+                />
                 {u.id !== session?.user.id ? (
                   <Button
                     title={u.is_blocked ? 'Odblokovať' : 'Zablokovať'}

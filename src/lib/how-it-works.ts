@@ -91,6 +91,14 @@ export const HOW_STEPS: HowStep[] = [
       'nikto nepridá ani nezvýši. Rozhodnutie je vždy na predávajúcom.',
   },
   {
+    icon: 'checkmark.seal',
+    title: 'Overený používateľ',
+    body:
+      'Pri niektorých ľuďoch je odznak OVERENÝ a vedľa neho veta, čo správca ' +
+      'overil. Nedá sa získať automaticky ani si ho nastaviť sám — a nič ' +
+      'neodkrýva, meno a telefón ostávajú skryté ako u ostatných.',
+  },
+  {
     icon: 'flag',
     title: 'Keď niečo nesedí',
     body:

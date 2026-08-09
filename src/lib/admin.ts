@@ -17,6 +17,10 @@ export type AdminUser = {
   is_blocked: boolean;
   inzeraty: number;
   created_at: string;
+  /** Kedy správca účet overil. `null` = neoverený. */
+  verified_at: string | null;
+  /** Čo presne bolo overené — zobrazuje sa ľuďom pri odznaku. */
+  verified_note: string | null;
 };
 
 export type ReportRow = {

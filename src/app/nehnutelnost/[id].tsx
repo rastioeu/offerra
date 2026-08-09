@@ -54,7 +54,7 @@ import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount } from '@/lib/offers';
-import { ratingLabel } from '@/lib/rating';
+import { fetchVerified, ratingLabel, type Verified } from '@/lib/rating';
 import { fetchPriceHistory, priceSummary, type PriceChange } from '@/lib/price-history';
 import { errorText } from '@/lib/errors';
 import { useRatings } from '@/hooks/use-ratings';
@@ -127,6 +127,20 @@ export default function PropertyDetailScreen() {
     };
   }, [id]);
   const priceNote = item ? priceSummary(priceHistory, item.transaction_type) : null;
+
+  const [verified, setVerified] = useState<Verified | null>(null);
+  useEffect(() => {
+    if (!item?.owner_id) return;
+    let cancelled = false;
+    void fetchVerified(item.owner_id)
+      .then((v) => {
+        if (!cancelled) setVerified(v);
+      })
+      .catch((e: unknown) => console.log(`[OVERENIE] Nedostupné: ${errorText(e)}`));
+    return () => {
+      cancelled = true;
+    };
+  }, [item?.owner_id]);
   const { ids: favorites, toggle } = useFavoriteIds(myId);
 
   // Živé ponuky = tie, ktoré ešte stoja. Stiahnutá ani odmietnutá ponuka
@@ -286,6 +300,17 @@ export default function PropertyDetailScreen() {
                   Pridal: {isOwner ? 'ty' : (item.owner?.nickname ?? 'neznámy')}
                   {ownerRating ? ` · ${ownerRating}` : ''}
                 </Text>
+                {/* Odznak nikdy nestojí sám — vedľa neho je VETA, čo bolo
+                    overené. Odznak, ktorý nevie povedať na základe čoho
+                    vznikol, je pri nehnuteľnostiach nebezpečná ozdoba. */}
+                {verified?.verified_at ? (
+                  <View style={styles.verifiedRow}>
+                    <Badge text="OVERENÝ" tone="accent" />
+                    <Text style={[styles.place, { color: palette.textMuted }]}>
+                      {verified.verified_note}
+                    </Text>
+                  </View>
+                ) : null}
               </View>
 
               {/* ── cena ── */}
@@ -542,6 +567,7 @@ const styles = StyleSheet.create({
   description: { ...Type.bodyLg },
   soon: { ...Type.bodyMd },
   added: { ...Type.caption },
+  verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: 4, flexWrap: 'wrap' },
   reportRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: Spacing.md },
 
   sticky: {
