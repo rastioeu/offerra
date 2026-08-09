@@ -3219,7 +3219,31 @@ grant, overené). Cudzí kľúč je `on delete set null`, aby zmazanie účtu
 nezmazalo stopu a zároveň účet nespravilo nezmazateľným — tá istá lekcia
 ako pri `app_config.updated_by`.
 
+### 11.24 Build 1.3.0 (#5) — ✅ OVERENÉ RUNTIME, hotový
+
+Build `57ca9b23-1424-46ca-a5bb-0507b322e49b` dobehol **FINISHED** za 5 minút
+(10:26 → 10:31). Minulý pokus padol vo fáze Xcode po dvoch minútach.
+
+**Dôkaz nie je „build zelený", ale obsah IPA.** Stiahol som artefakt
+(22,2 MB) a rozbalil `embedded.mobileprovision` z podpísanej appky:
+
+| kontrola | výsledok |
+|---|---|
+| `aps-environment` v **podpísanej** appke | **`production`** ✅ |
+| profil vytvorený | `2026-08-09T10:23:41Z` (nový) |
+| bundle | `com.offerra.app` |
+| CFBundleShortVersionString / CFBundleVersion | **1.3.0 / 5** |
+| `expo-notifications` natívne v balíku | ✅ `ExpoNotifications_privacy.bundle` |
+| runtime | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Názov profilu ostal starý (`…AppStore 2026-08-07…`) — Apple meno
+nemení pri regenerácii. Rozhoduje `CreationDate` a obsah, nie meno.
+
+**`eas submit` NESPUSTENÝ** — čaká na výslovné slovo od Rastia (§3).
+
 ### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
+(vyriešené, viď 11.24)
+
 
 Build `9f6e8fc7` spadol vo fáze Xcode:
 
