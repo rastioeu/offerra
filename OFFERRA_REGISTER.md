@@ -3388,6 +3388,50 @@ jedným volaním `push_notification()`, ktoré spravilo oboje naraz:
 Testovací riadok zmazaný hneď po overení — `select count(*) where
 title like 'TEST%'` → **0**. V zvončeku po teste neostalo nič.
 
+### 11.29 Seed dáta — fotky podľa typu a poriadny objem
+
+Report: `reports/SEED_FOTKY_A_OBJEM.md`, licencie
+`reports/SEED_FOTKY_LICENCIE.md`.
+
+**Fotky ✅ OVERENÉ RUNTIME, dvoma nezávislými spôsobmi.** Dotaz:
+`media.url not like '%/seed/' || property_type || '/%'` → **0**. A keďže
+dotaz dokazuje len zhodu reťazcov, nie že na fotke je dom, zložil som hárok
+z **prvých fotiek náhodných inzerátov každého typu** a pozrel sa naň.
+
+**Prečo to nesedelo:** fotky sa brali z jedného spoločného bazéna 22
+súborov a rozdávali dokola bez ohľadu na typ. Teraz je pre každý typ
+vlastný bazén v `offerra-media/seed/<TYP>/`.
+
+**96 fotiek z Wikimedia Commons, každá posúdená POHĽADOM** — vyhľadávanie
+klame (pri „apartment building" bola druhým výsledkom pálenica, pri
+pozemkoch vracalo budovy). Zo 195 kandidátov obstálo 96: APARTMENT 26,
+HOUSE 30, LAND 23, COMMERCIAL 17.
+
+**Objem:** inzeráty 20→**60**, ponuky 28→**124**, dopyty 8→**24**,
+oslovenia 15→**51**, fotky 63→**183**. 12 miest, 8 krajov, **21 inzerátov
+s 3+ konkurenčnými ponukami**, 0 bez fotky.
+
+**Rozloženie typov je zámerne NEROVNOMERNÉ** (byty 27, domy 18, komerčné 9,
+pozemky 6). Prvý beh dal presne 15 od každého — reálny portál tak nevyzerá
+a rovnomernosť je práve to „umelo pôsobiace", pred ktorým Rastio varoval.
+
+**Rastiov účet (zadanie 9.8.2026):** 5 vlastných inzerátov (všetky ACTIVE),
+**17 prichádzajúcich ponúk**, 5 vlastných dopytov, **11 oslovení** jeho
+dopytov. Na jeho inzerátoch zámerne **žiadna prijatá ponuka** — prijatie
+inzerát zamkne a on má práve na nich skúšať prijímanie a odmietanie.
+
+**Pokazilo sa a opravené:** Wikimedia po ~33 sťahovaniach odrezala a tri
+kategórie ostali prázdne — skript to **zamlčal**; odteraz je prázdna
+kategória chyba. Metadáta prvého kola prepísalo druhé (52 z 96 fotiek bez
+pôvodu) — vyhľadávania spustené znova a **párovanie overené veľkosťou
+súboru**, nesediacich **0**.
+
+**BEZ ZMENY KÓDU** — obsah databázy a úložiska, netreba OTA ani build.
+V changelogu pre používateľa zámerne nie je: changelog je o tom, čo appka
+vie, nie o testovacích dátach.
+
+---
+
 ### 11.28 Dopytová strana ožila + seed dáta nanovo (davka 9.8.2026)
 
 Plný report: `reports/DAVKA_DOPYTY_A_SEED.md`. Push som **nemenil** (bod 2
