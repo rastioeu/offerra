@@ -2948,6 +2948,45 @@ avatary**, **podsvietenie loga**, **skloňovanie pri hľadaní obce**
 („v Petržalke" → „petrzalka") a **časová os cien**. To sú veci, ktoré
 duplicitné nie sú a stálo by za to ich prebrať.
 
+### 11.11 Audit celej appky — 62/66 bodov, 2 skutočné diery
+
+Rastio si vyžiadal prechod bod po bode s dôkazom. Audit číta **kód a
+databázu**, nie moju pamäť (`audit.js`). Celý výsledok je
+v `reports/AUDIT_9_8_2026.md`.
+
+**Dve skutočné diery, obe dorobené (13/13):**
+
+1. **Uzavretie obchodu nikomu nič nepovedalo.** Ponuky sa ticho menili na
+   `REJECTED` — človek by ďalej čakal na rozhodnutie, ktoré padlo. Správa
+   zámerne **neobsahuje meno ani sumu víťaza**: suma je v zozname verejná,
+   ale poslať ju do oznámení je porovnanie, o ktoré nikto nepožiadal.
+2. **Uložené vyhľadávanie nemalo notifikáciu pri zhode** — len počítadlo.
+
+**Dve „diery", ktoré boli chyby auditu:** hlásil `instanceof Error`
+z komentára v `errors.ts` (ukážka STARÉHO vzoru) a hľadal DB funkciu
+`i_have_offer_on` v `src/`.
+
+⚠️ **Vedomá duplicita:** podmienky filtra sú teraz v TypeScripte (katalóg)
+aj v SQL (notifikácia o zhode). SQL nevie zavolať JS. Hlásim to, lebo je
+to presne tá trieda, pred ktorou tu stále varujem — a preto je na to test.
+
+### 11.12 Logo v tmavej téme a glow — ✅ ZMERANÉ
+
+Navy `#103A6B` na tmavom povrchu `#211D1A` má kontrast **1,47:1**. Presne
+to Rastio videl. Samostatný svetlý variant má **15,15:1**.
+
+Sú to **dva súbory z toho istého SVG**, nie `tintColor` — ten by prefarbil
+aj teplé podčiarknutie, ktoré je súčasťou značky.
+
+**Glow:** prvý pokus mal tri vrstvy po 0,10–0,22, čo sa v strede sčítalo
+na 0,42 a namiesto glow z toho bola **hnedá elipsa s viditeľným okrajom**.
+Zistil som to až tým, že som si kompozíciu **vykreslil a pozrel** — z kódu
+to vidieť nebolo. Teraz šesť vrstiev s nízkou krytosťou + natívny tieň.
+Rendery oboch tém: `reports/hdr_light.png`, `reports/hdr_dark.png`.
+
+Test stráži, že wordmark sa vkladá **len** v `logo.tsx` — pri ďalšej
+zmene témy sa na variant nedá zabudnúť.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
