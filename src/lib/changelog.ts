@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Avatary, časová os ceny a návrat dátumu na kartu',
+    items: [
+      'Opravené: pri redizajne vypadol z karty dátum pridania. Je späť — „visí tu tri mesiace" hovorí o cene viac než samotná cena.',
+      'Ľudia majú namiesto sivého kolieska s písmenom vygenerovaný obrazec. Pri piatich ponukách stálo pod sebou päť rovnakých „P" a nedali sa rozoznať.',
+      'V detaile je časová os ceny: kedy sa menila orientačná cena a ako rástli ponuky, na jednej osi.',
+      'Počet zobrazení ostáva len v Profile → Moje inzeráty. Cudziemu človeku „0 zobrazení" pri inzeráte, ktorý práve otvára, nehovorí nič.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Logo v tmavom režime, skloňovanie a Obľúbené',
     items: [
       'Opravené: v tmavom režime logo splývalo s pozadím. Má teraz vlastnú svetlú verziu — kontrast stúpol z 1,5:1 na 15:1.',

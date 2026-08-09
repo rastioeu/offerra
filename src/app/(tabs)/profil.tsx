@@ -14,6 +14,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
+import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
@@ -164,19 +165,9 @@ export default function ProfilScreen() {
             <Card>
               <View style={styles.identity}>
                 <Pressable onPress={changePhoto} accessibilityRole="button" disabled={busy}>
-                  {profile.avatar_url ? (
-                    <Image
-                      source={{ uri: profile.avatar_url }}
-                      style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}
-                      contentFit="cover"
-                    />
-                  ) : (
-                    <View style={[styles.avatar, styles.avatarEmpty, { backgroundColor: palette.surfacePressed }]}>
-                      <Text style={[styles.avatarLetter, { color: palette.primary }]}>
-                        {profile.nickname.slice(0, 1).toUpperCase()}
-                      </Text>
-                    </View>
-                  )}
+                  {/* Tá istá komponenta ako v zozname ponúk — s prstencom,
+                      lebo tu ide o MOJU identitu, nie o riadok v zozname. */}
+                  <Avatar name={profile.nickname} uri={profile.avatar_url} size={72} ring />
                 </Pressable>
                 <View style={styles.identityText}>
                   <Text style={[styles.nick, { color: palette.textPrimary }]}>{profile.nickname}</Text>

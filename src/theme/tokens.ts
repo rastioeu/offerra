@@ -212,6 +212,22 @@ export const Shadow = {
     shadowRadius: 14,
     elevation: 2,
   },
+  /**
+   * Teplý svit — okolo loga a okrúhlych avatarov.
+   *
+   * `elevation: 0` ZÁMERNE: Android farebné tiene nevie a spravil by
+   * z toho sivý obdĺžnik pod prvkom. Na iOS je to skutočné rozostrenie.
+   *
+   * Prevzaté z paralelnej vetvy (worktree `ulice-ra-import`) — mala to
+   * ako token, ja som pri logu tie isté hodnoty písal do komponentu.
+   */
+  glow: {
+    shadowColor: '#C9703B',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 0,
+  },
   /** Prilepená spodná lišta — tieň smeruje NAHOR, oddeľuje ju od obsahu. */
   bar: {
     shadowColor: '#1C1815',

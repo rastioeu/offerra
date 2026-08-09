@@ -10,6 +10,7 @@
  * takže sa nedá podvrhnúť ani prepísať — inak by to nebola história,
  * ale len ďalšie pole, ktoré si vlastník upraví.
  */
+import type { Offer } from './offers';
 import { db, formatPrice, type TransactionType } from './property';
 
 export type PriceChange = {
@@ -52,4 +53,48 @@ export function priceSummary(
     direction: down ? 'DOWN' : 'UP',
     text: `${down ? 'Znížená' : 'Zvýšená'} z ${formatPrice(from, transaction)} o ${pct} %${times}`,
   };
+}
+
+
+/**
+ * Bod na časovej osi ceny — buď zmena orientačnej ceny, alebo REKORDNÁ
+ * ponuka. Prevzaté z paralelnej vetvy (worktree `ulice-ra-import`), kde to
+ * bolo spravené lepšie než moje jednoriadkové zhrnutie.
+ */
+export type PricePoint = {
+  at: string;
+  kind: 'ASKING' | 'OFFER';
+  value: number | null;
+  /** Predošlá orientačná cena — nech sa dá povedať „zlacnené o…". */
+  from?: number | null;
+};
+
+/**
+ * Zmeny ceny a rast najvyššej ponuky na JEDNEJ osi.
+ *
+ * Rekordy sa POČÍTAJÚ z ponúk, ktoré appka aj tak načítala — druhá
+ * tabuľka s tými istými číslami by sa raz rozišla s pravdou.
+ */
+export function buildTimeline(changes: PriceChange[], offers: Offer[]): PricePoint[] {
+  const points: PricePoint[] = changes.map((c) => ({
+    at: c.changed_at,
+    kind: 'ASKING',
+    value: c.new_price,
+    from: c.old_price,
+  }));
+
+  const live = offers
+    .filter((o) => o.status !== 'WITHDRAWN' && o.status !== 'REJECTED')
+    .slice()
+    .sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+
+  let best = -Infinity;
+  for (const o of live) {
+    if (o.amount > best) {
+      best = o.amount;
+      points.push({ at: o.created_at, kind: 'OFFER', value: o.amount });
+    }
+  }
+
+  return points.sort((a, b) => (a.at < b.at ? -1 : 1));
 }

@@ -25,13 +25,8 @@ import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/the
 import { ratingLabel } from '@/lib/rating';
 import { useRatings } from '@/hooks/use-ratings';
 
+import { Avatar } from './avatar';
 import { ReportButton } from './report-button';
-
-/** Iniciála prezývky do krúžku. Prázdna prezývka by inak dala prázdny krúžok. */
-function initial(nickname: string | undefined): string {
-  const t = (nickname ?? '?').trim();
-  return (t[0] ?? '?').toUpperCase();
-}
 
 export function OfferList({
   offers,
@@ -80,11 +75,11 @@ export function OfferList({
                 borderWidth: best ? 1.5 : 1,
               },
             ]}>
-            <View style={[styles.avatar, { backgroundColor: palette.surfacePressed }]}>
-              <Text style={[styles.avatarText, { color: palette.accentDeep }]}>
-                {initial(o.bidder?.nickname)}
-              </Text>
-            </View>
+            {/* Vygenerovaný obrazec namiesto sivého kolieska s písmenom:
+                pri piatich ponukách stálo pod sebou päť „P" na tom istom
+                podklade a nedali sa od seba odlíšiť. Prevzaté z paralelnej
+                vetvy, kde to bolo spravené lepšie. */}
+            <Avatar name={o.bidder?.nickname ?? '?'} uri={o.bidder?.avatar_url} size={38} />
 
             <View style={styles.body}>
               <Text style={[styles.nick, { color: palette.textPrimary }]}>
@@ -171,10 +166,6 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     padding: Spacing.md,
   },
-  avatar: { width: 38, height: 38, borderRadius: Radius.full, alignItems: 'center', justifyContent: 'center' },
-  // 20px tucne = velky text podla WCAG (prah 3:1). Pri 18px by
-  // iniciala na `surfacePressed` neprelezla (4,42:1 pri prahu 4,5).
-  avatarText: { ...Type.title, fontWeight: Weight.bold },
   body: { flex: 1, gap: 2 },
   right: { alignItems: 'flex-end', gap: 4 },
   nick: { ...Type.bodyLg, fontWeight: Weight.semibold },

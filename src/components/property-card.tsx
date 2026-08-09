@@ -28,6 +28,7 @@ import {
   deadlineLabel,
   deadlineUrgency,
   formatArea,
+  formatDate,
   formatPrice,
   PROPERTY_LABEL,
   TRANSACTION_LABEL,
@@ -175,6 +176,21 @@ export function PropertyCard({
             {facts.join(' · ')}
           </Text>
         ) : null}
+
+        {/* REGRESIA Z REDIZAJNU (Rastio, 9.8.2026): dátum pridania z karty
+            vypadol. Pri inzeráte je to podstatná informácia — „visí tu tri
+            mesiace" hovorí o cene viac než samotná cena.
+
+            POČET ZOBRAZENÍ sem ZÁMERNE NEDÁVAM. Je to metrika VLASTNÍKA
+            a v Profile → Moje inzeráty už je. Cudziemu človeku „0 zobrazení"
+            pri inzeráte, ktorý práve otvára, nehovorí nič užitočné — a pri
+            malej appke to vyzerá horšie, než aká je pravda.
+
+            Počet ponúk na karte JE — v pravom stĺpci pätky ako
+            „2 ponuky" / „zatiaľ bez ponúk". */}
+        <Text numberOfLines={1} style={[styles.facts, { color: palette.textMuted }]}>
+          Pridané {formatDate(item.created_at)}
+        </Text>
 
         <View style={styles.foot}>
           <View style={styles.footMain}>

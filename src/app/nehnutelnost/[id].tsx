@@ -44,6 +44,7 @@ import { OfferList } from '@/components/offer-list';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
+import { PriceTimeline } from '@/components/price-timeline';
 import { RatingCard } from '@/components/rating-card';
 import { ViewingCard } from '@/components/viewing-card';
 import { useViewings } from '@/hooks/use-viewings';
@@ -376,6 +377,10 @@ export default function PropertyDetailScreen() {
                   Presná adresa je skrytá — zobrazí sa až po dohode s predávajúcim.
                 </Text>
               ) : null}
+
+              {/* Jednoriadkové zhrnutie je hore pri cene (rýchla odpoveď),
+                  tu je celý priebeh vrátane rastu ponúk (podrobná). */}
+              <PriceTimeline propertyId={item.id} offers={offers ?? []} transaction={item.transaction_type} />
 
               {/* O byte a budove — pri predaji ROVNAKO ako pri prenájme. */}
               {buildingRows(item).length > 0 ? (
