@@ -60,6 +60,8 @@ export const HOW_STEPS: HowStep[] = [
     icon: 'checkmark.seal',
     title: 'Uzavretie a hodnotenie',
     body:
+      'Po prijatí ponuky sa inzerát UZAMKNE — cena, výmera ani podmienky sa už ' +
+      'nedajú zmeniť, aby dohoda ostala taká, aká bola v tej chvíli. ' +
       'Keď obchod dopadne, predávajúci ho uzavrie — inzerát zmizne z katalógu ' +
       'a ostatné čakajúce ponuky sa uzavrú tiež. Potom sa obe strany môžu ' +
       'navzájom ohodnotiť. Hviezdičky vidí každý ako priemer pri prezývke, ' +

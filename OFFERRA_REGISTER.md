@@ -2740,6 +2740,35 @@ Každé otvorenie sa vracia na predvolený dôvod, nie na ten, čo ostal
 z predošlého nahlásenia v tej istej relácii. Prepnúť sa dá naďalej;
 je to predvoľba, nie zámok.
 
+### 11.4 Zámok inzerátu po prijatí ponuky — ✅ OVERENÉ RUNTIME (16/16)
+
+Zadanie Rastia 9.8.2026. Trigger `guard_property_locked` na `property`:
+keď existuje ponuka v stave `ACCEPTED`, obsahové polia sa už nezmenia.
+
+**Prečo trigger a nie RLS politika:** RLS vie povedať „na tento RIADOK
+nesmieš", nie „tieto STĹPCE nesmieš, tamtie áno". Rozlíšiť zmenu stavu od
+zmeny ceny vie len trigger, ktorý vidí `old` aj `new`.
+
+Povolené aj po zamknutí: `status`, `closed_at`, `closed_offer_id`,
+`final_amount`, `updated_at`, `view_count` — teda presne to, čo mení
+**„Uzavrieť obchod"**. Overené, že `close_deal()` prejde aj so zámkom;
+keby ho zámok blokoval, dohodnutý obchod by sa nedal dotiahnuť do konca.
+
+**Rozhodnutie o fotkách (moje, zdôvodnené):**
+
+| | | |
+|---|---|---|
+| pridať fotku | **povolené** | nemení cenu, podmienky ani ktorá nehnuteľnosť to je; kupujúci si pred podpisom často vypýta ďalšie zábery |
+| zmazať fotku | **zakázané** | odstraňuje dôkaz o tom, ako vec vyzerala v čase dohody — presne to riziko, ktorému má zámok brániť |
+| prepísať URL / poradie | **zakázané** | je to prepísanie existujúcej fotky, nie doplnenie novej |
+
+Riešené `restrictive` politikami na `media` (delete + update).
+
+**Dôležitý vedľajší nález:** `restrictive` RLS pri DELETE vráti **HTTP 204
+a nezmaže nič**. V appke by to bolo „nestane sa nič", čo §2 zakazuje.
+Preto sa pri zámku krížik na fotke **vôbec nezobrazí** a nad formulárom je
+pás s vysvetlením, čo sa dá a čo nie.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

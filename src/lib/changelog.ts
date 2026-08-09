@@ -28,6 +28,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Inzeráty, kde na teba čaká ponuka, sú zvýraznené — vidíš na prvý pohľad, kde treba rozhodnúť.',
       'Ťuknutie na zverejnený inzerát ide rovno k ponukám (prijať, odmietnuť, uzavrieť obchod). Upraviť sa dá tlačidlom v hlavičke.',
       'Nové tlačidlo „Nahlásiť realitku" pri prezývke — dôvod je predvyplnený, nemusíš ho hľadať v zozname.',
+      'Po prijatí ponuky sa inzerát uzamkne: cena, výmera ani podmienky sa už nedajú zmeniť. Dohoda musí ostať taká, aká bola v tej chvíli. Ďalšie fotky pridať môžeš, existujúce zmazať nie.',
     ],
   },
   {

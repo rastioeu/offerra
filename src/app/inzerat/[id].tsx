@@ -41,6 +41,7 @@ import {
 } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
+import { LEGAL_CONTACT_EMAIL } from '@/lib/legal';
 
 /** Číslo z poľa. Prázdne → `null` (stĺpec je nullable, 0 by bola lož). */
 function num(text: string): number | null {
@@ -74,6 +75,30 @@ export default function PropertyEditorScreen() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const { uploading, addPhoto, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
+
+  /**
+   * Zamknutý inzerát = existuje prijatá ponuka. Pýtame sa DATABÁZY, nie
+   * lokálneho zoznamu — rozhoduje o tom ona a odpoveď musí byť tá istá,
+   * akú dostane pri zápise. Inak by obrazovka ponúkala niečo, čo server
+   * odmietne.
+   */
+  const [locked, setLocked] = useState(false);
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    void db()
+      .rpc('has_accepted_offer', { p_property: id })
+      .then(({ data, error: e }) => {
+        if (e) {
+          console.log(`[INZERÁT] Zistenie zámku zlyhalo: ${errorText(e)}`);
+          return;
+        }
+        if (!cancelled) setLocked(data === true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, item]);
   useRefreshOnFocus(reload);
 
   // Server je zdroj pravdy; lokálny stav sa napĺňa až keď dorazí.
@@ -227,6 +252,21 @@ export default function PropertyEditorScreen() {
           <Text style={[styles.missing, { color: palette.textMuted }]}>Inzerát sa nenašiel.</Text>
         ) : null}
 
+        {draft && locked ? (
+          <View style={[styles.lockNote, { borderColor: palette.warning, backgroundColor: palette.surface }]}>
+            <Text style={[styles.lockTitle, { color: palette.warning }]}>Inzerát je uzamknutý</Text>
+            <Text style={[styles.lockBody, { color: palette.textSecondary }]}>
+              Prijal si ponuku, takže sa už nedá meniť názov, cena, výmera ani podmienky.
+              To, na čom ste sa dohodli, musí ostať také, aké bolo v tej chvíli.
+              {'\n\n'}
+              Ďalšie fotky pridať môžeš — nemenia podstatu dohody. Zmazať ani prepísať
+              tie existujúce už nie, sú dôkazom o stave veci.
+              {'\n\n'}
+              Ak naozaj potrebuješ zmenu, ozvi sa na {LEGAL_CONTACT_EMAIL}.
+            </Text>
+          </View>
+        ) : null}
+
         {draft ? (
           <>
             <View style={styles.statusRow}>
@@ -266,13 +306,18 @@ export default function PropertyEditorScreen() {
                       <Badge text="TITULNÁ" tone="accent" />
                     </View>
                   ) : null}
-                  <Pressable
-                    onPress={() => removePhoto(m.id, m.url)}
-                    accessibilityRole="button"
-                    hitSlop={8}
-                    style={[styles.remove, { backgroundColor: palette.danger }]}>
-                    <Text style={[styles.removeText, { color: palette.onPrimary }]}>×</Text>
-                  </Pressable>
+                  {/* Pri zámku krížik CHÝBA zámerne: DELETE by vrátil 204 a
+                      fotka by ostala (tak funguje restrictive RLS). Tlačidlo,
+                      po ktorom sa nič nestane, je horšie než žiadne (§2). */}
+                  {locked ? null : (
+                    <Pressable
+                      onPress={() => removePhoto(m.id, m.url)}
+                      accessibilityRole="button"
+                      hitSlop={8}
+                      style={[styles.remove, { backgroundColor: palette.danger }]}>
+                      <Text style={[styles.removeText, { color: palette.onPrimary }]}>×</Text>
+                    </Pressable>
+                  )}
                 </View>
               ))}
 
@@ -517,7 +562,7 @@ export default function PropertyEditorScreen() {
 
             {/* ── akcie ── */}
             <View style={styles.actions}>
-              <Button title={saving ? 'Ukladám…' : 'Uložiť koncept'} onPress={() => save()} variant="outline" disabled={saving} />
+              <Button title={saving ? 'Ukladám…' : 'Uložiť koncept'} onPress={() => save()} variant="outline" disabled={saving || locked} />
 
               {draft.status === 'REJECTED' ? (
                 <Text style={[styles.statusNote, { color: palette.danger }]}>
@@ -526,12 +571,12 @@ export default function PropertyEditorScreen() {
                   ho môže znovu len on — uprav, čo je potrebné, a ozvi sa.
                 </Text>
               ) : draft.status === 'ACTIVE' ? (
-                <Button title="Stiahnuť z katalógu" onPress={unpublish} variant="outline" disabled={saving} />
+                <Button title="Stiahnuť z katalógu" onPress={unpublish} variant="outline" disabled={saving || locked} />
               ) : (
-                <Button title="Zverejniť" onPress={publish} disabled={saving} />
+                <Button title="Zverejniť" onPress={publish} disabled={saving || locked} />
               )}
 
-              <Button title="Zmazať inzerát" onPress={confirmDelete} variant="danger" disabled={saving} />
+              <Button title="Zmazať inzerát" onPress={confirmDelete} variant="danger" disabled={saving || locked} />
             </View>
           </>
         ) : null}
@@ -543,6 +588,9 @@ export default function PropertyEditorScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
+  lockNote: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.xs },
+  lockTitle: { ...Type.bodyLg, fontWeight: Weight.bold },
+  lockBody: { ...Type.bodyMd },
   spinner: { marginTop: Spacing.xxl },
   missing: { ...Type.body, textAlign: 'center', marginTop: Spacing.xxl },
   statusRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
