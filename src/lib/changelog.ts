@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Uložené vyhľadávanie',
+    items: [
+      'Keď si nastavíš filtre, môžeš si hľadanie uložiť jedným ťuknutím — nabudúce ho vyvoláš z lišty nad katalógom.',
+      'Pri uloženom hľadaní je číslo: koľko inzerátov mu vyhovuje a pribudlo odvtedy, čo si ho naposledy otvoril.',
+      'Uložené hľadanie je súkromné. To, čo hľadáš, nevidí nikto okrem teba.',
+      'Zmažeš ho podržaním prsta.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Appka ti odteraz povie, čo sa stalo',
     items: [
       'Po každej akcii — podanie ponuky, srdiečko, nahlásenie, uzavretie obchodu, hodnotenie — vyskočí dole krátke potvrdenie, čo sa práve stalo. Doteraz osem akcií nedávalo po úspechu žiadnu odozvu; srdiečko napríklad len zablikalo.',

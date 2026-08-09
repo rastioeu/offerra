@@ -24,6 +24,7 @@ import { useHints } from '@/hooks/use-hints';
 import { useSession } from '@/hooks/use-session';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
+import { SavedSearches } from '@/components/saved-searches';
 import { useTheme } from '@/hooks/use-theme';
 import type { CatalogSort } from '@/lib/property';
 import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
@@ -38,6 +39,7 @@ export default function NehnutelnostiScreen() {
   const { items, error, reload } = useProperties(filter, sort);
   const [refreshing, setRefreshing] = useState(false);
   const { session } = useSession();
+  const myId = session?.user.id;
   const { ids: favorites, toggle } = useFavoriteIds(session?.user.id);
   const { shouldShow, dismiss } = useHints(session?.user.id);
   const [view, setView] = useState<'LIST' | 'MAP'>('LIST');
@@ -97,6 +99,15 @@ export default function NehnutelnostiScreen() {
         <View style={styles.mapHead}>
           {head}
           <SearchBar filter={filter} onChange={setFilter} sort={sort} onSortChange={setSort} />
+          <SavedSearches
+            myId={myId}
+            filter={filter}
+            sort={sort}
+            onApply={(f, s2) => {
+              setFilter(f);
+              setSort(s2);
+            }}
+          />
           <ErrorNote error={error} />
         </View>
         <PropertyMap

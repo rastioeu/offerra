@@ -2821,6 +2821,31 @@ ostatné.
 Dôkaz `odozva_test.js` **20/20**: prejde každý súbor, ktorý zapisuje do DB,
 a stráži, že má odozvu. Padne aj vtedy, keď niekto pridá zápis bez nej.
 
+### 11.6 Uložené vyhľadávanie — ✅ OVERENÉ RUNTIME (13/13)
+
+`offerra.saved_search`. **Filter sa ukladá ako `jsonb`, nie rozložený na
+stĺpce** — je to ten istý objekt, aký drží katalóg (`CatalogFilter`).
+Rozložiť ho na stĺpce by znamenalo držať ten istý tvar na dvoch miestach
+a pri každom novom filtri meniť schému.
+
+**Súkromné.** To, čo človek hľadá, prezrádza o ňom viac než jeho inzeráty
+— koľko má peňazí, kam sa sťahuje. RLS `for all` len na vlastníka;
+overené, že cudzí ho ani nevidí, ani nezmaže, ani nezaloží v cudzom mene.
+
+`last_seen_at` drží, odkedy sa počítajú „nové". Otvorenie hľadania ho
+posunie a odznak zhasne.
+
+**Počet nových sa počíta ROVNAKÝM dotazom, aký používa katalóg.** Keby mal
+vlastnú kópiu podmienok, číslo by časom prestalo sedieť so zoznamom, ktorý
+sa po ťuknutí otvorí — a to je horšie než žiadne číslo.
+
+Lišta je **nad katalógom, nie v Profile**: hľadanie sa ukladá aj používa
+v tom istom okamihu a na tom istom mieste. V Profile by si ho nikto
+neotvoril.
+
+Pri práci sa našla vlastná duplicita — napísal som `isEmptyFilter()`,
+hoci `isFilterEmpty()` v `search.ts` už existovala. Zmazané.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

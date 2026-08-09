@@ -68,6 +68,14 @@ export const HOW_STEPS: HowStep[] = [
       'napísaný text prečíta LEN ten, komu je určený.',
   },
   {
+    icon: 'magnifyingglass',
+    title: 'Hľadanie si appka zapamätá',
+    body:
+      'Nastavené filtre si uložíš jedným ťuknutím a nabudúce ich vyvoláš z lišty ' +
+      'nad katalógom. Pri každom uloženom hľadaní vidíš, koľko inzerátov pribudlo ' +
+      'odvtedy, čo si ho naposledy otvoril. Vidíš ho len ty.',
+  },
+  {
     icon: 'envelope',
     title: 'Hľadať sa dá aj naopak',
     body:
