@@ -15,6 +15,7 @@ export type NotificationType =
   | 'PONUKA_AKCEPTOVANA'
   | 'PONUKA_ZAMIETNUTA'
   | 'NOVY_DOPYT_ZODPOVEDA_INZERATU'
+  | 'OSLOVENIE_DOPYTU'
   | 'NOVA_ZHODA'
   | 'ZIADOST_O_OBHLIADKU'
   | 'SYSTEMOVE';
@@ -54,6 +55,11 @@ export const NOTIFICATION_TYPES: {
     type: 'NOVY_DOPYT_ZODPOVEDA_INZERATU',
     label: 'Nový dopyt sedí na môj inzerát',
     hint: 'Niekto hľadá presne to, čo ponúkaš.',
+  },
+  {
+    type: 'OSLOVENIE_DOPYTU',
+    label: 'Niekto oslovil môj dopyt',
+    hint: 'Ponúka ti inzerát, ktorý zodpovedá tomu, čo hľadáš.',
   },
   {
     type: 'NOVA_ZHODA',

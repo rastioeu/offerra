@@ -11,6 +11,7 @@ import {
   fetchOfferMessages,
   OFFER_PUBLIC_COLS,
   type BuyerRequest,
+  type MyOutreach,
   type Offer,
   type Outreach,
   type TenantProfile,
@@ -223,6 +224,40 @@ export function useRequest(id: string | undefined) {
 }
 
 /** Oslovenia k dopytu — vidí ich len autor dopytu a ten, kto oslovil. */
+/**
+ * Oslovenia MOJICH dopytov — aj s inzerátom, ktorý mi ponúkajú.
+ *
+ * `requestId` nepovinné: bez neho vráti oslovenia VŠETKÝCH mojich dopytov
+ * (to potrebuje časová os v „Moje"), s ním len jedného.
+ */
+export function useMyOutreach(requestId?: string) {
+  const [items, setItems] = useState<MyOutreach[] | undefined>(undefined);
+  const [error, setError] = useState<string | null>(null);
+
+  const reload = useCallback(async () => {
+    try {
+      const { data, error: e } = await db().rpc('my_request_outreach');
+      if (e) throw e;
+      const all = (data ?? []) as MyOutreach[];
+      setItems(requestId ? all.filter((o) => o.request_id === requestId) : all);
+      setError(null);
+    } catch (e: unknown) {
+      // ŽIADNY TICHÝ CATCH: prázdny zoznam a chyba sú dve rôzne veci
+      // a používateľ musí vidieť, ktorá to je.
+      const m = errorText(e);
+      console.log(`[OSLOVENIA] Načítanie zlyhalo: ${m}`);
+      setError(m);
+      setItems([]);
+    }
+  }, [requestId]);
+
+  useEffect(() => {
+    void reload();
+  }, [reload]);
+
+  return { items, error, reload };
+}
+
 export function useOutreach(requestId: string | undefined) {
   const [items, setItems] = useState<Outreach[]>([]);
 

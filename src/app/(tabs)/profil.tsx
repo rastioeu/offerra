@@ -18,7 +18,7 @@ import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
-import { useMyOffers, useRequests } from '@/hooks/use-offers';
+import { useMyOffers, useMyOutreach, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
@@ -44,6 +44,7 @@ export default function ProfilScreen() {
   const { items: properties, reload: reloadProperties } = useMyProperties(userId);
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
+  const { items: myOutreach } = useMyOutreach();
   const { items: favorites } = useFavoriteProperties(userId);
 
   const [nickname, setNickname] = useState('');
@@ -129,6 +130,16 @@ export default function ProfilScreen() {
       kind: 'PONUKA_ODOSLANA' as const,
       title: o.property?.title || 'Inzerát',
       detail: `${formatAmount(o.amount, o.property?.transaction_type ?? 'SALE')} · ${OFFER_STATUS_LABEL[o.status]}`,
+      onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
+    })),
+    // Oslovenia MOJICH dopytov. Vedú na PONÚKNUTÝ inzerát, nie na môj
+    // dopyt — tam sa dá niečo spraviť (pozrieť si ho, vypýtať obhliadku).
+    ...(myOutreach ?? []).map((o) => ({
+      id: o.id,
+      at: o.created_at,
+      kind: 'OSLOVENIE_DOPYTU' as const,
+      title: o.property_title || 'Inzerát',
+      detail: [o.from_nickname, o.property_city].filter(Boolean).join(' · '),
       onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
     })),
     ...(requests ?? []).map((r) => ({

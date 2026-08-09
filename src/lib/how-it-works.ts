@@ -112,6 +112,13 @@ export const HOW_SECTIONS: HowSection[] = [
       'V tabe Dopyty napíšeš, čo hľadáš. Majitelia ťa potom môžu osloviť svojím inzerátom.',
       'Dopyt hovorí rečou HĽADAJÚCEHO: „Kúpim" a „Hľadám prenájom" namiesto „Predaj" ' +
         'a „Prenájom", ktoré sú na inzerátoch. Je to tá istá dvojica, len z druhej strany.',
+      'Keď ťa niekto osloví, dostaneš upozornenie a oslovenie nájdeš v detaile svojho dopytu. ' +
+        'Ťuknutím sa otvorí inzerát, ktorý ti ponúka — s fotkami, cenou aj počtom izieb, ' +
+        'presne ako v katalógu. Odtiaľ si môžeš vypýtať obhliadku úplne rovnako ako pri ' +
+        'inzeráte, ktorý si našiel sám.',
+      'Oslovenie nie je súkromná správa. Je to záznam pri tvojom dopyte — appka nemá četovanie ' +
+        'a nechceme, aby sa ňou dalo obťažovať. Osloviť ťa vie len ten, kto má vlastný ' +
+        'zverejnený inzerát.',
       'Rozpočet je orientačný, nie záväzok. Tvoje meno ani telefón sa v dopyte nezobrazia — ' +
         'rovnako ako pri ponukách.',
     ],

@@ -28,6 +28,7 @@ import {
   deadlineLabel,
   deadlineUrgency,
   formatArea,
+  formatRooms,
   formatDate,
   formatPrice,
   PROPERTY_LABEL,
@@ -91,7 +92,7 @@ export function PropertyCard({
 
   const facts = [
     item.city,
-    item.rooms != null ? `${item.rooms} ${item.rooms === 1 ? 'izba' : item.rooms < 5 ? 'izby' : 'izieb'}` : null,
+    formatRooms(item.rooms),
     formatArea(item.area_m2),
   ].filter(Boolean) as string[];
 

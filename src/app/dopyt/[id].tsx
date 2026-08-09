@@ -9,7 +9,7 @@
  * 1.3.0 existujú — push aj zvonček. Komentár, ktorý klame o mechanike,
  * je horší než žiadny.)
  */
-import { Stack, useLocalSearchParams } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,13 +17,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ModalScreen } from '@/components/modal-screen';
 
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar } from '@/components/ui';
-import { useOutreach, useRequest } from '@/hooks/use-offers';
+import { useMyOutreach, useOutreach, useRequest } from '@/hooks/use-offers';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
-import { db, DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
+import { db, DEMAND_LABEL, formatArea, formatDate, formatPrice, formatRooms, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
@@ -32,11 +32,15 @@ export default function RequestDetailScreen() {
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
+  const router = useRouter();
   const myId = session?.user.id;
 
   const { item, error } = useRequest(id);
   const { items: myProperties } = useMyProperties(myId);
   const { items: outreach, reload: reloadOutreach } = useOutreach(id);
+  // Oslovenia MÔJHO dopytu — aj s inzerátom, ktorý mi ponúkajú. Bez toho
+  // sa nedalo zistiť ani ČO mi ponúkajú, nieto sa na to prekliknúť.
+  const { items: mine, error: mineError, reload: reloadMine } = useMyOutreach(id);
 
   const [pickerOpen, setPickerOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -59,10 +63,17 @@ export default function RequestDetailScreen() {
       });
       if (e) throw e;
       await reloadOutreach();
+      await reloadMine();
+      const sentWith = chosen;
       setPickerOpen(false);
       setChosen(null);
       setMessage('');
       toast('Oslovenie odoslané');
+      // NÁVRAT DO INZERÁTU, KTORÝM OSLOVIL (Rastio, 9.8.2026): zostať na
+      // cudzom dopyte po odoslaní nedáva zmysel — spravil tam všetko, čo
+      // sa dalo. Vedie to na VEREJNÝ detail, nie do editora: presne to
+      // uvidí druhá strana, keď si oslovenie otvorí.
+      router.replace({ pathname: '/nehnutelnost/[id]', params: { id: sentWith } });
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OSLOVENIE] Odoslanie zlyhalo: ${m}`);
@@ -125,21 +136,72 @@ export default function RequestDetailScreen() {
             {isMine ? (
               <Card>
                 <Text style={[styles.section, { color: palette.textMuted }]}>
-                  OSLOVENIA ({outreach.length})
+                  OSLOVENIA ({(mine ?? []).length})
                 </Text>
-                {outreach.length === 0 ? (
+                <ErrorNote error={mineError} />
+                {(mine ?? []).length === 0 ? (
                   <Text style={[styles.desc, { color: palette.textMuted }]}>
-                    Zatiaľ ťa nikto neoslovil.
+                    Zatiaľ ťa nikto neoslovil. Keď niekto ponúkne inzerát, ktorý sedí na tvoj
+                    dopyt, objaví sa tu — a dáme ti vedieť.
                   </Text>
                 ) : (
-                  outreach.map((o) => (
-                    <View key={o.id} style={[styles.outreach, { borderColor: palette.border }]}>
-                      <Text style={[styles.desc, { color: palette.textPrimary }]}>
-                        {o.message || 'Bez správy.'}
-                      </Text>
-                      <Text style={[styles.author, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
-                    </View>
-                  ))
+                  <>
+                    <Text style={[styles.hint, { color: palette.textMuted }]}>
+                      Ťukni na oslovenie a otvorí sa inzerát, ktorý ti ponúkajú. Odtiaľ si
+                      môžeš vypýtať obhliadku.
+                    </Text>
+                    {(mine ?? []).map((o) => {
+                      // Inzerát medzičasom mohol zmiznúť alebo byť stiahnutý.
+                      // Klikať na neexistujúce by skončilo prázdnou obrazovkou.
+                      const openable = o.property_status === 'ACTIVE' || o.property_status === 'CLOSED';
+                      const facts = [
+                        o.property_city,
+                        formatRooms(o.property_rooms),
+                        formatArea(o.property_area),
+                      ].filter(Boolean) as string[];
+                      // Cena je v Offerre nepovinná — keď chýba, hovorí
+                      // najvyššia živá ponuka. Keď nie je ani tá, povie sa to.
+                      const price =
+                        formatPrice(o.property_price, item.transaction_type === 'RENT' ? 'RENT' : 'SALE') ??
+                        (o.property_top_offer != null
+                          ? `Najvyššia ponuka ${formatPrice(o.property_top_offer, item.transaction_type === 'RENT' ? 'RENT' : 'SALE')}`
+                          : 'Cena neuvedená');
+                      return (
+                        <Pressable
+                          key={o.id}
+                          disabled={!openable}
+                          accessibilityRole={openable ? 'button' : 'text'}
+                          onPress={() =>
+                            router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } })
+                          }
+                          style={({ pressed }) => [
+                            styles.outreach,
+                            {
+                              borderColor: palette.border,
+                              backgroundColor: pressed ? palette.surfacePressed : 'transparent',
+                              opacity: openable ? 1 : 0.6,
+                            },
+                          ]}>
+                          <Text style={[styles.optionTitle, { color: palette.textPrimary }]}>
+                            {o.property_title || 'Bez názvu'}
+                          </Text>
+                          <Text style={[styles.price, { color: palette.primary }]}>{price}</Text>
+                          {facts.length > 0 ? (
+                            <Text style={[styles.author, { color: palette.textSecondary }]}>
+                              {facts.join(' · ')}
+                            </Text>
+                          ) : null}
+                          {o.message ? (
+                            <Text style={[styles.desc, { color: palette.textPrimary }]}>{o.message}</Text>
+                          ) : null}
+                          <Text style={[styles.author, { color: palette.textMuted }]}>
+                            {o.from_nickname ?? 'Neznámy'} · {formatDate(o.created_at)}
+                            {openable ? '' : ' · inzerát už nie je dostupný'}
+                          </Text>
+                        </Pressable>
+                      );
+                    })}
+                  </>
                 )}
               </Card>
             ) : myId ? (
@@ -193,8 +255,22 @@ export default function RequestDetailScreen() {
                     },
                   ]}>
                   <Text style={[styles.optionTitle, { color: palette.textPrimary }]}>{p.title || 'Bez názvu'}</Text>
+                  {/* CENA A IZBY (Rastio, 9.8.2026): predtým tu bol len názov,
+                      mesto a m². Podľa toho sa nedalo rozhodnúť, KTORÝ inzerát
+                      poslať — a pri viacerých inzerátoch v tom istom meste boli
+                      riadky prakticky nerozoznateľné. */}
+                  <Text style={[styles.price, { color: palette.primary }]}>
+                    {formatPrice(p.asking_price_hint, p.transaction_type) ??
+                      (p.top_offer != null
+                        ? `Najvyššia ponuka ${formatPrice(p.top_offer, p.transaction_type)}`
+                        : 'Cena neuvedená')}
+                  </Text>
                   <Text style={[styles.author, { color: palette.textMuted }]}>
-                    {used ? 'týmto si už oslovil' : [p.city, formatArea(p.area_m2)].filter(Boolean).join(' · ')}
+                    {used
+                      ? 'týmto si už oslovil'
+                      : [p.city, formatRooms(p.rooms), formatArea(p.area_m2)]
+                          .filter(Boolean)
+                          .join(' · ')}
                   </Text>
                 </Pressable>
               );
@@ -241,6 +317,8 @@ const styles = StyleSheet.create({
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   desc: { ...Type.bodyLg },
   outreach: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, gap: 4 },
+  price: { ...Type.bodyLg, fontWeight: Weight.bold },
+  hint: { ...Type.caption },
   row: { flexDirection: 'row', justifyContent: 'space-between', gap: Spacing.md },
   rowLabel: { ...Type.bodyMd },
   rowValue: { ...Type.bodyMd, fontWeight: Weight.medium, flexShrink: 1, textAlign: 'right' },

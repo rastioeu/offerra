@@ -421,8 +421,19 @@ export default function PropertyEditorScreen() {
               onChange={(v) => patch({ street: v })}
             />
 
+            {/* POVINNÉ (Rastio, 9.8.2026). Appka to žiadala už predtým cez
+                `missingForPublish`, ale pole vyzeralo ako ktorékoľvek iné —
+                človek sa to dozvedel až pri pokuse zverejniť. Odteraz to
+                vidno dopredu a stráži to aj databáza (trigger
+                `property_publish_guard`). Pozemok izby nemá. */}
             {!isLand ? (
-              <Field label="Počet izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="3" />
+              <Field
+                label="Počet izieb (povinné)"
+                value={rooms}
+                onChangeText={setRooms}
+                keyboardType="numeric"
+                placeholder="3"
+              />
             ) : null}
 
             <Field

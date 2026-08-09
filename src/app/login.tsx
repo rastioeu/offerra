@@ -1,4 +1,5 @@
 import { Image } from 'expo-image';
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -29,6 +30,7 @@ const TAPS_TO_UNLOCK = 5;
  * Preto sú to jediné dve viditeľné cesty a e-mail/heslo je skryté.
  */
 export default function LoginScreen() {
+  const router = useRouter();
   const palette = useTheme();
   const [busy, setBusy] = useState<null | 'apple' | 'google' | 'email'>(null);
   const [error, setError] = useState<string | null>(null);
@@ -261,6 +263,29 @@ export default function LoginScreen() {
                 </Pressable>
               </View>
             ) : null}
+
+            {/* LEGAL LINKY NA PRVEJ OBRAZOVKE (Rastio, 9.8.2026, vzor MUTARK).
+                Doteraz boli len v Nastaveniach — teda AŽ ZA prihlásením.
+                Kto sa ešte neprihlásil, nemal ako zistiť, čomu sa vlastne
+                chystá dôverovať. Text sa berie z toho istého zdroja
+                (`src/lib/legal.ts`) ako obrazovka v Nastaveniach. */}
+            <Text style={[styles.legal, { color: palette.textMuted }]}>
+              Prihlásením súhlasíš s{' '}
+              <Text
+                style={[styles.legalLink, { color: palette.link }]}
+                accessibilityRole="link"
+                onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}>
+                Podmienkami používania
+              </Text>{' '}
+              a berieš na vedomie{' '}
+              <Text
+                style={[styles.legalLink, { color: palette.link }]}
+                accessibilityRole="link"
+                onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}>
+                Ochranu osobných údajov
+              </Text>
+              .
+            </Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -277,6 +302,8 @@ const styles = StyleSheet.create({
   subtitle: { ...Type.bodyMd, textAlign: 'center' },
   actions: { gap: Spacing.sm },
   why: { ...Type.small, textAlign: 'center', marginBottom: Spacing.md },
+  legal: { ...Type.caption, textAlign: 'center', marginTop: Spacing.xl, lineHeight: 19 },
+  legalLink: { ...Type.caption, fontWeight: Weight.semibold, textDecorationLine: 'underline' },
   button: {
     borderRadius: Radius.md,
     paddingVertical: Spacing.md,

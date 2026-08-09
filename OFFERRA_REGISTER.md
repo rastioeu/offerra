@@ -3388,6 +3388,63 @@ jedným volaním `push_notification()`, ktoré spravilo oboje naraz:
 Testovací riadok zmazaný hneď po overení — `select count(*) where
 title like 'TEST%'` → **0**. V zvončeku po teste neostalo nič.
 
+### 11.28 Dopytová strana ožila + seed dáta nanovo (davka 9.8.2026)
+
+Plný report: `reports/DAVKA_DOPYTY_A_SEED.md`. Push som **nemenil** (bod 2
+zadania).
+
+| bod | stav |
+|---|---|
+| 1. legal linky na prihlasovacej obrazovke | ✅ (🟡 vzhľad) |
+| 3. cena + izby pri výbere inzerátu na oslovenie | ✅ |
+| 4. počet izieb povinný | ✅ appka **aj** DB |
+| 5. návrat do inzerátu po oslovení | ✅ (🟡 vzhľad) |
+| 6. dopytová strana — všetky 4 veci | ✅ OVERENÉ RUNTIME |
+| 7. seed dáta 2× | ✅ OVERENÉ RUNTIME |
+
+**Bod 6 — príčina ZMERANÁ, nie odhadnutá:**
+
+```sql
+select tgname from pg_trigger where relname='request_outreach';  →  0 riadkov
+```
+
+`request_outreach` nemal **žiadny** trigger. Nešlo o preferenciu ani
+o chybu odosielania — oznámenie nemal kto založiť. Mig 30: typ
+`OSLOVENIE_DOPYTU`, trigger `trg_notify_request_outreach` (cez
+`push_notification()`, teda zvonček aj push naraz) a
+`my_request_outreach()` (SECURITY DEFINER, `where r.user_id = auth.uid()`).
+Oznámenie vedie na **ponúknutý inzerát**, nie na vlastný dopyt — tam sa
+dá niečo spraviť, na dopyte nič.
+
+**Bod 4 — appka to žiadala, DB nie.** `missingForPublish()` počet izieb
+vracal medzi chýbajúcimi, ale server ho nekontroloval a jeden ACTIVE
+inzerát bez izieb v katalógu naozaj bol. Pravidlo, ktoré platí len
+v appke, nie je pravidlo → mig 31 `property_publish_guard`.
+
+**Seed:** inzeráty 10→**20**, ponuky 3→**28**, dopyty 2→**8**, oslovenia
+6→**15**, fotky 22→**63**, seed profily 1→**6**. Skript sa na konci sám
+overí dotazom (0 duplicitných ACCEPTED, 0 s `view_count` < počet ponúk,
+0 bez izieb, 0 dopytov bez oslovení). Mestá/ulice z `offerra.city` a
+`offerra.street`, nie vymyslené reťazce.
+
+**Rozhodnuté samostatne:** 3 z 20 inzerátov a 2 z 8 dopytov patria
+Rastiovi (`is_seed`) — inak by obrazovky vlastníka a „OSLOVENIA" nemal na
+čom vyskúšať. Preto mu prišlo aj niekoľko notifikácií; Expo ich prijalo
+(`status: ok`), čo je zároveň dôkaz, že trigger funguje na skutočnej ceste.
+
+**Opravené navyše:** `legal.ts` tvrdil, že telefón je nepovinný (od 9.8.
+je povinný) — právny dokument, ktorý klame o žiadaných údajoch, je horší
+než žiadny. `how-it-works.ts` sekcia o dopytoch nevedela o oslovení,
+upozornení ani obhliadke (§8).
+
+**Dôkazy:** `dopyty_test.py` **18/18** (cez PostgREST, 3 účty),
+`push_route_test.js` 20/20, `onboarding_test.js` 13/13, `akofunguje` 15/15,
+`odozva` 21/21, `audit` 74/74, `tsc` čistý.
+
+**IDE OTA.**
+
+---
+
 ### 11.27 Nastavenie upozornení pri prvom prihlásení
 
 Zadanie (Rastio, 9.8.2026): pri prvom prihlásení sa appka musí spýtať na

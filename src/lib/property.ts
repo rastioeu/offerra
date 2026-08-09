@@ -205,6 +205,17 @@ export function formatPrice(
   return transaction === 'RENT' ? `${amount} / mesiac` : amount;
 }
 
+/**
+ * „3 izby" so správnym skloňovaním. Vytiahnuté z karty (9.8.2026), keď to
+ * isté potreboval aj výber inzerátu pri oslovení dopytu — dve kópie
+ * skloňovania by sa časom rozišli.
+ */
+export function formatRooms(value: number | null): string | null {
+  if (value == null) return null;
+  const word = value === 1 ? 'izba' : value < 5 ? 'izby' : 'izieb';
+  return `${value} ${word}`;
+}
+
 export function formatArea(value: number | null): string | null {
   return value == null ? null : `${new Intl.NumberFormat('sk-SK').format(value)} m²`;
 }

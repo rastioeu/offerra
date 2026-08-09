@@ -109,6 +109,36 @@ export type Outreach = {
   created_at: string;
 };
 
+/**
+ * Oslovenie MÔJHO dopytu aj s inzerátom, ktorý mi ponúkajú.
+ *
+ * CHYBA, KVÔLI KTOREJ VZNIKLO (Rastio, 9.8.2026): zoznam „OSLOVENIA (3)"
+ * ukazoval len správu a dátum. Nedalo sa zistiť ANI ČO mi ponúkajú, nieto
+ * sa na to prekliknúť. Celá dopytová strana bola jednosmerný zoznam.
+ *
+ * Chodí z `offerra.my_request_outreach()` — SECURITY DEFINER, ktorá hneď
+ * v `where` obmedzí výber na dopyty volajúceho.
+ */
+export type MyOutreach = {
+  id: string;
+  request_id: string;
+  property_id: string;
+  from_id: string;
+  from_nickname: string | null;
+  message: string | null;
+  created_at: string;
+  property_title: string | null;
+  property_city: string | null;
+  /** Orientačná suma. V Offerre je NEPOVINNÁ, takže často `null`. */
+  property_price: number | null;
+  /** Najvyššia živá ponuka — keď cena chýba, toto je jediné číslo. */
+  property_top_offer: number | null;
+  property_rooms: number | null;
+  property_area: number | null;
+  property_status: string | null;
+  request_description: string | null;
+};
+
 /** Protistrana odkrytá po akceptácii. `party` hovorí, koho kontakt to je. */
 export type OfferContact = {
   party: 'OWNER' | 'BIDDER';

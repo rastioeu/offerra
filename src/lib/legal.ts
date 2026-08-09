@@ -48,7 +48,9 @@ export const PRIVACY: LegalDoc = {
           'Ak pri prihlásení cez Apple zvolíš skrytie e-mailu, Offerra dostane len preposielaciu adresu Apple.',
         'Prezývka. Je VEREJNÁ — vidí ju každý pri tvojich inzerátoch a ponukách, aj neprihlásený návštevník. ' +
           'Vyberáš si ju sám a nemusí obsahovať tvoje meno.',
-        'Meno, priezvisko a telefónne číslo. Sú NEPOVINNÉ a NEVEREJNÉ. Odkryjú sa v DVOCH prípadoch, ' +
+        'Telefónne číslo. Je POVINNÉ (od 9. augusta 2026) a NEVEREJNÉ — appka stojí na tom, ' +
+          'že sa dvaja ľudia dohodnú telefonicky. Meno a priezvisko sú nepovinné a rovnako neverejné. ' +
+          'Odkryjú sa v DVOCH prípadoch, ' +
           'v oboch obom stranám naraz a nikomu inému: (1) keď predávajúci prijme konkrétnu ponuku, ' +
           'a (2) keď záujemca požiada o obhliadku — vtedy sa kontakt odkryje okamžite, aby sa dalo dohodnúť ' +
           'stretnutie. O odkrytí pri obhliadke je používateľ vopred výslovne informovaný a potvrdzuje ho. ' +

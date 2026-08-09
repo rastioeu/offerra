@@ -13,7 +13,7 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 export type ActivityEvent = {
   id: string;
   at: string;
-  kind: 'INZERAT' | 'PONUKA_ODOSLANA' | 'PONUKA_PRIJATA' | 'DOPYT';
+  kind: 'INZERAT' | 'PONUKA_ODOSLANA' | 'PONUKA_PRIJATA' | 'DOPYT' | 'OSLOVENIE_DOPYTU';
   title: string;
   detail?: string;
   onPress?: () => void;
@@ -24,6 +24,10 @@ const KIND_LABEL: Record<ActivityEvent['kind'], string> = {
   PONUKA_ODOSLANA: 'Podal si ponuku',
   PONUKA_PRIJATA: 'Dostal si ponuku',
   DOPYT: 'Pridal si dopyt',
+  // Jediná udalosť, ktorú nespôsobil používateľ — preto formulácia
+  // v tretej osobe. Chýbala úplne (Rastio, 9.8.2026): dopytová strana
+  // sa na časovej osi neprejavila vôbec.
+  OSLOVENIE_DOPYTU: 'Niekto oslovil tvoj dopyt',
 };
 
 function dayLabel(iso: string): string {

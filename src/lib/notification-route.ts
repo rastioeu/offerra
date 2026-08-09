@@ -63,6 +63,13 @@ export function notificationRoute(
     case 'NOVY_DOPYT_ZODPOVEDA_INZERATU':
       return { pathname: '/nehnutelnost/[id]', params: { id: propertyId } };
 
+    // Oslovenie MÔJHO dopytu vedie na INZERÁT, ktorý ma oslovil — nie na
+    // môj dopyt. `propertyId` je tu zámerne cudzí inzerát: tam sa dá
+    // pozrieť, čo mi ponúkajú, a požiadať o obhliadku. Na vlastnom dopyte
+    // by sa nedalo spraviť nič, a presne to bola nahlásená chyba.
+    case 'OSLOVENIE_DOPYTU':
+      return { pathname: '/nehnutelnost/[id]', params: { id: propertyId } };
+
     // Neznámy typ (napr. novší server než appka) nesmie skončiť pádom
     // ani tichým nič. Detail nehnuteľnosti je bezpečná odpoveď.
     default:

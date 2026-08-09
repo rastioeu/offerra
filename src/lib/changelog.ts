@@ -21,6 +21,28 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '9. augusta 2026',
+    title: 'Dopyty konečne fungujú obojsmerne',
+    items: [
+      'Keď niekto osloví tvoj dopyt svojím inzerátom, dostaneš o tom upozornenie. Predtým sa to stalo potichu a nedozvedel si sa to.',
+      'Ťuknutím na oslovenie sa otvorí inzerát, ktorý ti ponúkajú — aj s cenou, izbami a fotkami. Odtiaľ si rovno vypýtaš obhliadku.',
+      'V zozname oslovení vidíš, čo ti kto ponúka, nie len holú správu a dátum.',
+      'Oslovenie tvojho dopytu sa objaví aj na časovej osi v „Moje".',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '9. augusta 2026',
+    title: 'Drobnosti, ktoré zdržiavali',
+    items: [
+      'Pri oslovení dopytu vidíš pri každom svojom inzeráte aj cenu a počet izieb — dovtedy sa nedalo rozumne vybrať, ktorý poslať.',
+      'Po odoslaní oslovenia ťa appka vráti do inzerátu, ktorým si oslovil.',
+      'Počet izieb je pri zverejnení povinný. Bolo to tak aj predtým, ale dozvedel si sa to až pri pokuse zverejniť — teraz to vidno dopredu.',
+      'Ochranu osobných údajov a Podmienky používania si prečítaš už na prihlasovacej obrazovke, nemusíš byť kvôli tomu prihlásený.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '9. augusta 2026',
     title: 'Upozornenia si nastavíš hneď na začiatku',
     items: [
       'Pri registrácii — hneď po zadaní prezývky — sa ťa Offerra spýta, či chceš upozornenia na telefón, a najprv ti povie, načo ti to je.',
