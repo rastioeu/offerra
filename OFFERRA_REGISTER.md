@@ -3372,6 +3372,25 @@ push vedú pri každom type na tú istú obrazovku, a že poškodené `data` zo
 siete nespôsobia pád. `npx tsc --noEmit` čistý.
 
 **IDE OTA** — `expo-notifications` je v builde #5, pribudol len JS.
+Vydané: update group `ed66b62c-fe08-416c-b9ce-fd4248bb708e`, runtime
+`24919867…`, commit `69933b5`.
+
+**✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 9.8.2026): „funguje".** Overované
+jedným volaním `push_notification()`, ktoré spravilo oboje naraz:
+
+| | dôkaz |
+|---|---|
+| riadok v zvončeku | `9cc4e11c…` · `NOVA_PONUKA` · property `0e897357…` |
+| push do Expa | `{"status":"ok","id":"019fe635-ca30-756b-a05d-e4dec6f9b405"}` |
+| klik na notifikáciu → správa ponúk | potvrdil Rastio |
+| klik v zvončeku → to isté miesto | potvrdil Rastio |
+
+Testovací riadok zmazaný hneď po overení — `select count(*) where
+title like 'TEST%'` → **0**. V zvončeku po teste neostalo nič.
+
+**Tým je push HOTOVÝ celou reťazou:** appka získa token → databáza
+založí oznámenie aj push → Expo → APNs → telefón → klik → správna
+obrazovka. Žiadny článok už nie je neoverený.
 
 ### 11.23 Build 1.3.0 — 🔴 chýba schopnosť Push Notifications na App ID
 (vyriešené, viď 11.24)
