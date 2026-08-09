@@ -167,6 +167,9 @@ export default function NehnutelnostiScreen() {
             key={item.id}
             item={item}
             favorite={favorites.has(item.id)}
+            // Porovnanie s VLASTNÝM id na klientovi. Cudzí nikdy neuvidí
+            // odznak pri cudzom inzeráte — vidí len svoje vlastné.
+            mine={Boolean(myId && item.owner_id === myId)}
             onToggleFavorite={session ? () => toggle(item.id) : undefined}
             // Vlastný inzerát sa nahlásiť nedá — ponuka akcie, ktorá by
             // aj tak neprešla, je horšia než jej absencia.

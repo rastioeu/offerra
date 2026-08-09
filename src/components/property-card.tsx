@@ -60,17 +60,23 @@ export async function shareProperty(item: PropertyWithMedia) {
   }
 }
 
+/** Od koľkých zobrazení sa číslo ukazuje. Nižšie čísla nič nehovoria. */
+const VIEWS_SHOWN_FROM = 5;
+
 export function PropertyCard({
   item,
   favorite,
   onToggleFavorite,
   onReport,
+  mine,
 }: {
   item: PropertyWithMedia;
   favorite?: boolean;
   onToggleFavorite?: () => Promise<boolean | null>;
   /** Nahlásenie z podržania prstu. Chýba = vlastný inzerát. */
   onReport?: () => void;
+  /** Je to MÔJ inzerát? Rozhoduje volajúci porovnaním s vlastným id. */
+  mine?: boolean;
 }) {
   const palette = useTheme();
   const router = useRouter();
@@ -133,6 +139,10 @@ export function PropertyCard({
         <View style={styles.badges}>
           <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
           <Badge text={PROPERTY_LABEL[item.property_type]} tone="onPhoto" />
+          {/* „Tvoj inzerát" vidí LEN vlastník — porovnáva sa na klientovi
+              s jeho vlastným id. Cudziemu sa nezobrazí nič navyše a nič
+              sa tým neodkrýva: `owner_id` je vo verejnom výpise aj tak. */}
+          {mine ? <Badge text="TVOJ INZERÁT" tone="accent" /> : null}
         </View>
         <View style={styles.actions}>
           <Pressable
@@ -189,7 +199,17 @@ export function PropertyCard({
             Počet ponúk na karte JE — v pravom stĺpci pätky ako
             „2 ponuky" / „zatiaľ bez ponúk". */}
         <Text numberOfLines={1} style={[styles.facts, { color: palette.textMuted }]}>
-          Pridané {formatDate(item.created_at)}
+          {/* Počet zobrazení je VEREJNÝ — je to bežné pri inzerátoch
+              a hovorí, či je o vec záujem. Pod piatimi sa ale NEUKAZUJE:
+              „1 zobrazenie" pri inzeráte, ktorý človek práve otvoril,
+              vyzerá mŕtvo a nepovie nič. Rovnaký prah ako pri konverzii
+              v „Moje inzeráty" — jedno pravidlo, nie dve. */}
+          {[
+            `Pridané ${formatDate(item.created_at)}`,
+            item.view_count >= VIEWS_SHOWN_FROM ? `${item.view_count} zobrazení` : null,
+          ]
+            .filter(Boolean)
+            .join(' · ')}
         </Text>
 
         <View style={styles.foot}>

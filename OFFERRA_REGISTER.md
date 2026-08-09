@@ -3102,6 +3102,26 @@ a že appka je len pre fyzické osoby vrátane dôsledkov.
 Test `akofunguje_test.js` stráži pokrytie po jednotlivých témach — padne,
 keď sa niektorá z nich z textu vytratí.
 
+### 11.18 Označenie vlastných položiek + zobrazenia na karte — ✅ 11/11 naživo
+
+**Rastiova obava, či to niečo neodkrýva, je overená meraním:** `owner_id`
+aj `buyer_request.user_id` sú vo verejnom výpise **už teraz** (overené
+anonymným dotazom PRED zmenou). Porovnanie na klientovi teda neodkrýva
+nič nové a nerobí ani žiadny dotaz navyše.
+
+Dôkaz dvoma účtami: server vracia obom **rovnaké dáta**, ale označené má
+každý len svoje. Neprihlásený nemá čo označiť.
+
+Vlastný dopyt má okrem odznaku aj **obrys** — v dlhom zozname sa samotný
+odznak stratí.
+
+**Rozhodnutie o počte zobrazení:** je **VEREJNÝ**, ako Rastio odporúčal.
+Moja pôvodná námietka („0 zobrazení vyzerá mŕtvo") sa dá vyriešiť lepšie
+než skrývaním údaja: číslo sa **ukazuje až od piatich**. Pod tým nič
+nehovorí — človek, ktorý inzerát práve otvoril, by videl „1 zobrazenie".
+Je to **ten istý prah** ako pri konverzii v „Moje inzeráty", teda jedno
+pravidlo, nie dve.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

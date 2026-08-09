@@ -19,6 +19,7 @@ import { Badge, ErrorNote } from '@/components/ui';
 import { useRequests } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { AppHeader } from '@/components/app-header';
+import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
 import { DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
@@ -27,6 +28,8 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function DopytyScreen() {
   const palette = useTheme();
+  const { session } = useSession();
+  const myId = session?.user.id;
   const router = useRouter();
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
   const { items, error, reload } = useRequests(undefined, filter);
@@ -93,13 +96,20 @@ export default function DopytyScreen() {
                 styles.card,
                 {
                   backgroundColor: pressed ? palette.surfacePressed : palette.surface,
-                  borderColor: palette.border,
+                  // Vlastný dopyt má aj obrys, nie len odznak — v dlhom
+                  // zozname sa odznak stratí, obrys nie.
+                  borderColor: myId && r.user_id === myId ? palette.accent : palette.border,
+                  borderWidth: myId && r.user_id === myId ? 1.5 : 1,
                 },
               ]}>
               <View style={styles.badges}>
                 <Badge text={DEMAND_LABEL[r.transaction_type].toUpperCase()} tone="accent" />
                 {r.property_type ? <Badge text={PROPERTY_LABEL[r.property_type as PropertyType]} /> : null}
                 {r.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
+                {/* „Tvoj dopyt" vidí LEN ten, kto ho pridal — porovnáva sa
+                    na klientovi s vlastným id. Nič to neodkrýva: `user_id`
+                    je vo verejnom výpise aj tak (overené). */}
+                {myId && r.user_id === myId ? <Badge text="TVOJ DOPYT" tone="navy" /> : null}
               </View>
 
               <Text style={[styles.budget, { color: palette.primary }]}>

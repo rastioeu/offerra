@@ -21,6 +21,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Vlastné inzeráty na prvý pohľad',
+    items: [
+      'Tvoje vlastné inzeráty a dopyty sú v zozname označené — nemusíš si pamätať, ktoré sú tvoje. Vidíš to len ty; ostatní pri tvojich veciach nič navyše nevidia.',
+      'Na karte v katalógu pribudol počet zobrazení. Ukáže sa až od piatich — „1 zobrazenie" pri inzeráte, ktorý práve otváraš, nehovorí nič.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Hodnotenia sú verejné + podrobné „Ako funguje"',
     items: [
       'Hodnotenia sú teraz celé verejné — hviezdičky aj text. Kto zvažuje obchod s konkrétnym človekom, potrebuje kontext, nie len číslo.',
