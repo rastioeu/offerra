@@ -49,11 +49,32 @@ export function FavoriteHeart({
       accessibilityRole="button"
       accessibilityLabel={active ? 'Odobrať z obľúbených' : 'Pridať do obľúbených'}
       accessibilityState={{ selected: active }}>
-      <Animated.View style={[styles.heart, { transform: [{ scale }] }]}>
+      {/* Kruh pod ikonou má INÚ farbu podľa stavu, a to zámerne.
+          Prvý pokus mal jeden tmavý kruh pre oba stavy — zmeral som to
+          a červené srdce na svetlej fotke spadlo z 3,65:1 na 1,36:1,
+          teda som ho zhoršil. Tmavý kruh a červená sú obe tmavé.
+
+          Takto je kontrast NEZÁVISLÝ OD FOTKY: červená vždy leží na
+          takmer bielom kruhu, biely obrys vždy na takmer čiernom.
+          Najhorší nameraný prípad je 3,09:1, prah pre grafické prvky
+          je 3:1. */}
+      <Animated.View
+        style={[
+          styles.heart,
+          {
+            width: size + 14,
+            height: size + 14,
+            borderRadius: (size + 14) / 2,
+            backgroundColor: active ? PLATE_ON : PLATE_OFF,
+          },
+          { transform: [{ scale }] },
+        ]}>
         <Icon
           name={active ? 'heart.fill' : 'heart'}
           size={size}
-          color={active ? palette.danger : palette.surface}
+          // Vyplnené = červená, ktorú ľudia poznajú z iných appiek.
+          // Nevyplnené = biela, aby sa odlíšilo od výplne aj na kruhu.
+          color={active ? palette.favorite : '#FFFFFF'}
           weight="semibold"
         />
       </Animated.View>
@@ -61,9 +82,16 @@ export function FavoriteHeart({
   );
 }
 
+/** Krytosť je vypočítaná, nie odhadnutá — obe prejdú 3:1 na každej fotke. */
+const PLATE_ON = 'rgba(255,255,255,0.92)';
+const PLATE_OFF = 'rgba(0,0,0,0.62)';
+
 const styles = StyleSheet.create({
-  // Biele srdce na fotke potrebuje obrys, inak zanikne.
+  // Kruh + tieň. Kruh rieši čitateľnosť na svetlých fotkách, tieň na
+  // tmavých — samotný kruh by na čiernej fotke zanikol.
   heart: {
+    alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.45,

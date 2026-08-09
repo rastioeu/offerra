@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Počet ponúk na karte a výraznejšie srdiečko',
+    items: [
+      'Na karte v katalógu vidíš aj počet ponúk — „Pridané 7. augusta · 14 zobrazení · 3 ponuky". Hneď je jasné, či je o inzerát záujem, bez otvárania.',
+      'Keď inzerát ponuky nemá, tá časť sa vynechá — „0 ponúk" by pôsobilo sucho a pätka karty to aj tak povie.',
+      'Srdiečko je po novom jasne červené a má pod sebou kruh, takže je čitateľné na akejkoľvek fotke — na tmavej aj na svetlej. Predtým na niektorých splývalo.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Vlastné inzeráty na prvý pohľad',
     items: [
       'Tvoje vlastné inzeráty a dopyty sú v zozname označené — nemusíš si pamätať, ktoré sú tvoje. Vidíš to len ty; ostatní pri tvojich veciach nič navyše nevidia.',

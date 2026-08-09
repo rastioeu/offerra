@@ -3122,6 +3122,36 @@ nehovorí — človek, ktorý inzerát práve otvoril, by videl „1 zobrazenie"
 Je to **ten istý prah** ako pri konverzii v „Moje inzeráty", teda jedno
 pravidlo, nie dve.
 
+### 11.19 Počet ponúk na karte + srdiečko — ✅ 11/11 a 18/18
+
+**Počet ponúk** doplnený do riadku pod názvom. `offerCountLabel()` už
+existovala, vracia `null` pri nule a skloňuje — „0 ponúk" teda nemá ako
+vzniknúť. Absenciu ponúk aj tak povie pätka vpravo („zatiaľ bez ponúk"),
+takže by to bolo dvakrát to isté.
+
+**Srdiečko — a chyba, ktorú našlo až meranie.** Pôvodná farba bola
+`palette.danger` (#A33528), teda terakota, ktorá na karte splývala
+s akcentom aj s cenou. Nová `favorite: #FF3040` je v TOKENOCH a **rovnaká
+v oboch témach** — srdiečko sa nemá meniť podľa témy.
+
+Prvý pokus mal jeden tmavý kruh pod ikonou pre oba stavy. **Zmeral som to
+a červené srdce na svetlej fotke spadlo z 3,65:1 na 1,36:1** — teda som
+ho zhoršil. Tmavý kruh aj červená sú obe tmavé.
+
+Riešenie: kruh má **inú farbu podľa stavu**, takže kontrast je
+**nezávislý od fotky**:
+
+| stav | kruh | ikona | najhorší z 7 fotiek |
+|---|---|---|---|
+| obľúbené | biely 0,92 | červená #FF3040 | **3,09:1** |
+| neobľúbené | čierny 0,62 | biela | **6,19:1** |
+
+Krytosti sú **vypočítané**, nie odhadnuté — hľadal som dvojicu, pri
+ktorej oba stavy prejdú 3:1 na každom zo siedmich pozadí (biela, svetlý
+interiér, trávnik, obloha, tehla, večer, čierna).
+
+Vizuálny dôkaz: `reports/srdiecko.png`.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

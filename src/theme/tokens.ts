@@ -55,6 +55,16 @@ export type Palette = {
   success: string;
   warning: string;
   danger: string;
+  /**
+   * Srdiečko „obľúbené". ZÁMERNE rovnaká v oboch témach a ZÁMERNE mimo
+   * teplej palety appky.
+   *
+   * `danger` (#A33528) je terakotová a na karte splývala s akcentom aj
+   * s cenou — nebolo poznať, že ide špecificky o obľúbené. Táto červená
+   * je tá, ktorú ľudia poznajú zo všetkých ostatných appiek, takže
+   * nepotrebuje vysvetlenie.
+   */
+  favorite: string;
 };
 
 /**
@@ -105,6 +115,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     success: '#1D6B4A',
     warning: '#8A5A12',
     danger: '#A33528',
+    favorite: '#FF3040',
   },
   dark: {
     // Tmavá je TEPLÉ uhlie, nie modrá noc — aby sedela k terakote
@@ -134,6 +145,8 @@ export const Colors: { light: Palette; dark: Palette } = {
     success: '#5CC08E',
     warning: '#E0A94A',
     danger: '#EE7A6A',
+    // Tá istá červená ako v svetlej — srdiečko sa nemá meniť podľa témy.
+    favorite: '#FF3040',
   },
 };
 

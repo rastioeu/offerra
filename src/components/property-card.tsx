@@ -207,6 +207,12 @@ export function PropertyCard({
           {[
             `Pridané ${formatDate(item.created_at)}`,
             item.view_count >= VIEWS_SHOWN_FROM ? `${item.view_count} zobrazení` : null,
+            // Počet ponúk hovorí, či sa oplatí kliknúť — veľa ponúk =
+            // žiadaný inzerát. Pri NULE sa vynecháva: `offerCountLabel`
+            // vracia `null` a „0 ponúk" by pôsobilo sucho. Absenciu už
+            // aj tak povie pätka vpravo („zatiaľ bez ponúk"), takže by
+            // to bolo aj dvakrát to isté.
+            offerCountLabel(pd.offerCount),
           ]
             .filter(Boolean)
             .join(' · ')}
