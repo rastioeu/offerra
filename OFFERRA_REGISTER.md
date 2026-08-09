@@ -2846,6 +2846,25 @@ neotvoril.
 Pri práci sa našla vlastná duplicita — napísal som `isEmptyFilter()`,
 hoci `isFilterEmpty()` v `search.ts` už existovala. Zmazané.
 
+### 11.7 História cien — ✅ OVERENÉ RUNTIME (10/10)
+
+`offerra.price_history`, zapisuje **trigger**, nie appka.
+
+**Prečo verejná:** orientačná cena je verejná od začiatku a jej ZMENA je
+informácia rovnakej povahy. Keby verejná nebola, dalo by sa týždeň pred
+uzávierkou ticho zdvihnúť cenu a záujemcovia by ponúkali proti niečomu,
+čo sa im pod rukami zmenilo.
+
+**Nedá sa podvrhnúť.** Nikto — ani vlastník inzerátu — nemá `insert`,
+`update` ani `delete` grant. Overené všetkými tromi. Inak by to nebola
+história, ale ďalšie pole, ktoré si vlastník upraví.
+
+Koncept sa nezaznamenáva: kým inzerát nikto nevidí, ladenie ceny je šum,
+nie história.
+
+Na detaile je **jedna veta pri cene**, nie zoznam: „Znížená z 200 000 €
+o 20 % · 3× menená". Zníženie zelené, zvýšenie oranžové.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

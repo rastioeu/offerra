@@ -55,6 +55,8 @@ import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount } from '@/lib/offers';
 import { ratingLabel } from '@/lib/rating';
+import { fetchPriceHistory, priceSummary, type PriceChange } from '@/lib/price-history';
+import { errorText } from '@/lib/errors';
 import { useRatings } from '@/hooks/use-ratings';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
@@ -108,6 +110,23 @@ export default function PropertyDetailScreen() {
   const winnerBidderId = offers?.find((o) => o.id === item?.closed_offer_id)?.bidder_id;
   const ratings = useRatings(item ? [item.owner_id] : []);
   const ownerRating = item ? ratingLabel(ratings[item.owner_id]) : null;
+
+  // História ceny — doťahuje sa samostatne, lebo väčšina inzerátov ju
+  // nemá a nemá zmysel ňou zaťažovať hlavný dotaz.
+  const [priceHistory, setPriceHistory] = useState<PriceChange[]>([]);
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    void fetchPriceHistory(id)
+      .then((h) => {
+        if (!cancelled) setPriceHistory(h);
+      })
+      .catch((e: unknown) => console.log(`[CENA] História nedostupná: ${errorText(e)}`));
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
+  const priceNote = item ? priceSummary(priceHistory, item.transaction_type) : null;
   const { ids: favorites, toggle } = useFavoriteIds(myId);
 
   // Živé ponuky = tie, ktoré ešte stoja. Stiahnutá ani odmietnutá ponuka
@@ -294,6 +313,18 @@ export default function PropertyDetailScreen() {
                     .filter(Boolean)
                     .join(' · ')}
                 </Text>
+                {/* Zmena ceny patrí k cene, nie do samostatnej sekcie —
+                    je to informácia o TEJTO sume, nie vedľajší údaj. */}
+                {priceNote ? (
+                  <Text
+                    style={[
+                      styles.priceSub,
+                      { color: priceNote.direction === 'DOWN' ? palette.success : palette.warning },
+                    ]}>
+                    {priceNote.text}
+                  </Text>
+                ) : null}
+
                 {deadline ? (
                   <Text
                     style={[

@@ -24,7 +24,8 @@ export const HOW_STEPS: HowStep[] = [
     title: 'Cena je nepovinná',
     body:
       'Kto ponúka nehnuteľnosť, môže uviesť orientačnú sumu — alebo nechať pole prázdne ' +
-      'a počkať, čo mu ľudia ponúknu.',
+      'a počkať, čo mu ľudia ponúknu. Ak ju po zverejnení zmení, na inzeráte je ' +
+      'vidieť o koľko — cena sa nedá upraviť ticho.',
   },
   {
     icon: 'person.circle',

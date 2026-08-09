@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'História ceny',
+    items: [
+      'Ak predávajúci po zverejnení zmenil orientačnú cenu, na inzeráte to je vidieť — napríklad „Znížená z 200 000 € o 20 %".',
+      'Zníženie je zelené, zvýšenie oranžové. Vidí to každý, nielen ty.',
+      'Záznam robí databáza, nie appka — nedá sa podvrhnúť ani prepísať, ani vlastníkom inzerátu.',
+      'Kým je inzerát rozpracovaný, ladenie ceny sa nikam nezapisuje.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Uložené vyhľadávanie',
     items: [
       'Keď si nastavíš filtre, môžeš si hľadanie uložiť jedným ťuknutím — nabudúce ho vyvoláš z lišty nad katalógom.',
