@@ -14,28 +14,18 @@ import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 're
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, ChoiceRow, ErrorNote, SectionLabel } from '@/components/ui';
+import { NotificationTypeList } from '@/components/notification-types';
 import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
 import { useSession } from '@/hooks/use-session';
 import { ContactCard } from '@/components/contact-card';
 import { useToast } from '@/components/toast';
 import { useTheme, useThemeMode, THEME_MODE_LABEL, type ThemeMode } from '@/hooks/use-theme';
-import {
-  FREQUENCY_LABEL,
-  NOTIFICATION_TYPES,
-  type NotificationFrequency,
-} from '@/lib/notifications';
 import { signOut } from '@/lib/auth';
 import { disablePushOnThisDevice, enablePush, getPushStatus, type PushStatus } from '@/lib/push';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
-
-/**
- * Sú denný a týždenný súhrn už funkčné? Kým nie, výber frekvencie sa
- * vôbec nezobrazuje — jedna možnosť nie je výber a „(čoskoro)" je výplň.
- */
-const DIGEST_READY = false;
 
 export default function NastaveniaScreen() {
   const palette = useTheme();
@@ -205,65 +195,7 @@ export default function NastaveniaScreen() {
           </View>
           <ErrorNote error={prefError} />
 
-          {NOTIFICATION_TYPES.map((t) => {
-            const pref = prefs[t.type];
-            const enabled = t.system ? true : (pref?.enabled ?? true);
-            const frequency = (pref?.frequency ?? 'IHNED') as NotificationFrequency;
-            return (
-              <View key={t.type} style={[styles.notifRow, { borderTopColor: palette.border }]}>
-                <View style={styles.switchRow}>
-                  <View style={styles.switchText}>
-                    <Text style={[styles.label, { color: palette.textPrimary }]}>{t.label}</Text>
-                    {t.hint ? (
-                      <Text style={[styles.hint, { color: palette.textMuted }]}>{t.hint}</Text>
-                    ) : null}
-                  </View>
-                  <Switch
-                    value={enabled}
-                    disabled={t.system}
-                    onValueChange={(v) => save(t.type, { enabled: v })}
-                    trackColor={{ true: palette.secondary, false: palette.border }}
-                  />
-                </View>
-
-                {/* Frekvencia sa NEZOBRAZUJE, kým funguje jediná možnosť.
-                    Denný a týždenný súhrn potrebujú plánovanú úlohu na
-                    serveri, ktorú Offerra nemá — chip so štítkom „(čoskoro)"
-                    je presne ten druh nefunkčnej výplne, ktorý Apple pri
-                    recenzii odmieta (App Review 2.1). Až budú súhrny reálne
-                    fungovať, stačí prepnúť `DIGEST_READY`. */}
-                {DIGEST_READY && enabled && !t.system ? (
-                  <View style={styles.freqRow}>
-                    {(['IHNED', 'DENNY_SUHRN', 'TYZDENNY_SUHRN'] as NotificationFrequency[]).map((f) => {
-                      const active = frequency === f;
-                      return (
-                        <Pressable
-                          key={f}
-                          onPress={() => save(t.type, { frequency: f })}
-                          accessibilityRole="button"
-                          accessibilityState={{ selected: active }}
-                          style={[
-                            styles.freq,
-                            {
-                              backgroundColor: active ? palette.primary : palette.surface,
-                              borderColor: active ? palette.primary : palette.border,
-                            },
-                          ]}>
-                          <Text
-                            style={[
-                              styles.freqText,
-                              { color: active ? palette.onPrimary : palette.textSecondary },
-                            ]}>
-                            {FREQUENCY_LABEL[f]}
-                          </Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
+          <NotificationTypeList prefs={prefs} onChange={(t, patch) => void save(t, patch)} />
         </Card>
 
         <Card>
@@ -325,9 +257,6 @@ const styles = StyleSheet.create({
   scroll: { padding: Spacing.lg, gap: Spacing.md, paddingBottom: Spacing.xxl },
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1 },
   notifRow: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.md, gap: Spacing.sm },
-  freqRow: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
-  freq: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 5 },
-  freqText: { ...Type.caption, fontWeight: Weight.semibold },
   switchRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.md },
   switchText: { flexShrink: 1, gap: 2 },
   label: { ...Type.bodyLg, fontWeight: Weight.medium },

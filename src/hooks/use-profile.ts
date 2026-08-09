@@ -42,6 +42,19 @@ export type MyProfile = {
    * preto čas, nie `true`: pri spore je podstatné KEDY to odklikol.
    */
   agent_declaration_at: string | null;
+  /**
+   * Kedy človek prešiel krokom „Upozornenia" v onboardingu. `null` = ešte
+   * nevidel a brána ho tam pošle.
+   *
+   * Čas, nie `true`: rovnaký dôvod ako vyššie — keď sa texty alebo typy
+   * upozornení zmenia, treba vedieť, KTORÚ verziu videl.
+   *
+   * POZOR: `authenticated` má na tento stĺpec len UPDATE, nie SELECT.
+   * Chodí VÝHRADNE cez `my_profile()` (SECURITY DEFINER, vlastný riadok).
+   * Keby sme dali SELECT, každý by vedel vyčítať, kedy si kto nastavoval
+   * upozornenia — a to nikoho iného nezaujíma.
+   */
+  notif_onboarded_at: string | null;
 };
 
 type ProfileState = {

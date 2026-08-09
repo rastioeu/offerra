@@ -3388,6 +3388,79 @@ jedným volaním `push_notification()`, ktoré spravilo oboje naraz:
 Testovací riadok zmazaný hneď po overení — `select count(*) where
 title like 'TEST%'` → **0**. V zvončeku po teste neostalo nič.
 
+### 11.27 Nastavenie upozornení pri prvom prihlásení
+
+Zadanie (Rastio, 9.8.2026): pri prvom prihlásení sa appka musí spýtať na
+povolenie pushu **a hneď potom ukázať výber typov** — nie ich len ticho
+zapnúť a nechať človeka, nech si to nájde v Nastaveniach.
+
+**Onboarding má odteraz tri kroky:** LOGIN → PREZÝVKA → **UPOZORNENIA** →
+appka.
+
+| | |
+|---|---|
+| mig 29 | `profile.notif_onboarded_at`, `my_profile()` ho vracia |
+| `src/app/upozornenia.tsx` (NOVÝ) | vlastné vysvetlenie + systémový dialóg + výber typov |
+| `src/components/notification-types.tsx` (NOVÝ) | zoznam prepínačov — JEDEN pre onboarding aj Nastavenia |
+| `src/lib/gate.ts` | tretí stupeň brány |
+| `src/lib/how-it-works.ts` | §8 — text o načasovaní by inak klamal |
+| `src/lib/push-prompt.ts` | z „prvej" ponuky sa stala záchranná sieť |
+
+**Rozhodnutia, ktoré som spravil sám (a prečo):**
+
+1. **Krok je až PO prezývke, nie pred ňou.** Systémový dialóg sa dá
+   položiť **raz**; kto klikne „Nepovoliť", toho sa iOS druhýkrát nespýta.
+   Pred prezývkou by sa appka pýtala skôr, než o sebe čokoľvek povedala.
+2. **Vlastné vysvetlenie PRED systémovým dialógom** — zadanie ho označilo
+   za nepovinné („ak čas netlačí"). Čas netlačí, tak je tam: tri konkrétne
+   príklady, nie slovo „notifikácie". Systémový dialóg vyskočí až po
+   stlačení tlačidla.
+3. **Krok sa dá preskočiť a preskočenie sa ZAPÍŠE.** „Teraz nie" je
+   odpoveď. Vstupná podmienka to nie je — na rozdiel od prezývky sa bez
+   upozornení appka používať dá.
+4. **Bez backfillu existujúcich profilov.** Keby sme im nastavili `now()`,
+   krok by nikto z doterajších nikdy nevidel — vrátane Rastia, ktorý ho má
+   otestovať. A hlavne: možnosť vybrať si typy nikdy nedostali.
+5. **Zoznam typov je ZDIEĽANÝ komponent.** Kópia v onboardingu by sa
+   s tou v Nastaveniach časom rozišla.
+
+**Stĺpcové granty sú zámerne asymetrické:** `authenticated` má na
+`notif_onboarded_at` len **UPDATE**, nie SELECT. `profile` má SELECT na
+cudzie riadky (verejná je prezývka, avatar, overenie) — s grantom SELECT
+by ktokoľvek vyčítal, kedy si kto nastavoval upozornenia. Vlastnú hodnotu
+appka dostane cez `my_profile()` (SECURITY DEFINER, iba vlastný riadok).
+
+**🔴 ČO SA NEDALO SPLNIŤ: výber FREKVENCIE.** Zadanie hovorí „typy +
+frekvencia". Typy áno. Frekvencia sa nezobrazuje ani tu, ani v
+Nastaveniach — denný a týždenný súhrn potrebujú plánovanú úlohu na
+serveri, ktorú Offerra nemá. Jediná fungujúca hodnota je `IHNED` a jedna
+možnosť nie je výber. Nefunkčný chip „(čoskoro)" je presne to, čo Apple
+pri recenzii odmieta (App Review 2.1). **Default `IHNED` zo zadania teda
+platí a je overený; chýba len možnosť ho zmeniť.** Zapnutie je jeden
+prepínač `DIGEST_READY` na jednom mieste, keď súhrny naozaj pribudnú.
+
+**Dôkazy:**
+
+| test | výsledok |
+|---|---|
+| `onboarding_test.js` (brána) | **13/13** |
+| `notif_onboarding_test.py` (cez PostgREST, ako appka) | **13/13** |
+| `push_route_test.js` | 18/18 |
+| `akofunguje_test.js` / `odozva_test.js` / `audit.js` | 15/15 · 21/21 · 74/74 |
+| `npx tsc --noEmit` | čistý |
+
+DB test ide **cestou appky** (PostgREST + RPC, dva reálne účty), nie
+SELECT-om — lebo som už raz mal krok onboardingu, ktorý sa v DB ukladal
+správne, ale človek sa cezeň **nedostal**. Overené aj to, že vypnutý typ
+`should_notify()` naozaj odmietne — inak by prepínač bol ozdoba.
+
+**🟡 ČAKÁ VIZUÁLNE OVERENIE.** Čo má Rastio otestovať, je v
+`reports/ONBOARDING_UPOZORNENIA.md`.
+
+**IDE OTA** — žiadny nový natívny modul.
+
+---
+
 **Tým je push HOTOVÝ celou reťazou:** appka získa token → databáza
 založí oznámenie aj push → Expo → APNs → telefón → klik → správna
 obrazovka. Žiadny článok už nie je neoverený.

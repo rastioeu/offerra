@@ -1,11 +1,16 @@
 /**
- * Jednorazová ponuka zapnúť upozornenia — po PRVEJ akcii, na ktorú bude
- * niekto reagovať.
+ * DRUHÁ a POSLEDNÁ ponuka zapnúť upozornenia — po prvej akcii, na ktorú
+ * bude niekto reagovať.
  *
- * PREČO NIE PRI ŠTARTE APPKY: kto povolenie odmietne, systém sa ho
- * druhýkrát nespýta. Otázka položená v momente, keď človek ešte nevie,
- * načo mu to je, tú možnosť natrvalo spáli. Po podaní ponuky alebo
- * zverejnení inzerátu už dôvod pozná — čaká odpoveď.
+ * VZŤAH KU KROKU V ONBOARDINGU (`upozornenia.tsx`, 9.8.2026): prvý raz
+ * sa pýta onboarding. Toto je záchranná sieť pre toho, kto tam krok
+ * PRESKOČIL — vtedy systémový dialóg nikdy nevyskočil, povolenie ostalo
+ * `undetermined` a dá sa oň ešte požiadať.
+ *
+ * Kto v onboardingu klikol „Nepovoliť", sem nedôjde: `getPushStatus()`
+ * vráti `denied` a funkcia sa hneď vráti. iOS sa druhýkrát nespýta a
+ * predstierať opak by bolo klamstvo — v tom prípade to ide už len cez
+ * nastavenia telefónu.
  *
  * PREČO LEN RAZ: odpoveď „nie" je odpoveď. Zapnúť sa to dá kedykoľvek
  * v Nastaveniach a je to tam napísané.

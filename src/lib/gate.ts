@@ -19,11 +19,26 @@ export type GateInput = {
   segment: string | undefined;
   /** Nepodarilo sa načítať profil. */
   profileError?: boolean;
+  /**
+   * Kedy človek prešiel krokom „Upozornenia" (`profile.notif_onboarded_at`).
+   * `null`/`undefined` = ešte nevidel → onboarding pokračuje tam.
+   *
+   * ZÁMERNE samostatné pole a nie čítanie z `profile`: `profile` je tu
+   * `unknown`, aby brána nezávisela od tvaru profilu. Tá nezávislosť je
+   * dôvod, prečo sa dá otestovať bez zariadenia.
+   */
+  notifOnboardedAt?: string | null;
 };
 
-export type GateDecision = '/login' | '/prezyvka' | '/(tabs)' | null;
+export type GateDecision = '/login' | '/prezyvka' | '/upozornenia' | '/(tabs)' | null;
 
-export function decideRoute({ session, profile, segment, profileError }: GateInput): GateDecision {
+export function decideRoute({
+  session,
+  profile,
+  segment,
+  profileError,
+  notifOnboardedAt,
+}: GateInput): GateDecision {
   // 1. Nevieme, či je niekto prihlásený — nerozhodujeme.
   if (session === undefined) return null;
 
@@ -37,10 +52,22 @@ export function decideRoute({ session, profile, segment, profileError }: GateInp
   // 4. Chyba načítania profilu rieši samostatná obrazovka, nie onboarding.
   if (profileError) return null;
 
-  // 5. Server POTVRDIL, že profil nie je → onboarding.
+  // 5. Server POTVRDIL, že profil nie je → onboarding, krok 1.
   if (profile === null) return segment === 'prezyvka' ? null : '/prezyvka';
 
-  // 6. Všetko máme — preč z login/onboarding obrazoviek.
-  if (segment === 'login' || segment === 'prezyvka') return '/(tabs)';
+  // 6. Profil je, ale krok „Upozornenia" ešte nevidel → onboarding, krok 2.
+  //    Je AŽ TU, teda po prezývke: skôr by sa appka pýtala na povolenie
+  //    prv, než o sebe čokoľvek povedala. Systémový dialóg sa dá položiť
+  //    raz, tak nech je položený vtedy, keď človek vie, na čo odpovedá.
+  //
+  //    Platí to aj pre existujúcich používateľov (`notif_onboarded_at` majú
+  //    `null`, backfill sme zámerne nerobili) — nikdy nedostali možnosť si
+  //    typy vybrať, tak ju dostanú teraz. Je to jedna preskočiteľná obrazovka.
+  if (!notifOnboardedAt) return segment === 'upozornenia' ? null : '/upozornenia';
+
+  // 7. Všetko máme — preč zo všetkých onboardingových obrazoviek.
+  if (segment === 'login' || segment === 'prezyvka' || segment === 'upozornenia') {
+    return '/(tabs)';
+  }
   return null;
 }

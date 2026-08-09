@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '9. augusta 2026',
+    title: 'Upozornenia si nastavíš hneď na začiatku',
+    items: [
+      'Pri registrácii — hneď po zadaní prezývky — sa ťa Offerra spýta, či chceš upozornenia na telefón, a najprv ti povie, načo ti to je.',
+      'Rovno pod tým je zoznam typov: nová ponuka, prijatá ponuka, obhliadka a ďalšie. Všetko je zapnuté, takže stačí prejsť ďalej — ale čokoľvek si tam môžeš hneď vypnúť.',
+      'Nemusíš nič — krok sa dá preskočiť a appka funguje normálne. Upozornenia nájdeš pri zvončeku.',
+      'Ten istý zoznam ostáva v Nastaveniach a dá sa kedykoľvek zmeniť.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '9. augusta 2026',
     title: 'Klik na upozornenie ťa konečne niekam zoberie',
     items: [
       'Keď klikneš na upozornenie na zamknutej obrazovke, appka otvorí presne to, čoho sa týka — nie tam, kde si ju naposledy nechal.',

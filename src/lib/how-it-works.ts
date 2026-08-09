@@ -167,14 +167,18 @@ export const HOW_SECTIONS: HowSection[] = [
     icon: 'bell',
     title: 'Upozornenia si nastavuješ ty',
     paragraphs: [
-      'V Nastaveniach si pri každom type oznámenia zvolíš, či ho chceš: nová ponuka na tvoj ' +
-        'inzerát, prijatie či odmietnutie tvojej ponuky, nový dopyt, ktorý sedí na tvoj ' +
-        'inzerát, zhoda s uloženým hľadaním, záujem o obhliadku.',
+      'Hneď pri registrácii — po zadaní prezývky — sa ťa Offerra spýta, či chceš upozornenia ' +
+        'na telefón, a rovno ti ukáže zoznam typov. Nastavíš si to na začiatku, nie tak, že ' +
+        'sa ti to jedného dňa začne ozývať a ty budeš hľadať, kde sa to vypína.',
+      'Pri každom type si zvolíš, či ho chceš: nová ponuka na tvoj inzerát, prijatie či ' +
+        'odmietnutie tvojej ponuky, nový dopyt, ktorý sedí na tvoj inzerát, zhoda ' +
+        's uloženým hľadaním, záujem o obhliadku.',
       'Vypnutý typ neposiela nič — ani v appke, ani na telefón.',
       'Systémové a bezpečnostné oznámenia (napríklad zablokovanie účtu) sa vypnúť nedajú. ' +
         'Musia doraziť vždy.',
-      'Upozornenia na telefón sa pýtajú až vtedy, keď dávajú zmysel — po tvojej prvej ponuke ' +
-        'alebo prvom inzeráte. Nikdy hneď pri prvom otvorení appky.',
+      'Ten istý zoznam nájdeš kedykoľvek v Nastaveniach a môžeš ho zmeniť. Ak si povolenie ' +
+        'na začiatku nedal, appka ťa ním znovu neotravuje — pripomenie sa raz, po tvojej ' +
+        'prvej ponuke alebo prvom inzeráte, keď už vieš, načo ti je.',
     ],
   },
   {

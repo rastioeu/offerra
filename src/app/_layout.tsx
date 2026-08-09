@@ -77,7 +77,7 @@ function RootLayoutInner() {
   const router = useRouter();
   const segments = useSegments();
 
-  // FÁZA 2 — brána má dva stupne: session, a potom prezývka.
+  // Brána má TRI stupne: session → prezývka → upozornenia.
   // Musí byť deklarované PRED efektmi, ktoré ho čítajú.
   const { profile, error: profileError, reload: reloadProfile } = useProfile();
 
@@ -99,9 +99,10 @@ function RootLayoutInner() {
     });
   }, [session, profile, profileError]);
 
-  // FÁZA 2 — brána má teraz dva stupne: session, a potom prezývka.
   // Bez prezývky sa nedá inzerovať ani ponúkať (v DB to drží cudzí kľúč na
   // `offerra.profile`), takže je to podmienka vstupu, nie odporúčanie.
+  // Tretí stupeň (upozornenia) podmienka vstupu NIE JE — dá sa preskočiť,
+  // len sa nesmie preskočiť tichým nevidením.
   useEffect(() => {
     // Rozhodovanie je v `@/lib/gate` ako čistá funkcia — pokryté testom,
     // lebo práve táto logika nás už trikrát stála chybu na zariadení.
@@ -110,6 +111,7 @@ function RootLayoutInner() {
       profile,
       segment: segments[0],
       profileError: Boolean(profileError),
+      notifOnboardedAt: profile?.notif_onboarded_at ?? null,
     });
     if (target) router.replace(target);
   }, [session, profile, profileError, segments, router]);
@@ -176,6 +178,7 @@ function RootLayoutInner() {
           }}>
           <Stack.Screen name="login" />
           <Stack.Screen name="prezyvka" />
+          <Stack.Screen name="upozornenia" />
           {/* Titulok skupiny — druhá poistka toho istého: aj keby sa niekde
               text pri šípke predsa vykreslil, je po slovensky. */}
           <Stack.Screen name="(tabs)" options={{ title: 'Offerra' }} />
