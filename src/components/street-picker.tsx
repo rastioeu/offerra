@@ -18,7 +18,7 @@ import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 
 
 import { useTheme } from '@/hooks/use-theme';
 import { db } from '@/lib/property';
-import { normalizeText } from '@/lib/search';
+import { normalizeText, stemSk } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
@@ -77,7 +77,8 @@ export function StreetPicker({
 
   // 2. našeptávanie nad vlastnou tabuľkou
   useEffect(() => {
-    const needle = normalizeText((street ?? '').trim());
+    // Ulice sa skloňujú rovnako ako mestá („na Šancovej").
+    const needle = stemSk((street ?? '').trim());
     if (cityId == null || picked || needle.length < 2) {
       setItems([]);
       return;

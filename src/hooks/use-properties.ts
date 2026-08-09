@@ -9,7 +9,7 @@
  */
 import { useCallback, useEffect, useState } from 'react';
 
-import { normalizeText, type CatalogFilter } from '@/lib/search';
+import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 import { errorText } from '@/lib/errors';
 
@@ -90,8 +90,17 @@ export function useProperties(filter?: CatalogFilter, sort: CatalogSort = 'NEWES
       if (f?.text) {
         // JEDEN normalizovaný stĺpec namiesto troch `or` vetiev: hľadá
         // bez diakritiky a využije trigramový index.
-        const t = normalizeText(f.text.replace(/[%,()]/g, ' ').trim());
-        if (t) q = q.like('search_norm', `%${t}%`);
+        //
+        // Každé slovo sa hľadá ZVLÁŠŤ a musia sedieť všetky. Predtým išla
+        // do dotazu celá fráza ako jeden podreťazec, takže „byt Nitra"
+        // nenašlo nič — v texte tie dve slová vedľa seba nestoja.
+        //
+        // Slová idú cez `stemSk`: „Banskej" → „bansk", čo v „banska
+        // bystrica" JE. Bez toho skloňovaný tvar nenašiel nič
+        // (Rastio, 9.8.2026).
+        for (const w of stemQuery(f.text.replace(/[%,()]/g, ' ')).split(' ')) {
+          if (w) q = q.like('search_norm', `%${w}%`);
+        }
       }
 
       // Server radí od najnovšieho — to je predvolené poradie katalógu.

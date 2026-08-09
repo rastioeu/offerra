@@ -63,7 +63,65 @@ export function isFilterEmpty(f: CatalogFilter): boolean {
  * v rozbore vety.
  */
 export function normalizeText(s: string): string {
-  return s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+  return s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
+
+/**
+ * Slovenské koncovky, ktoré sa odsekávajú pri hľadaní — od najdlhších.
+ *
+ * Poradie JE podstatné: „Košiciach" musí padnúť na `iach`, nie najprv na
+ * `ach` a potom zostať s „kosici". Regex sa skúša zhora nadol a berie sa
+ * prvá zhoda.
+ */
+const SK_ENDINGS = [
+  'iach', 'ach', 'ami', 'ovi', 'ove', 'ova', 'ymi', 'ych', 'ich', 'emu', 'eho',
+  'iam', 'om', 'ou', 'ej', 'mi', 'ch', 'im', 'ym', 'am', 'ie',
+  'a', 'e', 'i', 'o', 'u', 'y',
+];
+
+/**
+ * Koreň slova bez skloňovacej koncovky.
+ *
+ * PREČO TO TREBA (Rastio, 9.8.2026): kto napíše „Banskej", nenašiel
+ * „Banská Bystrica" — hľadá sa podreťazcom a „banskej" v „banska bystrica"
+ * nie je. Spoločný je až koreň „bansk".
+ *
+ * PREČO ODSEKÁVANIE A NIE ZOZNAM TVAROV: slovenčina má pri každom meste
+ * šesť pádov v dvoch číslach. Zoznam by bol tabuľka na údržbu; koreň je
+ * pravidlo.
+ *
+ * PREČO SA ODSEKÁVA LEN DOTAZ A NIE AJ DÁTA: hľadá sa podreťazcom, takže
+ * `%bansk%` nájde „banska bystrica" aj bez toho, aby sa čokoľvek menilo
+ * v databáze. Žiadna migrácia, žiadny druhý zdroj pravdy.
+ *
+ * POISTKA PROTI PREHNANÉMU SKRACOVANIU: koreň musí ostať aspoň
+ * štvorpísmenový. Bez toho by z „byt" ostalo „by" a hľadanie by vracalo
+ * všetko, čo obsahuje tie dve písmená.
+ */
+export const MIN_STEM = 4;
+
+export function stemSk(word: string): string {
+  const w = normalizeText(word);
+  if (w.length <= MIN_STEM) return w;
+  for (const end of SK_ENDINGS) {
+    if (w.endsWith(end) && w.length - end.length >= MIN_STEM) {
+      return w.slice(0, w.length - end.length);
+    }
+  }
+  return w;
+}
+
+/**
+ * Celá veta od používateľa na korene, oddelené medzerou.
+ *
+ * Slová kratšie než prah ostávajú nedotknuté — „dom" sa skracovať nesmie.
+ */
+export function stemQuery(text: string): string {
+  return normalizeText(text)
+    .split(/\s+/)
+    .filter(Boolean)
+    .map(stemSk)
+    .join(' ');
 }
 
 const TRANSACTION_WORDS: [RegExp, TransactionType][] = [

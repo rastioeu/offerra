@@ -82,6 +82,10 @@ export default function AdminScreen() {
   /** `null` = bez filtra. Nefiltruje sa na serveri — 200 riadkov je málo. */
   const [reasonFilter, setReasonFilter] = useState<ReportReason | null>(null);
   const [limitDraft, setLimitDraft] = useState('');
+  /** Filtre, do ktorých vedie ťuknutie na dlaždicu štatistiky. */
+  const [propertyFilter, setPropertyFilter] = useState<PropertyStatus | null>(null);
+  const [onlyBlocked, setOnlyBlocked] = useState(false);
+  const [onlyPending, setOnlyPending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -246,7 +250,11 @@ export default function AdminScreen() {
   }
 
   const openReports = reports.filter((r) => r.status === 'PENDING');
-  const shownReports = reasonFilter ? reports.filter((r) => r.reason === reasonFilter) : reports;
+  const shownReports = reports
+    .filter((r) => (reasonFilter ? r.reason === reasonFilter : true))
+    .filter((r) => (onlyPending ? r.status === 'PENDING' : true));
+  const shownProperties = propertyFilter ? properties.filter((p) => p.status === propertyFilter) : properties;
+  const shownUsers = onlyBlocked ? users.filter((u) => u.is_blocked) : users;
   /** Koľko nahlásení pripadá na ktorý dôvod — bez toho je filter hádanie. */
   const reasonCounts = reports.reduce<Record<string, number>>((acc, r) => {
     acc[r.reason] = (acc[r.reason] ?? 0) + 1;
@@ -265,13 +273,53 @@ export default function AdminScreen() {
           <Card>
             <Text style={[styles.section, { color: palette.textMuted }]}>ŠTATISTIKA</Text>
             <View style={styles.stats}>
-              <Stat label="Zverejnené" value={stats.inzeraty_aktivne} />
-              <Stat label="Inzeráty spolu" value={stats.inzeraty_spolu} />
+              {/* Klikateľné sú LEN dlaždice, ktoré majú kam viesť. Ponuky
+                  a Dopyty admin pohľad zatiaľ nemajú — tvárili by sa
+                  klikateľne a nič by nespravili, čo §2 zakazuje. */}
+              <Stat
+                label="Zverejnené"
+                value={stats.inzeraty_aktivne}
+                onPress={() => {
+                  setSection('PROPERTIES');
+                  setPropertyFilter('ACTIVE');
+                }}
+              />
+              <Stat
+                label="Inzeráty spolu"
+                value={stats.inzeraty_spolu}
+                onPress={() => {
+                  setSection('PROPERTIES');
+                  setPropertyFilter(null);
+                }}
+              />
               <Stat label="Ponuky" value={stats.ponuky} />
               <Stat label="Dopyty" value={stats.dopyty} />
-              <Stat label="Používatelia" value={stats.pouzivatelia} />
-              <Stat label="Zablokovaní" value={stats.zablokovani} />
-              <Stat label="Otvorené nahlásenia" value={stats.nahlasenia_otvorene} highlight />
+              <Stat
+                label="Používatelia"
+                value={stats.pouzivatelia}
+                onPress={() => {
+                  setSection('USERS');
+                  setOnlyBlocked(false);
+                }}
+              />
+              <Stat
+                label="Zablokovaní"
+                value={stats.zablokovani}
+                onPress={() => {
+                  setSection('USERS');
+                  setOnlyBlocked(true);
+                }}
+              />
+              <Stat
+                label="Otvorené nahlásenia"
+                value={stats.nahlasenia_otvorene}
+                highlight
+                onPress={() => {
+                  setSection('REPORTS');
+                  setReasonFilter(null);
+                  setOnlyPending(true);
+                }}
+              />
             </View>
           </Card>
         ) : null}
@@ -435,7 +483,7 @@ export default function AdminScreen() {
         ) : null}
 
         {section === 'PROPERTIES'
-          ? properties.map((p) => (
+          ? shownProperties.map((p) => (
               <Pressable
                 key={p.id}
                 onPress={() => router.push({ pathname: '/nehnutelnost/[id]', params: { id: p.id } })}
@@ -484,7 +532,7 @@ export default function AdminScreen() {
         ) : null}
 
         {section === 'USERS'
-          ? users.map((u) => (
+          ? shownUsers.map((u) => (
               <Pressable
                 key={u.id}
                 onPress={() =>
@@ -631,15 +679,41 @@ export default function AdminScreen() {
   );
 }
 
-function Stat({ label, value, highlight }: { label: string; value: number; highlight?: boolean }) {
+/**
+ * Dlaždica štatistiky. S `onPress` je klikateľná a vedie do už
+ * vyfiltrovaného zoznamu; bez neho ostáva obyčajným číslom — a hlavne
+ * BEZ šípky, aby nesľubovala akciu, ktorá neexistuje.
+ */
+function Stat({
+  label,
+  value,
+  highlight,
+  onPress,
+}: {
+  label: string;
+  value: number;
+  highlight?: boolean;
+  onPress?: () => void;
+}) {
   const palette = useTheme();
+  const tone = highlight && value > 0 ? palette.warning : palette.primary;
+  const Wrap = onPress ? Pressable : View;
   return (
-    <View style={[styles.stat, { borderColor: highlight && value > 0 ? palette.warning : palette.border }]}>
-      <Text style={[styles.statValue, { color: highlight && value > 0 ? palette.warning : palette.primary }]}>
-        {value}
-      </Text>
+    <Wrap
+      onPress={onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={onPress ? `${label}: ${value}, otvoriť zoznam` : undefined}
+      style={({ pressed }: { pressed?: boolean } = {}) => [
+        styles.stat,
+        {
+          borderColor: highlight && value > 0 ? palette.warning : palette.border,
+          backgroundColor: pressed ? palette.surfacePressed : 'transparent',
+        },
+      ]}>
+      <Text style={[styles.statValue, { color: tone }]}>{value}</Text>
       <Text style={[styles.statLabel, { color: palette.textMuted }]}>{label}</Text>
-    </View>
+      {onPress ? <Text style={[styles.statArrow, { color: palette.textMuted }]}>›</Text> : null}
+    </Wrap>
   );
 }
 
@@ -651,6 +725,7 @@ const styles = StyleSheet.create({
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   stat: { borderWidth: 1, borderRadius: Radius.md, paddingHorizontal: Spacing.md, paddingVertical: Spacing.sm, minWidth: 96 },
   statValue: { ...Type.heading, fontWeight: Weight.bold, fontVariant: ['tabular-nums'] },
+  statArrow: { position: 'absolute', top: 4, right: 8, ...Type.bodyLg, fontWeight: Weight.bold },
   statLabel: { ...Type.caption },
   tabs: { flexDirection: 'row', gap: Spacing.xs, flexWrap: 'wrap' },
   tab: { borderWidth: 1, borderRadius: Radius.full, paddingHorizontal: Spacing.md, paddingVertical: 6 },

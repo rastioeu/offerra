@@ -16,7 +16,7 @@ import {
   type TenantProfile,
 } from '@/lib/offers';
 import { db } from '@/lib/property';
-import { normalizeText, type CatalogFilter } from '@/lib/search';
+import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { errorText } from '@/lib/errors';
 
 /** Verejný zoznam ponúk na inzeráte, zoradený podľa sumy zostupne. */
@@ -167,8 +167,11 @@ export function useRequests(mineOf?: string, filter?: CatalogFilter) {
       if (f?.priceMax != null) q = q.or(`budget_max.lte.${f.priceMax},budget_max.is.null`);
       if (f?.priceMin != null) q = q.or(`budget_min.gte.${f.priceMin},budget_min.is.null`);
       if (f?.text) {
-        const t = normalizeText(f.text.replace(/[%,()]/g, ' ').trim());
-        if (t) q = q.like('search_norm', `%${t}%`);
+        // To isté ako v katalógu: slovo po slove a cez koreň, aby
+        // skloňovaný tvar („v Košiciach") našiel svoje mesto.
+        for (const w of stemQuery(f.text.replace(/[%,()]/g, ' ')).split(' ')) {
+          if (w) q = q.like('search_norm', `%${w}%`);
+        }
       }
 
       const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);

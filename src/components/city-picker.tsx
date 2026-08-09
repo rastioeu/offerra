@@ -15,7 +15,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 
 import { useTheme } from '@/hooks/use-theme';
 import { db, type City } from '@/lib/property';
-import { normalizeText } from '@/lib/search';
+import { stemSk } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { ErrorNote, Label } from './ui';
@@ -59,7 +59,9 @@ export function CityPicker({
         // Hľadá sa v `name_norm` (bez diakritiky, malé písmená), nie
         // v `name` — inak by „banska" nenašlo „Banská". `like` a nie
         // `ilike`, aby sa využil prefixový index.
-        const needle = normalizeText(query.trim());
+        // Koreň, nie celé slovo: kto napíše „Banskej", má dostať
+        // „Banská Bystrica". Prefixový index sa tým využije rovnako.
+        const needle = stemSk(query.trim());
         if (needle.length > 0) q = q.like('name_norm', `${needle}%`);
         const { data, error: e } = await q
           .order('population', { ascending: false, nullsFirst: false })
