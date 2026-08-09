@@ -25,6 +25,9 @@ PY
     echo "Push je ZAPNUTÝ. Pozor: mení fingerprint → treba NOVÝ BUILD."
     ;;
   off)
+    # POZOR: nestačí vybrať balík z package.json. Fingerprint drží aj
+    # `package-lock.json` a stav `node_modules` — bez ich vrátenia runtime
+    # ostane posunutý a OTA nedorazí. Stálo to hodiny hľadania (register 11.16).
     python3 - <<'PY'
 import json, io
 d = json.load(open('package.json', encoding='utf-8'))
@@ -35,7 +38,9 @@ d['expo']['plugins'] = [x for x in d['expo']['plugins']
                         if not (isinstance(x, list) and x[0] == 'expo-notifications')]
 io.open('app.json', 'w', encoding='utf-8').write(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
 PY
-    echo "Push je ODLOŽENÝ. OTA znovu dorazí na existujúci build."
+    npm install --package-lock-only >/dev/null
+    npm ci >/dev/null
+    echo "Push je ODLOŽENÝ. Over runtime: npx eas fingerprint:generate -p ios --environment production"
     ;;
   *) echo "Použitie: $0 on|off" >&2; exit 1 ;;
 esac

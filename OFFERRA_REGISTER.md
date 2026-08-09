@@ -3038,6 +3038,36 @@ koliesko presunuté do hlavičky, teda na **5 z 5** hlavných obrazoviek.
 
 `legal.ts` opravený: cesta „Profil → Nastavenia" už neplatila.
 
+### 11.16 Fingerprint drží aj `package-lock.json` — ✅ VYRIEŠENÉ
+
+Po pridaní `expo-notifications` sa runtime posunul, čo sa čakalo. Lenže
+**odloženie natívnej časti** (balík z `package.json`, plugin z `app.json`)
+runtime **nevrátilo** — ostal na `017d0391`.
+
+Hľadanie príčiny stálo najviac času z celého dňa, tak ho sem zapisujem
+celé:
+
+1. Lokálny `@expo/fingerprint` tvrdil, že sa **nič nezmenilo** — pri
+   troch rôznych commitoch dal ten istý hash. Bola to slepá stopa:
+   lokálny nástroj počíta niečo iné než EAS.
+2. `npm prune` ani `npm ci` to nespravili.
+3. Test „starý commit má tiež `017d0391`" vyzeral, že chyba je mimo repa.
+   **Bol znečistený** — meral som starý commit s NOVÝMI `node_modules`.
+4. Čistý test (`git checkout eecba70` + `npm ci` + fingerprint) dal
+   **`451767ea`**. Tým sa rozdiel zúžil na `package-lock.json`.
+5. Obnovenie `package-lock.json` z toho commitu + `npm ci` → runtime späť.
+
+**Dve poučenia:**
+
+- **Fingerprint drží `package-lock.json` a stav `node_modules`**, nie len
+  `package.json` a `app.json`. Odložiť natívnu závislosť teda znamená
+  vrátiť aj zámok.
+- **`eas fingerprint:generate` vracia TÚ ISTÚ hodnotu ako `eas update`,
+  a bez publikovania.** Lokálny `@expo/fingerprint` nie. Odteraz sa
+  overuje ním — je to rýchle a smerodajné.
+
+Na prepínanie natívnej časti je `scripts/push-native.sh on|off`.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
