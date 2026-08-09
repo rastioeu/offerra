@@ -23,6 +23,7 @@ import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
 import { MyListingRow } from '@/components/my-listing-row';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
@@ -32,6 +33,7 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ProfilScreen() {
   const palette = useTheme();
+  const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
@@ -72,6 +74,7 @@ export default function ProfilScreen() {
     }
     setEditing(false);
     await reload();
+    toast('Profil uložený');
   }
 
   async function changePhoto() {
@@ -92,6 +95,7 @@ export default function ProfilScreen() {
 
       console.log('[FOTKA] 7 HOTOVO (profilovka)');
       await reload();
+      toast('Profilovka zmenená');
     } catch (e: unknown) {
       const m = photoErrorMessage(e);
       console.log(`[PROFIL] Zmena fotky zlyhala: ${m}`);

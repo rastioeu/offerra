@@ -23,6 +23,7 @@ import { usePhotoUpload } from '@/hooks/use-photo-upload';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import {
   db,
@@ -56,6 +57,7 @@ export default function PropertyEditorScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
+  const toast = useToast();
   const { item, error, reload } = useProperty(id);
 
   const [draft, setDraft] = useState<Property | null>(null);
@@ -171,6 +173,9 @@ export default function PropertyEditorScreen() {
         .eq('id', draft.id);
       if (e) throw e;
       await reload();
+      // Uloženie konceptu doteraz nedalo NIJAKÚ odozvu — tlačidlo len
+      // prestalo byť zaneprázdnené a človek nevedel, či sa niečo stalo.
+      if (!extra) toast('Uložené');
       return true;
     } catch (e: unknown) {
       const m = errorText(e);
@@ -197,13 +202,13 @@ export default function PropertyEditorScreen() {
       return;
     }
     if (await save({ status: 'ACTIVE' })) {
-      Alert.alert('Zverejnené', 'Inzerát je teraz viditeľný v katalógu.');
+      toast('Zverejnené — inzerát je v katalógu');
     }
   }
 
   async function unpublish() {
     if (await save({ status: 'DRAFT' })) {
-      Alert.alert('Stiahnuté z katalógu', 'Inzerát je opäť rozpracovaný.');
+      toast('Stiahnuté z katalógu', 'info');
     }
   }
 
@@ -265,6 +270,13 @@ export default function PropertyEditorScreen() {
               Ak naozaj potrebuješ zmenu, ozvi sa na {LEGAL_CONTACT_EMAIL}.
             </Text>
           </View>
+        ) : null}
+
+        {draft && !locked ? (
+          <Text style={[styles.formLead, { color: palette.textMuted }]}>
+            Kým je inzerát rozpracovaný, nevidí ho nikto okrem teba. Cena je
+            nepovinná — ak ju necháš prázdnu, ľudia ti navrhnú vlastnú.
+          </Text>
         ) : null}
 
         {draft ? (
@@ -588,6 +600,7 @@ export default function PropertyEditorScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   scroll: { padding: Spacing.lg, gap: Spacing.lg, paddingBottom: Spacing.xxl },
+  formLead: { ...Type.bodyMd },
   lockNote: { borderWidth: 1, borderRadius: Radius.md, padding: Spacing.md, gap: Spacing.xs },
   lockTitle: { ...Type.bodyLg, fontWeight: Weight.bold },
   lockBody: { ...Type.bodyMd },

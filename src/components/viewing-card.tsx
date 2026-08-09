@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
 
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { errorText } from '@/lib/errors';
 import {
@@ -41,6 +42,7 @@ export function ViewingCard({
   reload: () => Promise<void>;
 }) {
   const palette = useTheme();
+  const toast = useToast();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Record<string, ViewingContact>>({});
@@ -77,6 +79,7 @@ export function ViewingCard({
     try {
       await requestViewing(propertyId, myId);
       await reload();
+      toast('Kontakty odkryté — dohodnite sa telefonicky');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OBHLIADKA] Žiadosť zlyhala: ${m}`);
@@ -92,6 +95,7 @@ export function ViewingCard({
     try {
       await setViewingStatus(v.id, status);
       await reload();
+      toast(status === 'COMPLETED' ? 'Označené ako po obhliadke' : 'Obhliadka zrušená', 'info');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OBHLIADKA] Zmena stavu zlyhala: ${m}`);

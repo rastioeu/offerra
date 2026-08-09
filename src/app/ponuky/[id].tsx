@@ -27,6 +27,7 @@ import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { closeDeal } from '@/lib/rating';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import {
   fetchOfferContact,
@@ -44,6 +45,7 @@ export default function ManageOffersScreen() {
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, reload: reloadProperty } = useProperty(id);
   const { offers, error, reload } = useOffers(id);
@@ -90,10 +92,7 @@ export default function ManageOffersScreen() {
       await reload();
       await reloadProperty();
       setOpenId(null);
-      Alert.alert(
-        'Obchod uzavretý',
-        'Inzerát zmizol z katalógu. V jeho detaile teraz môžete jeden druhého ohodnotiť.'
-      );
+      toast('Obchod uzavretý — teraz sa môžete ohodnotiť');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKY] Uzavretie zlyhalo: ${m}`);
@@ -119,6 +118,7 @@ export default function ManageOffersScreen() {
             : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
         );
       } else {
+        toast('Ponuka odmietnutá', 'info');
         setOpenId(null);
       }
     } catch (e: unknown) {

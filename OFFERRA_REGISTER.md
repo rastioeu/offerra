@@ -2769,6 +2769,58 @@ a nezmaže nič**. V appke by to bolo „nestane sa nič", čo §2 zakazuje.
 Preto sa pri zámku krížik na fotke **vôbec nezobrazí** a nad formulárom je
 pás s vysvetlením, čo sa dá a čo nie.
 
+### 11.5 Spätná väzba po akcii — ✅ ŠTRUKTURÁLNE OVERENÉ (20/20)
+
+Zadanie Rastia 9.8.2026: jednotná odozva po každej akcii + kontextové
+vysvetlenia.
+
+**Zoznam toho, čo odozvu NEMALO — nahlásený, nie mlčky opravený:**
+
+| Akcia | Stav pred |
+|---|---|
+| Srdiečko (obľúbené) | len animácia; po úspechu nič |
+| Chcem obhliadku / Bol som na obhliadke / Zrušiť | nič |
+| Hodnotenie | vlastný inline text, iný než všade inde |
+| Uložiť koncept inzerátu | nič — tlačidlo len prestalo byť zaneprázdnené |
+| Uložiť profil | nič |
+| Zmeniť profilovku | nič |
+| Zverejniť dopyt | nič |
+| Prepínače upozornení | nič (ponechané — viď výnimky) |
+
+**Zavedené pravidlo:**
+
+- **Toast** = akcia PREBEHLA. Krátke, samo zmizne, nič nepýta.
+- **Alert** ostáva na POTVRDENIE pred nezvratným krokom a na CHYBU.
+
+Dôvod: modálne okno s tlačidlom OK zastaví človeka uprostred práce kvôli
+správe, ktorú netreba odklikávať. Pri srdiečku je to trest za používanie
+appky. Nezvratná vec (zmazanie účtu) si naopak okno zaslúži — toast, ktorý
+za dve sekundy zmizne, je na to málo.
+
+`ToastProvider` je v koreni, `useToast()` všade inde. To isté rozhodnutie
+na N miestach je trieda chyby, ktorá nás už stála zvonček (7.15)
+aj chybové hlášky (7.18).
+
+**Výnimky — každá s dôvodom** (výnimka bez dôvodu je diera, ktorá sa tvári
+ako pravidlo):
+
+| Miesto | Prečo bez toastu |
+|---|---|
+| prepínače upozornení | prepínač SÁM je odozvou; pri zlyhaní sa vráti a ukáže chybu |
+| pridanie/zmazanie fotky | fotka sa objaví/zmizne v zozname |
+| zavretie tipu | tip zmizne |
+| založenie konceptu | rovno otvorí editor — navigácia je odozva |
+| `bump_view` | automatické počítadlo, nie akcia používateľa |
+
+**Kontextové vysvetlenia doplnené:** Pridať, Nový dopyt, formulár inzerátu,
+Nastavenia → Účet, a všetky tri sekcie admin konzoly (čo presne znamená
+„Zablokovať", „Skryť z katalógu", „Označiť ako riešené"). Hodnotenie
+a obhliadka ich mali už predtým — boli to vzory, podľa ktorých sa písali
+ostatné.
+
+Dôkaz `odozva_test.js` **20/20**: prejde každý súbor, ktorý zapisuje do DB,
+a stráži, že má odozvu. Padne aj vtedy, keď niekto pridá zápis bez nej.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

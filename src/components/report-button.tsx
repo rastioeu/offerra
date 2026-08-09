@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { db } from '@/lib/property';
 import { REPORT_REASONS, type ReportTarget, type ReportReason } from '@/lib/report';
@@ -54,6 +55,7 @@ export function ReportButton({
   const palette = useTheme();
   const { session } = useSession();
   const myId = session?.user.id;
+  const toast = useToast();
 
   const [open, setOpen] = useState(false);
   const visible = hideTrigger ? Boolean(openExternally) : open;
@@ -113,11 +115,7 @@ export function ReportButton({
       close();
       setAlready(true);
       setNote('');
-      Alert.alert(
-        'Nahlásenie odoslané',
-        'Ďakujeme. Pozrieme sa na to. Nič sa nezmaže automaticky — ' +
-          'obsah posúdi človek.'
-      );
+      toast('Nahlásenie prijaté, pozrieme sa na to');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[NAHLÁSENIE] Odoslanie zlyhalo: ${m}`);

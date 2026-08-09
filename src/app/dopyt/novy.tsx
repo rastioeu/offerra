@@ -20,6 +20,7 @@ import { CityPicker } from '@/components/city-picker';
 import { FormScreen } from '@/components/form-screen';
 import { Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { db, DEMAND_LABEL, PROPERTY_LABEL, REGIONS, type PropertyType, type TransactionType } from '@/lib/property';
 import { Type } from '@/theme/tokens';
@@ -36,6 +37,7 @@ function num(text: string): number | null {
 
 export default function NewRequestScreen() {
   const palette = useTheme();
+  const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
   const myId = session?.user.id;
@@ -83,6 +85,7 @@ export default function NewRequestScreen() {
         status: 'ACTIVE',
       });
       if (e) throw e;
+      toast('Dopyt zverejnený');
       router.back();
     } catch (e: unknown) {
       const m = errorText(e);
@@ -107,6 +110,10 @@ export default function NewRequestScreen() {
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
           Dopyt je verejný pod tvojou prezývkou. Majitelia ťa naň môžu osloviť
           svojím inzerátom.
+        </Text>
+        <Text style={[styles.lead, { color: palette.textMuted }]}>
+          Tvoje meno ani telefón sa nikde nezobrazia — rovnako ako pri ponukách.
+          Rozpočet je orientačný, nie záväzok.
         </Text>
 
         <ChoiceRow<TransactionType>

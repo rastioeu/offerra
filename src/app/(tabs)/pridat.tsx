@@ -67,6 +67,10 @@ export default function PridatScreen() {
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
           Ponúkaš nehnuteľnosť, alebo naopak niečo hľadáš? Offerra vie oboje.
         </Text>
+        <Text style={[styles.lead, { color: palette.textMuted }]}>
+          Nový inzerát vznikne ako rozpracovaný a nikto ho nevidí, kým ho
+          sám nezverejníš. Cenu uvádzať nemusíš — o to tu ide.
+        </Text>
 
         <Button
           title={creating ? 'Zakladám…' : '+ Pridať nehnuteľnosť'}

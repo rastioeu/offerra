@@ -19,6 +19,7 @@ import { Button, Card, ChoiceRow, ErrorNote, Eyebrow, Field, ParamCell } from '@
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { EMPLOYMENT_OPTIONS, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
@@ -38,6 +39,7 @@ export default function OfferFormScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const myId = session?.user.id;
+  const toast = useToast();
 
   const { item } = useProperty(id);
   const { offers, reload: reloadOffers } = useOffers(id);
@@ -164,10 +166,7 @@ export default function OfferFormScreen() {
       }
 
       await reloadOffers();
-      Alert.alert(
-        mine ? 'Ponuka upravená' : 'Ponuka podaná',
-        'Suma a tvoja prezývka sú teraz verejné. Meno a telefón sa odkryjú, až keď ju predávajúci prijme.'
-      );
+      toast(mine ? 'Ponuka upravená' : 'Ponuka odoslaná');
       router.back();
     } catch (e: unknown) {
       const m = errorText(e);

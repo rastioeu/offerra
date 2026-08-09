@@ -229,6 +229,10 @@ export default function NastaveniaScreen() {
 
         <Card>
           <Text style={[styles.section, { color: palette.textMuted }]}>ÚČET</Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Odhlásenie ti dáta nechá — vrátiš sa k nim po prihlásení. Zmazanie účtu
+            je nezvratné a zmaže aj inzeráty, ponuky a dopyty.
+          </Text>
           <Button
             title={busy ? 'Pracujem…' : 'Odhlásiť sa'}
             onPress={handleSignOut}

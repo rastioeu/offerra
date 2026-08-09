@@ -8,6 +8,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { errorText } from '@/lib/errors';
 import { db } from '@/lib/property';
@@ -29,6 +30,7 @@ export function RatingCard({
   myId: string | undefined;
 }) {
   const palette = useTheme();
+  const toast = useToast();
   const [allowed, setAllowed] = useState(false);
   const [mine, setMine] = useState<Rating | null>(null);
   const [received, setReceived] = useState<Rating | null>(null);
@@ -36,7 +38,6 @@ export function RatingCard({
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
 
   const load = useCallback(async () => {
     if (!myId || !rateeId) return;
@@ -76,7 +77,7 @@ export function RatingCard({
     setError(null);
     try {
       await saveRating(propertyId, rateeId, myId, stars, comment.trim() || null);
-      setSaved(true);
+      toast(mine ? 'Hodnotenie upravené' : 'Hodnotenie odoslané');
       await load();
     } catch (e: unknown) {
       const m = errorText(e);
@@ -128,9 +129,9 @@ export function RatingCard({
             onPress={submit}
             disabled={busy}
           />
-          {saved ? (
-            <Text style={[styles.note, { color: palette.success }]}>Uložené. Zmeniť sa to dá kedykoľvek.</Text>
-          ) : null}
+          <Text style={[styles.note, { color: palette.textMuted }]}>
+            Zmeniť sa to dá kedykoľvek.
+          </Text>
         </>
       ) : null}
 

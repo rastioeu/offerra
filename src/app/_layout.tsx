@@ -8,6 +8,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/error-boundary';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ToastProvider } from '@/components/toast';
 import { NotificationsProvider } from '@/hooks/use-notifications';
 import { ThemeProvider as AppThemeProvider, useThemeMode } from '@/hooks/use-theme';
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
@@ -45,6 +46,9 @@ export default function RootLayout() {
             riadila výhradne systémovou témou a kto mal tmavý telefón,
             nemal sa ako vrátiť na schválenú svetlú (Rastio, 8.8.2026). */}
         <AppThemeProvider>
+        {/* Spätná väzba po akcii je JEDNA na celú appku — inak by mala
+            každá obrazovka vlastný štýl a niektoré žiadny (Rastio, 9.8.2026). */}
+        <ToastProvider>
         <ProfileProvider userId={session?.user.id}>
           {/* JEDEN kanál Realtime na celú appku. `AppHeader` je na štyroch
               taboch naraz a `supabase.channel()` vracia pri rovnakom názve
@@ -54,6 +58,7 @@ export default function RootLayout() {
             <RootLayoutInner />
           </NotificationsProvider>
         </ProfileProvider>
+        </ToastProvider>
         </AppThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

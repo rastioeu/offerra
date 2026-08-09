@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.2.0',
     date: '9. augusta 2026',
+    title: 'Appka ti odteraz povie, čo sa stalo',
+    items: [
+      'Po každej akcii — podanie ponuky, srdiečko, nahlásenie, uzavretie obchodu, hodnotenie — vyskočí dole krátke potvrdenie, čo sa práve stalo. Doteraz osem akcií nedávalo po úspechu žiadnu odozvu; srdiečko napríklad len zablikalo.',
+      'Potvrdenia sa už neotvárajú ako okno s tlačidlom OK. Okno ostáva len tam, kde treba naozaj potvrdiť nezvratný krok, alebo si prečítať chybu.',
+      'Na miestach, kde nebolo jasné, čo sa stane, pribudol krátky vysvetľujúci text — pri zakladaní inzerátu a dopytu, v Nastaveniach a v celej správcovskej konzole.',
+    ],
+  },
+  {
+    version: '1.2.0',
+    date: '9. augusta 2026',
     title: 'Moje inzeráty po novom + opravené hlavičky',
     items: [
       'Opravené: nadpis a „Zavrieť" sa v nahlasovacom okne prelínali s dynamic islandom, takže sa naň nedalo ani ťuknúť. Rovnaká chyba bola aj vo výbere obce a pri oslovení k dopytu — všetky tri majú teraz jednu spoločnú hlavičku so šípkou späť aj s „Zavrieť".',

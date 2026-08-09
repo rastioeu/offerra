@@ -13,6 +13,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Badge, Button, Card, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import type { AdminStats, AdminUser, ReportRow } from '@/lib/admin';
 import { db, formatDate, STATUS_LABEL, type PropertyStatus } from '@/lib/property';
@@ -65,6 +66,7 @@ type AdminProperty = {
 
 export default function AdminScreen() {
   const palette = useTheme();
+  const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
 
@@ -134,7 +136,7 @@ export default function AdminScreen() {
       const { error: e } = await db().rpc(fn, args);
       if (e) throw e;
       await reload();
-      Alert.alert('Hotovo', done);
+      toast(done);
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] ${fn} zlyhalo: ${m}`);
@@ -302,6 +304,14 @@ export default function AdminScreen() {
 
         {/* Filter podľa dôvodu. Podozrenia na realitku sa musia dať oddeliť
             od zvyšku jedným ťuknutím — inak sa v zozname stratia. */}
+        {section === 'REPORTS' ? (
+          <Text style={[styles.meta, { color: palette.textMuted }]}>
+            „Označiť ako riešené" znamená, že si zasiahol. „Zamietnuť" znamená, že
+            nahlásenie bolo neopodstatnené. Ani jedno nič nezmaže — obsah sa
+            skrýva zvlášť v sekcii Inzeráty.
+          </Text>
+        ) : null}
+
         {section === 'REPORTS' && reports.length > 0 ? (
           <View style={styles.filterRow}>
             {([null, ...REPORT_REASONS.map((x) => x.value)] as (ReportReason | null)[]).map((v) => {
@@ -379,6 +389,14 @@ export default function AdminScreen() {
           )
         ) : null}
 
+        {section === 'PROPERTIES' ? (
+          <Text style={[styles.meta, { color: palette.textMuted }]}>
+            „Skryť z katalógu" inzerát nezmaže — vlastník ho ďalej vidí aj s dôvodom
+            a dá sa vrátiť späť. „Zmazať natrvalo" zmaže aj fotky a ponuky a vrátiť
+            sa nedá.
+          </Text>
+        ) : null}
+
         {section === 'PROPERTIES'
           ? properties.map((p) => (
               <Pressable
@@ -419,6 +437,14 @@ export default function AdminScreen() {
               </Pressable>
             ))
           : null}
+
+        {section === 'USERS' ? (
+          <Text style={[styles.meta, { color: palette.textMuted }]}>
+            Zablokovaný používateľ sa nevie prihlásiť ani nič pridať a jeho účet
+            neprijíma oznámenia. Doterajšie inzeráty a ponuky mu ostanú a
+            odblokovaním sa vráti všetko naspäť — nie je to zmazanie.
+          </Text>
+        ) : null}
 
         {section === 'USERS'
           ? users.map((u) => (

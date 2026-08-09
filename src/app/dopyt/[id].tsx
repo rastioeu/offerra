@@ -18,6 +18,7 @@ import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar } from '@/compon
 import { useOutreach, useRequest } from '@/hooks/use-offers';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
 import { db, DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
@@ -26,6 +27,7 @@ import { errorText } from '@/lib/errors';
 
 export default function RequestDetailScreen() {
   const palette = useTheme();
+  const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const myId = session?.user.id;
@@ -58,10 +60,7 @@ export default function RequestDetailScreen() {
       setPickerOpen(false);
       setChosen(null);
       setMessage('');
-      Alert.alert(
-        'Oslovenie odoslané',
-        'Autor dopytu ho uvidí vo svojom profile. Push notifikácie zatiaľ appka nemá.'
-      );
+      toast('Oslovenie odoslané');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OSLOVENIE] Odoslanie zlyhalo: ${m}`);

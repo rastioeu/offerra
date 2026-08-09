@@ -6,6 +6,7 @@
 import { useRef } from 'react';
 import { Alert, Animated, Pressable, StyleSheet } from 'react-native';
 
+import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 
 import { Icon } from './icon';
@@ -22,16 +23,23 @@ export function FavoriteHeart({
   const palette = useTheme();
   const scale = useRef(new Animated.Value(1)).current;
 
+  const toast = useToast();
+
   async function press() {
     Animated.sequence([
       Animated.spring(scale, { toValue: 1.3, useNativeDriver: true, speed: 50, bounciness: 12 }),
       Animated.spring(scale, { toValue: 1, useNativeDriver: true, speed: 50, bounciness: 8 }),
     ]).start();
 
+    // `onToggle` vracia NOVÝ stav, takže sa dá povedať, čo sa práve stalo —
+    // nie len že sa niečo stalo. Srdiečko je najčastejšia akcia v appke
+    // a doteraz nedávalo po úspechu žiadnu odozvu okrem animácie.
     const result = await onToggle();
     if (result === null) {
       Alert.alert('Nepodarilo sa uložiť', 'Skús to prosím znova.');
+      return;
     }
+    toast(result ? 'Pridané do obľúbených' : 'Odstránené z obľúbených', result ? 'success' : 'info');
   }
 
   return (
