@@ -8,11 +8,12 @@
  * PREZÝVKA tu ZÁMERNE nie je — tá ostala na „Moje". Je to identita, ktorú
  * ľudia vidia, nie skrytý údaj; meniť ju vedľa telefónu by bolo mätúce.
  */
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useToast } from '@/components/toast';
-import { useProfile, saveProfile } from '@/hooks/use-profile';
+import { useFormDraft } from '@/hooks/use-form-draft';
+import { useProfile, profileForm, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { Spacing, Type, Weight } from '@/theme/tokens';
@@ -24,27 +25,24 @@ export function ContactCard() {
   const toast = useToast();
   const { session } = useSession();
   const { profile, reload } = useProfile();
+  const userId = session?.user.id;
 
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
+  // Rovnaké pravidlo ako pri inzeráte (`use-form-draft.ts`): server smie
+  // polia NAPLNIŤ, nikdy nie PREPÍSAŤ. Predtým to bol efekt závislý na
+  // `profile`, takže hociktoré obnovenie profilu — napríklad po zmene
+  // profilovky — zmazalo rozpísané meno aj telefón.
+  const { form, set, saved } = useFormDraft(userId && `kontakt:${userId}`, profile, profileForm);
   const [editing, setEditing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!profile) return;
-    setFullName(profile.full_name ?? '');
-    setPhone(profile.phone ?? '');
-  }, [profile]);
-
   async function save() {
-    const userId = session?.user.id;
-    if (!userId || busy) return;
+    if (!userId || !form || busy) return;
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
       userId,
-      { full_name: fullName.trim() || null, phone: phone.trim() || null },
+      { full_name: form.fullName.trim() || null, phone: form.phone.trim() || null },
       false
     );
     setBusy(false);
@@ -53,6 +51,8 @@ export function ContactCard() {
       return;
     }
     setEditing(false);
+    // Až teraz smie rozpísané zmiznúť — server sa mu práve vyrovnal.
+    saved();
     await reload();
     toast('Údaje uložené');
   }
@@ -70,14 +70,18 @@ export function ContactCard() {
 
       <ErrorNote error={error} />
 
-      {editing ? (
+      {editing && form ? (
         <>
           <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
           <Text style={[styles.hint, { color: palette.textMuted }]}>
             E-mail sa mení cez prihlásenie, nie tu.
           </Text>
-          <Field label="Meno a priezvisko" value={fullName} onChangeText={setFullName} />
-          <Field label="Telefón" value={phone} onChangeText={setPhone} />
+          <Field
+            label="Meno a priezvisko"
+            value={form.fullName}
+            onChangeText={(v) => set({ fullName: v })}
+          />
+          <Field label="Telefón" value={form.phone} onChangeText={(v) => set({ phone: v })} />
           <Button title={busy ? 'Ukladám…' : 'Uložiť'} onPress={save} disabled={busy} />
           <Button title="Zrušiť" onPress={() => setEditing(false)} variant="outline" disabled={busy} />
         </>

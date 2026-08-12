@@ -3612,6 +3612,102 @@ fingerprint:generate --platform ios`). Tretie meranie potvrdzujúce, že
 
 ---
 
+## Fáza 12 — Strata dát vo formulári, povinné polia, meno z prihlásenia (12.8.2026)
+
+Nasadenie: **IDE OTA** (nič natívne, `app.json` bez zmeny).
+Podrobne v `reports/FORMULAR_STRATA_DAT.md`.
+
+### 12.1 Koreňová príčina straty formulára — ✅ OVERENÉ RUNTIME
+
+Rastio hlásil, že picker robí remount obrazovky. **Nerobí.** Namerané:
+`addPhoto` → `onChanged()` → `useProperty.reload()` → `attachMedia` robí
+`rows.map(r => ({...r, media}))`, teda VŽDY nový objekt → `useEffect(…,
+[item])` v `src/app/inzerat/[id].tsx` sa spustí znova a prepíše polia
+hodnotami z DB. React porovnáva identitu, nie obsah.
+
+Tie isté následky mali `useRefreshOnFocus(reload)` (návrat na obrazovku)
+a `save()` → `reload()` (po uložení).
+
+`pickPhoto()` volá `expo-image-picker` cez `require()` v tele funkcie →
+natívne modálne okno, žiadna navigácia. `CityPicker`/`StreetPicker` používajú
+`ModalScreen` v komponente, nie `router.push`.
+
+### 12.2 Pravidlo „server smie naplniť, nie prepísať" — ✅ OVERENÉ RUNTIME
+
+`src/lib/form-draft.ts` (`fillFromServer`), `src/hooks/use-form-draft.ts`
+(`useFormDraft`), `src/lib/listing-form.ts` (formulár ako dáta).
+Editor prepísaný; deväť `useState` a spomínaný efekt sú preč.
+
+Dôkaz: Node test proti SKUTOČNÝM funkciám appky (nie kópii) —
+`formular_test.ts`, **115 kontrol, exit 0**. Obsahuje aj prehratie starého
+pravidla, ktoré ukazuje, že polia naozaj zmizli.
+
+Poradia podľa zadania: fotka prvá, fotka posledná, päť fotiek za sebou
+s písaním medzi nimi, tri návraty na obrazovku. Predaj aj prenájom so
+všetkými poľami.
+
+### 12.3 Stav mimo komponentu — ✅ OVERENÉ RUNTIME
+
+Rozpísané formuláre žijú v pamäti modulu (`form-draft.ts`), nie v obrazovke.
+Zámerne NIE AsyncStorage — koncept v DB je zdroj pravdy. Pri `signOut()` sa
+zahodia (`forgetAllDrafts`), aby na spoločnom telefóne nezostal text
+predošlého človeka. Overené sekciami 5, 6 a 8 testu.
+
+### 12.4 Rovnaká chyba inde — ✅ OVERENÉ RUNTIME
+
+- `src/components/contact-card.tsx` — mala ju reálne (zmena profilovky volá
+  `reload()` → zmazané rozpísané meno a telefón). Prepísané na `useFormDraft`.
+- `src/app/(tabs)/profil.tsx` — rovnaký vzor, ale ten formulár sa nemal ako
+  zobraziť (úprava sa presunula do Nastavení a na `/prezyvka`). Mŕtvy kód,
+  zmazaný. **Nebola tam prejavujúca sa chyba.**
+
+### 12.5 Povinné polia — ✅ OVERENÉ RUNTIME
+
+Povinné: názov, mesto, počet izieb (okrem pozemku), výmera, ≥1 fotka.
+Nepovinné zámerne: orientačná cena, kraj, ulica.
+Typ obchodu a typ nehnuteľnosti sa nedajú nechať prázdne (inzerát vzniká ako
+SALE/APARTMENT, `ChoiceRow` vracia vždy hodnotu).
+
+**Výmera:** Rastio ju chcel povinnú, povinná už bola — potvrdené, ostáva.
+
+V appke pribudlo „(povinné)" pri názve, obci a výmere.
+
+Trigger `guard_property_publish()` kontroloval do teraz LEN počet izieb —
+zvyšok bol iba v appke, takže s anon kľúčom sa dal mimo appky zverejniť
+prázdny inzerát. Teraz kontroluje všetkých päť. Spustené proti ostrej DB:
+
+```
+1 PRÁZDNY:                 chýba: názov inzerátu, mesto, počet izieb, výmera, aspoň jedna fotka
+2 BEZ IZIEB/VÝMERY/FOTKY:  chýba: počet izieb, výmera, aspoň jedna fotka
+3 BEZ FOTKY:               chýba: aspoň jedna fotka
+4 S FOTKOU:                ZVEREJNENÉ (správne)
+5 POZEMOK BEZ IZIEB:       ZVEREJNENÝ (správne)
+6 BEZ CENY/KRAJA/ULICE:    ZVEREJNENÉ (správne)
+```
+
+Testovacie riadky zmazané (`select count(*)` → 0).
+
+### 12.6 Meno z Apple / Google — ✅ OVERENÉ RUNTIME (logika), 🟡 na zariadení
+
+`src/lib/signin-name.ts`. Apple `requestedScopes` už `FULL_NAME` žiadalo, ale
+návratová hodnota sa zahadzovala. Apple dá meno LEN pri prvom prihlásení a LEN
+v návratovej hodnote `signInAsync` — v `identityToken` nie je, teda ani
+v `user_metadata`. Ukladá sa hneď, ešte pred kontrolou tokenu. Google chodí
+cez `user_metadata` (`full_name` → `name` → `given_name + family_name`).
+
+Predvyplnenie je len v onboardingu (`/prezyvka`), existujúcich účtov sa
+nedotkne. Pole ostáva editovateľné. Pri odhlásení sa meno zabudne.
+
+Dôkaz logiky: `meno_test.ts` proti skutočným funkciám, exit 0.
+
+### 12.7 Overenie na zariadení — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Zoznam presných krokov pre Rastia je v `reports/FORMULAR_STRATA_DAT.md`,
+sekcia KONTROLA PRED HOTOVO. Predvyplnené meno sa dá overiť len na NOVOM
+účte — na existujúcom sa onboarding neukáže.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

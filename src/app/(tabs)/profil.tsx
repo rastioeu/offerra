@@ -16,7 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActivityTimeline, type ActivityEvent } from '@/components/activity-timeline';
 import { Avatar } from '@/components/avatar';
 import { Icon } from '@/components/icon';
-import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar, SectionLabel } from '@/components/ui';
+import { Badge, Button, Card, ErrorNote, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useMyOutreach, useRequests } from '@/hooks/use-offers';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
@@ -47,40 +47,15 @@ export default function ProfilScreen() {
   const { items: myOutreach } = useMyOutreach();
   const { items: favorites } = useFavoriteProperties(userId);
 
-  const [nickname, setNickname] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [phone, setPhone] = useState('');
-  const [editing, setEditing] = useState(false);
   /** Ktorý inzerát má rozbalené ponuky. `null` = žiadny. */
   const [openListing, setOpenListing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!profile) return;
-    setNickname(profile.nickname);
-    setFullName(profile.full_name ?? '');
-    setPhone(profile.phone ?? '');
-  }, [profile]);
-
-  async function save() {
-    if (!userId || busy) return;
-    setBusy(true);
-    setSaveError(null);
-    const problem = await saveProfile(
-      userId,
-      { nickname: nickname.trim(), full_name: fullName.trim() || null, phone: phone.trim() || null },
-      false
-    );
-    setBusy(false);
-    if (problem) {
-      setSaveError(problem);
-      return;
-    }
-    setEditing(false);
-    await reload();
-    toast('Profil uložený');
-  }
+  // Formulár na meno, telefón a prezývku tu ZÁMERNE nie je. Kontaktné údaje
+  // sa upravujú v Nastaveniach (`ContactCard`), prezývka na `/prezyvka`.
+  // Do 9.8.2026 tu po tom presune ostali polia aj s ukladaním, ktoré sa
+  // nemali ako zobraziť — a ich napĺňanie v efekte bolo tá istá chyba,
+  // ktorá zmazala rozpísaný inzerát pri pridaní fotky (`use-form-draft.ts`).
 
   async function changePhoto() {
     if (!userId || busy) return;
@@ -164,7 +139,7 @@ export default function ProfilScreen() {
             na všetkých obrazovkách. Dve by boli duplicita. */}
         <Text style={[styles.title, { color: palette.textPrimary }]}>Moje</Text>
 
-        <ErrorNote error={error ?? saveError} />
+        <ErrorNote error={error} />
         {profile === undefined ? <ActivityIndicator color={palette.primary} /> : null}
 
         {profile ? (

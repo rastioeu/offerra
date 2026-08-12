@@ -8,7 +8,7 @@
  * `offerra.profile`, takže bez profilu sa nedá ani inzerovať, ani ponúkať.
  * Táto obrazovka je len pohodlná cesta k tomu istému pravidlu.
  */
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -18,6 +18,7 @@ import { isUsablePhone } from '@/lib/phone';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { suggestedFullName } from '@/lib/signin-name';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function PrezyvkaScreen() {
@@ -26,8 +27,19 @@ export default function PrezyvkaScreen() {
   const userId = session?.user.id;
   const { reload } = useProfile();
 
+  // Meno vie povedať Apple aj Google — netreba ho ťukať od nuly
+  // (Rastio, 9.8.2026). Je to NÁVRH, nie zámok: pole ostáva bežné.
+  const suggestedName = suggestedFullName(session);
+
   const [nickname, setNickname] = useState('');
-  const [fullName, setFullName] = useState('');
+  const [fullName, setFullName] = useState(suggestedName);
+
+  // Session býva pri prvom renderi ešte nenačítaná. Návrh sa preto doplní
+  // aj neskôr — ale LEN do prázdneho poľa. Prepísať to, čo už niekto
+  // napísal, je presne tá chyba, ktorú sme opravovali v editore inzerátu.
+  useEffect(() => {
+    setFullName((cur) => (cur.trim() === '' ? suggestedName : cur));
+  }, [suggestedName]);
   const [phone, setPhone] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,7 +135,11 @@ export default function PrezyvkaScreen() {
 
         <Field
           label="Meno a priezvisko (nepovinné)"
-          hint="Doplniť sa dá aj neskôr v Nastaveniach."
+          hint={
+            suggestedName
+              ? 'Doplnili sme ho z tvojho prihlásenia. Pokojne ho prepíš.'
+              : 'Doplniť sa dá aj neskôr v Nastaveniach.'
+          }
           value={fullName}
           onChangeText={setFullName}
           placeholder="Ján Novák"

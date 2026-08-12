@@ -36,10 +36,13 @@ export function CityPicker({
   city,
   district,
   onPick,
+  required,
 }: {
   city: string | null;
   district: string | null;
   onPick: (picked: PickedCity) => void;
+  /** Pri inzeráte je obec povinná, pri dopyte nie — a má to byť vidieť. */
+  required?: boolean;
 }) {
   const palette = useTheme();
   const [open, setOpen] = useState(false);
@@ -88,7 +91,7 @@ export function CityPicker({
   return (
     <View style={styles.group}>
       <Label hint="Podľa obce sa dopĺňa kraj aj poloha na mape. Presnú adresu nepýtame.">
-        Mesto / obec
+        {required ? 'Mesto / obec (povinné)' : 'Mesto / obec'}
       </Label>
 
       <Pressable

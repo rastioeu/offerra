@@ -20,6 +20,18 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '12. augusta 2026',
+    title: 'Rozpísaný inzerát sa už nestratí',
+    items: [
+      'Keď si pri pridávaní inzerátu pridal fotku, zmizlo všetko ostatné — názov, mesto, cena, izby. Toto je opravené: formulár si drží, čo si napísal, nech robíš čokoľvek.',
+      'Platí to aj pri odchode z obrazovky a späť, aj po uložení, aj keď pridáš päť fotiek za sebou.',
+      'Rovnaká oprava aj v Nastaveniach: rozpísané meno a telefón ti už nezmaže zmena profilovky.',
+      'Pri poliach je teraz napísané, ktoré sú povinné — názov, mesto, počet izieb, výmera a aspoň jedna fotka. Cena, kraj a ulica ostávajú dobrovoľné.',
+      'Meno a priezvisko sa pri registrácii predvyplní z Apple alebo Google účtu. Prepísať sa dá normálne.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '9. augusta 2026',
     title: 'Dopyty konečne fungujú obojsmerne',
     items: [

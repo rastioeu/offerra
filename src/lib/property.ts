@@ -418,16 +418,5 @@ export function deadlineLabel(iso: string | null): string | null {
   return `Ponuky sa uzatvárajú o ${hours} h`;
 }
 
-/**
- * Povinné polia pre zverejnenie. Vracia zoznam toho, čo chýba — nie boolean:
- * používateľ musí vidieť DÔVOD, prečo sa nedá zverejniť.
- */
-export function missingForPublish(p: Property, photoCount: number): string[] {
-  const missing: string[] = [];
-  if (!p.title.trim()) missing.push('názov inzerátu');
-  if (!p.city) missing.push('mesto');
-  if (p.property_type !== 'LAND' && p.rooms == null) missing.push('počet izieb');
-  if (p.area_m2 == null) missing.push('výmera');
-  if (photoCount < 1) missing.push('aspoň jedna fotka');
-  return missing;
-}
+// `missingForPublish` sa presunulo do `listing-form.ts` (9.8.2026) — patrí
+// k formuláru a hlavne sa tam dá spustiť testom bez Reactu a bez Supabase.

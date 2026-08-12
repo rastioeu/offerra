@@ -130,6 +130,21 @@ export function useProfile(): ProfileState {
   return ctx;
 }
 
+/**
+ * Profil ako FORMULÁR. Rovnaký vzor ako `listing-form.ts` pri inzeráte:
+ * polia sú dáta, nie stav obrazovky, a napĺňajú sa cez `useFormDraft`.
+ *
+ * PREČO: profil mal tú istú chybu ako editor inzerátu (9.8.2026) — polia
+ * sa napĺňali v `useEffect(…, [profile])`, a zmena profilovky volá
+ * `reload()`. Kto si teda medzi vyplnením mena a uložením zmenil fotku,
+ * prišiel o rozpísané meno aj telefón.
+ */
+export type ProfileForm = { nickname: string; fullName: string; phone: string };
+
+export function profileForm(p: MyProfile): ProfileForm {
+  return { nickname: p.nickname, fullName: p.full_name ?? '', phone: p.phone ?? '' };
+}
+
 /** Vracia chybovú hlášku, alebo `null` pri úspechu. */
 export async function saveProfile(
   userId: string,

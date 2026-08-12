@@ -7,6 +7,8 @@ import type * as AppleAuthenticationType from 'expo-apple-authentication';
 
 import { supabase } from './supabase';
 import { errorText } from '@/lib/errors';
+import { forgetAllDrafts } from '@/lib/form-draft';
+import { appleFullName, forgetSignInName, metadataFullName, rememberSignInName } from '@/lib/signin-name';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -41,6 +43,8 @@ async function createSessionFromUrl(url: string): Promise<AuthResult> {
     const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
     if (error) return { ok: false, message: error.message };
     if (!data.session) return { ok: false, message: 'Server nevrátil session.' };
+    // Google posiela meno v id tokene, takže ho Supabase má v `user_metadata`.
+    rememberSignInName(metadataFullName(data.session.user));
     return { ok: true, userId: data.session.user.id, email: data.session.user.email };
   }
 
@@ -49,6 +53,7 @@ async function createSessionFromUrl(url: string): Promise<AuthResult> {
     const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (error) return { ok: false, message: error.message };
     if (!data.session) return { ok: false, message: 'Server nevrátil session.' };
+    rememberSignInName(metadataFullName(data.session.user));
     return { ok: true, userId: data.session.user.id, email: data.session.user.email };
   }
 
@@ -117,6 +122,12 @@ export async function signInWithApple(): Promise<AuthResult> {
         AppleAuthentication.AppleAuthenticationScope.EMAIL,
       ],
     });
+
+    // MUSÍ sa to spraviť TERAZ. Apple pošle meno len pri PRVOM prihlásení
+    // a len sem — v `identityToken` nie je, takže po tomto riadku sa k nemu
+    // už nikdy nedostaneme. Ukladá sa ešte pred kontrolou tokenu: aj keď
+    // prihlásenie zlyhá a človek to skúsi znova, Apple už meno nepošle.
+    rememberSignInName(appleFullName(credential.fullName));
 
     if (!credential.identityToken) {
       console.log('[AUTH] Apple — chýba identityToken.');
@@ -187,6 +198,11 @@ export async function signInWithEmail(email: string, password: string): Promise<
 }
 
 export async function signOut(): Promise<void> {
+  // Rozpísané formuláre sú v pamäti procesu (`form-draft.ts`). Keby tu
+  // ostali, na spoločnom telefóne by ďalší prihlásený uvidel v poliach
+  // text predošlého človeka — vrátane mena a telefónu.
+  forgetAllDrafts();
+  forgetSignInName();
   const { error } = await supabase.auth.signOut();
   if (error) {
     console.log(`[AUTH] Odhlásenie zlyhalo: ${error.message}`);

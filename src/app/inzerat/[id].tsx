@@ -29,7 +29,6 @@ import { useTheme } from '@/hooks/use-theme';
 import {
   db,
   FURNISHING_LABEL,
-  missingForPublish,
   PROPERTY_LABEL,
   REGIONS,
   STATUS_LABEL,
@@ -43,16 +42,10 @@ import {
 } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
+import { formFromProperty, formToCandidate, formToPatch, missingForPublish } from '@/lib/listing-form';
+import { useFormDraft } from '@/hooks/use-form-draft';
 import { LEGAL_CONTACT_EMAIL } from '@/lib/legal';
 import { maybeOfferPush } from '@/lib/push-prompt';
-
-/** Číslo z poľa. Prázdne → `null` (stĺpec je nullable, 0 by bola lož). */
-function num(text: string): number | null {
-  const cleaned = text.replace(',', '.').trim();
-  if (cleaned === '') return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
-}
 
 export default function PropertyEditorScreen() {
   const palette = useTheme();
@@ -62,19 +55,13 @@ export default function PropertyEditorScreen() {
   const toast = useToast();
   const { item, error, reload } = useProperty(id);
 
-  const [draft, setDraft] = useState<Property | null>(null);
-  const [rooms, setRooms] = useState('');
-  const [area, setArea] = useState('');
-  const [price, setPrice] = useState('');
-  // Číselné polia prenájmu držíme ako TEXT, nie číslo — inak by sa pri
-  // mazaní znaku pole vynulovalo na 0 a používateľ by prišiel o rozpísanú
-  // hodnotu. Prevod je až v `num()` pri ukladaní.
-  const [deposit, setDeposit] = useState('');
-  const [depositMonths, setDepositMonths] = useState('');
-  const [minLease, setMinLease] = useState('');
-  const [floor, setFloor] = useState('');
-  const [floorsTotal, setFloorsTotal] = useState('');
-  const [monthlyCosts, setMonthlyCosts] = useState('');
+  /**
+   * Formulár sa zo servera naplní RAZ a ďalšie načítania sa ho už nedotknú
+   * (`useFormDraft`). Bez toho pridanie fotky — ktoré volá `reload()` —
+   * prepísalo všetko rozpísané hodnotami z databázy. To bola tá chyba
+   * z 9.8.2026, nie picker ani remount.
+   */
+  const { form, set, saved } = useFormDraft(id, item, formFromProperty);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
@@ -105,75 +92,19 @@ export default function PropertyEditorScreen() {
   }, [id, item]);
   useRefreshOnFocus(reload);
 
-  // Server je zdroj pravdy; lokálny stav sa napĺňa až keď dorazí.
-  useEffect(() => {
-    if (!item) return;
-    setDraft(item);
-    setRooms(item.rooms != null ? String(item.rooms) : '');
-    setArea(item.area_m2 != null ? String(item.area_m2) : '');
-    setPrice(item.asking_price_hint != null ? String(item.asking_price_hint) : '');
-    setDeposit(item.deposit_amount != null ? String(item.deposit_amount) : '');
-    setDepositMonths(item.deposit_months != null ? String(item.deposit_months) : '');
-    setMinLease(item.min_lease_months != null ? String(item.min_lease_months) : '');
-    setFloor(item.floor != null ? String(item.floor) : '');
-    setFloorsTotal(item.floors_total != null ? String(item.floors_total) : '');
-    setMonthlyCosts(item.monthly_costs != null ? String(item.monthly_costs) : '');
-  }, [item]);
-
-  function patch(p: Partial<Property>) {
-    setDraft((d) => (d ? { ...d, ...p } : d));
-  }
-
-  function collect(): Partial<Property> {
-    if (!draft) return {};
-    const isRent = draft.transaction_type === 'RENT';
-    const isFlat = draft.property_type === 'APARTMENT';
-    return {
-      transaction_type: draft.transaction_type,
-      property_type: draft.property_type,
-      title: draft.title,
-      description: draft.description,
-      city: draft.city,
-      district: draft.district,
-      region: draft.region,
-      street: draft.street?.trim() || null,
-      latitude: draft.latitude,
-      longitude: draft.longitude,
-      address_hidden: draft.address_hidden,
-      offer_deadline: draft.offer_deadline,
-      rooms: num(rooms),
-      area_m2: num(area),
-      asking_price_hint: num(price),
-      // Pri PREDAJI sa podmienky nájmu ZAHADZUJÚ. Keby ostali, inzerát
-      // prepnutý z prenájmu na predaj by si so sebou niesol zábezpeku,
-      // ktorá pri predaji nedáva zmysel.
-      deposit_amount: isRent ? num(deposit) : null,
-      deposit_months: isRent ? num(depositMonths) : null,
-      available_from: isRent ? draft.available_from : null,
-      min_lease_months: isRent ? num(minLease) : null,
-      furnishing: isRent ? draft.furnishing : null,
-      utilities_included: isRent ? draft.utilities_included : null,
-      internet_included: isRent ? draft.internet_included : null,
-      pets_allowed: isRent ? draft.pets_allowed : null,
-      // Rovnaký dôvod ako pri nájme: prepnutie bytu na pozemok nesmie
-      // nechať v inzeráte poschodie a výťah.
-      floor: isFlat ? num(floor) : null,
-      floors_total: isFlat ? num(floorsTotal) : null,
-      has_elevator: isFlat ? draft.has_elevator : null,
-      monthly_costs: isFlat ? num(monthlyCosts) : null,
-    };
-  }
-
   async function save(extra?: Partial<Property>): Promise<boolean> {
-    if (!draft || saving) return false;
+    if (!form || !item || saving) return false;
     setSaving(true);
     setSaveError(null);
     try {
       const { error: e } = await db()
         .from('property')
-        .update({ ...collect(), ...extra })
-        .eq('id', draft.id);
+        .update({ ...formToPatch(form), ...extra })
+        .eq('id', item.id);
       if (e) throw e;
+      // Až TERAZ smie rozpísaný formulár zmiznúť z pamäte — server sa mu
+      // práve vyrovnal. Pred uložením by to znamenalo stratu textu.
+      saved();
       await reload();
       // Uloženie konceptu doteraz nedalo NIJAKÚ odozvu — tlačidlo len
       // prestalo byť zaneprázdnené a človek nevedel, či sa niečo stalo.
@@ -190,12 +121,8 @@ export default function PropertyEditorScreen() {
   }
 
   async function publish() {
-    if (!draft) return;
-    const candidate: Property = {
-      ...draft,
-      ...(collect() as Property),
-    };
-    const missing = missingForPublish(candidate, item?.media.length ?? 0);
+    if (!form || !item) return;
+    const missing = missingForPublish(formToCandidate(item, form), item.media.length);
     if (missing.length > 0) {
       Alert.alert(
         'Inzerát sa ešte nedá zverejniť',
@@ -216,7 +143,7 @@ export default function PropertyEditorScreen() {
   }
 
   function confirmDelete() {
-    if (!draft) return;
+    if (!item) return;
     Alert.alert('Zmazať inzerát?', 'Zmaže sa aj so všetkými fotkami. Nedá sa vrátiť.', [
       { text: 'Zrušiť', style: 'cancel' },
       {
@@ -224,8 +151,9 @@ export default function PropertyEditorScreen() {
         style: 'destructive',
         onPress: async () => {
           try {
-            const { error: e } = await db().from('property').delete().eq('id', draft.id);
+            const { error: e } = await db().from('property').delete().eq('id', item.id);
             if (e) throw e;
+            saved(); // zmazaný inzerát nemá čo držať rozpísané
             router.back();
           } catch (e: unknown) {
             const m = errorText(e);
@@ -238,7 +166,10 @@ export default function PropertyEditorScreen() {
   }
 
   const photos = item?.media ?? [];
-  const isLand = draft?.property_type === 'LAND';
+  const isLand = form?.property_type === 'LAND';
+  // Stav inzerátu je vec SERVERA, nie formulára — mení ho „Zverejniť"
+  // a „Stiahnuť", nie písanie. Preto sa číta z načítaného riadku.
+  const status = item?.status;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right', 'bottom']}>
@@ -260,7 +191,7 @@ export default function PropertyEditorScreen() {
           <Text style={[styles.missing, { color: palette.textMuted }]}>Inzerát sa nenašiel.</Text>
         ) : null}
 
-        {draft && locked ? (
+        {form && locked ? (
           <View style={[styles.lockNote, { borderColor: palette.warning, backgroundColor: palette.surface }]}>
             <Text style={[styles.lockTitle, { color: palette.warning }]}>Inzerát je uzamknutý</Text>
             <Text style={[styles.lockBody, { color: palette.textSecondary }]}>
@@ -275,21 +206,21 @@ export default function PropertyEditorScreen() {
           </View>
         ) : null}
 
-        {draft && !locked ? (
+        {form && !locked ? (
           <Text style={[styles.formLead, { color: palette.textMuted }]}>
             Kým je inzerát rozpracovaný, nevidí ho nikto okrem teba. Cena je
             nepovinná — ak ju necháš prázdnu, ľudia ti navrhnú vlastnú.
           </Text>
         ) : null}
 
-        {draft ? (
+        {form && status ? (
           <>
             <View style={styles.statusRow}>
               <Badge
-                text={STATUS_LABEL[draft.status]}
-                tone={draft.status === 'ACTIVE' ? 'accent' : 'warning'}
+                text={STATUS_LABEL[status]}
+                tone={status === 'ACTIVE' ? 'accent' : 'warning'}
               />
-              {draft.status === 'ACTIVE' ? (
+              {status === 'ACTIVE' ? (
                 <Text style={[styles.statusNote, { color: palette.textMuted }]}>
                   Viditeľné v katalógu
                 </Text>
@@ -360,8 +291,8 @@ export default function PropertyEditorScreen() {
                 value: v,
                 label: TRANSACTION_LABEL[v],
               }))}
-              value={draft.transaction_type}
-              onChange={(v) => patch({ transaction_type: v })}
+              value={form.transaction_type}
+              onChange={(v) => set({ transaction_type: v })}
             />
 
             <ChoiceRow<PropertyType>
@@ -370,33 +301,34 @@ export default function PropertyEditorScreen() {
                 value: v,
                 label: PROPERTY_LABEL[v],
               }))}
-              value={draft.property_type}
-              onChange={(v) => patch({ property_type: v })}
+              value={form.property_type}
+              onChange={(v) => set({ property_type: v })}
             />
 
             <Field
-              label="Názov inzerátu"
-              value={draft.title}
-              onChangeText={(v) => patch({ title: v })}
+              label="Názov inzerátu (povinné)"
+              value={form.title}
+              onChangeText={(v) => set({ title: v })}
               placeholder="napr. Svetlý 3-izbový byt pri Slavíne"
             />
 
             <Field
               label="Popis"
-              value={draft.description ?? ''}
-              onChangeText={(v) => patch({ description: v })}
+              value={form.description}
+              onChangeText={(v) => set({ description: v })}
               placeholder="Stav, orientácia, čo je v okolí…"
               multiline
             />
 
             <CityPicker
-              city={draft.city}
-              district={draft.district}
+              required
+              city={form.city}
+              district={form.district}
               // Kraj a súradnice sa dopĺňajú spolu s obcou — sú v tom istom
               // riadku číselníka, takže pýtať sa na ne zvlášť by bolo
               // prepisovanie toho, čo už vieme.
               onPick={(p) =>
-                patch({
+                set({
                   city: p.city,
                   district: p.district,
                   region: p.region,
@@ -410,15 +342,15 @@ export default function PropertyEditorScreen() {
               label="Kraj"
               hint="Dopĺňa sa podľa obce. Zmeniť sa dá, keď to nesedí."
               options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
-              value={draft.region}
-              onChange={(v) => patch({ region: v })}
+              value={form.region}
+              onChange={(v) => set({ region: v })}
             />
 
             <StreetPicker
-              city={draft.city}
-              district={draft.district}
-              street={draft.street}
-              onChange={(v) => patch({ street: v })}
+              city={form.city}
+              district={form.district}
+              street={form.street}
+              onChange={(v) => set({ street: v ?? '' })}
             />
 
             {/* POVINNÉ (Rastio, 9.8.2026). Appka to žiadala už predtým cez
@@ -429,17 +361,17 @@ export default function PropertyEditorScreen() {
             {!isLand ? (
               <Field
                 label="Počet izieb (povinné)"
-                value={rooms}
-                onChangeText={setRooms}
+                value={form.rooms}
+                onChangeText={(v) => set({ rooms: v })}
                 keyboardType="numeric"
                 placeholder="3"
               />
             ) : null}
 
             <Field
-              label="Výmera (m²)"
-              value={area}
-              onChangeText={setArea}
+              label="Výmera v m² (povinné)"
+              value={form.area}
+              onChangeText={(v) => set({ area: v })}
               keyboardType="decimal-pad"
               placeholder="78"
             />
@@ -447,31 +379,31 @@ export default function PropertyEditorScreen() {
             <Field
               label="Orientačná cena (nepovinné)"
               hint="Nechaj prázdne, ak chceš počuť ponuky bez toho, aby si povedal sumu. Kupujúci aj tak predkladajú vlastné ponuky — toto je len vodidlo."
-              value={price}
-              onChangeText={setPrice}
+              value={form.price}
+              onChangeText={(v) => set({ price: v })}
               keyboardType="decimal-pad"
-              placeholder={draft.transaction_type === 'RENT' ? '850 (za mesiac)' : '248000'}
+              placeholder={form.transaction_type === 'RENT' ? '850 (za mesiac)' : '248000'}
             />
 
             {/* ── o budove ──
                 Len pri BYTE, ale pri predaji ROVNAKO ako pri prenájme.
                 Fond opráv platí aj ten, kto byt kúpi. */}
-            {draft.property_type === 'APARTMENT' ? (
+            {form.property_type === 'APARTMENT' ? (
               <>
                 <Text style={[styles.section, { color: palette.textMuted }]}>O BYTE A BUDOVE</Text>
 
                 <Field
                   label="Poschodie"
                   hint="0 = prízemie. Záporné číslo = suterén."
-                  value={floor}
-                  onChangeText={setFloor}
+                  value={form.floor}
+                  onChangeText={(v) => set({ floor: v })}
                   keyboardType="numbers-and-punctuation"
                   placeholder="3"
                 />
                 <Field
                   label="Z koľkých poschodí celkovo"
-                  value={floorsTotal}
-                  onChangeText={setFloorsTotal}
+                  value={form.floorsTotal}
+                  onChangeText={(v) => set({ floorsTotal: v })}
                   keyboardType="numeric"
                   placeholder="5"
                 />
@@ -482,15 +414,15 @@ export default function PropertyEditorScreen() {
                     { value: 'YES', label: 'Je' },
                     { value: 'NO', label: 'Nie je' },
                   ]}
-                  value={draft.has_elevator == null ? null : draft.has_elevator ? 'YES' : 'NO'}
-                  onChange={(v) => patch({ has_elevator: v === 'YES' })}
+                  value={form.hasElevator == null ? null : form.hasElevator ? 'YES' : 'NO'}
+                  onChange={(v) => set({ hasElevator: v === 'YES' })}
                 />
 
                 <Field
                   label="Mesačné náklady (€)"
                   hint="Fond opráv, spoločné priestory, správa. Nie je to nájom ani zábezpeka — platia sa aj po kúpe."
-                  value={monthlyCosts}
-                  onChangeText={setMonthlyCosts}
+                  value={form.monthlyCosts}
+                  onChangeText={(v) => set({ monthlyCosts: v })}
                   keyboardType="decimal-pad"
                   placeholder="140"
                 />
@@ -500,7 +432,7 @@ export default function PropertyEditorScreen() {
             {/* ── podmienky prenájmu ──
                 Len pri PRENÁJME. Pri predaji sú tieto polia nezmysel a
                 formulár sa nimi nemá čím naťahovať. */}
-            {draft.transaction_type === 'RENT' ? (
+            {form.transaction_type === 'RENT' ? (
               <>
                 <Text style={[styles.section, { color: palette.textMuted }]}>PODMIENKY PRENÁJMU</Text>
                 <Text style={[styles.sectionHint, { color: palette.textMuted }]}>
@@ -509,29 +441,29 @@ export default function PropertyEditorScreen() {
 
                 <Field
                   label="Zábezpeka (€)"
-                  value={deposit}
-                  onChangeText={setDeposit}
+                  value={form.deposit}
+                  onChangeText={(v) => set({ deposit: v })}
                   keyboardType="decimal-pad"
                   placeholder="1600"
                 />
                 <Field
                   label="Zábezpeka = koľko mesačných nájmov"
                   hint="Bežne 1 až 3. Slúži ako kontrola k sume vyššie."
-                  value={depositMonths}
-                  onChangeText={setDepositMonths}
+                  value={form.depositMonths}
+                  onChangeText={(v) => set({ depositMonths: v })}
                   keyboardType="decimal-pad"
                   placeholder="2"
                 />
 
                 <AvailableFromPicker
-                  value={draft.available_from}
-                  onChange={(day) => patch({ available_from: day })}
+                  value={form.availableFrom}
+                  onChange={(day) => set({ availableFrom: day })}
                 />
 
                 <Field
                   label="Minimálna doba nájmu (mesiace)"
-                  value={minLease}
-                  onChangeText={setMinLease}
+                  value={form.minLease}
+                  onChangeText={(v) => set({ minLease: v })}
                   keyboardType="numeric"
                   placeholder="12"
                 />
@@ -542,8 +474,8 @@ export default function PropertyEditorScreen() {
                     value: v,
                     label: FURNISHING_LABEL[v],
                   }))}
-                  value={draft.furnishing}
-                  onChange={(v) => patch({ furnishing: v })}
+                  value={form.furnishing}
+                  onChange={(v) => set({ furnishing: v })}
                 />
 
                 <ChoiceRow<Utilities>
@@ -552,8 +484,8 @@ export default function PropertyEditorScreen() {
                     value: v,
                     label: UTILITIES_LABEL[v],
                   }))}
-                  value={draft.utilities_included}
-                  onChange={(v) => patch({ utilities_included: v })}
+                  value={form.utilities}
+                  onChange={(v) => set({ utilities: v })}
                 />
 
                 {/* Internet je ZVLÁŠŤ od energií — „energie áno" nikdy
@@ -564,8 +496,8 @@ export default function PropertyEditorScreen() {
                     { value: 'YES', label: 'Áno' },
                     { value: 'NO', label: 'Nie' },
                   ]}
-                  value={draft.internet_included == null ? null : draft.internet_included ? 'YES' : 'NO'}
-                  onChange={(v) => patch({ internet_included: v === 'YES' })}
+                  value={form.internet == null ? null : form.internet ? 'YES' : 'NO'}
+                  onChange={(v) => set({ internet: v === 'YES' })}
                 />
 
                 <ChoiceRow<'YES' | 'NO'>
@@ -574,28 +506,28 @@ export default function PropertyEditorScreen() {
                     { value: 'YES', label: 'Povolené' },
                     { value: 'NO', label: 'Nepovolené' },
                   ]}
-                  value={draft.pets_allowed == null ? null : draft.pets_allowed ? 'YES' : 'NO'}
-                  onChange={(v) => patch({ pets_allowed: v === 'YES' })}
+                  value={form.pets == null ? null : form.pets ? 'YES' : 'NO'}
+                  onChange={(v) => set({ pets: v === 'YES' })}
                 />
               </>
             ) : null}
 
             <DeadlinePicker
-              value={draft.offer_deadline}
-              onChange={(iso) => patch({ offer_deadline: iso })}
+              value={form.offer_deadline}
+              onChange={(iso) => set({ offer_deadline: iso })}
             />
 
             {/* ── akcie ── */}
             <View style={styles.actions}>
               <Button title={saving ? 'Ukladám…' : 'Uložiť koncept'} onPress={() => save()} variant="outline" disabled={saving || locked} />
 
-              {draft.status === 'REJECTED' ? (
+              {status === 'REJECTED' ? (
                 <Text style={[styles.statusNote, { color: palette.danger }]}>
                   Inzerát skryl správca
-                  {draft.rejection_reason ? `: ${draft.rejection_reason}` : ''}. Zverejniť
+                  {item.rejection_reason ? `: ${item.rejection_reason}` : ''}. Zverejniť
                   ho môže znovu len on — uprav, čo je potrebné, a ozvi sa.
                 </Text>
-              ) : draft.status === 'ACTIVE' ? (
+              ) : status === 'ACTIVE' ? (
                 <Button title="Stiahnuť z katalógu" onPress={unpublish} variant="outline" disabled={saving || locked} />
               ) : (
                 <Button title="Zverejniť" onPress={publish} disabled={saving || locked} />

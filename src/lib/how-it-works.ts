@@ -35,6 +35,9 @@ export const HOW_SECTIONS: HowSection[] = [
       'Ak orientačnú cenu uvedieš, je to len vodidlo — ponuky môžu byť vyššie aj nižšie. ' +
         'Keď ju po zverejnení zmeníš, na inzeráte je vidieť o koľko. Cena sa nedá upraviť ticho.',
       'Pri prenájme sú všetky sumy MESAČNÉ, pri predaji celkové.',
+      'Zverejniť inzerát sa dá až s názvom, obcou, počtom izieb, výmerou a aspoň jednou ' +
+        'fotkou — bez toho sa nikto nevie rozhodnúť, či ho to zaujíma. Cena, kraj a ulica ' +
+        'sú dobrovoľné. Pozemok počet izieb pochopiteľne nepotrebuje.',
     ],
   },
   {
