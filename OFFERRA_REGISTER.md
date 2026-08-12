@@ -3719,9 +3719,17 @@ Nasadenie: **IDE OTA**. Podrobne v `reports/PODTABY_A_FILTRE.md`.
 
 ### 13.1 Poradie filtrov — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
 
-„♥ Obľúbené" presunuté z konca druhého riadka na začiatok prvého, spolu
-s triedením: **Obľúbené · Najnovšie · Čoskoro končí**. Neprihlásenému sa
-naďalej neukazuje. `src/components/search-bar.tsx`.
+Rastio poradie počas práce **upresnil**; platí druhá verzia:
+
+```
+Predaj · Prenájom · Byt · Dom · Pozemok · Komerčné · Najnovšie · Čoskoro končí · ♥
+```
+
+Triedenie a obľúbené sú **na konci**, srdiečko **bez textu** a úplne
+posledné. Vecný dôvod: triedenie ani obľúbené nezužujú, ČO sa hľadá, len
+menia pohľad na výsledok. `Chip` dostal `accessibilityLabel`, aby čítačka
+obrazovky nečítala „♥" ako znak. Neprihlásenému sa srdiečko neukazuje.
+`src/components/search-bar.tsx`.
 
 ### 13.2 Podtaby Ponuky / Obhliadka / Hodnotenia — 🟡 ČAKÁ VIZUÁLNE OVERENIE
 
@@ -3769,6 +3777,68 @@ vyzerá ako dôkaz dôveryhodnosti a nič nedokazuje.
 
 **Dokazuje, že sa to preloží a poskladá. NEDOKAZUJE, že to na telefóne
 vyzerá a funguje** — zoznam toho, čo musí overiť Rastio, je v reporte.
+
+---
+
+## Fáza 14 — Seed dáta pre podtaby (12.8.2026)
+
+**BEZ ZMENY KÓDU** — obsah databázy. Netreba OTA ani build.
+Report: `reports/SEED_PRE_PODTABY.md`. Skript `seed_taby.py` je zámerne
+mimo repa (§4, Offerra je verejná).
+
+### 14.1 Prečo to vzniklo
+
+Podtaby z Fázy 13 nemali z čoho žiť: **0 hodnotení, 2 obhliadky, 1 uzavretý
+obchod**. Dva z troch tabov boli prázdne na každom inzeráte, takže sa nedali
+overiť vôbec.
+
+### 14.2 Doplnené — ✅ OVERENÉ RUNTIME
+
+| | pred | teraz |
+|---|---|---|
+| ACTIVE / CLOSED | 59 / 1 | **49 / 11** |
+| hodnotenia | 0 | **18** (7 hodnotených ľudí) |
+| obhliadky | 2 | **38** |
+| stiahnuté ponuky | 0 | **5** |
+
+Inzerátov, ponúk, fotiek ani dopytov sa dávka nedotkla (60 / 126 / 183 / 24).
+
+**Zámerne nedokonalé, aby to nepôsobilo umelo:** priemery 3.50 – 5.00, nie
+samé päťky; pri každom štvrtom obchode hodnotí len jedna strana; časť
+hodnotení je bez textu. Obhliadky prevažne `CONTACT_SHARED` (to appka pri
+vypýtaní reálne robí), `CANCELLED` len dve.
+
+### 14.3 Rastiov účet — ✅ OVERENÉ RUNTIME
+
+4 aktívne inzeráty (13 čakajúcich ponúk, **žiadna prijatá** — to pravidlo
+platí ďalej), 1 uzavretý, 10 obhliadok na jeho inzerátoch, 7 kde žiada on,
+3 prijaté hodnotenia (4.33), **2 uzavreté obchody, kde ešte nehodnotil**,
+6 dopytov. Je na oboch stranách uzavretého obchodu — vlastník pri jednom,
+víťazný záujemca pri dvoch.
+
+**Oprava predošlého reportu:** `SEED_FOTKY_A_OBJEM.md` tvrdí „5 vlastných
+inzerátov, všetky ACTIVE". Jeden z nich („4-izbový byt na prenájom,
+Bratislava") bol uzavretý už pred touto dávkou — správne je **4 aktívne +
+1 uzavretý**. Nechané tak: práve vďaka tomu vidí vlastnícku stranu
+hodnotenia.
+
+### 14.4 Kontrola — ✅ OVERENÉ RUNTIME, 11 pravidiel, 0 porušení
+
+Okrem doterajších pribudli tri, ktoré predtým nebolo načo kontrolovať:
+
+- **hodnotiť smú výhradne dve strany uzavretého obchodu** — presne to, čo
+  dovolí `can_rate()`. Seed nesmie vyrobiť stav, ktorý appka nikdy
+  nevytvorí, inak by sa testovalo niečo neexistujúce.
+- **žiaden ACTIVE seed inzerát neporušuje rozšírený
+  `guard_property_publish()`** z Fázy 12. Keby porušoval, prvá úprava
+  takého inzerátu by spadla.
+- **žiadna obhliadka na vlastnom inzeráte.**
+
+**Čo sa pri behu pokazilo:** skript uzavrel obchod na dvoch inzerátoch, ktoré
+už jednu prijatú ponuku mali (víťaza hľadal len medzi čakajúcimi) → dva
+inzeráty s dvoma prijatými ponukami. **Záverečná kontrola v skripte to
+chytila a beh označila za neúspešný** — presne na to tam je. Neviťazné
+prijaté ponuky odmietnuté, prekontrolované, 0.
 
 ---
 

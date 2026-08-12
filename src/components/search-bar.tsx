@@ -156,40 +156,10 @@ export function SearchBar({
         </Text>
       ) : null}
 
-      {/* PRVÝ RIADOK: čo si človek vyberá najčastejšie (Rastio, 12.8.2026).
-          „Obľúbené" je pred triedením zámerne — je to skratka k vlastnému
-          zoznamu, nie ďalšie kritérium radenia. */}
-      {(side === 'PROPERTY' && canFavorite) || (sort && onSortChange) ? (
-        <View style={styles.row}>
-          {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
-              nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
-              to, na čo ich človek chce. Neprihlásenému sa neukazuje:
-              srdiečko si nemá kam uložiť. */}
-          {side === 'PROPERTY' && canFavorite ? (
-            <Chip
-              label="♥ Obľúbené"
-              active={filter.onlyFavorites === true}
-              onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
-            />
-          ) : null}
-          {sort && onSortChange
-            ? (
-                [
-                  ['NEWEST', 'Najnovšie'],
-                  ['ENDING_SOON', 'Čoskoro končí'],
-                ] as [CatalogSort, string][]
-              ).map(([value, label]) => (
-                <Chip
-                  key={value}
-                  label={label}
-                  active={sort === value}
-                  onPress={() => onSortChange(value)}
-                />
-              ))
-            : null}
-        </View>
-      ) : null}
-
+      {/* PORADIE (Rastio, 12.8.2026): najprv to, ČO človek hľadá — predaj,
+          prenájom, typ nehnuteľnosti. Až za tým triedenie a úplne na konci
+          srdiečko. Triedenie ani obľúbené nezužujú, čo sa hľadá, len menia
+          pohľad na výsledok — preto sú za, nie pred. */}
       <View style={styles.row}>
         {(['SALE', 'RENT'] as const).map((t) => (
           <Chip
@@ -207,6 +177,39 @@ export function SearchBar({
             onPress={() => toggle('propertyType', t)}
           />
         ))}
+
+        {sort && onSortChange
+          ? (
+              [
+                ['NEWEST', 'Najnovšie'],
+                ['ENDING_SOON', 'Čoskoro končí'],
+              ] as [CatalogSort, string][]
+            ).map(([value, sortLabel]) => (
+              <Chip
+                key={value}
+                label={sortLabel}
+                active={sort === value}
+                onPress={() => onSortChange(value)}
+              />
+            ))
+          : null}
+
+        {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
+            nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
+            to, na čo ich človek chce. Neprihlásenému sa neukazuje:
+            srdiečko si nemá kam uložiť.
+
+            SAMOTNÉ SRDIEČKO, bez slova (Rastio, 12.8.2026). Je to jediný
+            čip s ikonou, takže sa nedá pomýliť s ničím iným, a keď je
+            úplne na konci, nemá s čím splynúť. */}
+        {side === 'PROPERTY' && canFavorite ? (
+          <Chip
+            label="♥"
+            accessibilityLabel="Iba obľúbené"
+            active={filter.onlyFavorites === true}
+            onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
+          />
+        ) : null}
       </View>
 
       {!isFilterEmpty(filter) ? (
@@ -223,12 +226,24 @@ export function SearchBar({
   );
 }
 
-function Chip({ label, active, onPress }: { label: string; active: boolean; onPress: () => void }) {
+function Chip({
+  label,
+  active,
+  onPress,
+  accessibilityLabel,
+}: {
+  label: string;
+  active: boolean;
+  onPress: () => void;
+  /** Keď je čip len ikona, čítačka obrazovky potrebuje slovo. */
+  accessibilityLabel?: string;
+}) {
   const palette = useTheme();
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? label}
       accessibilityState={{ selected: active }}
       style={({ pressed }) => [
         styles.chip,

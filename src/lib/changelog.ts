@@ -28,7 +28,7 @@ export const CHANGELOG: ChangelogEntry[] = [
       'Odkrytý kontakt na druhú stranu je na jednom mieste — v tabe „Obhliadka" — či už sa odkryl obhliadkou, alebo prijatou ponukou.',
       'Hodnotenia ukazujú povesť predávajúceho zo VŠETKÝCH jeho obchodov, nie len z tohto inzerátu.',
       'Ak je inzerát tvoj, spodné tlačidlo ťa vezme rovno do úpravy — dovtedy sa k nej z detailu nedalo dostať.',
-      'V katalógu je „Obľúbené" prvé, hneď pred „Najnovšie" a „Čoskoro končí".',
+      'V katalógu sú filtre v poradí, v akom sa používajú: najprv čo hľadáš (predaj, prenájom, typ), až za tým triedenie. Obľúbené sú úplne na konci ako samotné srdiečko.',
     ],
   },
   {

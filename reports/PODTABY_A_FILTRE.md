@@ -8,17 +8,21 @@
 
 ## 1. PORADIE FILTROV
 
-Hotové. „♥ Obľúbené" je teraz **prvý** čip a je v hornom riadku spolu
-s triedením: **Obľúbené · Najnovšie · Čoskoro končí**, pod tým Predaj /
-Prenájom / Byt / Dom / …
+**Upresnené Rastiom počas práce (12.8.2026) — platí táto verzia:**
 
-Predtým bolo „Obľúbené" na konci druhého riadka, za všetkými typmi
-nehnuteľností — čo je pri filtri, ktorý človek používa najčastejšie, presne
-naopak, než by malo byť.
+```
+Predaj · Prenájom · Byt · Dom · Pozemok · Komerčné · Najnovšie · Čoskoro končí · ♥
+```
 
-Neprihlásenému sa „Obľúbené" naďalej neukazuje (srdiečko si nemá kam uložiť);
-vtedy riadok začína rovno „Najnovšie". Pri dopytoch nie je ani jedno — dopyty
-nemajú uzávierku ani obľúbené.
+Najprv to, **čo** človek hľadá. Až za tým triedenie, a úplne na konci
+srdiečko — **samotné, bez slova „Obľúbené"**. Dáva to zmysel aj vecne:
+triedenie ani obľúbené nezužujú, čo sa hľadá, len menia pohľad na výsledok.
+
+Srdiečko je jediný čip s ikonou, takže sa nedá pomýliť s ničím iným; pre
+čítačku obrazovky má popis „Iba obľúbené", aby ho nečítala ako znak.
+
+Neprihlásenému sa srdiečko naďalej neukazuje — nemá ho kam uložiť. Pri
+dopytoch nie je ani triedenie, ani obľúbené.
 
 ---
 
@@ -126,9 +130,10 @@ Zadáva sa teda per obchod, zobrazuje sa zosumarizované za človeka.
 Toto všetko je vizuálne alebo závisí od role — dokázať to viem len ja
 kódom, potvrdiť len ty na telefóne.
 
-- [ ] **Poradie filtrov.** Katalóg → prvý riadok čipov musí byť
-      **Obľúbené · Najnovšie · Čoskoro končí**. Odhlás sa (alebo pozri
-      neprihlásený pohľad) — vtedy tam „Obľúbené" byť nesmie.
+- [ ] **Poradie filtrov.** Katalóg → čipy musia ísť
+      **Predaj · Prenájom · typy… · Najnovšie · Čoskoro končí · ♥**,
+      srdiečko posledné a bez textu. Odhlásený pohľad — vtedy tam
+      srdiečko byť nesmie.
 - [ ] **Tri taby existujú.** Otvor ktorýkoľvek inzerát → pod popisom
       **Ponuky | Obhliadka | Hodnotenia**, prepínanie funguje, nič sa
       nestratí.
@@ -165,5 +170,5 @@ kódom, potvrdiť len ty na telefóne.
 | `src/components/owner-offers.tsx` | **nový** — rozhodovanie majiteľa vybrané z obrazovky, aby bolo na oboch miestach to isté |
 | `src/app/nehnutelnost/[id].tsx` | lineárne sekcie nahradené podtabmi; CTA majiteľa „Upraviť inzerát" |
 | `src/app/ponuky/[id].tsx` | používa `OwnerOffers`; z 377 riadkov na 88 |
-| `src/components/search-bar.tsx` | „Obľúbené" prvé, v riadku s triedením |
+| `src/components/search-bar.tsx` | triedenie a srdiečko na koniec, srdiečko bez textu, `Chip` dostal `accessibilityLabel` |
 | `src/lib/changelog.ts` | §7 |
