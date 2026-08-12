@@ -9,7 +9,7 @@
  * majiteľ a sám záujemca.
  */
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -68,14 +68,23 @@ export default function OfferFormScreen() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Server smie tieto polia NAPLNIŤ, nikdy nie PREPÍSAŤ — to isté pravidlo
+  // ako v `src/lib/form-draft.ts`. Efekt závislý na načítanom riadku by sa
+  // spustil pri každom obnovení zoznamu ponúk (nový objekt = iná identita,
+  // aj keď je obsah rovnaký) a zmazal by rozpísanú sumu aj správu. Presne
+  // tak sa 9.8.2026 strácal rozpísaný inzerát pri pridaní fotky.
+  const filledOffer = useRef<string | null>(null);
   useEffect(() => {
-    if (!mine) return;
+    if (!mine || filledOffer.current === mine.id) return;
+    filledOffer.current = mine.id;
     setAmount(String(mine.amount));
     setMessage(mine.message ?? '');
   }, [mine]);
 
+  const filledTenant = useRef<string | null>(null);
   useEffect(() => {
-    if (!myTenant) return;
+    if (!myTenant || filledTenant.current === myTenant.offer_id) return;
+    filledTenant.current = myTenant.offer_id;
     setPeople(myTenant.num_people != null ? String(myTenant.num_people) : '');
     setPets(myTenant.has_pets ? 'YES' : 'NO');
     setPetDetails(myTenant.pet_details ?? '');
