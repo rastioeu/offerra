@@ -3660,6 +3660,11 @@ predošlého človeka. Overené sekciami 5, 6 a 8 testu.
 - `src/app/(tabs)/profil.tsx` — rovnaký vzor, ale ten formulár sa nemal ako
   zobraziť (úprava sa presunula do Nastavení a na `/prezyvka`). Mŕtvy kód,
   zmazaný. **Nebola tam prejavujúca sa chyba.**
+- `src/app/ponuka/[id].tsx` — rovnaký vzor, zatiaľ bez spúšťača (`useOffers`
+  nemá realtime a `reload()` beží až po odoslaní, po ktorom sa obrazovka
+  aj tak zatvára). Ošetrené aj tak: polia sa naplnia raz pre danú ponuku.
+- Prejdené VŠETKY efekty v `src/app` a `src/components` (99 výskytov). Iné
+  miesto, kde by server prepisoval rozpísaný formulár, tam nie je.
 
 ### 12.5 Povinné polia — ✅ OVERENÉ RUNTIME
 

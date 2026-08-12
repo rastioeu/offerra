@@ -89,6 +89,12 @@ Hľadal som ten istý vzor (`useEffect` napĺňajúci polia zo servera):
   nemal ako zobraziť: úprava sa dávno presunula do Nastavení a na
   `/prezyvka`. Bol to mŕtvy kód, tak je zmazaný. **Nepredstieram, že som tam
   opravil chybu — žiadna sa neprejavovala.**
+- **`src/app/ponuka/[id].tsx`** — rovnaký vzor, ale zatiaľ ho nemá čo
+  spustiť: `useOffers` nemá realtime a `reload()` beží až po odoslaní, po
+  ktorom sa obrazovka zatvára. Ošetrené aj tak, aby to nezostalo ako pasca
+  na ďalšiu zmenu.
+- Prešiel som **všetky efekty** v `src/app` a `src/components` (99 výskytov).
+  Iné miesto, kde by server prepisoval rozpísaný formulár, tam nie je.
 
 ---
 
