@@ -156,21 +156,37 @@ export function SearchBar({
         </Text>
       ) : null}
 
-      {sort && onSortChange ? (
+      {/* PRVÝ RIADOK: čo si človek vyberá najčastejšie (Rastio, 12.8.2026).
+          „Obľúbené" je pred triedením zámerne — je to skratka k vlastnému
+          zoznamu, nie ďalšie kritérium radenia. */}
+      {(side === 'PROPERTY' && canFavorite) || (sort && onSortChange) ? (
         <View style={styles.row}>
-          {(
-            [
-              ['NEWEST', 'Najnovšie'],
-              ['ENDING_SOON', 'Čoskoro končí'],
-            ] as [CatalogSort, string][]
-          ).map(([value, label]) => (
+          {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
+              nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
+              to, na čo ich človek chce. Neprihlásenému sa neukazuje:
+              srdiečko si nemá kam uložiť. */}
+          {side === 'PROPERTY' && canFavorite ? (
             <Chip
-              key={value}
-              label={label}
-              active={sort === value}
-              onPress={() => onSortChange(value)}
+              label="♥ Obľúbené"
+              active={filter.onlyFavorites === true}
+              onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
             />
-          ))}
+          ) : null}
+          {sort && onSortChange
+            ? (
+                [
+                  ['NEWEST', 'Najnovšie'],
+                  ['ENDING_SOON', 'Čoskoro končí'],
+                ] as [CatalogSort, string][]
+              ).map(([value, label]) => (
+                <Chip
+                  key={value}
+                  label={label}
+                  active={sort === value}
+                  onPress={() => onSortChange(value)}
+                />
+              ))
+            : null}
         </View>
       ) : null}
 
@@ -191,17 +207,6 @@ export function SearchBar({
             onPress={() => toggle('propertyType', t)}
           />
         ))}
-        {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
-            nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
-            to, na čo ich človek chce. Neprihlásenému sa neukazuje:
-            srdiečko si nemá kam uložiť. */}
-        {side === 'PROPERTY' && canFavorite ? (
-          <Chip
-            label="♥ Obľúbené"
-            active={filter.onlyFavorites === true}
-            onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
-          />
-        ) : null}
       </View>
 
       {!isFilterEmpty(filter) ? (

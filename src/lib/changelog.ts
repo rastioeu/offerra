@@ -21,6 +21,19 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '12. augusta 2026',
+    title: 'Detail inzerátu má tri podtaby',
+    items: [
+      'Pod popisom sú teraz tri záložky — Ponuky, Obhliadka a Hodnotenia. Netreba scrollovať cez celú obrazovku, aby si našiel to, čo ťa zaujíma.',
+      'Ak inzerát patrí tebe, prijmeš aj odmietneš ponuku rovno tu. Nemusíš kvôli tomu chodiť na inú obrazovku.',
+      'Odkrytý kontakt na druhú stranu je na jednom mieste — v tabe „Obhliadka" — či už sa odkryl obhliadkou, alebo prijatou ponukou.',
+      'Hodnotenia ukazujú povesť predávajúceho zo VŠETKÝCH jeho obchodov, nie len z tohto inzerátu.',
+      'Ak je inzerát tvoj, spodné tlačidlo ťa vezme rovno do úpravy — dovtedy sa k nej z detailu nedalo dostať.',
+      'V katalógu je „Obľúbené" prvé, hneď pred „Najnovšie" a „Čoskoro končí".',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '12. augusta 2026',
     title: 'Rozpísaný inzerát sa už nestratí',
     items: [
       'Keď si pri pridávaní inzerátu pridal fotku, zmizlo všetko ostatné — názov, mesto, cena, izby. Toto je opravené: formulár si drží, čo si napísal, nech robíš čokoľvek.',

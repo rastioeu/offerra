@@ -40,14 +40,10 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FavoriteHeart } from '@/components/favorite-heart';
 import { Icon } from '@/components/icon';
 import { MortgageCalculator } from '@/components/mortgage';
-import { OfferList } from '@/components/offer-list';
+import { PropertyTabs } from '@/components/property-tabs';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
 import { Badge, Card, ErrorNote, Eyebrow, KeyboardDoneBar, ParamCell, PhotoBadge } from '@/components/ui';
-import { PriceTimeline } from '@/components/price-timeline';
-import { RatingCard } from '@/components/rating-card';
-import { Reviews } from '@/components/reviews';
-import { ViewingCard } from '@/components/viewing-card';
 import { useViewings } from '@/hooks/use-viewings';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useOffers } from '@/hooks/use-offers';
@@ -83,7 +79,7 @@ export default function PropertyDetailScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { item, error } = useProperty(id);
+  const { item, error, reload: reloadProperty } = useProperty(id);
   const { offers, error: offersError, reload: reloadOffers } = useOffers(id);
   const { items: viewings, reload: reloadViewings } = useViewings(id);
   const [photo, setPhoto] = useState(0);
@@ -162,9 +158,12 @@ export default function PropertyDetailScreen() {
   function primaryAction(): { title: string; onPress: () => void } | null {
     if (!item) return null;
     if (isOwner) {
+      // Ponuky sa od 12.8.2026 vybavujú v podtabe rovno tu, takže tlačidlo
+      // „Spravovať ponuky" by viedlo na to isté. Úprava inzerátu naopak
+      // z detailu neviedla nikam — teraz je to hlavná akcia majiteľa.
       return {
-        title: 'Spravovať ponuky',
-        onPress: () => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } }),
+        title: 'Upraviť inzerát',
+        onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: item.id } }),
       };
     }
     // Po uzávierke ani po uzavretí obchodu sa ponuka podať nedá —
@@ -379,20 +378,6 @@ export default function PropertyDetailScreen() {
                 </Text>
               ) : null}
 
-              {/* Jednoriadkové zhrnutie je hore pri cene (rýchla odpoveď),
-                  tu je celý priebeh vrátane rastu ponúk (podrobná). */}
-              {/* Hodnotenia predávajúceho sú TU, nie v jeho profile —
-                  rozhoduje sa práve tu, či s ním obchodovať. */}
-              {!isOwner ? (
-                <Reviews
-                  userId={item.owner_id}
-                  nickname={item.owner?.nickname ?? 'predávajúci'}
-                  summary={ratings[item.owner_id]}
-                />
-              ) : null}
-
-              <PriceTimeline propertyId={item.id} offers={offers ?? []} transaction={item.transaction_type} />
-
               {/* O byte a budove — pri predaji ROVNAKO ako pri prenájme. */}
               {buildingRows(item).length > 0 ? (
                 <Card>
@@ -426,45 +411,23 @@ export default function PropertyDetailScreen() {
                 <Text style={[styles.description, { color: palette.textSecondary }]}>{item.description}</Text>
               ) : null}
 
-              <Card>
-                <Eyebrow>{`Ponuky (${offers?.length ?? 0})`}</Eyebrow>
-                <Text style={[styles.soon, { color: palette.textMuted }]}>
-                  Sumy aj prezývky sú verejné. Kto za nimi stojí, sa dozvie až ten,
-                  koho ponuku predávajúci prijme. Správa priložená k ponuke verejná
-                  nie je — číta ju len predávajúci a ten, kto ju napísal.
-                </Text>
-                <ErrorNote error={offersError} />
-                <OfferList
-                  offers={offers ?? []}
-                  transaction={item.transaction_type}
-                  highlightBidderId={myId}
-                  allowReport
-                />
-                {closed && !isOwner ? (
-                  <Text style={[styles.soon, { color: palette.warning }]}>
-                    Príjem ponúk sa uzavrel — nové ponuky už podať nemožno.
-                  </Text>
-                ) : null}
-              </Card>
-
-              {/* Hodnotenie sa zobrazí LEN keď to dovolí databáza (`can_rate`),
-                  takže sa obrazovka nemá ako opýtať na niečo, čo server odmietne. */}
-              {item.status === 'CLOSED' ? (
-                <RatingCard
-                  propertyId={item.id}
-                  rateeId={isOwner ? (winnerBidderId ?? null) : item.owner_id}
-                  rateeNickname={isOwner ? 'záujemcom' : (item.owner?.nickname ?? 'predávajúcim')}
-                  myId={myId}
-                />
-              ) : null}
-
-              <ViewingCard
-                propertyId={item.id}
+              {/* ── podtaby ──
+                  Všetko, čo sa dá s inzerátom ROBIŤ, je odtiaľto nižšie
+                  a na jednom mieste. Nad nimi ostáva to, čo sa dá len
+                  čítať — galéria, cena, parametre, popis. */}
+              <PropertyTabs
+                item={item}
+                offers={offers}
+                offersError={offersError}
+                reloadOffers={reloadOffers}
+                reloadProperty={reloadProperty}
+                viewings={viewings}
+                reloadViewings={reloadViewings}
                 myId={myId}
                 isOwner={isOwner}
                 closed={closed}
-                viewings={viewings}
-                reload={reloadViewings}
+                ownerSummary={ratings[item.owner_id]}
+                winnerBidderId={winnerBidderId}
               />
 
               <Text style={[styles.added, { color: palette.textMuted }]}>
@@ -581,7 +544,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.sm },
   hidden: { ...Type.caption },
   description: { ...Type.bodyLg },
-  soon: { ...Type.bodyMd },
   added: { ...Type.caption },
   verifiedRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.xs, marginTop: 4, flexWrap: 'wrap' },
   reportRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-end', gap: Spacing.md },

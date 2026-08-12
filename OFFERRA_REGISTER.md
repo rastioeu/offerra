@@ -3708,6 +3708,65 @@ sekcia KONTROLA PRED HOTOVO. Predvyplnené meno sa dá overiť len na NOVOM
 
 ---
 
+## Fáza 13 — Poradie filtrov a podtaby na detaile (12.8.2026)
+
+Nasadenie: **IDE OTA**. Podrobne v `reports/PODTABY_A_FILTRE.md`.
+
+### 13.1 Poradie filtrov — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+„♥ Obľúbené" presunuté z konca druhého riadka na začiatok prvého, spolu
+s triedením: **Obľúbené · Najnovšie · Čoskoro končí**. Neprihlásenému sa
+naďalej neukazuje. `src/components/search-bar.tsx`.
+
+### 13.2 Podtaby Ponuky / Obhliadka / Hodnotenia — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+`src/components/property-tabs.tsx`. Obe strany vidia tie isté tri taby, líši
+sa obsah podľa role. Nad tabmi ostáva to, čo sa dá len čítať (galéria, cena,
+parametre, o budove, podmienky prenájmu, kalkulačka, popis); pod nimi všetko,
+čo sa dá ROBIŤ.
+
+Odchýlky od Rastiovho návrhu a dôvody sú v reporte, sekcia 2:
+- formulár „Podať ponuku" ostáva vlastnou obrazovkou (pri prenájme obsahuje
+  celý dotazník nájomcu — druhá kópia by sa rozišla); tab ukazuje STAV
+  vlastnej ponuky a má v sebe Upraviť aj **Stiahnuť**,
+- CTA majiteľa zmenené zo „Spravovať ponuky" na **„Upraviť inzerát"** —
+  ponuky sú teraz v tabe a úprava z detailu dovtedy nebola dostupná vôbec.
+
+### 13.3 `OwnerOffers` — jedna implementácia, dve miesta — 🟡 ČAKÁ OVERENIE
+
+Rozhodovanie majiteľa (zoznam + spodný panel + Prijať/Odmietnuť/Uzavrieť +
+dotazník nájomcu + odkrytý kontakt) vybraté z `app/ponuky/[id].tsx` do
+`components/owner-offers.tsx`. Obrazovka klesla z 377 na 88 riadkov.
+
+**Vedľajší nález:** razítko `mark_offers_viewed` sedelo na obrazovke „Ponuky
+na inzerát". Po presune ponúk do tabu by ponuka vybavená v tabe ostala
+záujemcovi označená ako „nevidená" — a to je údaj, ktorý si záujemca sám
+nastaviť nevie, teda by mu klamal. Razítko je preto v `OwnerOffers`.
+
+### 13.4 Odkrytý kontakt na jednom mieste — 🟡 ČAKÁ OVERENIE
+
+Tab „Obhliadka" ukazuje kontakt odkrytý obhliadkou **aj** kontakt odkrytý
+prijatou ponukou (`offer_contact()`). Ktorou cestou sa odkryl, človeka
+nezaujíma — zaujíma ho, na koho zavolať.
+
+### 13.5 Rozsah hodnotení — ROZHODNUTÉ
+
+Zadáva sa **per obchod** (`rating.property_id`, bez zmeny), zobrazuje sa
+**zosumarizované za človeka**. Dôvod: per inzerát by tam skoro vždy bolo
+nula alebo jedno hodnotenie (inzerát sa predá raz), čiže sekcia, ktorá
+vyzerá ako dôkaz dôveryhodnosti a nič nedokazuje.
+
+### 13.6 Zbalenie appky — ✅ OVERENÉ RUNTIME
+
+`npx expo export --platform ios` prešiel:
+`entry-cdbfe9ea6977aff01a9f97910170ad90.hbc (5.1MB)`.
+`npx tsc --noEmit` exit 0.
+
+**Dokazuje, že sa to preloží a poskladá. NEDOKAZUJE, že to na telefóne
+vyzerá a funguje** — zoznam toho, čo musí overiť Rastio, je v reporte.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
