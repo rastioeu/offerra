@@ -18,6 +18,7 @@ export type NotificationType =
   | 'OSLOVENIE_DOPYTU'
   | 'NOVA_ZHODA'
   | 'ZIADOST_O_OBHLIADKU'
+  | 'NOVA_SPRAVA'
   | 'SYSTEMOVE';
 
 export type NotificationFrequency = 'IHNED' | 'DENNY_SUHRN' | 'TYZDENNY_SUHRN';
@@ -70,6 +71,11 @@ export const NOTIFICATION_TYPES: {
     type: 'ZIADOST_O_OBHLIADKU',
     label: 'Niekto chce obhliadku',
     hint: 'Kontakt máte v tej chvíli odkrytý obaja — dohodnete sa telefonicky.',
+  },
+  {
+    type: 'NOVA_SPRAVA',
+    label: 'Nová správa',
+    hint: 'Keď ti niekto napíše k inzerátu. Obsah správy v oznámení nie je — ten je súkromný.',
   },
   {
     type: 'SYSTEMOVE',

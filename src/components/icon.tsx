@@ -28,6 +28,7 @@ export type IconName =
   | 'house'
   | 'magnifyingglass'
   | 'envelope'
+  | 'bubble.left.and.bubble.right'
   | 'plus.circle'
   | 'person.circle'
   | 'checkmark.seal'
@@ -46,6 +47,7 @@ const FALLBACK: Record<IconName, string> = {
   house: '⌂',
   magnifyingglass: '⌕',
   envelope: '✉',
+  'bubble.left.and.bubble.right': '💬',
   'plus.circle': '＋',
   'person.circle': '☺',
   'checkmark.seal': '✓',

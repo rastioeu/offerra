@@ -39,7 +39,6 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { FavoriteHeart } from '@/components/favorite-heart';
 import { Icon } from '@/components/icon';
-import { MortgageCalculator } from '@/components/mortgage';
 import { PropertyTabs } from '@/components/property-tabs';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
@@ -402,10 +401,9 @@ export default function PropertyDetailScreen() {
                 </Card>
               ) : null}
 
-              {/* Kalkulačka dáva zmysel len pri PREDAJI a keď je uvedená cena. */}
-              {item.transaction_type === 'SALE' && item.asking_price_hint ? (
-                <MortgageCalculator price={item.asking_price_hint} />
-              ) : null}
+              {/* Kalkulačka sa 12.8.2026 presunula do podtabu „Hypotéka" —
+                  tu v strede obrazovky ju nikto nehľadal a pri prenájme
+                  zavadzala. Tab sa ukazuje len pri predaji. */}
 
               {item.description ? (
                 <Text style={[styles.description, { color: palette.textSecondary }]}>{item.description}</Text>

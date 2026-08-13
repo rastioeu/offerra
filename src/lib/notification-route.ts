@@ -59,6 +59,10 @@ export function notificationRoute(
     case 'PONUKA_AKCEPTOVANA':
     case 'PONUKA_ZAMIETNUTA':
     case 'ZIADOST_O_OBHLIADKU':
+    // Nová správa vedie na detail inzerátu — vlákno je v podtabe „Správy".
+    // Vlastná obrazovka pre chat neexistuje zámerne: konverzácia patrí
+    // k inzerátu, o ktorom sa vedie.
+    case 'NOVA_SPRAVA':
     case 'NOVA_ZHODA':
     case 'NOVY_DOPYT_ZODPOVEDA_INZERATU':
       return { pathname: '/nehnutelnost/[id]', params: { id: propertyId } };

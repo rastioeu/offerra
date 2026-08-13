@@ -69,6 +69,22 @@ export const HOW_SECTIONS: HowSection[] = [
     ],
   },
   {
+    icon: 'bubble.left.and.bubble.right',
+    title: 'Správy — pýtať sa môžeš hneď',
+    paragraphs: [
+      'V detaile inzerátu je tab „Správy". Napísať sa dá kedykoľvek, aj predtým než podáš ' +
+        'ponuku — presne na to je: opýtať sa, čo z inzerátu nevyčítaš.',
+      'Konverzácia je VŽDY len medzi dvoma ľuďmi. Ak má inzerát desať záujemcov, predávajúci ' +
+        'má desať samostatných konverzácií a záujemcovia o sebe navzájom nevedia. Nikto tretí ' +
+        'cudziu konverzáciu neuvidí — ani technicky.',
+      'Píše sa POD PREZÝVKOU. Správy samy identitu neodkrývajú; meno a telefón sa odkryjú tak ' +
+        'ako doteraz — prijatou ponukou alebo obhliadkou.',
+      'Preto sa v správach NEDAJÚ posielať telefónne čísla ani e-maily. Appka to odmietne ' +
+        'a povie prečo. Bez toho by sa dalo celé odkrývanie kontaktu obísť jednou správou.',
+      'Keď ti niekto napíše, príde ti upozornenie. Obsah správy v ňom nie je — ten je súkromný.',
+    ],
+  },
+  {
     icon: 'key',
     title: 'Obhliadka je jedno kliknutie',
     paragraphs: [
@@ -121,9 +137,8 @@ export const HOW_SECTIONS: HowSection[] = [
         'Ťuknutím sa otvorí inzerát, ktorý ti ponúka — s fotkami, cenou aj počtom izieb, ' +
         'presne ako v katalógu. Odtiaľ si môžeš vypýtať obhliadku úplne rovnako ako pri ' +
         'inzeráte, ktorý si našiel sám.',
-      'Oslovenie nie je súkromná správa. Je to záznam pri tvojom dopyte — appka nemá četovanie ' +
-        'a nechceme, aby sa ňou dalo obťažovať. Osloviť ťa vie len ten, kto má vlastný ' +
-        'zverejnený inzerát.',
+      'Oslovenie nie je správa. Je to záznam pri tvojom dopyte a osloviť ťa vie len ten, kto ' +
+        'má vlastný zverejnený inzerát. Písať si môžete až v tabe „Správy" na tom inzeráte.',
       'Rozpočet je orientačný, nie záväzok. Tvoje meno ani telefón sa v dopyte nezobrazia — ' +
         'rovnako ako pri ponukách.',
     ],
@@ -242,6 +257,13 @@ export const HOW_STEPS: HowStep[] = [
     body:
       'Keď predávajúci ponuku prijme, meno, telefón a e-mail sa odkryjú OBOM stranám naraz. ' +
       'Alebo hneď, ak si vypýtaš obhliadku.',
+  },
+  {
+    icon: 'bubble.left.and.bubble.right',
+    title: 'Písať si viete hneď',
+    body:
+      'Tab „Správy" v inzeráte — vždy len vy dvaja, pod prezývkou. Telefón ani e-mail ' +
+      'sa v správach poslať nedajú; na to je prijatá ponuka alebo obhliadka.',
   },
   {
     icon: 'flag',

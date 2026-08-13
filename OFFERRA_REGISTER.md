@@ -3920,6 +3920,103 @@ vybrať skôr a zužuje hľadanie (§8), changelog má záznam (§7).
 
 ---
 
+## Fáza 16 — Správy 1:1 a tab Hypotéka (12.8.2026)
+
+**IDE OTA** pre appku. Databáza: migrácia `mig_33_message.sql` už nasadená.
+Report: `reports/SPRAVY_A_HYPOTEKA.md`. Skripty `spravy_test.py`
+a `kontakt_test.sql` sú mimo repa (§4 — zakladajú používateľov s heslami).
+
+### 16.1 Chat existuje — a menia sa tým predošlé texty
+
+Do dnes appka chat NEMALA a hovorila to nahlas („appka nemá četovanie",
+tab sa volal „Obhliadka" a nie „Komunikácia" práve preto). Rastio ho
+12.8.2026 pridáva, takže sa v tom istom kroku menia aj tie texty (§8) —
+`how-it-works.ts` má novú sekciu „Správy — pýtať sa môžeš hneď" a veta
+o četovaní pri dopytoch je prepísaná.
+
+**Vlákno určuje DVOJICA, nie inzerát.** Preto má riadok `recipient_id`.
+Keby vlákno určoval len inzerát, vznikla by pod ním spoločná debata
+a záujemcovia by videli jeden druhého — to, čo appka inde chráni.
+
+**Identita ostáva pod prezývkou** (Rastiov návrh, súhlasím). Chat je
+dostupný vždy, aj pred ponukou, ale sám kontakt neodkrýva — inak by bol
+treťou cestou k tomu istému a dve existujúce by stratili zmysel.
+
+### 16.2 Zákaz kontaktu v texte — ✅ OVERENÉ RUNTIME
+
+**Kontrola je v DATABÁZE, nie na klientovi.** Do `message` neexistuje
+`insert` policy ani `insert` grant — nie je to zabudnuté, je to celý trik.
+Jediná cesta vedie cez `send_message()`, ktorá kontroluje pred `insert`.
+`contactInText()` v appke je kópia toho istého pravidla, ale slúži len na
+rýchlu odozvu; je pri nej napísané, že to nie je ochrana.
+
+**Zákaz platí VŽDY, aj po odkrytí kontaktu.** Zadanie ponúkalo aj variant
+„po odkrytí padne"; zvolený je jednoduchší, a to nie ako kompromis:
+podmienený guard by musel pri každom inserte znovu vyhodnocovať „títo dvaja
+už majú kontakt" — to isté pravidlo na druhom mieste, a keby ho niekto raz
+vyhodnotil zle, **guard sa ticho otvorí**. Po odkrytí sa navyše nič
+nestráca: telefón je v tabe Obhliadka. Konkrétna je namiesto toho HLÁŠKA —
+hovorí, čo prekáža aj kedy kontakt príde.
+
+`kontakt_test.sql`, 21 vzoriek, **0 chýb**: 11 podôb kontaktu chytených
+(vrátane `peter (at) firma.sk` a `jan zavinac gmail bodka com`), 10 bežných
+viet prepustených — „3 izby a 78 m2", „zabezpeka 1600 eur", „cena 248000",
+„obhliadka 12.8.2026 o 15:00", „platim 100 000 hned a 150 000 do mesiaca".
+Prah je 9 číslic v súvislej skupine po zahodení oddeľovačov.
+
+### 16.3 RLS a oznámenie — ✅ OVERENÉ RUNTIME, 17 / 17
+
+`spravy_test.py` zakladá **troch** ľudí, nie dvoch — bez tretieho by sa
+nedalo dokázať to podstatné:
+
+```
+zákaz kontaktu cez RPC: telefón / e-mail / +421 / (at)     4× HTTP 400 P0001
+bežná veta s číslami prejde                                 HTTP 200
+priamy INSERT do `message`                                  HTTP 403 / 42501
+cudzí záujemca na TOM ISTOM inzeráte vidí                   [] (nič)
+neprihlásený vidí                                           HTTP 401
+záujemca ZÁUJEMCOVI napísať nemôže   403 „Písať sa dá len s vlastníkom…"
+obsah odoslanej správy sa prepísať nedá                     HTTP 403
+mark_messages_read: adresát 1, cudzí 0
+oznámenie NOVA_SPRAVA vzniklo obom stranám, BEZ textu správy
+```
+
+Po behu upratané — inzerát, správy, oznámenia aj traja používatelia.
+
+**🔴 Čo sa pri behu pokazilo:** prvý beh „prešiel" na štyroch bodoch
+z nesprávneho dôvodu — inzerát sa nikdy nevytvoril, lebo
+`guard_property_publish()` nepustí ACTIVE bez fotky, a detekcia chýb
+v skripte ten tvar hlášky nerozpoznala. Testy hlásili „nemôže napísať" tam,
+kde neexistoval inzerát. Opravené (DRAFT → fotka → ACTIVE) a **výsledky
+vyššie sú z druhého behu.**
+
+### 16.4 Tab Hypotéka — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+Kalkulačka v appke bola, ale visela v strede detailu. Teraz je tab a je
+**len pri predaji**. Suma sa berie z orientačnej ceny, a keď chýba (v Offerre
+smie), z najvyššej ŽIVEJ ponuky; keď sa ponuka od zadanej sumy líši, ponúkne
+sa riadkom „dosadiť". **Sadzba je pevná predvoľba označená ako orientačná —
+appka nemá odkiaľ brať trhové sadzby** a tvrdiť, že číslo je aktuálne, by
+bola lož. Disclaimer je pod výsledkom vždy.
+
+Bez DB, čisto klientský výpočet. Vedľajšia oprava: kalkulačka sa predtým pri
+inzeráte BEZ ceny nezobrazila vôbec — teraz vyzve na zadanie sumy.
+
+### 16.5 Čo má Rastio overiť na telefóne
+
+Zoznam je v reporte; v skratke: napísať z oboch strán, skúsiť telefón aj
+e-mail (musí odmietnuť), veta s číslami musí prejsť, odznak neprečítaných,
+push bez textu správy, nová položka v Upozorneniach, tab Hypotéka pri
+predaji a jeho neprítomnosť pri prenájme, posuvná lišta tabov.
+
+### 16.6 Čo NIE JE hotové
+
+**Chat pri dopytoch.** Tabuľka má `request_id`, RLS aj vetvu
+v `send_message()` — chýba len obrazovka. Zadanie bolo o detaile inzerátu,
+takže sa to nerobilo; migrácia sa kvôli tomu opakovať nebude.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

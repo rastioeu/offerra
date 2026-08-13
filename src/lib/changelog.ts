@@ -21,6 +21,18 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '12. augusta 2026',
+    title: 'Správy a odhad hypotéky v detaile inzerátu',
+    items: [
+      'Pribudol tab „Správy". Napísať sa dá kedykoľvek — aj predtým, než podáš ponuku, keď sa chceš len niečo opýtať.',
+      'Konverzácia je vždy len medzi vami dvoma. Ak má tvoj inzerát desať záujemcov, máš desať samostatných konverzácií a navzájom o sebe nevedia.',
+      'Píše sa pod prezývkou. Telefón ani e-mail sa v správach poslať nedajú — appka to odmietne a povie prečo. Kontakt sa aj naďalej odkryje až prijatou ponukou alebo obhliadkou.',
+      'Keď ti niekto napíše, príde ti upozornenie. Obsah správy v ňom nie je, ten je súkromný. Vypnúť sa dá v Nastaveniach ako každé iné upozornenie.',
+      'Odhad hypotéky má vlastný tab a ukazuje sa len pri predaji. Keď predávajúci cenu neuviedol, vie ju dosadiť z najvyššej ponuky.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '12. augusta 2026',
     title: 'Formulár inzerátu: kraj najprv, jasnejšie príklady',
     items: [
       'Kraj sa teraz vyberá PRED obcou a zúži hľadanie — z 2 930 obcí zrazu hľadáš v pár stovkách. Vyplniť ho nemusíš; keď vyberieš obec, kraj sa doplní sám podľa nej.',

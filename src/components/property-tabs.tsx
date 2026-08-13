@@ -1,14 +1,20 @@
 /**
- * Podtaby na detaile inzerátu — Ponuky / Obhliadka / Hodnotenia.
+ * Podtaby na detaile inzerátu — Ponuky / Správy / Obhliadka / Hypotéka /
+ * Hodnotenia.
  *
  * PREČO (Rastio, 12.8.2026): predtým boli ponuky, obhliadka a hodnotenia
  * poukladané pod sebou v jednom dlhom stĺpci a majiteľ musel na rozhodnutie
  * o ponuke odísť na inú obrazovku. Teraz je všetko na jednom mieste
- * a obe strany vidia TIE ISTÉ tri taby — líši sa obsah podľa toho, čo kto
+ * a obe strany vidia TIE ISTÉ taby — líši sa obsah podľa toho, čo kto
  * smie spraviť, nie samotná stavba obrazovky.
  *
- * NÁZOV „Obhliadka", nie „Komunikácia": appka nemá chat, len jednorazové
- * odkrytie kontaktu. Tab má sľubovať presne toľko, koľko appka vie.
+ * „SPRÁVY" PRIBUDLI 12.8.2026 a menia predošlé rozhodnutie. Dovtedy tu
+ * stálo, že tab sa volá „Obhliadka" a nie „Komunikácia", lebo appka chat
+ * nemá. Teraz ho má — a „Obhliadka" ostáva samostatne, lebo odkrytie
+ * kontaktu je iná vec než písanie si.
+ *
+ * „HYPOTÉKA" sa ukazuje LEN pri predaji. Pri prenájme nemá čo počítať,
+ * takže tam tab ani nie je — prázdna záložka je horšia než žiadna.
  *
  * ČO SA SEM ZÁMERNE NEPRESUNULO — formulár „Podať ponuku". Ostáva vlastnou
  * obrazovkou (`/ponuka/[id]`), lebo pri prenájme obsahuje celý dotazník
@@ -18,8 +24,10 @@
  */
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
+import { MessagesTab } from '@/components/message-thread';
+import { MortgageCalculator } from '@/components/mortgage';
 import { OfferList } from '@/components/offer-list';
 import { OwnerOffers } from '@/components/owner-offers';
 import { PriceTimeline } from '@/components/price-timeline';
@@ -42,13 +50,22 @@ import { type RatingSummary } from '@/lib/rating';
 import { type Viewing } from '@/lib/viewing';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
-export type DetailTab = 'OFFERS' | 'VIEWING' | 'RATINGS';
+export type DetailTab = 'OFFERS' | 'MESSAGES' | 'VIEWING' | 'MORTGAGE' | 'RATINGS';
 
-const TABS: [DetailTab, string][] = [
-  ['OFFERS', 'Ponuky'],
-  ['VIEWING', 'Obhliadka'],
-  ['RATINGS', 'Hodnotenia'],
-];
+/**
+ * Poradie je poradie použitia: najprv sa človek pýta (Správy), potom
+ * ponúka, potom sa ide pozrieť, a hodnotí sa až na konci. Hypotéka je
+ * medzi ponukou a obhliadkou — je to podklad k rozhodnutiu, nie krok.
+ */
+function tabsFor(sale: boolean): [DetailTab, string][] {
+  return [
+    ['OFFERS', 'Ponuky'],
+    ['MESSAGES', 'Správy'],
+    ['VIEWING', 'Obhliadka'],
+    ...(sale ? ([['MORTGAGE', 'Hypotéka']] as [DetailTab, string][]) : []),
+    ['RATINGS', 'Hodnotenia'],
+  ];
+}
 
 export function PropertyTabs({
   item,
@@ -81,11 +98,27 @@ export function PropertyTabs({
 }) {
   const palette = useTheme();
   const [tab, setTab] = useState<DetailTab>('OFFERS');
+  const sale = item.transaction_type === 'SALE';
+  const tabs = tabsFor(sale);
+
+  // Najvyššia ŽIVÁ ponuka — kalkulačka z nej vie začať, keď predávajúci
+  // cenu neuviedol. Stiahnuté a odmietnuté sa nerátajú: nie sú to čísla,
+  // za ktoré je dnes niekto ochotný kúpiť.
+  const liveOffers = (offers ?? []).filter((o) => o.status === 'PENDING' || o.status === 'ACCEPTED');
+  const topOffer = liveOffers.length > 0 ? Math.max(...liveOffers.map((o) => o.amount)) : null;
 
   return (
     <View style={styles.wrap}>
-      <View style={[styles.bar, { backgroundColor: palette.surfacePressed, borderColor: palette.border }]}>
-        {TABS.map(([value, label]) => {
+      {/* Tabov je päť a na úzkom telefóne sa nezmestia — lišta sa preto
+          posúva. Skratky názvov sú horšie: „Hyp." nikomu nič nepovie. */}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[
+          styles.bar,
+          { backgroundColor: palette.surfacePressed, borderColor: palette.border },
+        ]}>
+        {tabs.map(([value, label]) => {
           const active = tab === value;
           return (
             <Pressable
@@ -113,7 +146,7 @@ export function PropertyTabs({
             </Pressable>
           );
         })}
-      </View>
+      </ScrollView>
 
       {tab === 'OFFERS' ? (
         <OffersTab
@@ -126,6 +159,18 @@ export function PropertyTabs({
           isOwner={isOwner}
           closed={closed}
         />
+      ) : null}
+
+      {tab === 'MESSAGES' ? (
+        <MessagesTab item={item} offers={offers} myId={myId} isOwner={isOwner} />
+      ) : null}
+
+      {/* Kalkulačka je čisto klientský výpočet — nič sa neukladá a nikam
+          sa neposiela, takže tab nepotrebuje ani načítavanie, ani chybu. */}
+      {tab === 'MORTGAGE' && sale ? (
+        <View style={styles.body}>
+          <MortgageCalculator price={item.asking_price_hint} topOffer={topOffer} />
+        </View>
       ) : null}
 
       {tab === 'VIEWING' ? (
