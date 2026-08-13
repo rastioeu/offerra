@@ -239,8 +239,28 @@ zdroj pravdy, nie na lokálne opakované merania.
    cez skutočný `eas update` runtime `24919867e1…/eaadbb7eca8…` —
    presne to, čo má tvoj build #5.
 3. **Republikoval som OBIDVA orphanované balíky** (tento aj
-   obhliadka/Moje/odznaky) pod opraveným, správnym runtimom — mali by ti
-   teraz doraziť normálne.
+   obhliadka/Moje/odznaky) pod opraveným, správnym runtimom.
+
+   ✅ **OVERENÉ RUNTIME** — skutočný výstup `eas update` (13.8.2026, commit
+   `23b09ae`):
+
+   ```
+   Branch           production
+   Runtime version  24919867e1bcc84715b1b4d6998cb6b27886e5d9
+   Platform         ios
+   Update group ID  cfc45a72-f844-4f49-ae01-0e88dd44179e
+
+   Branch             production
+   Runtime version    eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7
+   Platform           android
+   Update group ID    aec94606-286e-4ae2-bfd0-ee54d5919456
+   ```
+
+   Toto je **presne** ten istý runtime ako tvoj TestFlight build #5. Balík
+   je teda publikovaný pod runtimom, ktorý appka na telefóne vie
+   stiahnuť — to je dôkaz, že publikácia je pod správnym runtimom, **nie**
+   dôkaz, že appka na tvojom telefóne balík už stiahla a zobrazila (to
+   viem overiť len ja zo servera, nie z telefónu — to potvrdíš len ty).
 
 **Čo by som mal robiť inak nabudúce:** žiadny nový balík do
 `package.json` (`dependencies` AJ `devDependencies`) bez toho, aby som si
@@ -250,7 +270,8 @@ nielen `dependencies`. Zapisujem to ako trvalé pravidlo nižšie.
 ### 🟡 Over prosím
 
 - [ ] Appka na tvojom telefóne (bez ručného zásahu, len bežné otvorenie)
-      dostane tento aj predošlý balík zmien cez OTA.
+      dostane tento aj predošlý balík zmien cez OTA — countdown štítok,
+      tab bar fade, obhliadka s potvrdením, Moje zjednotené, odznaky.
 - [ ] Ak nedostane do pár minút, daj vedieť — bude to znamenať, že
       diagnostika ešte nie je úplná a treba to riešiť ďalej, nie
       predstierať, že je to hotové.

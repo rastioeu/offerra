@@ -4270,6 +4270,30 @@ mirroring `mark_offers_viewed()` z 8.8.2026.
 rozhodnutí svieti ZÁUJEMCOVI, nie vlastníkovi (ten už videl), a že
 Hodnotenia svieti len hodnotenému, nikdy hodnotiacemu.
 
+### 21.4 🔴 Incident spôsobený mnou: `package.json` scripts odstrihlo OTA — nájdené a opravené
+
+Kým som pracoval na 20/21, pridanie `tsx` (devDependency + `scripts`
+`check:deadline`/`check`) zmenilo EAS fingerprint a **ticho odstrihlo obe
+vyššie balíky od Rastiovho TestFlight buildu #5** — žiadna appka to
+nehlásila, všimol som si to sám pri porovnávaní `eas update` výstupov.
+Príčina: `@expo/fingerprint` hashuje aj `package.json` pole `scripts`,
+nielen `dependencies`/natívne moduly. Plný diagnostický postup a dôvod,
+prečo trval dlho (lokálny `@expo/fingerprint` bol v tomto prostredí
+nespoľahlivý), je v `reports/COUNTDOWN_REGRESIA_A_TAB_BAR_FADE.md`.
+
+**Oprava:** `tsx` scripts odstránené z `package.json` úplne (test beží cez
+`npx tsx scripts/check-deadline.ts`), `package.json`/`package-lock.json`
+overené byte-identické s posledným known-good commitom. CLAUDE.md §9
+opravené (bolo tam nesprávne „appVersion" politika, v skutočnosti
+`fingerprint`) + trvalé pravidlo overovať dopad na fingerprint pred
+KAŽDOU zmenou `package.json`.
+
+✅ **OVERENÉ RUNTIME** — republikácia (13.8.2026, commit `23b09ae`) cez
+skutočný `eas update` vrátila presne `24919867e1…` (iOS) / `eaadbb7eca8…`
+(Android) — zhoda s buildom #5. Toto dokazuje, že balík je publikovaný
+pod runtimom, ktorý appka vie stiahnuť — **nie** že appka na telefóne
+balík už stiahla; to potvrdí len Rastio.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
