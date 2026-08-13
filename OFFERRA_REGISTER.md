@@ -4190,7 +4190,7 @@ presne toto sa už raz stalo a bolo opravené rovnako — seedom, nie kódom.
 nedali testovať: `property.ts` importuje `./supabase` na úrovni modulu).
 `property.ts` ich re-exportuje, 16 importujúcich miest nezmenených.
 
-`npm run check:deadline` (`tsx`, nová devDependency) — **12/12**, Node
+`npx tsx scripts/check-deadline.ts` — **12/12**, Node
 bez appky a bez DB. CLAUDE.md dostalo **§10 „Veci, čo sa strácajú pri
 redizajne"** — countdown a „Pridané [dátum]" (druhá vec, čo bola
 v minulosti REGRESIA, komentár v kóde z 9.8.2026).

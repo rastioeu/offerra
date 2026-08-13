@@ -132,10 +132,33 @@ Karta je na hlavnej obrazovke aj v Nastaveniach.
 
 ## ⚙️ 9. VERZIE A OTA
 
-> ⚠️ `runtimeVersion` má politiku `appVersion`. Zvýšenie `version`
-> v `app.json` preto **odstrihne existujúci TestFlight build od OTA**,
-> kým sa nespraví nový build. Verzia sa teda dvíha len spolu s buildom —
-> nie pri každej OTA.
+> ⚠️ `runtimeVersion` má v `app.json` politiku **`fingerprint`** (OPRAVENÉ
+> 13.8.2026 — tento riadok predtým nesprávne tvrdil `appVersion`, čo
+> priamo prispelo k incidentu nižšie). Fingerprint sa počíta z natívne
+> relevantných súborov AJ z **`package.json` vrátane `scripts` poľa** —
+> nielen z `dependencies`/natívnych modulov, ako by sa čakalo. Zvýšenie
+> `version` v `app.json` ODSTRIHNE existujúci TestFlight build od OTA
+> rovnako, ale **nie je to jediný spôsob, ako sa to dá spôsobiť omylom.**
+
+> 🔴 **INCIDENT (13.8.2026):** pridanie `tsx` do `package.json`
+> (`devDependencies` + `scripts`, kvôli spustiteľnému testu
+> `check:deadline`) zmenilo fingerprint a **odstrihlo 2 OTA balíky od
+> Rastiovho TestFlight buildu #5** bez toho, aby si to appka alebo agent
+> všimli — žiadna chyba, žiadny pád, OTA sa len nikdy nestiahla. Objavené
+> až keď sa opýtal, prečo zmeny nevidí. Podrobná diagnostika a oprava:
+> `reports/COUNTDOWN_REGRESIA_A_TAB_BAR_FADE.md`.
+>
+> **PRAVIDLO: pred KAŽDOU zmenou `package.json` (`dependencies` AJ
+> `devDependencies` AJ `scripts`) over dopad na fingerprint** —
+> `npx eas-cli update --branch production --non-interactive` a porovnaj
+> vypísaný `Runtime version` s runtimom posledného úspešného buildu
+> (`npx eas-cli build:list --platform ios --limit 1` s `Status: finished`).
+> Ak sa líši, OTA sa na existujúci build nedostane — vtedy buď zmenu
+> vráť, alebo to nahlás Rastiovi PRED publikovaním ďalších balíkov, nie
+> až keď sa spýta. Lokálny `@expo/fingerprint` nástroj sa v tomto
+> prostredí ukázal nespoľahlivý pri opakovaných behoch — ako zdroj
+> pravdy použi vždy skutočnú `eas update`/`eas build:list` odpoveď,
+> nikdy len lokálne opakované meranie.
 
 ---
 
@@ -152,7 +175,7 @@ v katalógu za hotovú, over, že tieto veci STÁLE FUNGUJÚ:**
 
 - [ ] **Countdown uzávierky na karte** (`Ponuky do… · ostáva X dní`,
       `src/lib/deadline.ts` + `property-card.tsx`) — spusti
-      `npm run check:deadline` (logika) a over aj DÁTA: má aspoň jeden
+      `npx tsx scripts/check-deadline.ts` (logika) a over aj DÁTA: má aspoň jeden
       ACTIVE inzerát `offer_deadline` v budúcnosti? Bez dát je štítok
       neviditeľný aj keď je kód správny — presne to sa stalo pri 9.8.2026.
 - [ ] **„Pridané [dátum]" na karte** (`property-card.tsx`, REGRESIA

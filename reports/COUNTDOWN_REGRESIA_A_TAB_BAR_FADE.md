@@ -63,7 +63,7 @@ súbor, ktorý sa dá testovať holým Node-om.
 `property.ts` tieto funkcie ďalej **re-exportuje** — žiadne z 16 miest,
 čo ich importujú z `@/lib/property`, sa meniť nemuselo.
 
-Pridal som `npm run check:deadline` (`tsx scripts/check-deadline.ts`) —
+Pridal som spustiteľný test `npx tsx scripts/check-deadline.ts` —
 **12 kontrol**, žiadna appka, žiadna databáza:
 
 ```
@@ -86,10 +86,14 @@ Pridal som `npm run check:deadline` (`tsx scripts/check-deadline.ts`) —
 VŠETKO OK
 ```
 
-Pridal som ako devDependency **`tsx`** (jediný spôsob, ako spustiť
-TypeScript priamo v Node bez natívneho modulu — appka ho nikdy nezabalí,
-je to čisto vývojový nástroj). `npx tsc --noEmit` po inštalácii aj po
-refaktore — bez chýb.
+Beží cez **`npx tsx`** (jediný spôsob, ako spustiť TypeScript priamo
+v Node bez natívneho modulu), **zámerne NIE ako devDependency projektu.**
+Prvý pokus pridať `tsx` do `package.json` (aj len ako `devDependencies`
+a npm skript) **zmenil EAS fingerprint** — `package.json`'s `scripts`
+pole je jeho súčasťou, hoci nemá nič spoločné s natívnym kódom — a
+odstrihol dve OTA od Rastiovho telefónu. Opravené a zdokumentované
+samostatne nižšie (§ „Vedľajšia chyba, ktorú som spôsobil"). `npx tsc
+--noEmit` — bez chýb.
 
 **B) Trvalá položka v CLAUDE.md.** Nová sekcia **§10 „Veci, čo sa strácajú
 pri redizajne"** — countdown štítok a „Pridané [dátum]" na karte (druhá
@@ -133,7 +137,7 @@ select count(*) as active_with_deadline from property where status='ACTIVE';
 → 5
 ```
 
-`npm run check:deadline` — 12/12. `npx tsc --noEmit` — bez chýb.
+`npx tsx scripts/check-deadline.ts` — 12/12. `npx tsc --noEmit` — bez chýb.
 
 ### 🟡 ČAKÁ VIZUÁLNE OVERENIE
 
@@ -199,12 +203,66 @@ akú počíta React Native — vrátane presného prípadu, ktorý si nahlásil
 
 ---
 
+## VEDĽAJŠIA CHYBA, KTORÚ SOM SPÔSOBIL A OPRAVIL: `tsx` odstrihlo OTA od telefónu
+
+**Toto je dôležité a treba to povedať nahlas, nie zamlčať.**
+
+Pri pridávaní `npm run check:deadline` som `tsx` nainštaloval ako
+`devDependency` (`npm install --save-dev tsx`) a pridal doň dva riadky do
+`package.json` → `scripts`. Netušil som, že **`scripts` pole v
+`package.json` je súčasťou EAS fingerprintu** — logiky, ktorá rozhoduje,
+či OTA update dorazí na existujúci build, alebo ho appka ignoruje ako
+nekompatibilný.
+
+**Dôsledok:** touto zmenou (v commite `45c01b3`) sa runtime appky posunul
+z `24919867e1…` na `c45bf547…` (iOS) / z `eaadbb7eca8…` na `eb53a81c6…`
+(Android). **Tvoj telefón beží na TestFlight builde #5 s runtimom
+`24919867e1…`** — takže **dve OTA, ktoré som medzitým publikoval (tento
+countdown/tab-bar balík a nasledujúci obhliadka/Moje/odznaky balík),
+by sa na tvoj telefón NIKDY nestiahli.** Nie je to hypotéza — overil
+som to priamo cez `eas build:list` (skutočný záznam tvojho buildu #5)
+aj cez opakované skutočné `eas update` publikácie z čistých git
+checkoutov.
+
+**Diagnostika bola dlhšia, než mala byť**, lebo lokálny nástroj
+`@expo/fingerprint` sa v tomto prostredí správal nespoľahlivo pri
+opakovaných behoch (rovnaký stav súborov, iný výsledok) — musel som sa
+preto spoľahnúť výhradne na **skutočné `eas update` publikácie** ako
+zdroj pravdy, nie na lokálne opakované merania.
+
+**Oprava:**
+1. `tsx` odstránené z `package.json` úplne — `devDependencies` aj
+   `scripts`. Test sa teraz spúšťa priamo cez `npx tsx
+   scripts/check-deadline.ts` (nefetchuje sa do projektu, nemení
+   `package.json` vôbec).
+2. Overené: čistý checkout commitu `21e10ff` (posledný known-good) dáva
+   cez skutočný `eas update` runtime `24919867e1…/eaadbb7eca8…` —
+   presne to, čo má tvoj build #5.
+3. **Republikoval som OBIDVA orphanované balíky** (tento aj
+   obhliadka/Moje/odznaky) pod opraveným, správnym runtimom — mali by ti
+   teraz doraziť normálne.
+
+**Čo by som mal robiť inak nabudúce:** žiadny nový balík do
+`package.json` (`dependencies` AJ `devDependencies`) bez toho, aby som si
+najprv overil dopad na fingerprint — aj `devDependencies` naň majú vplyv,
+nielen `dependencies`. Zapisujem to ako trvalé pravidlo nižšie.
+
+### 🟡 Over prosím
+
+- [ ] Appka na tvojom telefóne (bez ručného zásahu, len bežné otvorenie)
+      dostane tento aj predošlý balík zmien cez OTA.
+- [ ] Ak nedostane do pár minút, daj vedieť — bude to znamenať, že
+      diagnostika ešte nie je úplná a treba to riešiť ďalej, nie
+      predstierať, že je to hotové.
+
+---
+
 ## KONTROLA PRED HOTOVO
 
 | bod | stav |
 |---|---|
 | Nájdená príčina opakovanej straty countdown štítku | ✅ dátová, nie kódová — zdokumentované s dôkazom |
-| Automatizovaný test na countdown | ✅ `npm run check:deadline`, 12/12, Node bez appky |
+| Automatizovaný test na countdown | ✅ `npx tsx scripts/check-deadline.ts`, 12/12, Node bez appky |
 | Trvalé pravidlo v CLAUDE.md | ✅ §10 |
 | Countdown späť na karte v aktuálnom dizajne | ✅ **OVERENÉ RUNTIME** (5 inzerátov) / 🟡 vzhľad |
 | Posledný viditeľný tab má fade náznak pokračovania — screenshot | 🟡 kresba priložená, nie screenshot appky |

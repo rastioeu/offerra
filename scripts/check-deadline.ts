@@ -10,7 +10,7 @@
  * štítok, keď má dostať uzávierku), nie DÁTA v databáze — dáta sa menia,
  * pravidlo pre zobrazenie nie.
  *
- * SPUSTENIE: `npm run check:deadline` (žiadna appka, žiadna databáza).
+ * SPUSTENIE: `npx tsx scripts/check-deadline.ts` (žiadna appka, žiadna databáza).
  * Zapadá do CLAUDE.md „veci, čo sa strácajú pri redizajne" — pred
  * označením akejkoľvek zmeny detailu/karty inzerátu za hotovú.
  */
