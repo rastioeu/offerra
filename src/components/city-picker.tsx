@@ -1,14 +1,19 @@
 /**
- * Výber mesta/obce z tabuľky `offerra.city` (2 925 slovenských obcí,
+ * Výber mesta/obce z tabuľky `offerra.city` (2 930 slovenských obcí,
  * 79 okresov + Bratislava a Košice ako celok).
  *
- * Nie je to rozbaľovačka — pri 2 925 položkách je jediné použiteľné
+ * Nie je to rozbaľovačka — pri 2 930 položkách je jediné použiteľné
  * riešenie hľadanie podľa názvu. Dotaz ide do DB (`ilike`), nie cez
  * načítanie celého zoznamu do pamäte telefónu.
  *
  * Výber obce po novom vracia aj KRAJ a SÚRADNICE (8.8.2026). Bez toho by sa
  * inzerát nikdy neobjavil na mape — súradnice nemá kde inde vziať, presnú
  * adresu totiž zámerne nepýtame.
+ *
+ * Zvolený KRAJ zoznam zužuje (12.8.2026). Pri 2 930 obciach je to rozdiel
+ * medzi hľadaním v celej krajine a v pár stovkách — a je to jediný dôvod,
+ * prečo má zmysel pýtať sa na kraj skôr než na obec. Kraj je pritom len
+ * pomôcka pri hľadaní: obec ho po výbere prepíše na ten svoj.
  */
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
@@ -35,11 +40,14 @@ export type PickedCity = {
 export function CityPicker({
   city,
   district,
+  region,
   onPick,
   required,
 }: {
   city: string | null;
   district: string | null;
+  /** Keď je zvolený, hľadá sa len v ňom. `null` = po celom Slovensku. */
+  region?: string | null;
   onPick: (picked: PickedCity) => void;
   /** Pri inzeráte je obec povinná, pri dopyte nie — a má to byť vidieť. */
   required?: boolean;
@@ -66,6 +74,9 @@ export function CityPicker({
         // „Banská Bystrica". Prefixový index sa tým využije rovnako.
         const needle = stemSk(query.trim());
         if (needle.length > 0) q = q.like('name_norm', `${needle}%`);
+        // Zvolený kraj zúži hľadanie. Keď zvolený nie je, hľadá sa všade —
+        // prázdny kraj NESMIE znamenať prázdny výsledok.
+        if (region) q = q.eq('region', region);
         const { data, error: e } = await q
           .order('population', { ascending: false, nullsFirst: false })
           .limit(40);
@@ -86,11 +97,16 @@ export function CityPicker({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, query]);
+  }, [open, query, region]);
 
   return (
     <View style={styles.group}>
-      <Label hint="Podľa obce sa dopĺňa kraj aj poloha na mape. Presnú adresu nepýtame.">
+      <Label
+        hint={
+          region
+            ? `Hľadá sa v kraji ${region.replace(' kraj', '')}. Podľa obce sa doplní poloha na mape; presnú adresu nepýtame.`
+            : 'Podľa obce sa doplní kraj aj poloha na mape. Presnú adresu nepýtame.'
+        }>
         {required ? 'Mesto / obec (povinné)' : 'Mesto / obec'}
       </Label>
 
@@ -106,14 +122,17 @@ export function CityPicker({
         </Text>
       </Pressable>
 
-      <ModalScreen visible={open} onClose={() => setOpen(false)} title="Vyber obec">
+      <ModalScreen
+        visible={open}
+        onClose={() => setOpen(false)}
+        title={region ? `Vyber obec — ${region.replace(' kraj', '')}` : 'Vyber obec'}>
         <View style={styles.modalBody}>
           <TextInput
             value={query}
             onChangeText={setQuery}
             autoFocus
-            placeholder="Začni písať názov obce…"
-            placeholderTextColor={palette.textMuted}
+            placeholder={region ? `napr. Nitra — hľadá sa v kraji ${region.replace(' kraj', '')}` : 'napr. Nitra'}
+            placeholderTextColor={palette.textPlaceholder}
             style={[
               styles.search,
               { backgroundColor: palette.surface, borderColor: palette.borderStrong, color: palette.textPrimary },
@@ -126,7 +145,9 @@ export function CityPicker({
 
           {!busy && results.length === 0 ? (
             <Text style={[styles.empty, { color: palette.textMuted }]}>
-              Nič sa nenašlo. Skús inú časť názvu.
+              {region
+                ? `V kraji ${region.replace(' kraj', '')} sa nič nenašlo. Skús inú časť názvu, alebo zmeň kraj vyššie.`
+                : 'Nič sa nenašlo. Skús inú časť názvu.'}
             </Text>
           ) : null}
 

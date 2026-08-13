@@ -316,17 +316,44 @@ export default function PropertyEditorScreen() {
               label="Popis"
               value={form.description}
               onChangeText={(v) => set({ description: v })}
-              placeholder="Stav, orientácia, čo je v okolí…"
+              placeholder="napr. Po rekonštrukcii, orientácia na juh, električka 5 minút"
               multiline
+            />
+
+            {/* KRAJ JE NAD OBCOU (Rastio, 12.8.2026) a nie je to len presun
+                riadka — mení sa tým jeho úloha.
+
+                Predtým sa kraj DOPĹŇAL podľa obce a stál pod ňou. Nad obcou
+                by taká vec bola prázdny prepínač, ktorý sa sám vyplní neskôr
+                — teda ovládací prvok, čo pri ťuknutí nerobí nič užitočné.
+
+                Preto kraj po novom OBMEDZUJE ponuku obcí. Zvolil som to
+                namiesto „kraj sa nedá vybrať, kým nie je obec" z dvoch
+                dôvodov: je to jednoduchšie (jeden `eq` v dotaze oproti
+                blokovaniu prvku a vysvetľovaniu, prečo je zamknutý) a je to
+                jediná z tých dvoch možností, ktorá je používateľovi na
+                niečo — obcí je 2 930 a kraj ich zúži na pár stoviek.
+
+                Obec ostáva ZDROJ PRAVDY: keď ju človek vyberie, kraj sa
+                nastaví podľa nej, aj keby mal predtým zvolený iný. Inak by
+                sa dal uložiť inzerát s obcou v jednom kraji a krajom v inom.
+                Kraj sa preto nedá „pokaziť" — nanajvýš sa opraví. */}
+            <ChoiceRow<string>
+              label="Kraj (nepovinné)"
+              hint="Zúži zoznam obcí nižšie. Netreba ho vypĺňať — po výbere obce sa nastaví sám."
+              options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
+              value={form.region}
+              onChange={(v) => set({ region: v })}
             />
 
             <CityPicker
               required
               city={form.city}
               district={form.district}
-              // Kraj a súradnice sa dopĺňajú spolu s obcou — sú v tom istom
-              // riadku číselníka, takže pýtať sa na ne zvlášť by bolo
-              // prepisovanie toho, čo už vieme.
+              region={form.region}
+              // Súradnice sa dopĺňajú spolu s obcou — sú v tom istom riadku
+              // číselníka, takže pýtať sa na ne zvlášť by bolo prepisovanie
+              // toho, čo už vieme.
               onPick={(p) =>
                 set({
                   city: p.city,
@@ -336,14 +363,6 @@ export default function PropertyEditorScreen() {
                   longitude: p.longitude,
                 })
               }
-            />
-
-            <ChoiceRow<string>
-              label="Kraj"
-              hint="Dopĺňa sa podľa obce. Zmeniť sa dá, keď to nesedí."
-              options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
-              value={form.region}
-              onChange={(v) => set({ region: v })}
             />
 
             <StreetPicker
@@ -364,7 +383,7 @@ export default function PropertyEditorScreen() {
                 value={form.rooms}
                 onChangeText={(v) => set({ rooms: v })}
                 keyboardType="numeric"
-                placeholder="3"
+                placeholder="napr. 3"
               />
             ) : null}
 
@@ -373,7 +392,7 @@ export default function PropertyEditorScreen() {
               value={form.area}
               onChangeText={(v) => set({ area: v })}
               keyboardType="decimal-pad"
-              placeholder="78"
+              placeholder="napr. 78"
             />
 
             <Field
@@ -382,7 +401,7 @@ export default function PropertyEditorScreen() {
               value={form.price}
               onChangeText={(v) => set({ price: v })}
               keyboardType="decimal-pad"
-              placeholder={form.transaction_type === 'RENT' ? '850 (za mesiac)' : '248000'}
+              placeholder={form.transaction_type === 'RENT' ? 'napr. 850 za mesiac' : 'napr. 248000'}
             />
 
             {/* ── o budove ──
@@ -398,14 +417,14 @@ export default function PropertyEditorScreen() {
                   value={form.floor}
                   onChangeText={(v) => set({ floor: v })}
                   keyboardType="numbers-and-punctuation"
-                  placeholder="3"
+                  placeholder="napr. 3"
                 />
                 <Field
                   label="Z koľkých poschodí celkovo"
                   value={form.floorsTotal}
                   onChangeText={(v) => set({ floorsTotal: v })}
                   keyboardType="numeric"
-                  placeholder="5"
+                  placeholder="napr. 5"
                 />
 
                 <ChoiceRow<'YES' | 'NO'>
@@ -424,7 +443,7 @@ export default function PropertyEditorScreen() {
                   value={form.monthlyCosts}
                   onChangeText={(v) => set({ monthlyCosts: v })}
                   keyboardType="decimal-pad"
-                  placeholder="140"
+                  placeholder="napr. 140"
                 />
               </>
             ) : null}
@@ -444,7 +463,7 @@ export default function PropertyEditorScreen() {
                   value={form.deposit}
                   onChangeText={(v) => set({ deposit: v })}
                   keyboardType="decimal-pad"
-                  placeholder="1600"
+                  placeholder="napr. 1600"
                 />
                 <Field
                   label="Zábezpeka = koľko mesačných nájmov"
@@ -452,7 +471,7 @@ export default function PropertyEditorScreen() {
                   value={form.depositMonths}
                   onChangeText={(v) => set({ depositMonths: v })}
                   keyboardType="decimal-pad"
-                  placeholder="2"
+                  placeholder="napr. 2"
                 />
 
                 <AvailableFromPicker
@@ -465,7 +484,7 @@ export default function PropertyEditorScreen() {
                   value={form.minLease}
                   onChangeText={(v) => set({ minLease: v })}
                   keyboardType="numeric"
-                  placeholder="12"
+                  placeholder="napr. 12"
                 />
 
                 <ChoiceRow<Furnishing>

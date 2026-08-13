@@ -164,7 +164,7 @@ export default function NewRequestScreen() {
           value={budgetMin}
           onChangeText={setBudgetMin}
           keyboardType="decimal-pad"
-          placeholder={transaction === 'RENT' ? '400' : '120000'}
+          placeholder={transaction === 'RENT' ? 'napr. 400 za mesiac' : 'napr. 120000'}
         />
         <Field
           label={transaction === 'RENT' ? 'Nájom do (€/mesiac)' : 'Ponúkam do (€)'}
@@ -176,11 +176,11 @@ export default function NewRequestScreen() {
           value={budgetMax}
           onChangeText={setBudgetMax}
           keyboardType="decimal-pad"
-          placeholder={transaction === 'RENT' ? '650' : '200000'}
+          placeholder={transaction === 'RENT' ? 'napr. 650 za mesiac' : 'napr. 200000'}
         />
 
-        <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="2" />
-        <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="55" />
+        <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="napr. 2" />
+        <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="napr. 55" />
 
         <Field
           label="Čo hľadáš"

@@ -24,6 +24,20 @@ export type Palette = {
   textPrimary: string;
   textSecondary: string;
   textMuted: string;
+  /**
+   * Placeholder v poliach formulára — a NIČ INÉ.
+   *
+   * PREČO VLASTNÁ FARBA (Rastio, 12.8.2026): placeholder používal
+   * `textMuted`, ktorý má na svetlej téme kontrast 4.76:1 — teda taký,
+   * aký sa žiada od skutočného textu. Prázdne pole s nápisom „3" preto
+   * vyzeralo ako VYPLNENÉ a ľudia ho preskakovali. V tmavej to bolo
+   * horšie: od skutočnej hodnoty ho delilo len 2.61:1.
+   *
+   * Teraz je to ~3.1:1 s pozadím poľa — dosť na prečítanie, málo na to,
+   * aby to vyzeralo ako zadaná hodnota. Od skutočnej hodnoty je odstup
+   * 5.50:1 (svetlá) a 4.83:1 (tmavá).
+   */
+  textPlaceholder: string;
 
   /** Značková navy — kotva: nadpisy, aktívny tab, sekundárne akcie. */
   primary: string;
@@ -102,6 +116,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     textPrimary: '#1C1815',
     textSecondary: '#5C534B',
     textMuted: '#7A7068',
+    textPlaceholder: '#988E86',
 
     primary: '#103A6B',
     secondary: '#1B73D4',
@@ -130,6 +145,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     textPrimary: '#F7F3EF',
     textSecondary: '#C4B8AE',
     textMuted: '#A2968C',
+    textPlaceholder: '#75695F',
 
     primary: '#7FB3F0',
     secondary: '#7FB3F0',

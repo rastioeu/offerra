@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '12. augusta 2026',
+    title: 'Formulár inzerátu: kraj najprv, jasnejšie príklady',
+    items: [
+      'Kraj sa teraz vyberá PRED obcou a zúži hľadanie — z 2 930 obcí zrazu hľadáš v pár stovkách. Vyplniť ho nemusíš; keď vyberieš obec, kraj sa doplní sám podľa nej.',
+      'Príklady v prázdnych políčkach („napr. 78") sú bledšie a začínajú slovom „napr." — dovtedy vyzerali ako už vyplnená hodnota a ľudia políčko preskočili, hoci bolo prázdne.',
+      'Platí to všade, kde sa niečo vypĺňa — inzerát, ponuka aj dopyt.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '12. augusta 2026',
     title: 'Detail inzerátu má tri podtaby',
     items: [
       'Pod popisom sú teraz tri záložky — Ponuky, Obhliadka a Hodnotenia. Netreba scrollovať cez celú obrazovku, aby si našiel to, čo ťa zaujíma.',

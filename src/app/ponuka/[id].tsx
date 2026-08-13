@@ -292,7 +292,7 @@ export default function OfferFormScreen() {
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
-              placeholder={isRent ? '780' : '215000'}
+              placeholder={isRent ? 'napr. 780 za mesiac' : 'napr. 215000'}
             />
 
             <Field
@@ -326,7 +326,7 @@ export default function OfferFormScreen() {
                   value={people}
                   onChangeText={setPeople}
                   keyboardType="numeric"
-                  placeholder="2"
+                  placeholder="napr. 2"
                 />
                 <ChoiceRow<'NO' | 'YES'>
                   label="Domáce zvieratá"
@@ -350,7 +350,7 @@ export default function OfferFormScreen() {
                   value={months}
                   onChangeText={setMonths}
                   keyboardType="numeric"
-                  placeholder="24"
+                  placeholder="napr. 24"
                 />
                 <ChoiceRow<string>
                   label="Zamestnanie"
@@ -363,9 +363,9 @@ export default function OfferFormScreen() {
                   value={income}
                   onChangeText={setIncome}
                   keyboardType="decimal-pad"
-                  placeholder="2000"
+                  placeholder="napr. 2000"
                 />
-                <Field label="Poznámka" value={note} onChangeText={setNote} multiline placeholder="Čokoľvek, čo by mal majiteľ vedieť." />
+                <Field label="Poznámka" value={note} onChangeText={setNote} multiline placeholder="napr. pracujem z domu, budem tam sám" />
               </Card>
             ) : null}
 

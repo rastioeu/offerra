@@ -38,6 +38,8 @@ export const HOW_SECTIONS: HowSection[] = [
       'Zverejniť inzerát sa dá až s názvom, obcou, počtom izieb, výmerou a aspoň jednou ' +
         'fotkou — bez toho sa nikto nevie rozhodnúť, či ho to zaujíma. Cena, kraj a ulica ' +
         'sú dobrovoľné. Pozemok počet izieb pochopiteľne nepotrebuje.',
+      'Kraj sa dá vybrať aj skôr než obec — vtedy sa obec hľadá len v ňom. Keď obec vyberieš, ' +
+        'kraj sa nastaví podľa nej; obec je vždy tá, ktorá rozhoduje.',
     ],
   },
   {

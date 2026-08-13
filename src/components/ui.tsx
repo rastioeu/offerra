@@ -103,7 +103,7 @@ export function Field({
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor={palette.textMuted}
+        placeholderTextColor={palette.textPlaceholder}
         keyboardType={keyboardType ?? 'default'}
         multiline={multiline}
         returnKeyType={multiline ? undefined : 'done'}

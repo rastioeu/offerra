@@ -104,7 +104,7 @@ export function AvailableFromPicker({
         value={manual}
         onChangeText={applyManual}
         placeholder="alebo konkrétny dátum — 1.9.2026"
-        placeholderTextColor={palette.textMuted}
+        placeholderTextColor={palette.textPlaceholder}
         keyboardType="numbers-and-punctuation"
         returnKeyType="done"
         style={[

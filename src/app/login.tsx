@@ -208,7 +208,7 @@ export default function LoginScreen() {
                   value={email}
                   onChangeText={setEmail}
                   placeholder="e-mail"
-                  placeholderTextColor={palette.textMuted}
+                  placeholderTextColor={palette.textPlaceholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                   keyboardType="email-address"
@@ -226,7 +226,7 @@ export default function LoginScreen() {
                   value={password}
                   onChangeText={setPassword}
                   placeholder="heslo"
-                  placeholderTextColor={palette.textMuted}
+                  placeholderTextColor={palette.textPlaceholder}
                   autoCapitalize="none"
                   autoCorrect={false}
                   secureTextEntry

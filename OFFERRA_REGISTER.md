@@ -3842,6 +3842,84 @@ prijaté ponuky odmietnuté, prekontrolované, 0.
 
 ---
 
+## Fáza 15 — Kraj nad obcou, placeholdery (12.8.2026)
+
+**IDE OTA** — len JS, žiadny natívny modul, `app.json` bez zmeny.
+Report: `reports/KRAJ_A_PLACEHOLDERY.md`.
+
+### 15.1 Kraj je nad Mesto/obec a zužuje zoznam obcí — ✅ OVERENÉ RUNTIME
+
+Zo zadania boli dve možnosti: kraj zamknúť kým nie je obec, alebo nechať
+kraj zúžiť ponuku obcí. **Zvolené zúženie** — je to jeden `eq` v dotaze
+oproti blokovaniu prvku a vysvetľovaniu, prečo je zamknutý, a je to jediná
+z tých dvoch možností, ktorá je používateľovi na niečo (2 930 obcí → pár
+stoviek). **Obec ostáva zdroj pravdy**: jej výber kraj prepíše, takže nemôže
+vzniknúť inzerát s obcou v jednom kraji a krajom v inom.
+
+`kraj_test.py` (mimo repa) posiela ostrej DB **tie isté dotazy ako
+`CityPicker`, anon kľúčom** — teda s právami appky:
+
+```
+obcí spolu 2930 · všetkých 8 krajov zo src/lib/property.ts sedí na city.region
+súčet cez kraje 2930 / 2930  → žiadna obec pri zvolenom kraji nevypadne
+"nov":  bez kraja 32 → v Prešovskom 5, cudzí kraj v odpovedi 0
+"nitr": bez kraja  9 → v Nitrianskom 4, cudzí kraj v odpovedi 0
+bez zvoleného kraja sa hľadá po celom Slovensku (9 obcí, nie 0)
+```
+
+Prvé pravidlo je to podstatné: kraje sú v `property.ts` reťazce a filter je
+`eq` — keby sa jediný nezhodoval so stĺpcom `city.region`, ten kraj by dal
+prázdny zoznam obcí a nikto by nevedel prečo.
+
+**Vedľajší nález:** obcí je **2 930**, nie 2 925 — komentáre niesli číslo
+z prvého načítania číselníka a doplnené obce sa doň nepremietli. Opravené.
+
+Zúženie je vidieť aj v textoch (hint, nadpis modálu, placeholder, prázdny
+výsledok). Prázdny výsledok po novom hovorí **„alebo zmeň kraj vyššie"** —
+inak by človek nechápal, prečo mu obec nevyskočí.
+
+### 15.2 Placeholder prestal vyzerať ako vyplnená hodnota — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+Zmerané, nie odhadnuté. Placeholder používal `textMuted` — token pre
+**skutočný text**, teda nastavený na plný kontrast voči pozadiu:
+
+| | odstup placeholderu od zadanej hodnoty | |
+|---|---|---|
+| svetlá | 3.65:1 | → **5.50:1** |
+| tmavá | **2.61:1** | → **4.83:1** |
+
+V tmavej téme sa prázdne pole od vyplneného takmer nedalo odlíšiť. Nový token
+**`textPlaceholder`** (`#988E86` / `#75695F`) drží ≥ 3:1 voči pozadiu poľa —
+cieľ nebol placeholder schovať, ale prestať ho vydávať za hodnotu.
+`tokens.ts` ostáva jediný zdroj pravdy (§5).
+
+Farba nasadená v 6 súboroch (`ui.tsx`, `search-bar`, `city-picker`,
+`street-picker`, `available-from-picker`, `login`), formát **„napr. X"** na
+všetkých 11 poliach formulára inzerátu + dopyt, ponuka, prezývka, výber obce.
+Zámerne nezmenené: `e-mail`/`heslo` (názov poľa), `+421 9xx xxx xxx` (maska),
+`alebo konkrétny dátum — 1.9.2026` a `Napíš, prečo…` (pokyny, nie príklady).
+
+**Obrázok `reports/placeholder_pred_po.png` je vykreslený z hodnôt
+v `tokens.ts`, NIE screenshot appky** — dokazuje farby v tokenoch, nie to, ako
+to vyzerá na telefóne. Preto 🟡, nie ✅ (§1).
+
+### 15.3 Čo má Rastio overiť na telefóne
+
+- [ ] Kraj je **nad** Mesto/obec; po zvolení kraja hľadá modál len v ňom
+      (nadpis to hovorí).
+- [ ] Zlý kraj + „Bratislava" → hláška ponúkne zmeniť kraj vyššie.
+- [ ] Bez zvoleného kraja sa hľadá po celom Slovensku.
+- [ ] Výber obce **prepíše** predtým zvolený kraj.
+- [ ] Prázdne pole „Počet izieb" ukazuje `napr. 3` a je zreteľne bledšie než
+      napísaná hodnota — **hlavne v tmavej téme**, tam bol problém najväčší.
+- [ ] Placeholder ostáva čitateľný, nie je vybledlý do neviditeľna.
+- [ ] Rovnaký štýl aj v Ponuke a v Dopyte.
+
+`npx tsc --noEmit` bez chýb. `how-it-works.ts` doplnený o vetu, že kraj sa dá
+vybrať skôr a zužuje hľadanie (§8), changelog má záznam (§7).
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

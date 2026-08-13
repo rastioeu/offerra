@@ -142,7 +142,7 @@ export default function PrezyvkaScreen() {
           }
           value={fullName}
           onChangeText={setFullName}
-          placeholder="Ján Novák"
+          placeholder="napr. Ján Novák"
         />
         <Field
           label="Telefón — povinné"

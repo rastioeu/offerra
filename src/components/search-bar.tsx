@@ -139,7 +139,7 @@ export function SearchBar({
         value={text}
         onChangeText={setText}
         placeholder={PLACEHOLDER[side]}
-        placeholderTextColor={palette.textMuted}
+        placeholderTextColor={palette.textPlaceholder}
         returnKeyType="search"
         autoCorrect={false}
         style={[

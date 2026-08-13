@@ -143,7 +143,7 @@ export function StreetPicker({
           onChange(v);
         }}
         placeholder="napr. Šancová"
-        placeholderTextColor={palette.textMuted}
+        placeholderTextColor={palette.textPlaceholder}
         returnKeyType="done"
         style={[
           styles.input,
