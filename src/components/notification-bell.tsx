@@ -3,13 +3,13 @@
  * zvonček v hlavičke, `unreadCount` ako bodka.
  */
 import { useRouter } from 'expo-router';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
+import { CountBadge } from '@/components/count-badge';
 import { Icon } from '@/components/icon';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
-import { Type, Weight } from '@/theme/tokens';
 
 export function NotificationBell() {
   const palette = useTheme();
@@ -27,11 +27,8 @@ export function NotificationBell() {
       accessibilityLabel={unread > 0 ? `Oznámenia, ${unread} neprečítaných` : 'Oznámenia'}>
       <View>
         <Icon name={unread > 0 ? 'bell.badge' : 'bell'} size={24} color={palette.textSecondary} />
-        {unread > 0 ? (
-          <View style={[styles.badge, { backgroundColor: palette.danger, borderColor: palette.background }]}>
-            <Text style={[styles.count, { color: palette.onPrimary }]}>{unread > 9 ? '9+' : unread}</Text>
-          </View>
-        ) : null}
+        {/* Odznak je spoločný komponent — ten istý nosí tab „Správa". */}
+        <CountBadge count={unread} />
       </View>
     </Pressable>
   );
@@ -39,17 +36,4 @@ export function NotificationBell() {
 
 const styles = StyleSheet.create({
   bell: { fontSize: 22, lineHeight: 26 },
-  badge: {
-    position: 'absolute',
-    top: -3,
-    right: -6,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    borderWidth: 2,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 3,
-  },
-  count: { ...Type.caption, fontSize: 11, lineHeight: 13, fontWeight: Weight.bold },
 });

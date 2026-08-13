@@ -154,6 +154,10 @@ export const HOW_SECTIONS: HowSection[] = [
         'zmazal aj to, čo zmazať nemal.',
       'Ak sa pravidlá porušili, správca môže inzerát skryť z katalógu alebo zmazať. Skrytý ' +
         'inzerát vlastník ďalej vidí, aj s dôvodom.',
+      'A DOZVIE SA TO. Keď sa nahlásenie potvrdí, príde ti upozornenie s tým, čo sa stalo ' +
+        'a prečo — vrátane dôvodu. Kto ťa nahlásil, sa v ňom nedozvieš; inak by z ' +
+        'nahlasovania bol dôvod na odplatu. Upozornenie zároveň hovorí nahlas, že opakované ' +
+        'porušenia môžu viesť k zablokovaniu účtu.',
       'Používateľa možno zablokovať. Zablokovaný účet sa nevie prihlásiť ani nič pridať; ' +
         'doterajšie dáta mu ostanú a odblokovaním sa všetko vráti. Nie je to zmazanie.',
       'Offerra je trh MEDZI ĽUĎMI a je určená LEN pre fyzické osoby konajúce vo vlastnom ' +

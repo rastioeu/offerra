@@ -21,6 +21,17 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '12. augusta 2026',
+    title: 'Nahlásenia majú následok — a dozvieš sa o ňom',
+    items: [
+      'Keď sa nahlásenie na tvoj inzerát potvrdí, príde ti upozornenie s tým, čo sa stalo a prečo. Dovtedy sa mohol inzerát skryť bez toho, aby si vedel, kde je problém.',
+      'Ak bol dôvod spam, podvod alebo falošný inzerát, inzerát sa z katalógu skryje. Nezmaže sa — v sekcii Moje ho ďalej vidíš aj s dôvodom.',
+      'Kto ťa nahlásil, sa v upozornení nedozvieš. Nahlasovanie nemá byť dôvod na odplatu.',
+      'Upozornenie hovorí nahlas aj to, že opakované porušenia môžu viesť k zablokovaniu účtu. Nikoho ale neblokuje appka sama — rozhoduje o tom človek.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '12. augusta 2026',
     title: 'Správy a odhad hypotéky v detaile inzerátu',
     items: [
       'Pribudol tab „Správy". Napísať sa dá kedykoľvek — aj predtým, než podáš ponuku, keď sa chceš len niečo opýtať.',

@@ -11,7 +11,7 @@ import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, Text
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
-import { Badge, Button, Card, ErrorNote } from '@/components/ui';
+import { Badge, Button, Card, CheckRow, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
@@ -56,6 +56,39 @@ type Alert_ = {
   naliehave: boolean;
 };
 
+/**
+ * OPAKOVANÉ PORUŠENIA (návrh, 12.8.2026 — Rastio si vyhradil rozhodnutie).
+ *
+ * Prah sú TRI potvrdené nahlásenia na tú istú osobu: jedno býva omyl, dve
+ * môžu byť náhoda, tri už tvoria vzorec. Ráta sa cez všetky jej inzeráty
+ * a ponuky, nie cez jeden inzerát — inak by stačilo založiť nový a
+ * počítadlo by sa vynulovalo.
+ *
+ * Je to UPOZORNENIE PRE SPRÁVCU, nie automatika. Appka nikoho neblokuje
+ * sama a ani blokovať nebude: pri troch nahláseniach môže ísť rovnako
+ * dobre o cielenú kampaň proti jednému človeku. Rozhodnutie ostáva na
+ * človeku, rovnako ako pri `Alert_`.
+ */
+type RepeatOffender = {
+  user_id: string;
+  nickname: string;
+  potvrdene: number;
+  dovody: string;
+  blokovany: boolean;
+};
+
+/**
+ * Ktoré dôvody majú „skryť inzerát" PREDVOLENE zaškrtnuté.
+ *
+ * Spam, podvod a falošný inzerát nemajú verziu, v ktorej by inzerát mal
+ * v katalógu ostať — ak je nahlásenie opodstatnené, obsah je zlý celý.
+ * Realitka a nevhodný obsah sa naopak dajú vyriešiť aj úpravou textu,
+ * takže tam rozhoduje správca prípad od prípadu (zadanie Rastia).
+ */
+function hideByDefault(reason: string): boolean {
+  return reason === 'SPAM' || reason === 'PODVOD' || reason === 'FALOSNY_INZERAT';
+}
+
 type AdminProperty = {
   id: string;
   title: string;
@@ -82,6 +115,14 @@ export default function AdminScreen() {
   const [dupes, setDupes] = useState<DuplicateContact[]>([]);
   /** `null` = bez filtra. Nefiltruje sa na serveri — 200 riadkov je málo. */
   const [reasonFilter, setReasonFilter] = useState<ReportReason | null>(null);
+  /**
+   * Zaškrtnutie „skryť inzerát" pri jednotlivých nahláseniach.
+   * Kľúč = id nahlásenia; chýbajúci kľúč znamená PREDVOLENÚ hodnotu podľa
+   * dôvodu (`hideByDefault`), nie „neskrývať" — inak by sa predvoľba
+   * stratila hneď, ako by správca zaškrtol niečo iné.
+   */
+  const [hideChoice, setHideChoice] = useState<Record<string, boolean>>({});
+  const [offenders, setOffenders] = useState<RepeatOffender[]>([]);
   const [limitDraft, setLimitDraft] = useState('');
   /** Filtre, do ktorých vedie ťuknutie na dlaždicu štatistiky. */
   const [propertyFilter, setPropertyFilter] = useState<PropertyStatus | null>(null);
@@ -93,7 +134,7 @@ export default function AdminScreen() {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, p, u, a, c, t, d] = await Promise.all([
+      const [s, r, p, u, a, c, t, d, ro] = await Promise.all([
         db().rpc('admin_stats'),
         db().from('report').select('*').order('created_at', { ascending: false }).limit(200),
         db().from('property').select('id,title,status,city,created_at,rejection_reason')
@@ -103,6 +144,7 @@ export default function AdminScreen() {
         db().from('app_config').select('key,value,label,hint').order('key'),
         db().rpc('admin_top_listers'),
         db().rpc('admin_duplicate_contacts'),
+        db().rpc('admin_repeat_offenders'),
       ]);
       if (s.error) throw s.error;
       if (r.error) throw r.error;
@@ -112,6 +154,7 @@ export default function AdminScreen() {
       if (c.error) throw c.error;
       if (t.error) throw t.error;
       if (d.error) throw d.error;
+      if (ro.error) throw ro.error;
       setStats(((s.data ?? []) as AdminStats[])[0] ?? null);
       setReports((r.data ?? []) as ReportRow[]);
       setProperties((p.data ?? []) as AdminProperty[]);
@@ -122,6 +165,7 @@ export default function AdminScreen() {
       setLimitDraft(cfg.find((x) => x.key === 'max_active_listings')?.value ?? '');
       setTopListers((t.data ?? []) as TopLister[]);
       setDupes((d.data ?? []) as DuplicateContact[]);
+      setOffenders((ro.data ?? []) as RepeatOffender[]);
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] Načítanie zlyhalo: ${m}`);
@@ -145,6 +189,43 @@ export default function AdminScreen() {
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] ${fn} zlyhalo: ${m}`);
+      Alert.alert('Akcia zlyhala', m);
+    }
+  }
+
+  /**
+   * Vybavenie nahlásenia. JEDNA operácia, nie dve — server v jednej
+   * transakcii prepíše stav, (voliteľne) skryje inzerát a upozorní
+   * nahláseného. Dovtedy to boli dva kroky v dvoch sekciách a ten druhý
+   * sa dal zabudnúť.
+   *
+   * Vracia, koľko potvrdených nahlásení má ten človek CELKOVO — správca to
+   * má vedieť v tej chvíli, keď rozhoduje, nie až keď si to niekde nájde.
+   */
+  async function resolveReport(r: ReportRow, hide: boolean) {
+    try {
+      const { data, error: e } = await db().rpc('admin_resolve_report', {
+        p_report_id: r.id,
+        p_hide: hide,
+      });
+      if (e) throw e;
+      await reload();
+      const total = typeof data === 'number' ? data : 0;
+      toast(
+        hide
+          ? `Vybavené, inzerát je skrytý. Používateľ má ${total} potvrdených nahlásení.`
+          : `Vybavené. Používateľ má ${total} potvrdených nahlásení.`,
+      );
+      if (total >= 3) {
+        Alert.alert(
+          'Opakované porušenia',
+          `Tento účet má ${total} potvrdených nahlásení. Zablokovať ho vieš v sekcii Používatelia — ` +
+            'appka to sama nespraví.',
+        );
+      }
+    } catch (e: unknown) {
+      const m = errorText(e);
+      console.log(`[ADMIN] Vybavenie nahlásenia zlyhalo: ${m}`);
       Alert.alert('Akcia zlyhala', m);
     }
   }
@@ -393,6 +474,43 @@ export default function AdminScreen() {
           </Card>
         ) : null}
 
+        {/* OPAKOVANÉ PORUŠENIA — návrh z 12.8.2026. Je to zoznam pre teba,
+            nie akcia: appka nikoho neblokuje sama a ani nebude. Pri troch
+            nahláseniach môže ísť rovnako dobre o cielenú kampaň proti
+            jednému človeku, a to rozlíši len človek. */}
+        {offenders.length > 0 ? (
+          <Card>
+            <Text style={[styles.section, { color: palette.warning }]}>
+              OPAKOVANÉ PORUŠENIA ({offenders.length})
+            </Text>
+            <Text style={[styles.meta, { color: palette.textMuted }]}>
+              Tri a viac POTVRDENÝCH nahlásení na tú istú osobu — cez všetky jej inzeráty
+              a ponuky. Appka nikoho neblokuje sama; zablokovať sa dá v sekcii Používatelia.
+            </Text>
+            {offenders.map((o) => (
+              <Pressable
+                key={o.user_id}
+                onPress={() => openTarget('USER', o.user_id, `${o.potvrdene}× potvrdené · ${o.dovody}`)}
+                accessibilityRole="button"
+                style={({ pressed }) => [
+                  styles.alert,
+                  {
+                    borderColor: palette.warning,
+                    backgroundColor: pressed ? palette.surfacePressed : 'transparent',
+                  },
+                ]}>
+                <View style={styles.rowHead}>
+                  <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{o.nickname}</Text>
+                  {o.blokovany ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                </View>
+                <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                  {o.potvrdene}× potvrdené · {o.dovody}
+                </Text>
+              </Pressable>
+            ))}
+          </Card>
+        ) : null}
+
         <View style={styles.tabs}>
           {(
             [
@@ -425,9 +543,11 @@ export default function AdminScreen() {
             od zvyšku jedným ťuknutím — inak sa v zozname stratia. */}
         {section === 'REPORTS' ? (
           <Text style={[styles.meta, { color: palette.textMuted }]}>
-            „Označiť ako riešené" znamená, že si zasiahol. „Zamietnuť" znamená, že
-            nahlásenie bolo neopodstatnené. Ani jedno nič nezmaže — obsah sa
-            skrýva zvlášť v sekcii Inzeráty.
+            „Označiť ako riešené" znamená, že si zasiahol — nahlásený sa o tom
+            dozvie upozornením a pri inzeráte sa rovno rozhodne, či sa má skryť.
+            „Zamietnuť" znamená, že nahlásenie bolo neopodstatnené; vtedy sa
+            nahlásenému neposiela nič. Ani jedno NIČ NEMAŽE — skrytý inzerát
+            vlastník ďalej vidí aj s dôvodom.
           </Text>
         ) : null}
 
@@ -489,18 +609,47 @@ export default function AdminScreen() {
                   {formatDate(r.created_at)} · cieľ {r.target_id.slice(0, 8)}
                 </Text>
                 {r.status === 'PENDING' ? (
-                  <View style={styles.actions}>
-                    <Button
-                      title="Označiť ako riešené"
-                      onPress={() => call('admin_set_report_status', { p_report_id: r.id, p_status: 'ACTIONED' }, 'Označené.')}
-                      variant="outline"
-                    />
-                    <Button
-                      title="Zamietnuť nahlásenie"
-                      onPress={() => call('admin_set_report_status', { p_report_id: r.id, p_status: 'DISMISSED' }, 'Zamietnuté.')}
-                      variant="outline"
-                    />
-                  </View>
+                  <>
+                    {/* Voľba je LEN pri inzeráte. Pri používateľovi a ponuke
+                        by „skryť" nemalo čo spraviť — blokovanie účtu je
+                        samostatná akcia v sekcii Používatelia. */}
+                    {r.target_type === 'PROPERTY' ? (
+                      <CheckRow
+                        checked={hideChoice[r.id] ?? hideByDefault(r.reason)}
+                        onToggle={() =>
+                          setHideChoice((prev) => ({
+                            ...prev,
+                            [r.id]: !(prev[r.id] ?? hideByDefault(r.reason)),
+                          }))
+                        }
+                        label="Skryť inzerát z katalógu"
+                        hint={
+                          hideByDefault(r.reason)
+                            ? 'Pri tomto dôvode predvolene áno. Odškrtni, ak má inzerát ostať zverejnený.'
+                            : 'Pri tomto dôvode rozhodni sám — dá sa to vyriešiť aj úpravou textu.'
+                        }
+                      />
+                    ) : null}
+                    <View style={styles.actions}>
+                      <Button
+                        title="Označiť ako riešené"
+                        onPress={() =>
+                          resolveReport(
+                            r,
+                            r.target_type === 'PROPERTY'
+                              ? (hideChoice[r.id] ?? hideByDefault(r.reason))
+                              : false,
+                          )
+                        }
+                        variant="outline"
+                      />
+                      <Button
+                        title="Zamietnuť nahlásenie"
+                        onPress={() => call('admin_set_report_status', { p_report_id: r.id, p_status: 'DISMISSED' }, 'Zamietnuté.')}
+                        variant="outline"
+                      />
+                    </View>
+                  </>
                 ) : null}
               </Card>
               </Pressable>

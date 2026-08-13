@@ -4017,6 +4017,84 @@ takže sa to nerobilo; migrácia sa kvôli tomu opakovať nebude.
 
 ---
 
+## Fáza 17 — Odznak nahlásení a vybavenie s následkom (12.8.2026)
+
+**IDE OTA** pre appku. Databáza: `mig_34_reports.sql` nasadená.
+Report: `reports/NAHLASENIA_ODZNAK_A_NASLEDOK.md`. Skript
+`nahlasenia_test.py` mimo repa (§4).
+
+### 17.1 Odznak na tabe „Správa" — ✅ OVERENÉ RUNTIME
+
+Odznak sa **vybral zo zvončeka** do `count-badge.tsx` a nosia ho obaja —
+druhá kópia tých istých štýlov by sa časom rozišla (zadanie to priamo
+žiadalo: „použi rovnaký vzor/komponent, nevymýšľaj nový").
+
+Číslo počíta `admin_pending_reports()` v DB, nie klient: bežný používateľ má
+na `report` riadkový prístup k SVOJIM nahláseniam, takže `count(*)` z
+klienta by mu vrátil číslo, ktoré s odznakom správcu nesúvisí. Overené —
+správca 2, bežný účet 0, neprihlásený HTTP 401.
+
+**Živosť má dve poistky.** Realtime na `offerra.report` (nová v publikácii,
+`replica identity full` — bez nej sa RLS pri UPDATE nevyhodnotí a správca by
+videl len vznik nahlásenia, nie jeho vybavenie, teda práve tú polovicu, ktorá
+číslo znižuje) a prepočet pri návrate do appky (`AppState`). Kanál sa nemusí
+otvoriť; bez druhej poistky by číslo ticho zamrzlo. Pri zmene sa
+**prepočítava**, nie dopočítava ±1 — to by bola druhá kópia pravidla „čo je
+otvorené nahlásenie".
+
+### 17.2 Vybavenie nahlásenia má následok — ✅ OVERENÉ RUNTIME
+
+Doteraz „Označiť ako riešené" prepísalo stav a TO BOLO VŠETKO: spamový
+inzerát ostal v katalógu a majiteľ sa nedozvedel nič. Skryť sa dalo v inej
+sekcii, ručne — druhý krok sa dal zabudnúť.
+
+`admin_resolve_report(id, hide)` robí v JEDNEJ transakcii: stav → ACTIONED,
+voliteľne inzerát → **REJECTED** (nie mazanie, audit trail ostáva)
+s `rejection_reason`, upozornenie nahlásenému, a vráti počet jeho potvrdených
+nahlásení. Buď všetko, alebo nič — nie stav, kde je inzerát skrytý a človek
+o tom nevie.
+
+Predvolené zaškrtnutie „skryť": **Spam / Podvod / Falošný inzerát ✓**,
+Realitka / Nevhodný obsah / Iné prázdne (dajú sa vyriešiť aj úpravou textu).
+Voľba je len pri inzeráte — pri používateľovi a ponuke by nemala čo spraviť.
+
+Upozornenie má typ **SYSTEMOVE** zámerne: je to jediný typ, ktorý sa nedá
+vypnúť. Hovorí ČO sa stalo, aký bol dôvod a že opakovanie môže viesť
+k zablokovaniu — a **nehovorí, kto nahlásil** (overené testom, nie tvrdením;
+inak by z nahlasovania bol dôvod na odplatu). Pri „Zamietnuť" sa neposiela
+nič.
+
+### 17.3 Opakované porušenia — návrh, ktorý čaká na Rastia
+
+Prah **3 potvrdené nahlásenia na OSOBU**, rátané cez všetky jej inzeráty
+a ponuky — cez jeden inzerát by stačilo založiť nový a počítadlo by sa
+vynulovalo. **Upozorňuje, neblokuje**: tri nahlásenia môžu byť aj cielená
+kampaň proti jednému človeku a to rozlíši len človek. Vidno to na karte
+„Opakované porušenia" a — dôležitejšie — v hláške hneď pri treťom vybavení,
+teda v okamihu rozhodovania.
+
+Test má na to vlastné pravidlo (`appka NIKOHO nezablokovala sama`): keby raz
+niekto pridal automatické blokovanie, spadne.
+
+### 17.4 Runtime výsledok
+
+`nahlasenia_test.py`, **18 / 18**, štyria testovací ľudia (dvaja
+nahlasovatelia — `report` má unique na dvojicu nahlasovateľ+cieľ). Po behu
+upratané.
+
+### 17.5 Čo má Rastio overiť na telefóne
+
+Červený krúžok na tabe Správa a jeho zhoda so zvončekom; naskočenie čísla
+BEZ ťuknutia na tab pri novom nahlásení; zníženie po vybavení; prepočet po
+návrate do appky; zaškrtnuté políčko pri Spame a prázdne pri Nevhodnom
+obsahu; skrytý inzerát v sekcii Inzeráty aj s dôvodom; upozornenie
+u nahláseného z druhého účtu; karta a hláška pri treťom potvrdenom.
+
+`how-it-works.ts` doplnený o odsek „a dozvie sa to" (§8), changelog má
+záznam (§7).
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

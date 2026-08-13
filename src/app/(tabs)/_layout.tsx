@@ -1,8 +1,10 @@
 import { Tabs } from 'expo-router/tabs';
-import { type ColorValue } from 'react-native';
+import { View, type ColorValue } from 'react-native';
 
+import { CountBadge } from '@/components/count-badge';
 import { Icon, type IconName } from '@/components/icon';
 import { useIsAdmin } from '@/hooks/use-is-admin';
+import { usePendingReports } from '@/hooks/use-pending-reports';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { Type, Weight } from '@/theme/tokens';
@@ -23,6 +25,9 @@ export default function TabsLayout() {
   const palette = useTheme();
   const { session } = useSession();
   const isAdmin = useIsAdmin(session?.user.id);
+  // Odznak na tabe „Správa". Neadminovi vráti funkcia v DB nulu, takže sa
+  // nemá čo zobraziť ani vtedy, keby sa tab niekedy objavil omylom.
+  const pendingReports = usePendingReports(isAdmin);
 
   return (
     <Tabs
@@ -69,7 +74,18 @@ export default function TabsLayout() {
         options={{
           title: 'Správa',
           href: isAdmin ? undefined : null,
-          tabBarIcon: ({ color }) => <TabGlyph name="checkmark.seal" color={color} />,
+          // Odznak nesie ten istý komponent ako zvonček — dve kópie tých
+          // istých štýlov by sa časom rozišli.
+          tabBarIcon: ({ color }) => (
+            <View>
+              <TabGlyph name="checkmark.seal" color={color} />
+              <CountBadge count={pendingReports} />
+            </View>
+          ),
+          tabBarAccessibilityLabel:
+            pendingReports > 0
+              ? `Správa, ${pendingReports} otvorených nahlásení`
+              : 'Správa',
         }}
       />
     </Tabs>
