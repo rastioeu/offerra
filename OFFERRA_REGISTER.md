@@ -4095,6 +4095,35 @@ záznam (§7).
 
 ---
 
+## Fáza 18 — Tab bar v detaile inzerátu bol bug, nie len tesný (13.8.2026)
+
+**IDE OTA.** Report: `reports/TAB_BAR_SCROLL.md`.
+
+Rastio poslal screenshot: 5 podtabov natlačených na jeden riadok. Lišta
+už bola v `ScrollView horizontal` od Fázy 13 — problém nebol „nescrolluje",
+ale že **nemala prečo**: `tab` mal `flex: 1` vo vnútri scrollovaného
+obsahu, ktorý nemá pevnú šírku, takže yoga layout vtesnal všetkých päť
+tabov presne do viewportu. Scroll gesto nemalo čo posúvať.
+
+Oprava: `flex: 1` preč (šírka tabu podľa textu), rámik (pozadie, orámovanie)
+presunutý z `contentContainerStyle` na vonkajší `View` — zostáva pripnutý
+k viewportu pri každej pozícii scrollu, predtým by sa posúval s obsahom.
+`overflow: hidden` na vonkajšom `View` odrezáva posledný tab ako náznak,
+že lišta pokračuje — zvolené namiesto fade gradientu, ktorý by vyžadoval
+`expo-linear-gradient` a teda nový build (§3/§9) len na vizuálny detail.
+
+Skratky názvov (zvažované v zadaní) sa nepoužili — scroll stačí, plné
+slová sú lepšie.
+
+**🟡 ČAKÁ VIZUÁLNE OVERENIE.** Skúšané spustiť appku vo webovom móde
+a odfotiť automatizovaným prehliadačom — nenabehlo v tomto prostredí
+(RN DevTools/Electron bez GUI) a aj keby, RN-web nie je natívne iOS
+(§3). Namiesto toho kresba z hodnôt `tokens.ts` a rovnakej matematiky
+rozloženia (`reports/tab_bar_pred_po.png`), s otvoreným priznaním, že to
+nie je screenshot appky.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

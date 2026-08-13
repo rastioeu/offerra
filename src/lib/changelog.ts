@@ -20,6 +20,14 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '13. augusta 2026',
+    title: 'Podtaby v detaile inzerátu sa dajú posúvať',
+    items: [
+      'Piatim podtabom (Ponuky, Správy, Obhliadka, Hypotéka, Hodnotenia) bolo na jednom riadku tesno a text sa orezával. Teraz sa lišta dá posunúť prstom — a hneď je vidieť, že pokračuje ďalej.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '12. augusta 2026',
     title: 'Nahlásenia majú následok — a dozvieš sa o ňom',
     items: [

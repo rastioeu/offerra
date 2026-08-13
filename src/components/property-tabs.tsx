@@ -110,43 +110,59 @@ export function PropertyTabs({
   return (
     <View style={styles.wrap}>
       {/* Tabov je päť a na úzkom telefóne sa nezmestia — lišta sa preto
-          posúva. Skratky názvov sú horšie: „Hyp." nikomu nič nepovie. */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={[
-          styles.bar,
-          { backgroundColor: palette.surfacePressed, borderColor: palette.border },
-        ]}>
-        {tabs.map(([value, label]) => {
-          const active = tab === value;
-          return (
-            <Pressable
-              key={value}
-              onPress={() => setTab(value)}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: active }}
-              style={({ pressed }) => [
-                styles.tab,
-                {
-                  backgroundColor: active ? palette.surface : 'transparent',
-                  opacity: pressed ? 0.8 : 1,
-                },
-              ]}>
-              <Text
-                style={[
-                  styles.tabText,
+          posúva (Rastio, 13.8.2026 — pôvodná verzia mala BUG, nie len
+          tesný dizajn).
+
+          PRÍČINA: `tab` mal `flex: 1` a rámik s pozadím bol na
+          `contentContainerStyle`. Vnútri horizontálneho ScrollView nemá
+          obsah pevnú šírku, takže yoga layout `flex: 1` vyriešil tak, že
+          VŠETKÝCH päť tabov vtesnal presne do šírky obrazovky — scroll
+          teda nemal čo robiť, lebo obsah sa nikdy nestal širším než
+          viewport. Presne to bolo na screenshote.
+
+          OPRAVA: rámik (pozadie, orámovanie, zaoblenie) je na VONKAJŠOM
+          View, nie v scrollovanom obsahu — zostáva pripnutý k viewportu
+          a je vidieť pri každej pozícii scrollu. Vnútri sa taby už
+          NEROZ ŤAHUJÚ (`flex: 1` preč) — každý má šírku podľa textu
+          a paddingu, takže ich súčet legitímne presiahne obrazovku
+          a ScrollView má čo posúvať.
+
+          NÁZNAK, ŽE POKRAČUJE ĎALEJ: posledný tab je pri prvom vykreslení
+          zámerne ODREZANÝ vonkajším `overflow: hidden` — bežný iOS vzor
+          (App Store, Fotky). Skratky názvov „Hyp."/„Obhl." by boli horšie
+          než plné slová so scrollom — nikomu nič nepovedia. */}
+      <View style={[styles.barOuter, { backgroundColor: palette.surfacePressed, borderColor: palette.border }]}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barInner}>
+          {tabs.map(([value, label]) => {
+            const active = tab === value;
+            return (
+              <Pressable
+                key={value}
+                onPress={() => setTab(value)}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: active }}
+                style={({ pressed }) => [
+                  styles.tab,
                   {
-                    color: active ? palette.textPrimary : palette.textMuted,
-                    fontWeight: active ? Weight.bold : Weight.medium,
+                    backgroundColor: active ? palette.surface : 'transparent',
+                    opacity: pressed ? 0.8 : 1,
                   },
                 ]}>
-                {label}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
+                <Text
+                  style={[
+                    styles.tabText,
+                    {
+                      color: active ? palette.textPrimary : palette.textMuted,
+                      fontWeight: active ? Weight.bold : Weight.medium,
+                    },
+                  ]}>
+                  {label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
 
       {tab === 'OFFERS' ? (
         <OffersTab
@@ -560,15 +576,21 @@ function RatingsTab({
 
 const styles = StyleSheet.create({
   wrap: { gap: Spacing.md },
-  bar: {
-    flexDirection: 'row',
+  // Rámik je TU, na vonkajšom View — pri scrolle zostáva pripnutý
+  // k viewportu (§ komentár vyššie). `overflow: hidden` je zámerné:
+  // vytvára ten odrezaný posledný tab, ktorý signalizuje, že sa dá
+  // posunúť ďalej.
+  barOuter: {
     borderWidth: 1,
     borderRadius: Radius.md,
     padding: 3,
-    gap: 3,
+    overflow: 'hidden',
   },
+  barInner: { flexDirection: 'row', gap: 3 },
   tab: {
-    flex: 1,
+    // ŽIADNY `flex: 1` — to bol presne ten bug (komentár vyššie).
+    // Šírka podľa textu, nie rovnomerné rozdelenie viewportu.
+    paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
     borderRadius: Radius.sm,
     alignItems: 'center',
