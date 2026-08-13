@@ -66,6 +66,8 @@ export type AppNotification = {
   body: string | null;
   property_id: string | null;
   offer_id: string | null;
+  /** Predmet je dopyt, nie inzerát — len pri správe k dopytu (13.8.2026). */
+  request_id: string | null;
   read_at: string | null;
   created_at: string;
 };

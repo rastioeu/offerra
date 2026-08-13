@@ -61,22 +61,17 @@ export default function OznameniaScreen() {
           />
         ) : null}
 
-        {items.map((n) => (
+        {items.map((n) => {
+          const target = { propertyId: n.property_id, offerId: n.offer_id, requestId: n.request_id };
+          return (
           <Pressable
             key={n.id}
-            disabled={!notificationRoute(n.type, { propertyId: n.property_id, offerId: n.offer_id })}
+            disabled={!notificationRoute(n.type, target)}
             onPress={() => {
-              const route = notificationRoute(n.type, {
-                propertyId: n.property_id,
-                offerId: n.offer_id,
-              });
+              const route = notificationRoute(n.type, target);
               if (route) router.push(route as never);
             }}
-            accessibilityRole={
-              notificationRoute(n.type, { propertyId: n.property_id, offerId: n.offer_id })
-                ? 'button'
-                : 'text'
-            }
+            accessibilityRole={notificationRoute(n.type, target) ? 'button' : 'text'}
             style={({ pressed }) => [
               styles.row,
               {
@@ -91,7 +86,8 @@ export default function OznameniaScreen() {
             {n.body ? <Text style={[styles.body, { color: palette.textSecondary }]}>{n.body}</Text> : null}
             <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(n.created_at)}</Text>
           </Pressable>
-        ))}
+          );
+        })}
       </ScrollView>
     </SafeAreaView>
   );

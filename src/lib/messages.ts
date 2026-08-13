@@ -28,6 +28,23 @@ export type Message = {
   read_at: string | null;
 };
 
+/**
+ * PREDMET vlákna — inzerát ALEBO dopyt, nikdy oboje. Rovnaké obmedzenie
+ * ako `message_one_subject` v databáze; tento typ ho robí nevysloviteľným
+ * aj v TypeScripte — nejde zostaviť subjekt s oboma poľami naraz.
+ *
+ * Pridané 13.8.2026 (Rastio: „pridaj chat aj pri dopytoch"). Dovtedy tu
+ * bol `propertyId: string` natvrdo — mechanika je identická, mení sa len
+ * to, ČO je predmetom rozhovoru.
+ */
+export type MessageSubject = { propertyId: string; requestId?: never } | { requestId: string; propertyId?: never };
+
+function subjectIds(s: MessageSubject): { propertyId: string | null; requestId: string | null } {
+  return 'propertyId' in s && s.propertyId
+    ? { propertyId: s.propertyId, requestId: null }
+    : { propertyId: null, requestId: (s as { requestId: string }).requestId };
+}
+
 export const MESSAGE_MAX = 2000;
 
 /**
@@ -66,17 +83,17 @@ export function contactBlockedText(reason: 'e-mail' | 'telefónne číslo'): str
 }
 
 /**
- * Celé vlákno s JEDNÝM človekom pri jednom inzeráte.
+ * Celé vlákno s JEDNÝM človekom pri jednom predmete (inzerát alebo dopyt).
  *
  * Filter na dvojicu je tu preto, aby vlastník nedostal do jedného vlákna
  * všetkých záujemcov naraz — RLS mu vlastné vlákna púšťa všetky, lebo
  * v každom z nich je stranou.
  */
-export async function fetchThread(propertyId: string, otherId: string): Promise<Message[]> {
-  const { data, error } = await db()
-    .from('message')
-    .select('*')
-    .eq('property_id', propertyId)
+export async function fetchThread(subject: MessageSubject, otherId: string): Promise<Message[]> {
+  const { propertyId, requestId } = subjectIds(subject);
+  let q = db().from('message').select('*');
+  q = propertyId ? q.eq('property_id', propertyId) : q.eq('request_id', requestId as string);
+  const { data, error } = await q
     .or(`sender_id.eq.${otherId},recipient_id.eq.${otherId}`)
     .order('created_at', { ascending: true });
   if (error) throw error;
@@ -84,10 +101,11 @@ export async function fetchThread(propertyId: string, otherId: string): Promise<
 }
 
 /** Odošle správu. Kontrolu kontaktu robí DATABÁZA — sem sa vráti jej hláška. */
-export async function sendMessage(propertyId: string, recipientId: string, content: string): Promise<Message> {
+export async function sendMessage(subject: MessageSubject, recipientId: string, content: string): Promise<Message> {
+  const { propertyId, requestId } = subjectIds(subject);
   const { data, error } = await db().rpc('send_message', {
     p_property_id: propertyId,
-    p_request_id: null,
+    p_request_id: requestId,
     p_recipient: recipientId,
     p_content: content,
   });
@@ -96,10 +114,12 @@ export async function sendMessage(propertyId: string, recipientId: string, conte
 }
 
 /** Vráti, koľko správ sa naozaj označilo — nula znamená, že netreba nič načítavať. */
-export async function markRead(propertyId: string, otherId: string): Promise<number> {
+export async function markRead(subject: MessageSubject, otherId: string): Promise<number> {
+  const { propertyId, requestId } = subjectIds(subject);
   const { data, error } = await db().rpc('mark_messages_read', {
     p_property_id: propertyId,
     p_other: otherId,
+    p_request_id: requestId,
   });
   if (error) throw error;
   return typeof data === 'number' ? data : 0;
@@ -112,18 +132,18 @@ export type Thread = {
 };
 
 /**
- * Zoznam vlákien pri inzeráte — pre vlastníka, ktorý ich má viac.
+ * Zoznam vlákien pri predmete — pre vlastníka (inzerátu alebo dopytu),
+ * ktorý ich má viac.
  *
  * Zoskupuje sa TU, nie v databáze: RLS už na server-strane odfiltrovala
  * všetko, v čom nie som stranou, takže sem príde len to moje. Objem je
- * v ráde desiatok správ na inzerát.
+ * v ráde desiatok správ na jeden predmet.
  */
-export async function fetchThreads(propertyId: string, myId: string): Promise<Thread[]> {
-  const { data, error } = await db()
-    .from('message')
-    .select('*')
-    .eq('property_id', propertyId)
-    .order('created_at', { ascending: true });
+export async function fetchThreads(subject: MessageSubject, myId: string): Promise<Thread[]> {
+  const { propertyId, requestId } = subjectIds(subject);
+  let q = db().from('message').select('*');
+  q = propertyId ? q.eq('property_id', propertyId) : q.eq('request_id', requestId as string);
+  const { data, error } = await q.order('created_at', { ascending: true });
   if (error) throw error;
 
   const byOther = new Map<string, Thread>();

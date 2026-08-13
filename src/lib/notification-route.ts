@@ -20,6 +20,15 @@ export type NotificationTarget = {
   propertyId: string | null;
   /** id ponuky, ak ide o ponuku */
   offerId?: string | null;
+  /**
+   * id dopytu — vyplnené LEN pri správe k dopytu (`NOVA_SPRAVA`, keď
+   * predmetom nie je inzerát). Pridané 13.8.2026 spolu s chatom pri
+   * dopytoch: dovtedy `notification` nepoznala nič iné než inzerát a
+   * ponuku, a takéto oznámenie by `if (!propertyId) return null;`
+   * zahodilo — presne tá istá trieda chyby ako push, čo „nesmeroval
+   * nikam" (9.8.2026, komentár vyššie).
+   */
+  requestId?: string | null;
 };
 
 export type Route = { pathname: string; params?: Record<string, string> };
@@ -39,11 +48,18 @@ export function notificationRoute(
   type: NotificationType | string,
   target: NotificationTarget
 ): Route | null {
-  const { propertyId } = target;
+  const { propertyId, requestId } = target;
 
   // Systémové oznámenie sa nikdy neviaže na konkrétnu nehnuteľnosť —
   // patrí do zvončeka, kde je celý text.
   if (type === 'SYSTEMOVE') return { pathname: '/oznamenia' };
+
+  // Správa k DOPYTU — jediný typ, ktorého predmetom môže byť dopyt, nie
+  // inzerát. Vlákno je priamo na detaile dopytu (`dopyt/[id].tsx`),
+  // rovnako ako pri inzeráte je v podtabe „Správy".
+  if (type === 'NOVA_SPRAVA' && !propertyId && requestId) {
+    return { pathname: '/dopyt/[id]', params: { id: requestId } };
+  }
 
   if (!propertyId) return null;
 
@@ -86,6 +102,7 @@ export type PushData = {
   type?: string;
   propertyId?: string | null;
   offerId?: string | null;
+  requestId?: string | null;
 };
 
 /**
@@ -100,6 +117,7 @@ export function routeFromPushData(data: unknown): Route | null {
   const type = typeof d.type === 'string' ? d.type : '';
   const propertyId = typeof d.propertyId === 'string' ? d.propertyId : null;
   const offerId = typeof d.offerId === 'string' ? d.offerId : null;
-  if (!type && !propertyId) return null;
-  return notificationRoute(type, { propertyId, offerId });
+  const requestId = typeof d.requestId === 'string' ? d.requestId : null;
+  if (!type && !propertyId && !requestId) return null;
+  return notificationRoute(type, { propertyId, offerId, requestId });
 }

@@ -27,6 +27,7 @@ import {
   MESSAGE_MAX,
   sendMessage,
   type Message,
+  type MessageSubject,
   type Thread,
 } from '@/lib/messages';
 import { type Offer } from '@/lib/offers';
@@ -64,24 +65,51 @@ export function MessagesTab({
   if (!isOwner) {
     return (
       <View style={styles.body}>
-        <Conversation item={item} myId={myId} otherId={item.owner_id} otherName="predávajúcim" />
+        <Conversation
+          subject={{ propertyId: item.id }}
+          myId={myId}
+          otherId={item.owner_id}
+          otherName="predávajúcim"
+        />
       </View>
     );
   }
 
-  return <OwnerThreads item={item} offers={offers} myId={myId} />;
+  // Záujemcovia, ktorí PODALI PONUKU, ale ešte nenapísali — vlastník sa má
+  // vedieť ozvať prvý, nie čakať, kým naňho niekto začne.
+  const silentEntries = (offers ?? [])
+    .filter((o) => o.status !== 'WITHDRAWN' && o.bidder_id !== myId)
+    .map((o) => ({
+      id: o.bidder_id,
+      nickname: o.bidder?.nickname ?? 'Záujemca',
+      note: 'Podal ponuku, nepísali ste si. Ozvi sa prvý.',
+    }));
+
+  return <OwnerThreads subject={{ propertyId: item.id }} myId={myId} silentEntries={silentEntries} />;
 }
 
 // ── VLASTNÍK: zoznam vlákien ──────────────────────────────────────────────
+//
+// Znovupoužiteľné aj pre dopyty (`demand-messages.tsx`, 13.8.2026 —
+// „pridaj chat aj pri dopytoch") — mechanika je identická, mení sa len
+// PREDMET (`subject`) a odkiaľ prichádzajú „tichí" ľudia (pri inzeráte
+// ponuky, pri dopyte oslovenia). Preto tento komponent NEVIE nič o ponukách
+// — dostáva ich už hotové ako `silentEntries`.
 
-function OwnerThreads({
-  item,
-  offers,
+export function OwnerThreads({
+  subject,
   myId,
+  silentEntries,
 }: {
-  item: PropertyWithMedia;
-  offers: Offer[] | undefined;
+  subject: MessageSubject;
   myId: string;
+  /**
+   * Ľudia, ktorí sa už ozvali INOU cestou (ponukou, oslovením), ale
+   * v chate ešte nenapísali. Vlastník sa má vedieť ozvať prvý — bez
+   * tohto zoznamu by vedel začať konverzáciu len ten, komu niekto
+   * napísal ako prvému.
+   */
+  silentEntries: { id: string; nickname: string; note: string }[];
 }) {
   const palette = useTheme();
   const [threads, setThreads] = useState<Thread[] | undefined>(undefined);
@@ -92,7 +120,7 @@ function OwnerThreads({
   const load = useCallback(async () => {
     try {
       setError(null);
-      const t = await fetchThreads(item.id, myId);
+      const t = await fetchThreads(subject, myId);
       setThreads(t);
       const ids = t.map((x) => x.otherId);
       if (ids.length > 0) setNames(await fetchNicknames(ids));
@@ -102,18 +130,17 @@ function OwnerThreads({
       setError(m);
       setThreads([]);
     }
-  }, [item.id, myId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [JSON.stringify(subject), myId]);
 
   useEffect(() => {
     void load();
   }, [load]);
 
-  // Záujemcovia, ktorí ešte nenapísali, ale ponuku podali — vlastník sa má
-  // vedieť ozvať prvý, nie čakať, kým naňho niekto začne.
+  // Ľudia, ktorí sa ozvali inou cestou, ale v chate ešte nenapísali —
+  // vylúčení tí, čo už vlákno majú, nech sa neduplikujú v zozname.
   const withThread = new Set((threads ?? []).map((t) => t.otherId));
-  const silent = (offers ?? []).filter(
-    (o) => o.status !== 'WITHDRAWN' && o.bidder_id !== myId && !withThread.has(o.bidder_id),
-  );
+  const silent = silentEntries.filter((s) => !withThread.has(s.id));
 
   if (open) {
     return (
@@ -122,10 +149,10 @@ function OwnerThreads({
           <Text style={[styles.back, { color: palette.link }]}>‹ Späť na zoznam</Text>
         </Pressable>
         <Conversation
-          item={item}
+          subject={subject}
           myId={myId}
           otherId={open}
-          otherName={names[open] ?? nickOf(offers, open) ?? 'záujemcom'}
+          otherName={names[open] ?? silentEntries.find((s) => s.id === open)?.nickname ?? 'druhou stranou'}
         />
       </View>
     );
@@ -157,7 +184,7 @@ function OwnerThreads({
             ]}>
             <View style={styles.threadText}>
               <Text style={[styles.threadName, { color: palette.textPrimary }]}>
-                {names[t.otherId] ?? nickOf(offers, t.otherId) ?? 'Záujemca'}
+                {names[t.otherId] ?? 'Záujemca'}
               </Text>
               <Text style={[styles.threadLast, { color: palette.textMuted }]} numberOfLines={1}>
                 {t.last.sender_id === myId ? 'Ty: ' : ''}
@@ -172,22 +199,18 @@ function OwnerThreads({
           </Pressable>
         ))}
 
-        {silent.map((o) => (
+        {silent.map((s) => (
           <Pressable
-            key={o.bidder_id}
-            onPress={() => setOpen(o.bidder_id)}
+            key={s.id}
+            onPress={() => setOpen(s.id)}
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.threadRow,
               { borderTopColor: palette.border, opacity: pressed ? 0.7 : 1 },
             ]}>
             <View style={styles.threadText}>
-              <Text style={[styles.threadName, { color: palette.textPrimary }]}>
-                {o.bidder?.nickname ?? 'Záujemca'}
-              </Text>
-              <Text style={[styles.threadLast, { color: palette.textMuted }]}>
-                Podal ponuku, nepísali ste si. Ozvi sa prvý.
-              </Text>
+              <Text style={[styles.threadName, { color: palette.textPrimary }]}>{s.nickname}</Text>
+              <Text style={[styles.threadLast, { color: palette.textMuted }]}>{s.note}</Text>
             </View>
           </Pressable>
         ))}
@@ -196,19 +219,19 @@ function OwnerThreads({
   );
 }
 
-function nickOf(offers: Offer[] | undefined, id: string): string | undefined {
-  return (offers ?? []).find((o) => o.bidder_id === id)?.bidder?.nickname ?? undefined;
-}
-
 // ── JEDNO VLÁKNO ──────────────────────────────────────────────────────────
+//
+// Exportovaná — `demand-messages.tsx` ju používa nezmenenú, len s iným
+// `subject`. Konverzácia sama o sebe nevie, či ide o inzerát alebo dopyt,
+// a nemusí to vedieť: predmet je vyriešený už v `subject`.
 
-function Conversation({
-  item,
+export function Conversation({
+  subject,
   myId,
   otherId,
   otherName,
 }: {
-  item: PropertyWithMedia;
+  subject: MessageSubject;
   myId: string;
   otherId: string;
   otherName: string;
@@ -219,16 +242,17 @@ function Conversation({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const scroller = useRef<ScrollView>(null);
+  const subjectKey = JSON.stringify(subject);
 
   const load = useCallback(async () => {
     try {
       setError(null);
-      const rows = await fetchThread(item.id, otherId);
+      const rows = await fetchThread(subject, otherId);
       setList(rows);
       // Prečítané sa značí až keď je vlákno naozaj otvorené — inak by sa
       // odznak „neprečítané" zhasol bez toho, aby to niekto videl.
       if (rows.some((m) => m.recipient_id === myId && !m.read_at)) {
-        await markRead(item.id, otherId);
+        await markRead(subject, otherId);
       }
     } catch (e: unknown) {
       const m = errorText(e);
@@ -236,7 +260,8 @@ function Conversation({
       setError(m);
       setList([]);
     }
-  }, [item.id, otherId, myId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [subjectKey, otherId, myId]);
 
   useEffect(() => {
     void load();
@@ -252,7 +277,7 @@ function Conversation({
     setBusy(true);
     setError(null);
     try {
-      await sendMessage(item.id, otherId, body);
+      await sendMessage(subject, otherId, body);
       setText('');
       await load();
       requestAnimationFrame(() => scroller.current?.scrollToEnd({ animated: true }));

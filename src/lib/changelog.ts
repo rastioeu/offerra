@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '13. augusta 2026',
+    title: 'Chat aj pri dopytoch',
+    items: [
+      'V detaile dopytu je teraz tab „Správy" — ten istý chat, aký poznáš z inzerátov. Nemusíš najprv niekoho osloviť svojím inzerátom, aby ste si mohli napísať.',
+      'Konverzácia je vždy len medzi dvoma ľuďmi, pod prezývkou, a telefón ani e-mail sa v nej poslať nedajú — presne ako pri inzeráte.',
+      'Opravené aj upozornenie na novú správu: dovtedy by pri správe k dopytu ťuknutie na oznámenie neviedlo nikam. Teraz otvorí správny dopyt.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
     title: 'Podtaby v detaile inzerátu sa dajú posúvať',
     items: [
       'Piatim podtabom (Ponuky, Správy, Obhliadka, Hypotéka, Hodnotenia) bolo na jednom riadku tesno a text sa orezával. Teraz sa lišta dá posunúť prstom — a hneď je vidieť, že pokračuje ďalej.',

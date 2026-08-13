@@ -14,6 +14,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { DemandMessages } from '@/components/demand-messages';
 import { ModalScreen } from '@/components/modal-screen';
 
 import { Badge, Button, Card, ErrorNote, Field, KeyboardDoneBar } from '@/components/ui';
@@ -132,6 +133,18 @@ export default function RequestDetailScreen() {
                 <Text style={[styles.desc, { color: palette.textPrimary }]}>{item.description}</Text>
               </Card>
             ) : null}
+
+            {/* SPRÁVY (Rastio, 13.8.2026: „pridaj chat aj pri dopytoch") —
+                dostupné VŽDY, aj bez formálneho oslovenia. Preto je karta
+                TU, nad Osloveniami: pýtať sa má byť možné skôr, než niekto
+                ponúkne svoj inzerát. */}
+            <DemandMessages
+              requestId={item.id}
+              requestOwnerId={item.user_id}
+              outreach={outreach}
+              myId={myId}
+              isMine={isMine}
+            />
 
             {isMine ? (
               <Card>

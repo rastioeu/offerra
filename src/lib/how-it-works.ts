@@ -74,9 +74,12 @@ export const HOW_SECTIONS: HowSection[] = [
     paragraphs: [
       'V detaile inzerátu je tab „Správy". Napísať sa dá kedykoľvek, aj predtým než podáš ' +
         'ponuku — presne na to je: opýtať sa, čo z inzerátu nevyčítaš.',
+      'Rovnaký chat je aj priamo v DETAILE DOPYTU — netreba naň najprv niekoho osloviť svojím ' +
+        'inzerátom. Zíde sa, keď si pred oslovením chceš overiť, či presne to, čo ponúkaš, ' +
+        'sedí na to, čo niekto hľadá.',
       'Konverzácia je VŽDY len medzi dvoma ľuďmi. Ak má inzerát desať záujemcov, predávajúci ' +
         'má desať samostatných konverzácií a záujemcovia o sebe navzájom nevedia. Nikto tretí ' +
-        'cudziu konverzáciu neuvidí — ani technicky.',
+        'cudziu konverzáciu neuvidí — ani technicky. Rovnako to platí aj pri dopyte.',
       'Píše sa POD PREZÝVKOU. Správy samy identitu neodkrývajú; meno a telefón sa odkryjú tak ' +
         'ako doteraz — prijatou ponukou alebo obhliadkou.',
       'Preto sa v správach NEDAJÚ posielať telefónne čísla ani e-maily. Appka to odmietne ' +
@@ -138,7 +141,8 @@ export const HOW_SECTIONS: HowSection[] = [
         'presne ako v katalógu. Odtiaľ si môžeš vypýtať obhliadku úplne rovnako ako pri ' +
         'inzeráte, ktorý si našiel sám.',
       'Oslovenie nie je správa. Je to záznam pri tvojom dopyte a osloviť ťa vie len ten, kto ' +
-        'má vlastný zverejnený inzerát. Písať si môžete až v tabe „Správy" na tom inzeráte.',
+        'má vlastný zverejnený inzerát. Písať si viete aj SKÔR — priamo v detaile dopytu je ' +
+        'ten istý chat ako pri inzeráte, pod prezývkou.',
       'Rozpočet je orientačný, nie záväzok. Tvoje meno ani telefón sa v dopyte nezobrazia — ' +
         'rovnako ako pri ponukách.',
     ],

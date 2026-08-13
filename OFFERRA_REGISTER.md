@@ -4124,6 +4124,50 @@ nie je screenshot appky.
 
 ---
 
+## Fáza 19 — Chat aj pri dopytoch (13.8.2026)
+
+**IDE OTA.** Databáza: `mig_35_message_request.sql`,
+`mig_36_notification_request.sql` nasadené. Report:
+`reports/CHAT_PRI_DOPYTOCH.md`.
+
+### 19.1 Znovupoužitý kód, nie kópia — ✅ OVERENÉ RUNTIME
+
+`Conversation` a `OwnerThreads` z `message-thread.tsx` sú exportované
+a znovupoužité nezmenené v novom `demand-messages.tsx`; mení sa len
+`subject`. `src/lib/messages.ts` prerobené na `MessageSubject = {
+propertyId: string } | { requestId: string }` — subjekt s oboma poľami
+naraz sa v TypeScripte nedá ani napísať (`propertyId?: never` na druhej
+vetve).
+
+### 19.2 Bug objavený počas práce: push k dopytovej správe nikam nesmeroval
+
+`offerra.notification` mala `property_id`/`offer_id`, ale ŽIADEN
+`request_id`. `notificationRoute()` má z 9.8.2026 strážny riadok
+`if (!propertyId) return null;` presne kvôli podobnej triede chyby — a
+nový chat by cezeň prešiel rovnako ticho. Doplnené: stĺpec `request_id`
+v `notification`, `push_notification()` dostala tretí parameter
+`p_request_id` (aj v `data` pre Expo Push), `notificationRoute()` dostala
+vetvu `NOVA_SPRAVA` bez `propertyId` ale s `requestId` → `/dopyt/[id]`.
+
+**Poučenie z `mark_messages_read` (12.8.2026) zopakované správne:**
+pridanie parametra cez `create or replace` vytvorí NOVÉ pretaženie, nie
+náhradu — pri `push_notification()` bola preto stará 6-argumentová
+signatúra najprv explicitne zhodená, aby volanie s pôvodným počtom
+argumentov neskončilo `function is not unique`.
+
+### 19.3 Runtime — 13/13, vrátane testu čistej routovacej funkcie v Node
+
+`dopyt_spravy_test.py` (mimo repa): chat funguje pred formálnym
+oslovením, zákaz kontaktu platí, RLS izoluje cudzieho, `mark_messages_read`
+so starým 2-arg aj novým 3-arg volaním, oznámenie nesie `request_id`.
+Bod 6 kopíruje `notificationRoute()` do Node a overuje aj **regresiu** —
+že inzerátové oznámenia (`/nehnutelnost/[id]`) sa nezmenili.
+
+Zoznam vecí na vizuálne overenie a `how-it-works.ts`/changelog zmeny sú
+v reporte.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
