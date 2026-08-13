@@ -101,6 +101,15 @@ export function PropertyTabs({
   const sale = item.transaction_type === 'SALE';
   const tabs = tabsFor(sale);
 
+  // Rozmery tab baru — z NICH sa počíta, či sa dá scrollovať ďalej, nie
+  // z toho, či posledný tab náhodou vyjde odrezaný (§ komentár nižšie).
+  const [scrollMeta, setScrollMeta] = useState({ viewportW: 0, contentW: 0, scrollX: 0 });
+  // Optimisticky `true`, kým sa rozmery nezmerajú — pri piatich taboch je
+  // scroll takmer isto potrebný a je lepšie na zlomok sekundy ukázať fade
+  // navyše, než aby prvý snímok nezobrazil žiaden náznak vôbec.
+  const canScrollRight =
+    scrollMeta.contentW === 0 || scrollMeta.contentW - scrollMeta.viewportW - scrollMeta.scrollX > 2;
+
   // Najvyššia ŽIVÁ ponuka — kalkulačka z nej vie začať, keď predávajúci
   // cenu neuviedol. Stiahnuté a odmietnuté sa nerátajú: nie sú to čísla,
   // za ktoré je dnes niekto ochotný kúpiť.
@@ -113,26 +122,40 @@ export function PropertyTabs({
           posúva (Rastio, 13.8.2026 — pôvodná verzia mala BUG, nie len
           tesný dizajn).
 
-          PRÍČINA: `tab` mal `flex: 1` a rámik s pozadím bol na
+          PRÍČINA PRVÉHO BUGU: `tab` mal `flex: 1` a rámik s pozadím bol na
           `contentContainerStyle`. Vnútri horizontálneho ScrollView nemá
           obsah pevnú šírku, takže yoga layout `flex: 1` vyriešil tak, že
           VŠETKÝCH päť tabov vtesnal presne do šírky obrazovky — scroll
-          teda nemal čo robiť, lebo obsah sa nikdy nestal širším než
-          viewport. Presne to bolo na screenshote.
+          teda nemal čo robiť. OPRAVA: rámik je na VONKAJŠOM `View`,
+          taby dostali šírku podľa textu (`flex: 1` preč).
 
-          OPRAVA: rámik (pozadie, orámovanie, zaoblenie) je na VONKAJŠOM
-          View, nie v scrollovanom obsahu — zostáva pripnutý k viewportu
-          a je vidieť pri každej pozícii scrollu. Vnútri sa taby už
-          NEROZ ŤAHUJÚ (`flex: 1` preč) — každý má šírku podľa textu
-          a paddingu, takže ich súčet legitímne presiahne obrazovku
-          a ScrollView má čo posúvať.
+          DRUHÉ KOLO (Rastio, 13.8.2026, so screenshotom): spoliehal som
+          sa, že `overflow: hidden` na vonkajšom `View` sám od seba odreže
+          posledný tab napoly a to bude náznak scrollu. **To nie je
+          zaručené** — či je posledný VIDITEĽNÝ tab odrezaný napoly, alebo
+          presne dolieha na okraj (0 % viditeľný piaty tab), závisí od
+          náhodnej zhody medzi šírkou obrazovky a súčtom šírok tabov. Na
+          Rastiovom telefóne vyšlo práve to druhé — „Hypotéka" dosadla
+          presne na okraj, nič nenaznačovalo, že za ňou niečo je.
 
-          NÁZNAK, ŽE POKRAČUJE ĎALEJ: posledný tab je pri prvom vykreslení
-          zámerne ODREZANÝ vonkajším `overflow: hidden` — bežný iOS vzor
-          (App Store, Fotky). Skratky názvov „Hyp."/„Obhl." by boli horšie
-          než plné slová so scrollom — nikomu nič nepovedia. */}
+          OPRAVA, ktorá sa nespolieha na náhodu: `canScrollRight` sa počíta
+          zo SKUTOČNÝCH rozmerov (`onLayout` + `onContentSizeChange` +
+          `onScroll`), nie z toho, ako to vyjde. Kým sa dá scrollovať
+          ďalej, na pravom okraji je poloprehľadný FADE (`ScrollFade` nižšie)
+          — vrstva pásov s rastúcou nepriehľadnosťou smerom k okraju,
+          v FARBE POZADIA LIŠTY, takže vyzerá, že obsah do nej dotečie.
+          Skutočný `expo-linear-gradient` by vyžadoval nový natívny modul
+          a teda nový build (§3/§9) len na tento detail — poschodá vrstva
+          rovnakej farby v klesajúcej priehľadnosti robí to isté bez neho. */}
       <View style={[styles.barOuter, { backgroundColor: palette.surfacePressed, borderColor: palette.border }]}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.barInner}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          scrollEventThrottle={16}
+          onLayout={(e) => setScrollMeta((m) => ({ ...m, viewportW: e.nativeEvent.layout.width }))}
+          onContentSizeChange={(w) => setScrollMeta((m) => ({ ...m, contentW: w }))}
+          onScroll={(e) => setScrollMeta((m) => ({ ...m, scrollX: e.nativeEvent.contentOffset.x }))}
+          contentContainerStyle={styles.barInner}>
           {tabs.map(([value, label]) => {
             const active = tab === value;
             return (
@@ -162,6 +185,7 @@ export function PropertyTabs({
             );
           })}
         </ScrollView>
+        {canScrollRight ? <ScrollFade color={palette.surfacePressed} /> : null}
       </View>
 
       {tab === 'OFFERS' ? (
@@ -210,6 +234,28 @@ export function PropertyTabs({
           winnerBidderId={winnerBidderId}
         />
       ) : null}
+    </View>
+  );
+}
+
+/**
+ * Náznak, že tab bar pokračuje ďalej doprava — poschodá vrstva pásov
+ * ROVNAKEJ farby ako pozadie lišty, s klesajúcou nepriehľadnosťou smerom
+ * dnu. Bez `expo-linear-gradient` (nový natívny modul = nový build, §3/§9)
+ * je toto najbližšia napodobenina skutočného fade-out gradientu.
+ *
+ * `pointerEvents="none"`: leží nad posledným viditeľným tabom, nesmie mu
+ * brániť v ťuknutí.
+ */
+function ScrollFade({ color }: { color: string }) {
+  // Nepriehľadnosť rastie SMEROM VON (k okraju) — najbližšie k obsahu je
+  // takmer priehľadný pás, pri okraji je plná farba pozadia lišty.
+  const steps = [0.08, 0.22, 0.4, 0.62, 0.85, 1];
+  return (
+    <View pointerEvents="none" style={styles.fade}>
+      {steps.map((opacity, i) => (
+        <View key={i} style={[styles.fadeStep, { backgroundColor: color, opacity }]} />
+      ))}
     </View>
   );
 }
@@ -587,6 +633,15 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   barInner: { flexDirection: 'row', gap: 3 },
+  fade: {
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    bottom: 0,
+    width: 32,
+    flexDirection: 'row',
+  },
+  fadeStep: { flex: 1 },
   tab: {
     // ŽIADNY `flex: 1` — to bol presne ten bug (komentár vyššie).
     // Šírka podľa textu, nie rovnomerné rozdelenie viewportu.

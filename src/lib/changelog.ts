@@ -21,6 +21,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '13. augusta 2026',
+    title: 'Uzávierka späť na karte, jasnejší náznak posúvania tabov',
+    items: [
+      'Štítok „Ponuky do… · ostáva X dní" bol z niektorých kariet v katalógu nezámerne preč — je späť.',
+      'Lišta podtabov v detaile inzerátu teraz jasne ukáže, keď sa dá posunúť ďalej — na okraji je vidieť jemné stmavnutie smerom k pokračovaniu.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
     title: 'Chat aj pri dopytoch',
     items: [
       'V detaile dopytu je teraz tab „Správy" — ten istý chat, aký poznáš z inzerátov. Nemusíš najprv niekoho osloviť svojím inzerátom, aby ste si mohli napísať.',

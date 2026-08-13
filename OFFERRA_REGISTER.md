@@ -4168,6 +4168,52 @@ v reporte.
 
 ---
 
+## Fáza 20 — Countdown regresia (root cause) + tab bar fade (13.8.2026)
+
+**IDE OTA.** DB: 5 seed inzerátov dostalo `offer_deadline`. Report:
+`reports/COUNTDOWN_REGRESIA_A_TAB_BAR_FADE.md`.
+
+### 20.1 Countdown štítok — príčina nájdená, NIE je to kód
+
+Zobrazovací kód (`property-card.tsx`, `deadlineLabel`, `deadlineUrgency`,
+`PhotoBadge`) bol pri všetkých troch nahláseniach správny. **0 z 50
+ACTIVE inzerátov malo `offer_deadline`** — dáta sú test/seed hodnoty
+a každé veľké preseedovanie katalógu (9.8.2026, matchujúci `created_at`
+naprieč všetkými) ich stratí, lebo žiadny seed skript ich znova
+nenastaví. `POCITADLO_FOTIEK_A_TRIEDENIE.md` (8.8.2026) dokazuje, že
+presne toto sa už raz stalo a bolo opravené rovnako — seedom, nie kódom.
+
+### 20.2 Test + trvalé pravidlo — ✅ OVERENÉ RUNTIME
+
+`deadlineLabel`/`deadlineUrgency`/`isDeadlinePassed` presunuté do NOVÉHO
+`src/lib/deadline.ts` **bez jediného importu** (dôvod, prečo sa doteraz
+nedali testovať: `property.ts` importuje `./supabase` na úrovni modulu).
+`property.ts` ich re-exportuje, 16 importujúcich miest nezmenených.
+
+`npm run check:deadline` (`tsx`, nová devDependency) — **12/12**, Node
+bez appky a bez DB. CLAUDE.md dostalo **§10 „Veci, čo sa strácajú pri
+redizajne"** — countdown a „Pridané [dátum]" (druhá vec, čo bola
+v minulosti REGRESIA, komentár v kóde z 9.8.2026).
+
+Dáta opravené na 5 seed inzerátoch (Trenčín PASSED, Zvolen SOON/červený,
+Prievidza/Poprad/Martin OPEN) — zámerne NIE na Rastiových vlastných
+(reálny biznis atribút, jeho voľba dátumu).
+
+### 20.3 Tab bar — druhé kolo, fade nezávislý od náhody
+
+Prvá oprava (Fáza 18) sa spoliehala na to, že `overflow: hidden` odreže
+posledný tab napoly — nezaručené, závisí od zhody šírka obrazovky ↔
+súčet šírok tabov. Na Rastiovom telefóne vyšlo 0 % viditeľný piaty tab.
+
+`canScrollRight` sa teraz počíta zo skutočných rozmerov (`onLayout` +
+`onContentSizeChange` + `onScroll`), nie z odhadu. `ScrollFade` — 6 pásov
+farby pozadia lišty s rastúcou nepriehľadnosťou — napodobňuje gradient
+bez `expo-linear-gradient` (nový natívny modul = nový build, §3/§9).
+
+🟡 čaká vizuálne overenie — kontrolný zoznam v reporte.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

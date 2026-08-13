@@ -9,8 +9,14 @@
  * ten istý klient musí súčasne vedieť na `auth`, ktorý žije inde.
  */
 import { supabase } from './supabase';
+// Uzávierka je ČISTÁ logika bez importov, presunutá 13.8.2026 nech sa dá
+// testovať v Node bez appky — dôvod je celý zapísaný v `deadline.ts`.
+// Re-exportuje sa ďalej, aby sa nemuseli meniť miesta, čo ju importujú
+// odtiaľto (`@/lib/property`).
+import { deadlineLabel, deadlineUrgency, isDeadlinePassed, SOON_DAYS, type DeadlineUrgency } from './deadline';
 
 export const db = () => supabase.schema('offerra');
+export { deadlineLabel, deadlineUrgency, isDeadlinePassed, SOON_DAYS, type DeadlineUrgency };
 
 export type TransactionType = 'SALE' | 'RENT';
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'LAND' | 'COMMERCIAL' | 'OTHER';
@@ -343,25 +349,11 @@ export function rentalRows(p: Property): { label: string; value: string }[] {
   return rows;
 }
 
-/**
- * Naliehavosť uzávierky — riadi FARBU štítku na karte, nie jeho text.
- *
- * `PASSED`  — už po termíne, žiadna urgencia, len fakt.
- * `SOON`    — menej než 3 dni; vtedy sa štítok sfarbí varovne.
- * `OPEN`    — beží, ale pokojne.
- * `NONE`    — inzerát časovač nemá.
- */
-export type DeadlineUrgency = 'NONE' | 'OPEN' | 'SOON' | 'PASSED';
-
-/** Hranica, od ktorej je uzávierka „naliehavá" (Rastio, 8.8.2026). */
-export const SOON_DAYS = 3;
-
-export function deadlineUrgency(iso: string | null): DeadlineUrgency {
-  if (!iso) return 'NONE';
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return 'PASSED';
-  return ms < SOON_DAYS * 86_400_000 ? 'SOON' : 'OPEN';
-}
+// `DeadlineUrgency`, `SOON_DAYS`, `deadlineUrgency`, `isDeadlinePassed`
+// a `deadlineLabel` bývali tu — presunuté 13.8.2026 do `deadline.ts`
+// (importované a re-exportované hore) a odtiaľto zmazané, nie skopírované:
+// dve kópie tej istej logiky by sa časom rozišli presne tak, ako sa
+// rozišla appka od testu, ktorý na túto logiku nikdy nemohol existovať.
 
 /** Podľa čoho je katalóg zoradený. */
 export type CatalogSort = 'NEWEST' | 'ENDING_SOON';
@@ -400,22 +392,6 @@ export function sortProperties<T extends { created_at: string; offer_deadline: s
     // Bežiace: čo končí skôr, ide hore. Uplynuté: čo skončilo naposledy.
     return ba === 0 ? ta - tb : tb - ta;
   });
-}
-
-/** Uplynula uzávierka? Bez časovača nikdy. Vynucuje to aj RLS v DB. */
-export function isDeadlinePassed(iso: string | null): boolean {
-  return iso != null && new Date(iso).getTime() <= Date.now();
-}
-
-/** Ostávajúci čas do uzávierky ponúk. `null` = bez časovača alebo už po ňom. */
-export function deadlineLabel(iso: string | null): string | null {
-  if (!iso) return null;
-  const ms = new Date(iso).getTime() - Date.now();
-  if (ms <= 0) return 'Príjem ponúk ukončený';
-  const days = Math.floor(ms / 86_400_000);
-  if (days >= 1) return `Ponuky do ${formatDate(iso)} · ostáva ${days} dní`;
-  const hours = Math.max(1, Math.floor(ms / 3_600_000));
-  return `Ponuky sa uzatvárajú o ${hours} h`;
 }
 
 // `missingForPublish` sa presunulo do `listing-form.ts` (9.8.2026) — patrí

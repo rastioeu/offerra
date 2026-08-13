@@ -136,3 +136,32 @@ Karta je na hlavnej obrazovke aj v Nastaveniach.
 > v `app.json` preto **odstrihne existujúci TestFlight build od OTA**,
 > kým sa nespraví nový build. Verzia sa teda dvíha len spolu s buildom —
 > nie pri každej OTA.
+
+---
+
+## 🧹 10. VECI, ČO SA STRÁCAJÚ PRI REDIZAJNE — VŽDY OVER
+
+**Pravidlo (Rastio, 13.8.2026):** countdown štítok „Ponuky do… · ostáva
+X dní" zmizol z karty v katalógu **tretí raz** — pri redizajne 8.8.2026,
+pri preseedovaní katalógu 9.8.2026, a znova pri podtaboch 12.8.2026. Pri
+všetkých troch nahláseniach bol samotný zobrazovací kód SPRÁVNY — problém
+bol v tom, že si to nikto neoveril skôr, než to nahlásil Rastio.
+
+**Pred označením AKEJKOĽVEK zmeny obrazovky detailu inzerátu alebo karty
+v katalógu za hotovú, over, že tieto veci STÁLE FUNGUJÚ:**
+
+- [ ] **Countdown uzávierky na karte** (`Ponuky do… · ostáva X dní`,
+      `src/lib/deadline.ts` + `property-card.tsx`) — spusti
+      `npm run check:deadline` (logika) a over aj DÁTA: má aspoň jeden
+      ACTIVE inzerát `offer_deadline` v budúcnosti? Bez dát je štítok
+      neviditeľný aj keď je kód správny — presne to sa stalo pri 9.8.2026.
+- [ ] **„Pridané [dátum]" na karte** (`property-card.tsx`, REGRESIA
+      z redizajnu 9.8.2026, odvtedy opravené) — dátum pridania inzerátu
+      musí byť na karte vidieť, nie len v detaile.
+
+**Prečo je to samostatná sekcia, nie riadok v štandardnom postupe:** tieto
+dve veci sa stratili TICHO — appka nespadla, typecheck prešiel, nič
+nehlásilo chybu. Zmizli len vizuálne, a to sa dá overiť LEN pohľadom na
+skutočnú kartu/detail, nie čítaním kódu (§1 — „grep a čítanie kódu
+nedokazuje NIČ"). Zoznam sa dopĺňa, keď pribudne ďalší podobný prípad —
+nie preventívne, len keď sa naozaj stane.
