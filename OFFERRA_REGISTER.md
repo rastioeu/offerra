@@ -4214,6 +4214,64 @@ bez `expo-linear-gradient` (nový natívny modul = nový build, §3/§9).
 
 ---
 
+## Fáza 21 — Obhliadka s potvrdením, Moje zjednotené s detailom, odznaky (13.8.2026)
+
+**IDE OTA.** DB: `mig_37_viewing_confirm.sql`, `mig_38_tab_badges.sql`
+nasadené. Report: `reports/OBHLIADKA_MOJE_ODZNAKY.md`.
+
+### 21.1 Obhliadka — kontakt až po potvrdení vlastníkom — ✅ OVERENÉ RUNTIME
+
+Mení rozhodnutie z 8.8.2026 (okamžité odkrytie). Žiadosť vzniká ako
+`REQUESTED` (bez kontaktu), vlastník ju v tabe Obhliadka potvrdí alebo
+odmietne, kontakt sa odkrýva OBOM stranám naraz až s `CONFIRMED` —
+rovnaký mechanizmus ako pri prijatí ponuky.
+
+`guard_viewing_update()` je teraz explicitný stavový automat, nie len
+„uzavretá sa nemení": REQUESTED→CONFIRMED smie výhradne vlastník
+(overené — žiadateľov priamy PATCH dostane 403), REQUESTED→CANCELLED
+vlastník (odmietne) alebo žiadateľ (stiahne). Legacy `CONTACT_SHARED`
+(riadky spred zmeny) sa NEMENÍ — spätne schovať už videný kontakt by
+bolo horšie než pôvodná chyba.
+
+Nové notifikácie `OBHLIADKA_POTVRDENA`/`OBHLIADKA_ZAMIETNUTA` zrkadlia
+`PONUKA_AKCEPTOVANA`/`PONUKA_ZAMIETNUTA`. Texty prepísané: `VIEWING_CONSENT`,
+`how-it-works.ts` (sekcia aj krátky súhrn), **privacy policy
+(`legal.ts`)** — všetky tri predtým tvrdili okamžité odkrytie.
+
+`obhliadka_potvrdenie_test.py`, **17/17**, vrátane žiadateľovho
+zamietnutého pokusu o self-CONFIRM a legacy CONTACT_SHARED kompatibility.
+
+### 21.2 „Moje inzeráty" zjednotené s detailom — ✅
+
+Mení rozhodnutie o inline expand-in-place (`InlineOffers`, **zmazané**).
+Ťuknutie na ACTIVE/CLOSED v „Moje" vedie teraz do rovnakého
+`/nehnutelnost/[id]`, aký vidí cudzí z katalógu — podtaby sú jediné
+miesto, kde sa s inzerátom niečo robí. DRAFT/REJECTED naďalej rovno do
+editora. „Moje" ostáva prehľad bez akčných tlačidiel.
+
+### 21.3 Odznaky na podtaboch — ✅ OVERENÉ RUNTIME
+
+Jedna RPC (`tab_badges()`) vracia štyri booleany naraz. Správy majú
+odznak, NIE nový mechanizmus — číta sa z existujúceho `message.read_at`
+(12.8.2026), tab-level „videné" by pokazilo presnosť per-vlákno sledovania.
+Ponuky/Obhliadka/Hodnotenia dostali nové stĺpce + `mark_*_viewed()` RPC,
+mirroring `mark_offers_viewed()` z 8.8.2026.
+
+**Runtime test odhalil dve veci, ktoré čítanie kódu nechytilo:**
+1. `guard_offer_update()` mal nepodmienený blok „uzavretá sa nemení" PRED
+   kontrolou KTO/ČO mení — blokoval aj vlastný nový zápis
+   `viewed_by_bidder_at`. Oprava: úzka výnimka pred týmto blokom.
+2. Chýbajúce STĹPCOVÉ granty na `viewing`/`property_offer`/`rating` (tieto
+   tabuľky negrantujú `select *`) — `return=representation` po
+   INSERT/UPDATE padal na „permission denied". Oba nálezy zapísané priamo
+   v migračnom skripte.
+
+`tab_badges_test.py`, **17/17** — vrátane overenia, že odznak Ponuky po
+rozhodnutí svieti ZÁUJEMCOVI, nie vlastníkovi (ten už videl), a že
+Hodnotenia svieti len hodnotenému, nikdy hodnotiacemu.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

@@ -52,9 +52,9 @@ export const PRIVACY: LegalDoc = {
           'že sa dvaja ľudia dohodnú telefonicky. Meno a priezvisko sú nepovinné a rovnako neverejné. ' +
           'Odkryjú sa v DVOCH prípadoch, ' +
           'v oboch obom stranám naraz a nikomu inému: (1) keď predávajúci prijme konkrétnu ponuku, ' +
-          'a (2) keď záujemca požiada o obhliadku — vtedy sa kontakt odkryje okamžite, aby sa dalo dohodnúť ' +
-          'stretnutie. O odkrytí pri obhliadke je používateľ vopred výslovne informovaný a potvrdzuje ho. ' +
-          'Nikomu inému ich systém nevydá, ani technicky.',
+          'a (2) keď záujemca požiada o obhliadku A vlastník ju potvrdí — do potvrdenia kontakt ' +
+          'odkrytý nie je, žiadosť vidí vlastník len pod prezývkou žiadateľa. O odkrytí je používateľ ' +
+          'vopred výslovne informovaný a potvrdzuje ho. Nikomu inému ich systém nevydá, ani technicky.',
         'Profilová fotka. Nepovinná, verejná.',
         'Obsah, ktorý sám pridáš. Inzeráty vrátane fotografií, obce, kraja, prípadnej ulice, výmery, počtu izieb, ' +
           'orientačnej ceny a podmienok prenájmu; ponuky vrátane sumy a správy; dopyty. Tento obsah je verejný.',

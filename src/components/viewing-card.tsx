@@ -5,6 +5,13 @@
  * ešte PREDTÝM než klikne (Rastio, 8.8.2026). Preto je varovanie nad
  * tlačidlom, nie v potvrdzovacom dialógu za ním — a je tam aj vtedy, keď
  * dialóg preskočí.
+ *
+ * POTVRDZOVACÍ TOK (Rastio, 13.8.2026, mení predošlé rozhodnutie z 8.8.):
+ * žiadosť vznikne ako `REQUESTED`, kontakt je stále skrytý. Vlastník ju tu
+ * potvrdí alebo odmietne — až potvrdením (`CONFIRMED`) sa kontakt odkryje
+ * obom stranám. Kto smie ktorý prechod spraviť, presadzuje databáza
+ * (`guard_viewing_update`), nie táto obrazovka — tá len ponúka tlačidlá,
+ * ktoré k tomu vedú.
  */
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, StyleSheet, Text, View } from 'react-native';
@@ -13,6 +20,7 @@ import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { errorText } from '@/lib/errors';
 import {
+  confirmViewing,
   fetchViewingContact,
   requestViewing,
   setViewingStatus,
@@ -24,6 +32,9 @@ import {
 import { Spacing, Type } from '@/theme/tokens';
 
 import { Button, Card, ErrorNote, Eyebrow, ParamCell } from './ui';
+
+/** Stavy, v ktorých je kontakt naozaj odkrytý — nové aj legacy pred zmenou. */
+const REVEALED: Viewing['status'][] = ['CONFIRMED', 'CONTACT_SHARED'];
 
 export function ViewingCard({
   propertyId,
@@ -55,7 +66,8 @@ export function ViewingCard({
   const loadContacts = useCallback(async () => {
     const next: Record<string, ViewingContact> = {};
     for (const v of visible) {
-      if (v.status === 'CANCELLED') continue;
+      // Pred potvrdením kontakt neexistuje — netreba oň ani žiadať.
+      if (!REVEALED.includes(v.status)) continue;
       try {
         const c = await fetchViewingContact(v.id);
         if (c) next[v.id] = c;
@@ -79,10 +91,26 @@ export function ViewingCard({
     try {
       await requestViewing(propertyId, myId);
       await reload();
-      toast('Kontakty odkryté — dohodnite sa telefonicky');
+      toast('Žiadosť odoslaná — čaká na potvrdenie vlastníkom', 'info');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OBHLIADKA] Žiadosť zlyhala: ${m}`);
+      setError(m);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirm(v: Viewing) {
+    setBusy(true);
+    setError(null);
+    try {
+      await confirmViewing(v.id);
+      await reload();
+      toast('Obhliadka potvrdená — kontakty odkryté', 'info');
+    } catch (e: unknown) {
+      const m = errorText(e);
+      console.log(`[OBHLIADKA] Potvrdenie zlyhalo: ${m}`);
       setError(m);
     } finally {
       setBusy(false);
@@ -121,12 +149,12 @@ export function ViewingCard({
             </Text>
           ) : (
             <Button
-              title={busy ? 'Odkrývam…' : 'Chcem obhliadku'}
+              title={busy ? 'Odosielam…' : 'Chcem obhliadku'}
               disabled={busy}
               onPress={() =>
-                Alert.alert('Odkryť kontakt?', VIEWING_CONSENT, [
+                Alert.alert('Požiadať o obhliadku?', VIEWING_CONSENT, [
                   { text: 'Zrušiť', style: 'cancel' },
-                  { text: 'Áno, odkryť', onPress: () => void ask() },
+                  { text: 'Áno, požiadať', onPress: () => void ask() },
                 ])
               }
             />
@@ -136,33 +164,77 @@ export function ViewingCard({
 
       {isOwner && visible.length === 0 ? (
         <Text style={[styles.note, { color: palette.textMuted }]}>
-          Zatiaľ nikto o obhliadku nepožiadal. Keď požiada, uvidíš tu jeho kontakt.
+          Zatiaľ nikto o obhliadku nepožiadal. Keď požiada, uvidíš tu jeho žiadosť.
         </Text>
       ) : null}
 
       {visible.map((v) => {
         const c = contacts[v.id];
+        const revealed = REVEALED.includes(v.status);
         return (
           <View key={v.id} style={styles.item}>
             <Text style={[styles.status, { color: palette.textPrimary }]}>
               {VIEWING_STATUS_LABEL[v.status]}
             </Text>
+
             {v.status === 'CANCELLED' ? (
               <Text style={[styles.note, { color: palette.textMuted }]}>
-                Zrušená. Kontakt, ktorý ste už videli, sa tým nemaže.
+                {/* ZÁMERNE bez tvrdenia o tom, či sa kontakt stihol odkryť
+                    — z aktuálneho riadku sa to nedá zistiť (`CANCELLED` už
+                    nenesie, z akého stavu prišla) a klamať by bolo horšie
+                    než napísať menej. */}
+                Zrušená.
               </Text>
-            ) : c ? (
+            ) : v.status === 'REQUESTED' ? (
+              isOwner ? (
+                <>
+                  <Text style={[styles.note, { color: palette.textSecondary }]}>
+                    Kontakt sa odkryje obom stranám až po potvrdení.
+                  </Text>
+                  <View style={styles.actions}>
+                    <Button
+                      title="Potvrdiť obhliadku"
+                      disabled={busy}
+                      onPress={() =>
+                        Alert.alert('Potvrdiť obhliadku?', VIEWING_CONSENT, [
+                          { text: 'Späť', style: 'cancel' },
+                          { text: 'Potvrdiť', onPress: () => void confirm(v) },
+                        ])
+                      }
+                    />
+                    <Button
+                      title="Odmietnuť"
+                      variant="outline"
+                      disabled={busy}
+                      onPress={() => void mark(v, 'CANCELLED')}
+                    />
+                  </View>
+                </>
+              ) : (
+                <>
+                  <Text style={[styles.note, { color: palette.textSecondary }]}>
+                    Vlastník ešte nerozhodol. Dáme ti vedieť, keď žiadosť potvrdí.
+                  </Text>
+                  <Button
+                    title="Stiahnuť žiadosť"
+                    variant="outline"
+                    disabled={busy}
+                    onPress={() => void mark(v, 'CANCELLED')}
+                  />
+                </>
+              )
+            ) : revealed && c ? (
               <View style={styles.grid}>
                 <ParamCell value={c.nickname ?? '—'} label="Prezývka" />
                 <ParamCell value={c.full_name ?? 'nevyplnené'} label="Meno" />
                 <ParamCell value={c.phone ?? 'nevyplnený'} label="Telefón" />
                 <ParamCell value={c.email ?? 'nedostupný'} label="E-mail" />
               </View>
-            ) : (
+            ) : revealed ? (
               <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam kontakt…</Text>
-            )}
+            ) : null}
 
-            {v.status === 'CONTACT_SHARED' || v.status === 'REQUESTED' ? (
+            {revealed ? (
               <View style={styles.actions}>
                 <Button
                   title="Bol som na obhliadke"

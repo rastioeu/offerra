@@ -89,14 +89,17 @@ export const HOW_SECTIONS: HowSection[] = [
   },
   {
     icon: 'key',
-    title: 'Obhliadka je jedno kliknutie',
+    title: 'Obhliadka — vlastník ju potvrdí',
     paragraphs: [
-      'Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku" sa kontakt odkryje ' +
-        'OBOM stranám okamžite.',
-      'Appka termíny NENAVRHUJE ani nepotvrdzuje. Kedy a kde sa stretnete, si dohodnete ' +
-        'telefonicky — je to rýchlejšie než akékoľvek klikanie.',
-      'Čo sa stane, je napísané NAD tlačidlom, nie až po ňom. A späť sa to vziať nedá — ' +
-        'kontakt, ktorý druhá strana videla, sa nezmaže.',
+      'Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku" pošleš žiadosť — ' +
+        'vlastník ju vidí pod tvojou prezývkou, kontakt ešte NIE JE odkrytý.',
+      'Vlastník žiadosť v tabe Obhliadka POTVRDÍ alebo ODMIETNE. Až potvrdením sa meno, ' +
+        'telefón a e-mail odkryjú OBOM stranám naraz — rovnaký mechanizmus ako pri prijatí ' +
+        'ponuky.',
+      'Appka termíny NENAVRHUJE ani nepotvrdzuje. Kedy a kde sa stretnete, si po odkrytí ' +
+        'kontaktu dohodnete telefonicky.',
+      'Čo sa stane potvrdením, je napísané NAD tlačidlom, nie až po ňom. A späť sa to vziať ' +
+        'nedá — kontakt, ktorý druhá strana videla, sa nezmaže.',
       'Po stretnutí to označ ako „Bol som na obhliadke".',
     ],
   },
@@ -264,7 +267,7 @@ export const HOW_STEPS: HowStep[] = [
     title: 'Kontakt až po dohode',
     body:
       'Keď predávajúci ponuku prijme, meno, telefón a e-mail sa odkryjú OBOM stranám naraz. ' +
-      'Alebo hneď, ak si vypýtaš obhliadku.',
+      'Alebo si vypýtaj obhliadku — po potvrdení vlastníkom je to to isté.',
   },
   {
     icon: 'bubble.left.and.bubble.right',

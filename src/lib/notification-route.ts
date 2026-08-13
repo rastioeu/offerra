@@ -75,6 +75,8 @@ export function notificationRoute(
     case 'PONUKA_AKCEPTOVANA':
     case 'PONUKA_ZAMIETNUTA':
     case 'ZIADOST_O_OBHLIADKU':
+    case 'OBHLIADKA_POTVRDENA':
+    case 'OBHLIADKA_ZAMIETNUTA':
     // Nová správa vedie na detail inzerátu — vlákno je v podtabe „Správy".
     // Vlastná obrazovka pre chat neexistuje zámerne: konverzácia patrí
     // k inzerátu, o ktorom sa vedie.

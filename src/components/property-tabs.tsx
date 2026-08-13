@@ -23,7 +23,7 @@
  * vlastnej ponuky, čo je to, čo z neho človek potrebuje vidieť.
  */
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { MessagesTab } from '@/components/message-thread';
@@ -47,6 +47,7 @@ import {
 } from '@/lib/offers';
 import { db, type PropertyWithMedia } from '@/lib/property';
 import { type RatingSummary } from '@/lib/rating';
+import { fetchTabBadges, markRatingsViewed, markViewingViewed, type TabBadges } from '@/lib/tab-badges';
 import { type Viewing } from '@/lib/viewing';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -65,6 +66,22 @@ function tabsFor(sale: boolean): [DetailTab, string][] {
     ...(sale ? ([['MORTGAGE', 'Hypotéka']] as [DetailTab, string][]) : []),
     ['RATINGS', 'Hodnotenia'],
   ];
+}
+
+/** Hypotéka nemá čo sledovať — je to kalkulačka, nič sa v nej nedeje samo. */
+function badgeFor(tab: DetailTab, badges: TabBadges): boolean {
+  switch (tab) {
+    case 'OFFERS':
+      return badges.offers;
+    case 'MESSAGES':
+      return badges.messages;
+    case 'VIEWING':
+      return badges.viewing;
+    case 'RATINGS':
+      return badges.ratings;
+    default:
+      return false;
+  }
 }
 
 export function PropertyTabs({
@@ -100,6 +117,48 @@ export function PropertyTabs({
   const [tab, setTab] = useState<DetailTab>('OFFERS');
   const sale = item.transaction_type === 'SALE';
   const tabs = tabsFor(sale);
+
+  // ── ODZNAKY NOVEJ AKTIVITY (Rastio, 13.8.2026) ──────────────────────
+  const [badges, setBadges] = useState<TabBadges>({ offers: false, messages: false, viewing: false, ratings: false });
+  const reloadBadges = useCallback(() => {
+    if (!myId) return;
+    void fetchTabBadges(item.id)
+      .then(setBadges)
+      .catch((e: unknown) => console.log(`[ODZNAKY] Nedostupné: ${errorText(e)}`));
+  }, [item.id, myId]);
+
+  useEffect(() => {
+    reloadBadges();
+  }, [reloadBadges]);
+
+  // Otvorenie tabu OZNAČÍ jeho vlastnú aktivitu za videnú — Ponuky (OFFERS)
+  // a Správy (MESSAGES) to už robia SAMÉ (`mark_offers_viewed` v
+  // `OwnerOffers`/`OffersTab`, `markRead` v `Conversation` pri otvorení
+  // vlákna); Obhliadka a Hodnotenia dostali tento mechanizmus TERAZ, takže
+  // ho spúšťa tento efekt priamo. Krátke oneskorenie pred druhým
+  // `reloadBadges()` necháva vlastný mark-as-viewed obsahu tabu dobehnúť
+  // predtým, než sa odznak prekreslí.
+  useEffect(() => {
+    if (!myId) return;
+    let cancelled = false;
+    const mark =
+      tab === 'VIEWING' ? markViewingViewed(item.id)
+        : tab === 'RATINGS' ? markRatingsViewed(item.id)
+          : Promise.resolve();
+    mark
+      .catch((e: unknown) => console.log(`[ODZNAKY] Označenie za videné zlyhalo: ${errorText(e)}`))
+      .finally(() => {
+        if (!cancelled) reloadBadges();
+      });
+    const t = setTimeout(() => {
+      if (!cancelled) reloadBadges();
+    }, 700);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tab, item.id, myId]);
 
   // Rozmery tab baru — z NICH sa počíta, či sa dá scrollovať ďalej, nie
   // z toho, či posledný tab náhodou vyjde odrezaný (§ komentár nižšie).
@@ -158,12 +217,14 @@ export function PropertyTabs({
           contentContainerStyle={styles.barInner}>
           {tabs.map(([value, label]) => {
             const active = tab === value;
+            const hasBadge = badgeFor(value, badges);
             return (
               <Pressable
                 key={value}
                 onPress={() => setTab(value)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
+                accessibilityLabel={hasBadge ? `${label}, nová aktivita` : label}
                 style={({ pressed }) => [
                   styles.tab,
                   {
@@ -171,16 +232,22 @@ export function PropertyTabs({
                     opacity: pressed ? 0.8 : 1,
                   },
                 ]}>
-                <Text
-                  style={[
-                    styles.tabText,
-                    {
-                      color: active ? palette.textPrimary : palette.textMuted,
-                      fontWeight: active ? Weight.bold : Weight.medium,
-                    },
-                  ]}>
-                  {label}
-                </Text>
+                <View style={styles.tabRow}>
+                  <Text
+                    style={[
+                      styles.tabText,
+                      {
+                        color: active ? palette.textPrimary : palette.textMuted,
+                        fontWeight: active ? Weight.bold : Weight.medium,
+                      },
+                    ]}>
+                    {label}
+                  </Text>
+                  {/* Bodka, nie číslo — tab nesie viac vecí naraz (nová ponuka
+                      AJ zmena stavu), presné číslo by muselo sčítať dve rôzne
+                      veci a pôsobilo by presnejšie, než v skutočnosti je. */}
+                  {hasBadge ? <View style={[styles.tabDot, { backgroundColor: palette.danger }]} /> : null}
+                </View>
               </Pressable>
             );
           })}
@@ -289,6 +356,20 @@ function OffersTab({
 
   const list = offers ?? [];
   const mine = myId ? list.find((o) => o.bidder_id === myId && o.status !== 'WITHDRAWN') : undefined;
+
+  // Zobrazenie tohto tabu ZNAMENÁ, že záujemca videl rozhodnutie o svojej
+  // ponuke — rovnaký princíp ako pri `OwnerOffers` (13.8.2026: `mark_offers_viewed`
+  // je odteraz obojstranná, pozná aj túto stranu). Priamy UPDATE na
+  // `viewed_by_bidder_at` nemá povolený nikto — musí ísť cez RPC.
+  useEffect(() => {
+    if (!mine || isOwner) return;
+    void db()
+      .rpc('mark_offers_viewed', { p_property_id: item.id })
+      .then(({ error: e }) => {
+        if (e) console.log(`[PONUKY] Označenie za videné (záujemca) zlyhalo: ${e.message}`);
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item.id, isOwner, mine?.id, mine?.status]);
 
   async function withdraw() {
     if (!mine || busy) return;
@@ -458,9 +539,9 @@ function ViewingTab({
         <Card>
           <Eyebrow>Obhliadka</Eyebrow>
           <Text style={[styles.note, { color: palette.textMuted }]}>
-            Obhliadku si vypýta len prihlásený človek. Pri vypýtaní si vy dvaja
-            navzájom odkryjete meno, telefón a e-mail — inak niet ako sa
-            dohodnúť na termíne.
+            Obhliadku si vypýta len prihlásený človek. Vlastník žiadosť potvrdí a až
+            potom si vy dvaja navzájom odkryjete meno, telefón a e-mail — inak niet
+            ako sa dohodnúť na termíne.
           </Text>
         </Card>
       </View>
@@ -652,7 +733,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     minHeight: 40,
   },
+  tabRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   tabText: { ...Type.bodyMd },
+  tabDot: { width: 7, height: 7, borderRadius: 4 },
 
   body: { gap: Spacing.md },
   note: { ...Type.bodyMd },

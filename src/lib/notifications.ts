@@ -18,6 +18,8 @@ export type NotificationType =
   | 'OSLOVENIE_DOPYTU'
   | 'NOVA_ZHODA'
   | 'ZIADOST_O_OBHLIADKU'
+  | 'OBHLIADKA_POTVRDENA'
+  | 'OBHLIADKA_ZAMIETNUTA'
   | 'NOVA_SPRAVA'
   | 'SYSTEMOVE';
 
@@ -70,7 +72,17 @@ export const NOTIFICATION_TYPES: {
   {
     type: 'ZIADOST_O_OBHLIADKU',
     label: 'Niekto chce obhliadku',
-    hint: 'Kontakt máte v tej chvíli odkrytý obaja — dohodnete sa telefonicky.',
+    hint: 'Potvrď žiadosť v tabe Obhliadka — vtedy sa vám navzájom odkryje kontakt.',
+  },
+  {
+    type: 'OBHLIADKA_POTVRDENA',
+    label: 'Moja obhliadka bola potvrdená',
+    hint: 'Vtedy sa odkryje kontakt na druhú stranu.',
+  },
+  {
+    type: 'OBHLIADKA_ZAMIETNUTA',
+    label: 'Moja žiadosť o obhliadku bola zamietnutá',
+    hint: '',
   },
   {
     type: 'NOVA_SPRAVA',

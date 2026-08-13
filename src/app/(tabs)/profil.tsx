@@ -23,7 +23,6 @@ import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
-import { InlineOffers } from '@/components/inline-offers';
 import { MyListingRow } from '@/components/my-listing-row';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
@@ -41,14 +40,12 @@ export default function ProfilScreen() {
   const userId = session?.user.id;
 
   const { profile, error, reload } = useProfile();
-  const { items: properties, reload: reloadProperties } = useMyProperties(userId);
+  const { items: properties } = useMyProperties(userId);
   const { items: offers } = useMyOffers(userId);
   const { items: requests } = useRequests(userId);
   const { items: myOutreach } = useMyOutreach();
   const { items: favorites } = useFavoriteProperties(userId);
 
-  /** Ktorý inzerát má rozbalené ponuky. `null` = žiadny. */
-  const [openListing, setOpenListing] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   // Formulár na meno, telefón a prezývku tu ZÁMERNE nie je. Kontaktné údaje
@@ -173,30 +170,30 @@ export default function ProfilScreen() {
                 <Text style={[styles.hint, { color: palette.textMuted }]}>Zatiaľ žiadne.</Text>
               ) : null}
               {(properties ?? []).map((p) => (
-                <View key={p.id}>
                 <MyListingRow
+                  key={p.id}
                   item={p}
-                  // Kam ťuknutie vedie, závisí od toho, čo sa na inzeráte
-                  // dá ROBIŤ. Pri zverejnenom a uzavretom sú to ponuky
-                  // (prijať, odmietnuť, uzavrieť obchod, hodnotiť); pri
-                  // koncepte niet čo spravovať, tam patrí úprava.
-                  // Ťuknutie ROZBALÍ ponuky na mieste, nikam neodnaviguje.
-                  // Koncept ponuky nemá, tam vedie rovno do úpravy.
+                  // ZJEDNOTENÉ S DETAILOM (Rastio, 13.8.2026) — mení predošlé
+                  // rozhodnutie o inline rozbaľovaní. Predtým ťuknutie
+                  // rozbalilo ponuky NA MIESTE s vlastným Prijať/Odmietnuť —
+                  // druhé miesto s tou istou akciou, presne tá trieda chyby,
+                  // ktorá appku už raz stála zvonček aj chybové hlášky
+                  // (komentár v zmazanom `inline-offers.tsx`). Teraz vedie
+                  // VŽDY do toho istého detailu, aký vidí cudzí človek
+                  // z katalógu — podtaby Ponuky/Správy/Obhliadka/Hypotéka/
+                  // Hodnotenia sú jediné miesto, kde sa s inzerátom niečo
+                  // robí. Koncept ponuky nemá, tam patrí rovno úprava.
                   onPress={() =>
                     p.status === 'DRAFT' || p.status === 'REJECTED'
                       ? router.push({ pathname: '/inzerat/[id]', params: { id: p.id } })
-                      : setOpenListing((cur) => (cur === p.id ? null : p.id))
+                      : router.push({ pathname: '/nehnutelnost/[id]', params: { id: p.id } })
                   }
                 />
-                {openListing === p.id ? (
-                  <InlineOffers item={p} onChanged={reloadProperties} />
-                ) : null}
-                </View>
               ))}
               {(properties ?? []).some((p) => p.status === 'ACTIVE' || p.status === 'CLOSED') ? (
                 <Text style={[styles.hint, { color: palette.textMuted }]}>
-                  Ťuknutím rozbalíš ponuky aj s tlačidlami — netreba nikam chodiť.
-                  Celý inzerát aj s fotkami otvoríš cez „Upraviť" v ňom.
+                  Ťuknutím otvoríš inzerát presne tak, ako ho vidia ostatní — ponuky,
+                  správy aj obhliadku spravuješ tam, na podtaboch.
                 </Text>
               ) : null}
             </Card>

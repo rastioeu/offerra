@@ -21,6 +21,25 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '13. augusta 2026',
+    title: 'Obhliadku teraz vlastník potvrdzuje',
+    items: [
+      'Kontakt (meno, telefón, e-mail) sa pri obhliadke už neodkrýva okamžite. Vlastník žiadosť vidí pod tvojou prezývkou a musí ju potvrdiť — až vtedy sa vám navzájom zobrazí kontakt.',
+      'Vlastník má v tabe Obhliadka nové tlačidlá „Potvrdiť obhliadku" a „Odmietnuť".',
+      'Ak žiadosť ešte nie je potvrdená, môžeš ju kedykoľvek stiahnuť.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
+    title: 'Podtaby v detaile ukážu, kde je niečo nové',
+    items: [
+      'Ponuky, Správy, Obhliadka a Hodnotenia dostali malú červenú bodku, keď je tam niečo, čo si ešte nevidel — nová ponuka, správa, žiadosť o obhliadku alebo hodnotenie. Zmizne, keď si to otvoríš.',
+      'V „Moje inzeráty" ťuknutie na inzerát teraz otvorí rovnaký detail, aký vidia ostatní — ponuky aj všetko ostatné spravuješ tam, na jednom mieste.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
     title: 'Uzávierka späť na karte, jasnejší náznak posúvania tabov',
     items: [
       'Štítok „Ponuky do… · ostáva X dní" bol z niektorých kariet v katalógu nezámerne preč — je späť.',

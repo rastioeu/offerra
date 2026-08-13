@@ -1,17 +1,25 @@
 /**
  * OFFERRA — obhliadky.
  *
- * Rozhodnutie Rastia 8.8.2026: appka termíny NENAVRHUJE a NEPOTVRDZUJE.
- * Jedno tlačidlo, kontakt sa odkryje OKAMŽITE obom stranám, čas a miesto
- * si ľudia dohodnú telefonicky. Preto tu nenájdeš `proposed_times` ani
- * `confirmed_time` — nechýbajú, v tomto toku nemajú čo znamenať.
+ * MENÍ ROZHODNUTIE Z 8.8.2026 (Rastio, 13.8.2026). Dovtedy „Chcem
+ * obhliadku" odkrylo kontakt OKAMŽITE. Teraz je tam medzikrok: žiadosť
+ * vznikne ako `REQUESTED` (pod prezývkou, bez kontaktu), vlastník ju
+ * v tabe Obhliadka POTVRDÍ alebo ZAMIETNE, a až potvrdením (`CONFIRMED`)
+ * sa kontakt odkryje OBOM stranám naraz — rovnaký mechanizmus ako pri
+ * prijatí ponuky. Appka ĎALEJ NENAVRHUJE ani nepotvrdzuje TERMÍNY — to
+ * zostáva na telefonáte mimo appky, mení sa len to, KEDY sa odkryje
+ * kontakt, nie AKO sa dohodne stretnutie.
+ *
+ * `CONTACT_SHARED` ostáva ako platný stav pre RIADKY SPRED TEJTO ZMENY —
+ * kontakt, ktorý si dvaja ľudia už reálne vymenili, sa spätne neschováva.
+ * Nové žiadosti už tento stav nikdy nedostanú.
  *
  * Na rozdiel od ponuky obhliadka VEREJNÁ NIE JE. Ponuka je súťaž a jej
  * suma patrí na oči všetkým; obhliadka je súkromná dohoda dvoch ľudí.
  */
 import { db } from './property';
 
-export type ViewingStatus = 'REQUESTED' | 'CONTACT_SHARED' | 'COMPLETED' | 'CANCELLED';
+export type ViewingStatus = 'REQUESTED' | 'CONFIRMED' | 'CONTACT_SHARED' | 'COMPLETED' | 'CANCELLED';
 
 export type Viewing = {
   id: string;
@@ -32,7 +40,8 @@ export type ViewingContact = {
 };
 
 export const VIEWING_STATUS_LABEL: Record<ViewingStatus, string> = {
-  REQUESTED: 'Požiadané',
+  REQUESTED: 'Čaká na potvrdenie',
+  CONFIRMED: 'Potvrdená — kontakt odkrytý',
   CONTACT_SHARED: 'Kontakty odkryté',
   COMPLETED: 'Po obhliadke',
   CANCELLED: 'Zrušená',
@@ -42,20 +51,29 @@ export const VIEWING_STATUS_LABEL: Record<ViewingStatus, string> = {
  * Veta, ktorá musí byť pri tlačidle VIDNO PREDTÝM, než naň niekto klikne.
  * Je tu ako konštanta, nie zapísaná v obrazovke, aby sa nedala zmeniť na
  * jednom mieste a zabudnúť na druhom — je to podstata informovaného súhlasu.
+ *
+ * PREPÍSANÉ 13.8.2026 — predtým sľubovala OKAMŽITÉ odkrytie. Teraz je
+ * pravda iná: žiadosť ide vlastníkovi a kontakt sa odkryje AŽ PO jeho
+ * potvrdení. Veta, ktorá by tu klamala o mechanike, je horšia než žiadna.
  */
 export const VIEWING_CONSENT =
-  'Kliknutím sa tvoje meno, telefón a e-mail okamžite zobrazia majiteľovi ' +
-  'inzerátu a jeho kontakt tebe. Termín si dohodnete telefonicky mimo aplikácie. ' +
-  'Späť sa to vziať nedá.';
+  'Vlastník uvidí tvoju žiadosť pod prezývkou a po potvrdení sa vám navzájom zobrazí kontakt ' +
+  '— meno, telefón aj e-mail. Termín si potom dohodnete telefonicky mimo aplikácie.';
 
 export async function requestViewing(propertyId: string, myId: string): Promise<Viewing> {
   const { data, error } = await db()
     .from('viewing')
-    .insert({ property_id: propertyId, requester_id: myId, status: 'CONTACT_SHARED' })
+    .insert({ property_id: propertyId, requester_id: myId, status: 'REQUESTED' })
     .select('id, property_id, requester_id, status, created_at, updated_at')
     .single();
   if (error) throw error;
   return data as Viewing;
+}
+
+/** Potvrdí žiadosť — SMIE výhradne vlastník inzerátu, presadzuje to DB (§ komentár vyššie). */
+export async function confirmViewing(id: string): Promise<void> {
+  const { error } = await db().from('viewing').update({ status: 'CONFIRMED' }).eq('id', id);
+  if (error) throw error;
 }
 
 export async function fetchViewingContact(viewingId: string): Promise<ViewingContact | null> {
