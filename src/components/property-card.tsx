@@ -22,6 +22,7 @@ import { useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { coverPhotoIndex } from '@/lib/cover-photo';
 import { formatAmount } from '@/lib/offers';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
@@ -82,7 +83,10 @@ export function PropertyCard({
   const palette = useTheme();
   const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
-  const cover = item.media[0]?.url;
+  // Rotuje raz za spustenie appky, nie pri každom prekreslení — pozri
+  // `cover-photo.ts`.
+  const coverIdx = coverPhotoIndex(item.id, item.media.length);
+  const cover = item.media[coverIdx]?.url;
   const deadline = deadlineLabel(item.offer_deadline);
   // Menej než 3 dni = štítok sa sfarbí varovne. Urgencia patrí do FARBY,
   // text ostáva ten istý.
@@ -172,8 +176,9 @@ export function PropertyCard({
             ) : (
               <View />
             )}
-            {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. */}
-            {item.media.length > 1 ? <PhotoBadge text={`1/${item.media.length}`} /> : null}
+            {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. Číslo vpredu
+                ukazuje SKUTOČNÚ pozíciu rotujúcej titulky, nie vždy „1". */}
+            {item.media.length > 1 ? <PhotoBadge text={`${coverIdx + 1}/${item.media.length}`} /> : null}
           </View>
         ) : null}
       </View>

@@ -4296,6 +4296,90 @@ balík už stiahla; to potvrdí len Rastio.
 
 ---
 
+## Fáza 22 — RLS chyba pri obhliadke, rotujúca titulná fotka, Podozriví používatelia (13.8.2026)
+
+**IDE OTA.** DB: `mig_39_suspicious_users.sql` nasadená. Reporty:
+`reports/RLS_ROTACIA_PODOZRIVI.md`.
+
+### 22.1 RLS chyba pri „Chcem obhliadku" — príčina nájdená, NIE je to chyba RLS
+
+Rastio nahlásil technickú hlášku „new row violates row-level security
+policy for table viewing". Diagnostika (`moderacia_test.py`, 8/8) ukázala:
+**RLS bola SPRÁVNA** — `property_select_public` (mig_02, nezmenené odvtedy)
+už dávno púšťa len `status = 'ACTIVE'`, REJECTED aj CLOSED sú neverejné.
+Skutočná chyba bola v appke: obrazovka detailu si stav inzerátu natiahla
+LEN raz pri otvorení a nikdy znova, takže keď admin medzičasom inzerát
+skryl, tlačidlo „Chcem obhliadku" ostalo klikateľné so ZASTARANÝM stavom
+— server ho správne odmietol (kód `42501`), len appka o tom nevedela.
+
+Oprava (bez zmeny RLS, tá bola v poriadku):
+1. `useProperty()` (`use-properties.ts`) dostal Realtime kanál na vlastný
+   riadok — zmena stavu príde do appky živo, rovnaký princíp ako
+   `usePendingReports`.
+2. `nehnutelnost/[id].tsx` dostal `useRefreshOnFocus(reloadProperty)` —
+   druhá poistka, doteraz to mali len ponuky.
+3. `closed` (gate na tlačidlá) už číta aj `item.status`, nielen uzávierku
+   — predtým mohol bidder vidieť aktívne tlačidlo na CLOSED inzeráte
+   uzavretom PRED uzávierkou (majiteľ prijal ponuku skôr).
+4. `ViewingCard.ask()`: kód `42501` teraz ukáže LEN „Tento inzerát už nie
+   je dostupný" (surová chyba naďalej ide do logu, nikdy sa nezahadzuje —
+   §2) a hneď spustí `reloadProperty()`.
+
+Mimochodom overené (nie nová práca, len potvrdené naživo): vlastník
+REJECTED inzerátu vidí dôvod BEZ identity nahlasovateľa — toto už robil
+`inzerat/[id].tsx` od Fázy 17 (`rejection_reason`), test to len potvrdil.
+
+🟡 čaká vizuálne overenie — nedá sa vyrobiť naživo scenár „nahlásenie
+prišlo, kým mal Rastio obrazovku otvorenú" bez čakania; over prosím, že
+appka pri bežnom používaní nesype chyby do logu `[OBHLIADKA]`/`[DETAIL]`.
+
+### 22.2 Rotujúca titulná fotka — ✅ OVERENÉ RUNTIME (logika)
+
+`src/lib/cover-photo.ts` (bez importov, testovateľné) — `coverPhotoIndex(id, count, seed)`.
+Seed sa vygeneruje raz pri načítaní modulu (= raz za spustenie appky).
+`npx tsx scripts/check-cover-photo.ts` — **5/5**: index stály v rámci
+jedného seedu, mimo rozsahu nikdy, rôzne seedy → rôzny index pre ten istý
+inzerát, rôzne inzeráty v tom istom seede → nie vždy tá istá fotka.
+Číslo v rohu karty (`2/6` a pod.) teraz ukazuje SKUTOČNÚ pozíciu, nie
+vždy „1".
+
+🟡 vizuálne — over na telefóne cez aspoň DVE spustenia appky (force quit +
+znova otvoriť), že titulka na karte s viacerými fotkami je iná.
+
+### 22.3 Admin — „Podozriví používatelia" — ✅ OVERENÉ RUNTIME
+
+Tri vzorce, LEN signály na ručnú kontrolu (rovnaký princíp ako
+`admin_repeat_offenders`) — appka nikoho neblokuje sama:
+
+1. **Záplava ponúk** — ponuky na ≥10 RÔZNYCH inzerátov za 24 h (obe čísla
+   nastaviteľné).
+2. **Opakovane nízke ponuky** — ≥3 rôzne inzeráty s ponukou pod 50 %
+   orientačnej ceny (obe čísla nastaviteľné). Inzeráty bez orientačnej
+   ceny sa nerátajú — nemajú s čím porovnať.
+3. **Opakovane ponúka tomu istému vlastníkovi** (PRIDANÉ BEZ PÝTANIA,
+   zadanie: „ak ťa napadne ďalší rozumný vzor, pridaj ho") — ≥3 rôzne
+   inzeráty TOHO ISTÉHO predávajúceho od jedného záujemcu. Dôvod: pri
+   OTVORENÝCH ponukách (sumy sú verejné) sa dá takto druhým účtom umelo
+   nadsadzovať vlastná cena.
+
+Prahy sú **admin-konfigurovateľné** cez `app_config`/`admin_set_config`
+(zadanie: „daj nejaké parametre, kde sa dá definovať, čo je podozrivé") —
+rovnaký mechanizmus ako existujúci `max_active_listings`, nová karta
+„PODOZRIVÍ POUŽÍVATELIA — PRAHY" v Nastaveniach.
+
+**Existujúci check na rovnaký telefón/e-mail naprieč účtami** (spomenutý
+ako „už bol riešený, over stav"): je **hotový a beží** —
+`admin_duplicate_contacts()` z 9.8.2026 (Fáza 12/`mig_19`), karta
+„ROVNAKÝ KONTAKT NA VIACERÝCH ÚČTOCH" v Nastaveniach. Nová práca sa ho
+netýkala, len sa jeho stav overil.
+
+`podozrivi_test.py`, **13/13** — vrátane: bežný (nie admin) účet dostane
+prázdny zoznam, nie cudzie dáta; bežný záujemca s 1–2 ponukami sa NIKDE
+neobjaví (žiadny falošný poplach); zmena prahu cez `admin_set_config`
+naozaj mení, čo sa ukáže; bežný účet prah zmeniť nesmie.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

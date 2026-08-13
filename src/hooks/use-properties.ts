@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 import { errorText } from '@/lib/errors';
+import { supabase } from '@/lib/supabase';
 
 /** Fotky sa doťahujú jedným dotazom pre celý zoznam, nie N+1 na kartu. */
 async function attachMedia(rows: Property[]): Promise<PropertyWithMedia[]> {
@@ -174,6 +175,32 @@ export function useProperty(id: string | undefined) {
   useEffect(() => {
     void reload();
   }, [reload]);
+
+  // Stav inzerátu sa môže zmeniť (napr. admin ho skryje po nahlásení) kým
+  // je táto obrazovka otvorená — bez tohto by appka ukazovala neplatný stav
+  // ešte niekoľko minút a klik na akciu (napr. „Chcem obhliadku") by narazil
+  // na nezrozumiteľnú RLS chybu namiesto jasnej správy (Rastio, 13.8.2026).
+  // Kanál je len doplnok — `useRefreshOnFocus` na obrazovke je druhá poistka.
+  useEffect(() => {
+    if (!id) return;
+    const topic = `property-${id}`;
+    const channel = supabase
+      .channel(topic)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'offerra', table: 'property', filter: `id=eq.${id}` },
+        () => {
+          console.log('[DETAIL] Zmena inzerátu — obnovujem');
+          void reload();
+        },
+      )
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          console.log(`[DETAIL] Kanál sa neotvoril: ${status} — ostáva obnova pri návrate na obrazovku`);
+        }
+      });
+    return () => void supabase.removeChannel(channel);
+  }, [id, reload]);
 
   return { item, error, reload };
 }

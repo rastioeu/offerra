@@ -286,6 +286,7 @@ export function PropertyTabs({
           offers={offers}
           viewings={viewings}
           reloadViewings={reloadViewings}
+          reloadProperty={reloadProperty}
           myId={myId}
           isOwner={isOwner}
           closed={closed}
@@ -519,6 +520,7 @@ function ViewingTab({
   offers,
   viewings,
   reloadViewings,
+  reloadProperty,
   myId,
   isOwner,
   closed,
@@ -527,6 +529,7 @@ function ViewingTab({
   offers: Offer[] | undefined;
   viewings: Viewing[] | undefined;
   reloadViewings: () => Promise<void>;
+  reloadProperty: () => Promise<void>;
   myId: string | undefined;
   isOwner: boolean;
   closed: boolean;
@@ -557,6 +560,7 @@ function ViewingTab({
         closed={closed}
         viewings={viewings}
         reload={reloadViewings}
+        reloadProperty={reloadProperty}
       />
 
       {/* Kontakt odkrytý PRIJATOU PONUKOU. Je tu zámerne spolu s obhliadkou

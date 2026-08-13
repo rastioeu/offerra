@@ -43,6 +43,53 @@ type TopLister = {
 type DuplicateContact = { kind: string; value: string; accounts: number; nicknames: string };
 
 /**
+ * PODOZRIVÍ POUŽÍVATELIA (Rastio, 13.8.2026) — tri vzorce, LEN signály na
+ * ručnú kontrolu, rovnaký princíp ako `Alert_`/`RepeatOffender` vyššie:
+ * appka nikoho neblokuje sama.
+ *
+ *   1. ZÁPLAVA — ponuky na neobvykle veľa RÔZNYCH inzerátov v krátkom čase.
+ *   2. NÍZKE PONUKY — opakovane výrazne pod orientačnou cenou naprieč
+ *      VIACERÝMI inzerátmi (raz je vyjednávanie, opakovane je vzorec).
+ *   3. TEN ISTÝ VLASTNÍK — tretí vzorec pridaný BEZ pýtania (zadanie:
+ *      „ak ťa napadne ďalší rozumný vzor, pridaj ho"): jeden záujemca
+ *      opakovane ponúka na inzeráty TOHO ISTÉHO predávajúceho — pri
+ *      otvorených ponukách (sumy sú verejné) je to spôsob, ako si vlastník
+ *      môže druhým účtom nadsadzovať vlastnú cenu.
+ *
+ * Prahy sú nastaviteľné cez `app_config` — pozri `susParams` nižšie.
+ */
+type SuspiciousFlood = {
+  user_id: string;
+  nickname: string;
+  pocet_inzeratov: number;
+  pocet_ponuk: number;
+  is_blocked: boolean;
+};
+type SuspiciousLowball = {
+  user_id: string;
+  nickname: string;
+  pocet_nizkych: number;
+  priemerny_pomer: number;
+  is_blocked: boolean;
+};
+type SuspiciousShill = {
+  bidder_id: string;
+  bidder_nickname: string;
+  owner_id: string;
+  owner_nickname: string;
+  pocet_inzeratov: number;
+};
+
+/** Kľúče `app_config`, ktoré ovládajú prahy vyššie — v tomto poradí sa aj vypíšu. */
+const SUSPICIOUS_CONFIG_KEYS = [
+  'suspicious_offer_flood_hours',
+  'suspicious_offer_flood_count',
+  'suspicious_lowball_pct',
+  'suspicious_lowball_min_count',
+  'suspicious_shill_min_count',
+] as const;
+
+/**
  * Prah upozornenia (schválil Rastio 7.8.2026): TRAJA RÔZNI nahlasovatelia
  * na tú istú vec — jeden nahnevaný konkurent nestačí. Výnimka: dôvod
  * PODVOD upozorní už pri PRVOM nahlásení, lebo pri nehnuteľnostiach ide
@@ -124,6 +171,11 @@ export default function AdminScreen() {
   const [hideChoice, setHideChoice] = useState<Record<string, boolean>>({});
   const [offenders, setOffenders] = useState<RepeatOffender[]>([]);
   const [limitDraft, setLimitDraft] = useState('');
+  const [floods, setFloods] = useState<SuspiciousFlood[]>([]);
+  const [lowballs, setLowballs] = useState<SuspiciousLowball[]>([]);
+  const [shills, setShills] = useState<SuspiciousShill[]>([]);
+  /** Rozpísané hodnoty prahov v `SETTINGS` — kľúč = `app_config.key`. */
+  const [susDraft, setSusDraft] = useState<Record<string, string>>({});
   /** Filtre, do ktorých vedie ťuknutie na dlaždicu štatistiky. */
   const [propertyFilter, setPropertyFilter] = useState<PropertyStatus | null>(null);
   const [onlyBlocked, setOnlyBlocked] = useState(false);
@@ -134,7 +186,7 @@ export default function AdminScreen() {
   const reload = useCallback(async () => {
     setError(null);
     try {
-      const [s, r, p, u, a, c, t, d, ro] = await Promise.all([
+      const [s, r, p, u, a, c, t, d, ro, fl, lb, sh] = await Promise.all([
         db().rpc('admin_stats'),
         db().from('report').select('*').order('created_at', { ascending: false }).limit(200),
         db().from('property').select('id,title,status,city,created_at,rejection_reason')
@@ -145,6 +197,9 @@ export default function AdminScreen() {
         db().rpc('admin_top_listers'),
         db().rpc('admin_duplicate_contacts'),
         db().rpc('admin_repeat_offenders'),
+        db().rpc('admin_suspicious_offer_flood'),
+        db().rpc('admin_suspicious_lowball'),
+        db().rpc('admin_suspicious_shill_bidding'),
       ]);
       if (s.error) throw s.error;
       if (r.error) throw r.error;
@@ -155,6 +210,9 @@ export default function AdminScreen() {
       if (t.error) throw t.error;
       if (d.error) throw d.error;
       if (ro.error) throw ro.error;
+      if (fl.error) throw fl.error;
+      if (lb.error) throw lb.error;
+      if (sh.error) throw sh.error;
       setStats(((s.data ?? []) as AdminStats[])[0] ?? null);
       setReports((r.data ?? []) as ReportRow[]);
       setProperties((p.data ?? []) as AdminProperty[]);
@@ -163,9 +221,17 @@ export default function AdminScreen() {
       const cfg = (c.data ?? []) as ConfigRow[];
       setConfig(cfg);
       setLimitDraft(cfg.find((x) => x.key === 'max_active_listings')?.value ?? '');
+      setSusDraft(
+        Object.fromEntries(
+          SUSPICIOUS_CONFIG_KEYS.map((k) => [k, cfg.find((x) => x.key === k)?.value ?? '']),
+        ),
+      );
       setTopListers((t.data ?? []) as TopLister[]);
       setDupes((d.data ?? []) as DuplicateContact[]);
       setOffenders((ro.data ?? []) as RepeatOffender[]);
+      setFloods((fl.data ?? []) as SuspiciousFlood[]);
+      setLowballs((lb.data ?? []) as SuspiciousLowball[]);
+      setShills((sh.data ?? []) as SuspiciousShill[]);
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] Načítanie zlyhalo: ${m}`);
@@ -867,6 +933,142 @@ export default function AdminScreen() {
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>{d.value}</Text>
                     <Text style={[styles.meta, { color: palette.textMuted }]}>{d.nicknames}</Text>
                   </View>
+                ))
+              )}
+            </Card>
+
+            {/* PODOZRIVÍ POUŽÍVATELIA — tri vzorce, len signál na ručnú
+                kontrolu (pozri komentár pri type SuspiciousFlood vyššie). */}
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>PODOZRIVÍ POUŽÍVATELIA — PRAHY</Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Od koľkých inzerátov/percent sa účet nižšie objaví. Platí hneď, nový build netreba.
+              </Text>
+              {SUSPICIOUS_CONFIG_KEYS.map((key) => {
+                const c = config.find((x) => x.key === key);
+                if (!c) return null;
+                const draft = susDraft[key] ?? '';
+                return (
+                  <View key={key} style={styles.cfg}>
+                    <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{c.label}</Text>
+                    {c.hint ? <Text style={[styles.meta, { color: palette.textMuted }]}>{c.hint}</Text> : null}
+                    <View style={styles.cfgRow}>
+                      <TextInput
+                        value={draft}
+                        onChangeText={(v) => setSusDraft((prev) => ({ ...prev, [key]: v }))}
+                        keyboardType="numeric"
+                        accessibilityLabel={c.label}
+                        style={[
+                          styles.cfgInput,
+                          { borderColor: palette.borderStrong, color: palette.textPrimary, backgroundColor: palette.surface },
+                        ]}
+                      />
+                      <Button
+                        title="Uložiť"
+                        disabled={draft.trim() === c.value}
+                        onPress={() =>
+                          call('admin_set_config', { p_key: key, p_value: draft.trim() },
+                            `${c.label}: teraz ${draft.trim()}.`)
+                        }
+                      />
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>Teraz platí: {c.value}.</Text>
+                  </View>
+                );
+              })}
+            </Card>
+
+            <Card>
+              <Text style={[styles.section, { color: palette.warning }]}>ZÁPLAVA PONÚK ({floods.length})</Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Ponuka na neobvykle veľa RÔZNYCH inzerátov v krátkom čase — podnet na pozretie, nie obvinenie.
+              </Text>
+              {floods.length === 0 ? (
+                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+              ) : (
+                floods.map((f) => (
+                  <Pressable
+                    key={f.user_id}
+                    onPress={() =>
+                      openTarget('USER', f.user_id, `${f.pocet_inzeratov} rôznych inzerátov · ${f.pocet_ponuk} ponúk`)
+                    }
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.alert,
+                      { borderColor: palette.warning, backgroundColor: pressed ? palette.surfacePressed : 'transparent' },
+                    ]}>
+                    <View style={styles.rowHead}>
+                      <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{f.nickname}</Text>
+                      {f.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                      {f.pocet_inzeratov} rôznych inzerátov · {f.pocet_ponuk} ponúk
+                    </Text>
+                  </Pressable>
+                ))
+              )}
+            </Card>
+
+            <Card>
+              <Text style={[styles.section, { color: palette.warning }]}>OPAKOVANE NÍZKE PONUKY ({lowballs.length})</Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Výrazne pod orientačnou cenou naprieč VIACERÝMI inzerátmi — raz je vyjednávanie, opakovane je vzorec.
+              </Text>
+              {lowballs.length === 0 ? (
+                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+              ) : (
+                lowballs.map((l) => (
+                  <Pressable
+                    key={l.user_id}
+                    onPress={() =>
+                      openTarget('USER', l.user_id,
+                        `${l.pocet_nizkych} nízkych ponúk · priemerne ${Math.round(l.priemerny_pomer * 100)} % ceny`)
+                    }
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.alert,
+                      { borderColor: palette.warning, backgroundColor: pressed ? palette.surfacePressed : 'transparent' },
+                    ]}>
+                    <View style={styles.rowHead}>
+                      <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{l.nickname}</Text>
+                      {l.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                      {l.pocet_nizkych} nízkych ponúk · priemerne {Math.round(l.priemerny_pomer * 100)} % ceny
+                    </Text>
+                  </Pressable>
+                ))
+              )}
+            </Card>
+
+            <Card>
+              <Text style={[styles.section, { color: palette.warning }]}>
+                OPAKOVANE PONÚKA TOMU ISTÉMU VLASTNÍKOVI ({shills.length})
+              </Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Jeden záujemca opakovane ponúka na inzeráty toho istého predávajúceho — pri otvorených
+                ponukách môže ísť o umelé nadsadzovanie ceny druhým účtom.
+              </Text>
+              {shills.length === 0 ? (
+                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+              ) : (
+                shills.map((sh) => (
+                  <Pressable
+                    key={`${sh.bidder_id}-${sh.owner_id}`}
+                    onPress={() =>
+                      openTarget('USER', sh.bidder_id,
+                        `Ponúka vlastníkovi ${sh.owner_nickname} na ${sh.pocet_inzeratov} rôznych inzerátoch`)
+                    }
+                    accessibilityRole="button"
+                    style={({ pressed }) => [
+                      styles.alert,
+                      { borderColor: palette.warning, backgroundColor: pressed ? palette.surfacePressed : 'transparent' },
+                    ]}>
+                    <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{sh.bidder_nickname}</Text>
+                    <Text style={[styles.meta, { color: palette.textSecondary }]}>
+                      → vlastníkovi {sh.owner_nickname} na {sh.pocet_inzeratov} rôznych inzerátoch
+                    </Text>
+                  </Pressable>
                 ))
               )}
             </Card>

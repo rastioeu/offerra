@@ -21,6 +21,22 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '13. augusta 2026',
+    title: 'Titulná fotka v katalógu sa strieda',
+    items: [
+      'Pri inzerátoch s viacerými fotkami sa titulná fotka na karte v katalógu mení pri každom novom otvorení appky — nie vždy len tá prvá.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
+    title: 'Jasnejšia správa, keď inzerát medzitým prestal byť dostupný',
+    items: [
+      'Ak niekto klikne na „Chcem obhliadku" (alebo inú akciu) na inzeráte, ktorý medzičasom prestal byť dostupný, appka to teraz ukáže jasnou vetou namiesto technickej chybovej hlášky — a stav inzerátu na obrazovke sa obnoví hneď.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '13. augusta 2026',
     title: 'Obhliadku teraz vlastník potvrdzuje',
     items: [
       'Kontakt (meno, telefón, e-mail) sa pri obhliadke už neodkrýva okamžite. Vlastník žiadosť vidí pod tvojou prezývkou a musí ju potvrdiť — až vtedy sa vám navzájom zobrazí kontakt.',

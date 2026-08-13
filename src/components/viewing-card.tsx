@@ -43,6 +43,7 @@ export function ViewingCard({
   closed,
   viewings,
   reload,
+  reloadProperty,
 }: {
   propertyId: string;
   myId: string | undefined;
@@ -51,6 +52,8 @@ export function ViewingCard({
   closed: boolean;
   viewings: Viewing[] | undefined;
   reload: () => Promise<void>;
+  /** Na obnovu stavu inzerátu, keď žiadosť narazí na RLS — pozri `ask()`. */
+  reloadProperty: () => Promise<void>;
 }) {
   const palette = useTheme();
   const toast = useToast();
@@ -93,9 +96,22 @@ export function ViewingCard({
       await reload();
       toast('Žiadosť odoslaná — čaká na potvrdenie vlastníkom', 'info');
     } catch (e: unknown) {
-      const m = errorText(e);
-      console.log(`[OBHLIADKA] Žiadosť zlyhala: ${m}`);
-      setError(m);
+      // Surová chyba (aj s Postgres kódom) ide vždy do logu — nikdy sa
+      // nezahadzuje (CLAUDE.md §2). Používateľovi sa ale pri tomto
+      // konkrétnom kóde (RLS na vklad) NEMÁ ukázať naraz s technickým
+      // textom (Rastio, 13.8.2026, screenshot: obe hlášky naraz mátali).
+      // 42501 sem reálne príde len jedným spôsobom — tlačidlo bolo
+      // klikateľné so ZASTARANÝM stavom inzerátu (medzičasom prestal byť
+      // ACTIVE, napr. admin ho skryl po nahlásení) — server to správne
+      // odmietol, len appka o tom ešte nevedela.
+      const code = (e as { code?: unknown } | null)?.code;
+      console.log(`[OBHLIADKA] Žiadosť zlyhala: ${errorText(e)}`);
+      if (code === '42501') {
+        setError('Tento inzerát už nie je dostupný.');
+        void reloadProperty();
+      } else {
+        setError(errorText(e));
+      }
     } finally {
       setBusy(false);
     }

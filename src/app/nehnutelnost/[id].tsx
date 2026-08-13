@@ -83,6 +83,11 @@ export default function PropertyDetailScreen() {
   const { items: viewings, reload: reloadViewings } = useViewings(id);
   const [photo, setPhoto] = useState(0);
   useRefreshOnFocus(reloadOffers);
+  // Bez tohto by táto obrazovka po admin. skrytí/uzavretí inzerátu (odkiaľ
+  // sa človek vrátil, napr. z pozadia appky) ukazovala starý stav, kým sa
+  // nespustí Realtime kanál v `useProperty` — druhá poistka, rovnaký
+  // princíp ako pri `reloadOffers`.
+  useRefreshOnFocus(reloadProperty);
 
   // `view_count` je v modeli od Fázy 1, ale nemal ho kto zvyšovať — UPDATE
   // na cudzom inzeráte RLS nepustí. Rieši to `bump_view()` (SECURITY
@@ -101,7 +106,13 @@ export default function PropertyDetailScreen() {
   const myId = session?.user.id;
   const isOwner = Boolean(myId && item && item.owner_id === myId);
   const myOffer = offers?.find((o) => o.bidder_id === myId && o.status === 'PENDING');
-  const closed = isDeadlinePassed(item?.offer_deadline ?? null);
+  // Uzávierka NIE JE jediný spôsob, ako inzerát prestane brať nové akcie —
+  // obchod sa dá uzavrieť aj pred uzávierkou (majiteľ prijme ponuku skôr) a
+  // admin ho vie skryť kedykoľvek. Predtým sa tu čítal len dátum, takže
+  // napr. bidder na uzavretom inzeráte pred uzávierkou ešte videl aktívne
+  // tlačidlo „Chcem obhliadku" a klik na neho narazil na RLS chybu, nie na
+  // jasnú správu (Rastio, 13.8.2026).
+  const closed = isDeadlinePassed(item?.offer_deadline ?? null) || (item ? item.status !== 'ACTIVE' : false);
   // Kto obchod vyhral. Vlastník podľa toho vie, koho hodnotí; ostatní to
   // nepotrebujú — hodnotiť smú len dvaja a rozhoduje o tom DB.
   const winnerBidderId = offers?.find((o) => o.id === item?.closed_offer_id)?.bidder_id;
