@@ -14,7 +14,7 @@ import { AppHeader } from '@/components/app-header';
 import { Badge, Button, Card, CheckRow, ErrorNote } from '@/components/ui';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSession } from '@/hooks/use-session';
-import { useToast } from '@/components/toast';
+import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import type { AdminStats, AdminUser, ReportRow } from '@/lib/admin';
 import { db, formatDate, STATUS_LABEL, type PropertyStatus } from '@/lib/property';
@@ -90,6 +90,23 @@ const SUSPICIOUS_CONFIG_KEYS = [
 ] as const;
 
 /**
+ * Rate limiting (Rastio, 14.8.2026) — prahy pre DB triggery, ktoré blokujú
+ * nadmerné akcie (`mig_41_rate_limiting.sql`). Rovnaký mechanizmus ako
+ * `SUSPICIOUS_CONFIG_KEYS` vyššie — je to preventívna poistka PRED tým, čo
+ * podozriví používatelia vyššie len detekujú spätne.
+ */
+const RATE_LIMIT_CONFIG_KEYS = [
+  'rate_limit_offers_count',
+  'rate_limit_offers_window_minutes',
+  'rate_limit_messages_count',
+  'rate_limit_messages_window_minutes',
+  'rate_limit_listings_count',
+  'rate_limit_listings_window_minutes',
+  'rate_limit_viewings_count',
+  'rate_limit_viewings_window_minutes',
+] as const;
+
+/**
  * Prah upozornenia (schválil Rastio 7.8.2026): TRAJA RÔZNI nahlasovatelia
  * na tú istú vec — jeden nahnevaný konkurent nestačí. Výnimka: dôvod
  * PODVOD upozorní už pri PRVOM nahlásení, lebo pri nehnuteľnostiach ide
@@ -148,6 +165,7 @@ type AdminProperty = {
 export default function AdminScreen() {
   const palette = useTheme();
   const toast = useToast();
+  const confirmWithUndo = useUndoToast();
   const router = useRouter();
   const { session } = useSession();
 
@@ -176,6 +194,7 @@ export default function AdminScreen() {
   const [shills, setShills] = useState<SuspiciousShill[]>([]);
   /** Rozpísané hodnoty prahov v `SETTINGS` — kľúč = `app_config.key`. */
   const [susDraft, setSusDraft] = useState<Record<string, string>>({});
+  const [rlDraft, setRlDraft] = useState<Record<string, string>>({});
   /** Filtre, do ktorých vedie ťuknutie na dlaždicu štatistiky. */
   const [propertyFilter, setPropertyFilter] = useState<PropertyStatus | null>(null);
   const [onlyBlocked, setOnlyBlocked] = useState(false);
@@ -224,6 +243,11 @@ export default function AdminScreen() {
       setSusDraft(
         Object.fromEntries(
           SUSPICIOUS_CONFIG_KEYS.map((k) => [k, cfg.find((x) => x.key === k)?.value ?? '']),
+        ),
+      );
+      setRlDraft(
+        Object.fromEntries(
+          RATE_LIMIT_CONFIG_KEYS.map((k) => [k, cfg.find((x) => x.key === k)?.value ?? '']),
         ),
       );
       setTopListers((t.data ?? []) as TopLister[]);
@@ -395,17 +419,27 @@ export default function AdminScreen() {
     Alert.alert(
       blocking ? 'Zablokovať používateľa?' : 'Odblokovať?',
       blocking
-        ? 'Nebude sa vedieť prihlásiť ani nič pridať. Jeho doterajšie dáta ostanú.'
+        ? 'Nebude sa vedieť prihlásiť ani nič pridať. Jeho doterajšie dáta ostanú. Pár sekúnd pôjde ešte vrátiť späť.'
         : 'Bude sa vedieť znovu prihlásiť a pridávať.',
       [
         { text: 'Zrušiť', style: 'cancel' },
         {
           text: blocking ? 'Zablokovať' : 'Odblokovať',
           style: blocking ? 'destructive' : 'default',
-          onPress: () =>
-            call('admin_set_blocked',
-              { p_user_id: u.id, p_blocked: blocking, p_reason: blocking ? 'Zablokované správcom' : null },
-              blocking ? 'Používateľ je zablokovaný.' : 'Používateľ je odblokovaný.'),
+          onPress: () => {
+            if (!blocking) {
+              // Odblokovanie nie je tá riziková akcia zo zadania — undo
+              // okno je tu navyše len pre BLOKOVANIE (Rastio, 14.8.2026).
+              void call('admin_set_blocked', { p_user_id: u.id, p_blocked: false, p_reason: null },
+                'Používateľ je odblokovaný.');
+              return;
+            }
+            confirmWithUndo(`${u.nickname} bude zablokovaný`, () =>
+              call('admin_set_blocked',
+                { p_user_id: u.id, p_blocked: true, p_reason: 'Zablokované správcom' },
+                'Používateľ je zablokovaný.')
+            );
+          },
         },
       ]
     );
@@ -956,6 +990,48 @@ export default function AdminScreen() {
                       <TextInput
                         value={draft}
                         onChangeText={(v) => setSusDraft((prev) => ({ ...prev, [key]: v }))}
+                        keyboardType="numeric"
+                        accessibilityLabel={c.label}
+                        style={[
+                          styles.cfgInput,
+                          { borderColor: palette.borderStrong, color: palette.textPrimary, backgroundColor: palette.surface },
+                        ]}
+                      />
+                      <Button
+                        title="Uložiť"
+                        disabled={draft.trim() === c.value}
+                        onPress={() =>
+                          call('admin_set_config', { p_key: key, p_value: draft.trim() },
+                            `${c.label}: teraz ${draft.trim()}.`)
+                        }
+                      />
+                    </View>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>Teraz platí: {c.value}.</Text>
+                  </View>
+                );
+              })}
+            </Card>
+
+            {/* RATE LIMITING (Rastio, 14.8.2026) — DB triggery blokujú akciu
+                priamo (mig_41), toto sú len ich prahy. Prevencia, nie
+                detekcia — dopĺňa PODOZRIVÝCH POUŽÍVATEĽOV vyššie. */}
+            <Card>
+              <Text style={[styles.section, { color: palette.textMuted }]}>RATE LIMITING — PRAHY</Text>
+              <Text style={[styles.meta, { color: palette.textMuted }]}>
+                Server odmietne akciu, keď ju ten istý účet za dané okno prekročí. Platí hneď, nový build netreba.
+              </Text>
+              {RATE_LIMIT_CONFIG_KEYS.map((key) => {
+                const c = config.find((x) => x.key === key);
+                if (!c) return null;
+                const draft = rlDraft[key] ?? '';
+                return (
+                  <View key={key} style={styles.cfg}>
+                    <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{c.label}</Text>
+                    {c.hint ? <Text style={[styles.meta, { color: palette.textMuted }]}>{c.hint}</Text> : null}
+                    <View style={styles.cfgRow}>
+                      <TextInput
+                        value={draft}
+                        onChangeText={(v) => setRlDraft((prev) => ({ ...prev, [key]: v }))}
                         keyboardType="numeric"
                         accessibilityLabel={c.label}
                         style={[

@@ -14,6 +14,7 @@ import { ThemeProvider as AppThemeProvider, useThemeMode } from '@/hooks/use-the
 import { ProfileProvider, useProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { usePushTap } from '@/hooks/use-push-tap';
+import { WalkthroughProvider, useWalkthrough } from '@/hooks/use-walkthrough';
 import { decideRoute } from '@/lib/gate';
 import { Colors } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -50,6 +51,11 @@ export default function RootLayout() {
         {/* Spätná väzba po akcii je JEDNA na celú appku — inak by mala
             každá obrazovka vlastný štýl a niektoré žiadny (Rastio, 9.8.2026). */}
         <ToastProvider>
+        {/* Beží PRED prihlásením, takže nemôže visieť na `ProfileProvider`
+            (ten potrebuje `userId`). Vlastný provider z rovnakého dôvodu,
+            prečo je `profile` jeden zdieľaný stav — brána musí vidieť
+            ZMENU príznaku, nie jeho hodnotu len pri štarte appky. */}
+        <WalkthroughProvider>
         <ProfileProvider userId={session?.user.id}>
           {/* JEDEN kanál Realtime na celú appku. `AppHeader` je na štyroch
               taboch naraz a `supabase.channel()` vracia pri rovnakom názve
@@ -59,6 +65,7 @@ export default function RootLayout() {
             <RootLayoutInner />
           </NotificationsProvider>
         </ProfileProvider>
+        </WalkthroughProvider>
         </ToastProvider>
         </AppThemeProvider>
       </SafeAreaProvider>
@@ -77,9 +84,10 @@ function RootLayoutInner() {
   const router = useRouter();
   const segments = useSegments();
 
-  // Brána má TRI stupne: session → prezývka → upozornenia.
+  // Brána má ŠTYRI stupne: walkthrough → session → prezývka → upozornenia.
   // Musí byť deklarované PRED efektmi, ktoré ho čítajú.
   const { profile, error: profileError, reload: reloadProfile } = useProfile();
+  const { seen: walkthroughSeen } = useWalkthrough();
 
   // Splash sa smie skryť až keď vieme, kam patríme — inak by na okamih
   // preblikla nesprávna obrazovka.
@@ -94,10 +102,14 @@ function RootLayoutInner() {
     // obrazovka. Ak profil zlyhal (`profileError`), splash SA MUSÍ skryť
     // tiež, inak by appka ostala visieť — tá istá trieda chyby ako 0.17.
     if (session && profile === undefined && !profileError) return;
+    // Pri neprihlásenom čakáme na AsyncStorage príznak walkthroughu — inak
+    // by splash zmizol skôr, než appka vie, či ísť na walkthrough alebo
+    // rovno na login, a medzi tým by preblikla nesprávna obrazovka.
+    if (!session && walkthroughSeen === undefined) return;
     SplashScreen.hideAsync().catch((e: unknown) => {
       console.log(`[APP] Skrytie splash screenu zlyhalo: ${errorText(e)}`);
     });
-  }, [session, profile, profileError]);
+  }, [session, profile, profileError, walkthroughSeen]);
 
   // Bez prezývky sa nedá inzerovať ani ponúkať (v DB to drží cudzí kľúč na
   // `offerra.profile`), takže je to podmienka vstupu, nie odporúčanie.
@@ -112,9 +124,10 @@ function RootLayoutInner() {
       segment: segments[0],
       profileError: Boolean(profileError),
       notifOnboardedAt: profile?.notif_onboarded_at ?? null,
+      walkthroughSeen,
     });
     if (target) router.replace(target);
-  }, [session, profile, profileError, segments, router]);
+  }, [session, profile, profileError, segments, router, walkthroughSeen]);
 
   // Klik na push notifikáciu smie skočiť na obrazovku až vtedy, keď brána
   // vyššie dorozhodla — inak by ju `router.replace()` okamžite prebil.
@@ -176,6 +189,7 @@ function RootLayoutInner() {
             headerBackButtonDisplayMode: 'minimal',
             headerBackTitle: 'Späť',
           }}>
+          <Stack.Screen name="walkthrough" />
           <Stack.Screen name="login" />
           <Stack.Screen name="prezyvka" />
           <Stack.Screen name="upozornenia" />

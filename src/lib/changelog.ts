@@ -20,6 +20,39 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '14. augusta 2026',
+    title: 'Rozpracovaný inzerát sa už neztratí',
+    items: [
+      'Formulár nového inzerátu sa teraz priebežne ukladá — aj keď appku medzi písaním zavrieš alebo ju preruší telefonát.',
+      'Pri návrate do appky ti tab „Pridať" ponúkne „Pokračovať v rozpracovanom inzeráte?" namiesto prázdneho formulára.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '14. augusta 2026',
+    title: 'Stiahnutie vlastných dát',
+    items: [
+      'V Nastaveniach pribudlo tlačidlo „Stiahnuť moje dáta" — vygeneruje export všetkého, čo o tebe appka eviduje (profil, inzeráty, ponuky, dopyty, obhliadky, hodnotenia, správy).',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '14. augusta 2026',
+    title: '„Zrušiť" pri dôležitých akciách',
+    items: [
+      'Po odmietnutí ponuky alebo zmazaní inzerátu máš teraz pár sekúnd na to si to rozmyslieť — appka ukáže tlačidlo „Zrušiť" predtým, než sa akcia naozaj vykoná.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '14. augusta 2026',
+    title: 'Úvodné obrazovky pri prvom spustení',
+    items: [
+      'Pri celkom prvom otvorení appky ťa pár obrazoviek prevedie tým, ako Offerra funguje — dá sa preskočiť a nabudúce sa už neukáže.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '13. augusta 2026',
     title: 'Titulná fotka v katalógu sa strieda',
     items: [

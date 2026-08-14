@@ -10,7 +10,7 @@
  */
 import { Stack, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Share, StyleSheet, Switch, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Card, ChoiceRow, ErrorNote, SectionLabel } from '@/components/ui';
@@ -37,6 +37,7 @@ export default function NastaveniaScreen() {
   const [busy, setBusy] = useState(false);
   const [pushStatus, setPushStatus] = useState<PushStatus>('undetermined');
   const [pushBusy, setPushBusy] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     void getPushStatus().then(setPushStatus);
@@ -117,6 +118,32 @@ export default function NastaveniaScreen() {
       console.log(`[NASTAVENIA] Zmazanie účtu zlyhalo: ${m}`);
       Alert.alert('Zmazanie účtu zlyhalo', m);
       setBusy(false);
+    }
+  }
+
+  /**
+   * GDPR export (Rastio, 14.8.2026) — Privacy Policy sľubuje právo na
+   * prenositeľnosť údajov, toto ho reálne pokrýva. `export_my_data()` je
+   * scope-nutá výhradne na `auth.uid()` na strane servera (mig_40).
+   *
+   * ZÁMERNE natívny `Share` z `react-native`, nie `expo-file-system` /
+   * `expo-sharing` — tie by pridali nový natívny modul a odstrihli by OTA
+   * od existujúceho buildu presne tak, ako sa to appke už raz stalo (§9).
+   */
+  async function exportData() {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      const { data, error } = await db().rpc('export_my_data');
+      if (error) throw error;
+      const json = JSON.stringify(data, null, 2);
+      await Share.share({ message: json, title: 'Moje dáta z Offerra' });
+    } catch (e: unknown) {
+      const m = errorText(e);
+      console.log(`[NASTAVENIA] Export dát zlyhal: ${m}`);
+      Alert.alert('Export sa nepodaril', m);
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -226,6 +253,21 @@ export default function NastaveniaScreen() {
           <Text style={[styles.hint, { color: palette.textMuted }]}>
             Zoznam zmien podľa verzií — podľa neho spoznáš, čo ti už dorazilo.
           </Text>
+        </Card>
+
+        <Card>
+          <Text style={[styles.section, { color: palette.textMuted }]}>MOJE DÁTA</Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>
+            Export všetkého, čo o tebe appka eviduje — profil, inzeráty, ponuky,
+            dopyty, obhliadky, hodnotenia, správy. Právo na prenositeľnosť údajov
+            podľa Zásad ochrany súkromia.
+          </Text>
+          <Button
+            title={exporting ? 'Pripravujem…' : 'Stiahnuť moje dáta'}
+            onPress={exportData}
+            variant="outline"
+            disabled={exporting}
+          />
         </Card>
 
         <Card>

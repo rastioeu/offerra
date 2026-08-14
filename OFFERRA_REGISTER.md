@@ -4380,6 +4380,132 @@ naozaj mení, čo sa ukáže; bežný účet prah zmeniť nesmie.
 
 ---
 
+## Fáza 23 — Autosave, GDPR export, rate limiting, undo okno, walkthrough (14.8.2026)
+
+Päť samostatných položiek zo zadania Rastia, zaradených až po dokončení
+predošlého backlogu (obhliadka s potvrdením, Moje zjednotené, chat —
+Fázy 16/19/21). Report: `reports/AUTOSAVE_GDPR_RATELIMIT_UNDO_WALKTHROUGH.md`.
+DB: `mig_40_gdpr_export.sql`, `mig_41_rate_limiting.sql` nasadené priamo
+(scratchpad, mimo repa podľa §4).
+
+### 23.1 Autosave rozpracovaného inzerátu — ✅ OVERENÉ RUNTIME (logika), 🟡 odpočet na zariadení
+
+DRAFT riadok v DB existuje od tapnutia „+ Pridať nehnuteľnosť" už od Fázy 1
+(kvôli fotkám) — appka tak už mala polovicu poistky. Chýbalo priebežné
+ukladanie POLÍ formulára: doteraz sa do DB zapisovali až na tlačidlo
+„Uložiť koncept". `inzerat/[id].tsx` má teraz debounced autosave (2,5 s
+ticha po poslednej zmene → tichý zápis, žiadny toast) navyše k
+`form-draft.ts` (ktorý drží text v pamäti procesu, nie cez reštart appky).
+
+`pridat.tsx` navyše ponúkne najnovšie upravený DRAFT rovno hore ako kartu
+„Pokračovať v rozpracovanom inzeráte?" — nie len ako riadok v zozname
+nižšie. Výber čistou funkciou `src/lib/draft-resume.ts`
+(`npx tsx scripts/check-draft-resume.ts`, **6/6**).
+
+Debounce/časovanie samotné je klientský `setTimeout` — nedá sa dokázať bez
+zariadenia (§1, „grep a čítanie kódu nedokazuje NIČ").
+
+🟡 **Čo Rastio otestuje**: rozpísať pár polí v editore, počkať pár sekúnd,
+appku force-quit-núť, znova otvoriť a ísť do „Pridať" — má tam byť karta
+„Pokračovať v rozpracovanom inzeráte?" a otvorený koncept má mať zapísané
+to, čo bolo rozpísané pred zabitím appky (nie prázdny formulár).
+
+### 23.2 GDPR export „Stiahnuť moje dáta" — ✅ OVERENÉ RUNTIME (21/21)
+
+Nová RPC `offerra.export_my_data()` (SECURITY DEFINER, scope-nutá výhradne
+na `auth.uid()`) vracia JSON so všetkým: profil, inzeráty (+ fotky), podané
+aj prijaté ponuky, dopyty, oslovenia (odoslané/prijaté), obhliadky (moje aj
+na mojich inzerátoch), hodnotenia (dané/prijaté), správy, uložené
+vyhľadávania. Tlačidlo v Nastaveniach → natívny `Share` z `react-native`
+(ZÁMERNE nie `expo-file-system`/`expo-sharing` — nový natívny modul by
+odstrihol OTA presne ako incident 21.4).
+
+`gdpr_export_test.py`, **21/21** naživo: dvaja používatelia s krížovými
+ponukami/obhliadkami/hodnoteniami/správami/dopytom, export A obsahuje
+VŠETKO svoje a NIČ z bytu/dát B (a naopak), anon dostane 401/403.
+
+### 23.3 Rate limiting proti spamu — ✅ OVERENÉ RUNTIME (14/14)
+
+Server-side (BEFORE INSERT triggery na `property_offer`, `message`,
+`property`, `viewing`), nie len klientská kontrola — dopĺňa plánované
+„Podozrivých používateľov" (22.3): toto je PREVENCIA, tamto DETEKCIA.
+
+Predvolené prahy: 10 ponúk/60 min, 20 správ/min, 5 nových inzerátov/60 min,
+10 žiadostí o obhliadku/60 min — všetky admin-nastaviteľné cez novú kartu
+„RATE LIMITING — PRAHY" v Nastaveniach (rovnaký `app_config`/
+`admin_set_config` mechanizmus ako 22.3).
+
+Kontrola beží LEN keď `auth.uid()` sedí so stĺpcom pôvodcu (bidder_id/
+sender_id/owner_id/requester_id) — seed skripty a migrácie idú cez
+Management API bez JWT, takže sa ich netýka. Overené priamo (bod 6 nižšie).
+
+`rate_limit_test.py`, **14/14** naživo: admin zníži prah na malé číslo,
+presne N akcií prejde a (N+1). je zablokovaná s ľudskou hláškou
+(„Príliš veľa ponúk za krátky čas…"), bežný účet prah zmeniť nesmie (403),
+6 priamych SQL insertov (seed) rate limit vôbec nevidí.
+
+### 23.4 „Zrušiť" undo okno — ✅ OVERENÉ RUNTIME (logika, 4/4), 🟡 vizuál na zariadení
+
+`toast.tsx` dostal druhú funkciu v TOM ISTOM provideri (nie druhý systém
+spätnej väzby vedľa seba) — `confirmWithUndo(text, commit)`: zobrazí 5 s
+odpočet s tlačidlom „Zrušiť", server sa akcie dotkne AŽ po dobehnutí,
+zrušenie = commit sa nikdy nezavolá. Zapojené na troch miestach zo
+zadania:
+
+- **Odmietnuť ponuku** (`owner-offers.tsx`) — doteraz bez akéhokoľvek
+  potvrdenia, teraz undo okno ako jediná poistka.
+- **Zmazať inzerát** (`inzerat/[id].tsx`) — undo okno PRIDANÉ K
+  existujúcemu dvojitému Alert potvrdeniu, nie namiesto neho (dve rôzne
+  veci: potvrdenie chráni pred omylom v úmysle, undo pred preklikom tesne
+  predtým).
+- **Zablokovať používateľa** (admin.tsx) — len smer BLOKOVANIA, nie
+  odblokovania (to nie je riziková akcia zo zadania).
+
+Odpočet samotný (`src/lib/undo-countdown.ts`, čistá funkcia) —
+`npx tsx scripts/check-undo-countdown.ts`, **4/4**: 5→4→…→0 dobehne presne
+v 5 tikoch. Samotné vykreslenie/tap na „Zrušiť" na zariadení je klientský
+timer — nedá sa dokázať bez zariadenia.
+
+🟡 **Čo Rastio otestuje**: skús odmietnuť ponuku/zmazať inzerát/zablokovať
+používateľa a hneď ťukni „Zrušiť" — akcia sa nesmie vykonať. Potom skús
+znova a nechaj odpočet dobehnúť — akcia sa MUSÍ vykonať.
+
+### 23.5 Úvodný walkthrough pred prvým prihlásením — ✅ OVERENÉ RUNTIME (gate, 13/13), 🟡 vizuál na zariadení
+
+Nová obrazovka `walkthrough.tsx`, PRED loginom (`LOGIN → PREZÝVKA →
+UPOZORNENIA` je onboarding PO prihlásení, toto je krok pred ním). Obsah je
+ZDIEĽANÝ `HOW_STEPS` z `how-it-works.ts` (5 krokov) — ZÁMERNE nie nový
+text, aby platilo CLAUDE.md §8 (jedno miesto pravdy o mechanike appky,
+inak tretia kópia textu, čo je presne riziko, kvôli ktorému §8 vzniklo).
+Preskočiteľné, „len raz" cez nový `WalkthroughProvider`
+(`use-walkthrough.tsx`, AsyncStorage) — rovnaký dôvod ako `ProfileProvider`
+byť JEDEN zdieľaný stav (komentár v `_layout.tsx`, 7.8.2026): brána musí
+vidieť ZMENU príznaku, nie len jeho hodnotu pri štarte appky.
+
+`src/lib/gate.ts` (`decideRoute`) rozšírené o krok walkthroughu.
+**Objav pri písaní testu**: komentár v `gate.ts` už dlho tvrdil „pokryté
+testom", no v repe žiadny testovací skript pre `decideRoute` nebol —
+doplnené (`scripts/check-gate.ts`), teraz **13/13**, vrátane explicitného
+dôkazu, že EXISTUJÚCI prihlásený účet walkthrough NIKDY nedostane
+dodatočne (aj keby mal `walkthroughSeen: false`, čo pri reálnom účte s
+existujúcou session ani nenastane).
+
+🟡 **Čo Rastio otestuje**: appku predtým odinštalovať alebo vymazať dáta
+(inak `walkthroughSeen` z predošlého inštalu appku rovno pustí na login) —
+pri úplne prvom spustení sa má ukázať 5 obrazoviek s „Preskočiť" hore a
+„Ďalej"/„Začať" dole, po dokončení/preskočení už NIKDY znova (ani po
+odhlásení a opätovnom prihlásení).
+
+### 23.6 Nasadenie
+
+Všetko **IDE OTA** — `package.json` sa v tejto dávke vôbec nezmenil
+(overené `git diff --stat package.json package-lock.json` pred aj po,
+prázdne), žiadny nový natívny modul (`Share` z `react-native` a
+`@react-native-async-storage/async-storage` sú už súčasťou existujúcej
+binárky). `npx tsc --noEmit` čisté po každom bloku zmien.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

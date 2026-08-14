@@ -28,9 +28,16 @@ export type GateInput = {
    * dôvod, prečo sa dá otestovať bez zariadenia.
    */
   notifOnboardedAt?: string | null;
+  /**
+   * Videl už niekedy úvodný walkthrough (Rastio, 14.8.2026)?
+   * `undefined` = AsyncStorage sa ešte nenačítalo — ČAKÁME, rovnaký
+   * princíp ako `profile === undefined` nižšie. Beží PRED prihlásením
+   * (na rozdiel od prezývky/upozornení), takže nemôže byť stĺpec profilu.
+   */
+  walkthroughSeen?: boolean;
 };
 
-export type GateDecision = '/login' | '/prezyvka' | '/upozornenia' | '/(tabs)' | null;
+export type GateDecision = '/walkthrough' | '/login' | '/prezyvka' | '/upozornenia' | '/(tabs)' | null;
 
 export function decideRoute({
   session,
@@ -38,12 +45,17 @@ export function decideRoute({
   segment,
   profileError,
   notifOnboardedAt,
+  walkthroughSeen,
 }: GateInput): GateDecision {
   // 1. Nevieme, či je niekto prihlásený — nerozhodujeme.
   if (session === undefined) return null;
 
-  // 2. Neprihlásený → login.
-  if (!session) return segment === 'login' ? null : '/login';
+  // 2. Neprihlásený → najprv walkthrough (len raz, kým nemá session), potom login.
+  if (!session) {
+    if (walkthroughSeen === undefined) return null;
+    if (!walkthroughSeen) return segment === 'walkthrough' ? null : '/walkthrough';
+    return segment === 'login' ? null : '/login';
+  }
 
   // 3. Prihlásený, ale profil ešte nepoznáme — ČAKÁME.
   //    Toto je jadro opravy: `undefined` nikdy neznamená „bez prezývky".
@@ -66,7 +78,7 @@ export function decideRoute({
   if (!notifOnboardedAt) return segment === 'upozornenia' ? null : '/upozornenia';
 
   // 7. Všetko máme — preč zo všetkých onboardingových obrazoviek.
-  if (segment === 'login' || segment === 'prezyvka' || segment === 'upozornenia') {
+  if (segment === 'walkthrough' || segment === 'login' || segment === 'prezyvka' || segment === 'upozornenia') {
     return '/(tabs)';
   }
   return null;

@@ -24,7 +24,7 @@ import { usePhotoUpload } from '@/hooks/use-photo-upload';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
-import { useToast } from '@/components/toast';
+import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import {
   db,
@@ -53,6 +53,7 @@ export default function PropertyEditorScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
   const toast = useToast();
+  const confirmWithUndo = useUndoToast();
   const { item, error, reload } = useProperty(id);
 
   /**
@@ -92,7 +93,7 @@ export default function PropertyEditorScreen() {
   }, [id, item]);
   useRefreshOnFocus(reload);
 
-  async function save(extra?: Partial<Property>): Promise<boolean> {
+  async function save(extra?: Partial<Property>, opts?: { silent?: boolean }): Promise<boolean> {
     if (!form || !item || saving) return false;
     setSaving(true);
     setSaveError(null);
@@ -108,17 +109,35 @@ export default function PropertyEditorScreen() {
       await reload();
       // Uloženie konceptu doteraz nedalo NIJAKÚ odozvu — tlačidlo len
       // prestalo byť zaneprázdnené a človek nevedel, či sa niečo stalo.
-      if (!extra) toast('Uložené');
+      if (!extra && !opts?.silent) toast('Uložené');
       return true;
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[EDITOR] Uloženie zlyhalo: ${m}`);
-      setSaveError(m);
+      // Tichý autosave nesmie prekryť to, čo si používateľ práve rozpísal
+      // technickou hláškou uprostred písania — ukáž ju len pri ručnom uložení.
+      if (!opts?.silent) setSaveError(m);
       return false;
     } finally {
       setSaving(false);
     }
   }
+
+  /**
+   * AUTOSAVE (Rastio, 14.8.2026) — poistka nad rámec `form-draft.ts`
+   * (ktorý drží text len v pamäti procesu, nie cez reštart appky).
+   * 2,5 s ticha po poslednej zmene → tiché uloženie do DB, kde DRAFT
+   * riadok existuje od založenia (viď hlavička `pridat.tsx`). Pri páde
+   * appky / preskočení hovoru sa tak stratí najviac 2,5 s písania, nie
+   * celý formulár.
+   */
+  useEffect(() => {
+    if (!form || !item || locked) return;
+    const t = setTimeout(() => {
+      void save(undefined, { silent: true });
+    }, 2500);
+    return () => clearTimeout(t);
+  }, [form, locked]);
 
   async function publish() {
     if (!form || !item) return;
@@ -144,22 +163,28 @@ export default function PropertyEditorScreen() {
 
   function confirmDelete() {
     if (!item) return;
-    Alert.alert('Zmazať inzerát?', 'Zmaže sa aj so všetkými fotkami. Nedá sa vrátiť.', [
+    Alert.alert('Zmazať inzerát?', 'Zmaže sa aj so všetkými fotkami. Pár sekúnd pôjde ešte vrátiť späť.', [
       { text: 'Zrušiť', style: 'cancel' },
       {
         text: 'Zmazať',
         style: 'destructive',
-        onPress: async () => {
-          try {
-            const { error: e } = await db().from('property').delete().eq('id', item.id);
-            if (e) throw e;
-            saved(); // zmazaný inzerát nemá čo držať rozpísané
-            router.back();
-          } catch (e: unknown) {
-            const m = errorText(e);
-            console.log(`[EDITOR] Zmazanie zlyhalo: ${m}`);
-            Alert.alert('Zmazanie zlyhalo', m);
-          }
+        // Potvrdenie vyššie chráni pred omylom v ÚMYSLE; undo okno
+        // (Rastio, 14.8.2026) chráni pred PREKLIKOM tesne predtým —
+        // odíde sa hneď, server sa zmazania dotkne až po odpočte.
+        onPress: () => {
+          saved(); // zmazaný inzerát nemá čo držať rozpísané
+          router.back();
+          confirmWithUndo('Inzerát bude zmazaný', async () => {
+            try {
+              const { error: e } = await db().from('property').delete().eq('id', item.id);
+              if (e) throw e;
+              toast('Inzerát zmazaný', 'info');
+            } catch (e: unknown) {
+              const m = errorText(e);
+              console.log(`[EDITOR] Zmazanie zlyhalo: ${m}`);
+              Alert.alert('Zmazanie zlyhalo', m);
+            }
+          });
         },
       },
     ]);

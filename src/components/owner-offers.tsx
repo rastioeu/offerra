@@ -27,7 +27,7 @@ import { OfferList } from '@/components/offer-list';
 import { OfferTimeline } from '@/components/offer-timeline';
 import { Button, Card, Eyebrow, ParamCell } from '@/components/ui';
 import { useTenantProfiles } from '@/hooks/use-offers';
-import { useToast } from '@/components/toast';
+import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import {
   fetchOfferContact,
@@ -56,6 +56,7 @@ export function OwnerOffers({
   const palette = useTheme();
   const insets = useSafeAreaInsets();
   const toast = useToast();
+  const confirmWithUndo = useUndoToast();
   const tenants = useTenantProfiles(offers.map((o) => o.id));
 
   const [contacts, setContacts] = useState<Record<string, OfferContact | null>>({});
@@ -111,25 +112,48 @@ export function OwnerOffers({
     }
   }
 
+  /**
+   * Zamietnutie je nezvratné a tlačidlo „Odmietnuť" je hneď vedľa
+   * „Prijať" — undo okno (Rastio, 14.8.2026) chráni pred preklikom.
+   * Panel sa zavrie hneď, server sa dotkne až po dobehnutí odpočtu.
+   */
+  function rejectOffer(offerId: string) {
+    setOpenId(null);
+    confirmWithUndo('Ponuka bude odmietnutá', async () => {
+      setBusy(offerId);
+      try {
+        const { error: e } = await db().from('property_offer').update({ status: 'REJECTED' }).eq('id', offerId);
+        if (e) throw e;
+        await reload();
+        toast('Ponuka odmietnutá', 'info');
+      } catch (e: unknown) {
+        const m = errorText(e);
+        console.log(`[PONUKY] Odmietnutie zlyhalo: ${m}`);
+        Alert.alert('Nepodarilo sa uložiť', m);
+      } finally {
+        setBusy(null);
+      }
+    });
+  }
+
   async function decide(offerId: string, status: 'ACCEPTED' | 'REJECTED') {
+    if (status === 'REJECTED') {
+      rejectOffer(offerId);
+      return;
+    }
     setBusy(offerId);
     try {
       const { error: e } = await db().from('property_offer').update({ status }).eq('id', offerId);
       if (e) throw e;
       await reload();
-      if (status === 'ACCEPTED') {
-        const c = await fetchOfferContact(offerId);
-        setContacts((prev) => ({ ...prev, [offerId]: c }));
-        Alert.alert(
-          'Ponuka prijatá',
-          c?.full_name || c?.phone || c?.email
-            ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone, c.email].filter(Boolean).join('\n')}`
-            : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
-        );
-      } else {
-        toast('Ponuka odmietnutá', 'info');
-        setOpenId(null);
-      }
+      const c = await fetchOfferContact(offerId);
+      setContacts((prev) => ({ ...prev, [offerId]: c }));
+      Alert.alert(
+        'Ponuka prijatá',
+        c?.full_name || c?.phone || c?.email
+          ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone, c.email].filter(Boolean).join('\n')}`
+          : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
+      );
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKY] Rozhodnutie zlyhalo: ${m}`);

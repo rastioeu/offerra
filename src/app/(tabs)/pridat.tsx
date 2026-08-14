@@ -19,6 +19,7 @@ import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
 import { db, formatDate, PROPERTY_LABEL, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
+import { pickLatestDraft } from '@/lib/draft-resume';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
@@ -30,6 +31,12 @@ export default function PridatScreen() {
   const { items, error, reload } = useMyProperties(userId);
   const [creating, setCreating] = useState(false);
   useRefreshOnFocus(reload);
+
+  // AUTOSAVE — poistka (Rastio, 14.8.2026): DRAFT riadok existuje v DB od
+  // založenia a editor ho teraz priebežne autosavuje (`inzerat/[id].tsx`).
+  // Namiesto toho, aby rozpracovaný koncept ležal nepovšimnutý v zozname
+  // nižšie, appka ho pri návrate ponúkne rovno hore.
+  const latestDraft = pickLatestDraft(items ?? []);
 
   async function createDraft() {
     if (!userId || creating) return;
@@ -71,6 +78,23 @@ export default function PridatScreen() {
           Nový inzerát vznikne ako rozpracovaný a nikto ho nevidí, kým ho
           sám nezverejníš. Cenu uvádzať nemusíš — o to tu ide.
         </Text>
+
+        {latestDraft ? (
+          <Pressable
+            onPress={() => router.push({ pathname: '/inzerat/[id]', params: { id: latestDraft.id } })}
+            accessibilityRole="button"
+            style={({ pressed }) => [
+              styles.resume,
+              { backgroundColor: pressed ? palette.surfacePressed : palette.surface, borderColor: palette.primary },
+            ]}>
+            <Text style={[styles.resumeTitle, { color: palette.primary }]}>
+              Pokračovať v rozpracovanom inzeráte?
+            </Text>
+            <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
+              {latestDraft.title.trim() || 'Bez názvu'} · upravené {formatDate(latestDraft.updated_at)}
+            </Text>
+          </Pressable>
+        ) : null}
 
         <Button
           title={creating ? 'Zakladám…' : '+ Pridať nehnuteľnosť'}
@@ -142,6 +166,8 @@ const styles = StyleSheet.create({
   section: { ...Type.caption, fontWeight: Weight.bold, letterSpacing: 1, marginTop: Spacing.sm },
   empty: { ...Type.body },
   row: { borderWidth: 1, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.xs },
+  resume: { borderWidth: 2, borderRadius: Radius.lg, padding: Spacing.md, gap: Spacing.xs },
+  resumeTitle: { ...Type.subtitle, fontWeight: Weight.bold },
   rowHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: Spacing.sm },
   rowTitle: { ...Type.subtitle, fontWeight: Weight.semibold, flexShrink: 1 },
   rowMeta: { ...Type.caption },
