@@ -4506,6 +4506,93 @@ binárky). `npx tsc --noEmit` čisté po každom bloku zmien.
 
 ---
 
+## Fáza 24 — Regresia: fotky zmizli z kariet katalógu (14.8.2026)
+
+Nahlásil Rastio: badge/srdiečko/zdieľať fungovali, obrázok chýbal — len
+prázdne farebné pozadie. Report: `reports/REGRESIA_FOTKY_KATALOG.md`.
+
+### 24.1 Koreňová príčina — ZMERANÁ, nie odhadnutá
+
+**Nebola to rotujúca titulná fotka ani seed dáta**, ako znela hypotéza v
+zadaní. Bol to môj vlastný pozostatok: runtime dôkazové skripty tejto
+session (`rate_limit_test.py`, `gdpr_export_test.py`, Fáza 23) vytvorili
+v PRODUKČNEJ DB skutočné ACTIVE inzeráty s falošnou fotkou
+`https://example.invalid/x.jpg` — doména, ktorá zámerne nikdy neexistuje
+(RFC 2606), použitá v testoch presne preto, aby sa nedala omylom
+zameniť za reálnu. Po teste som ich ale **nezmazal**.
+
+Katalóg radí najnovšie-prvé (`sortProperties`, Fáza 6). Tieto testovacie
+inzeráty vznikli ~02:49–02:53 dnes, teda tesne pred nahlásením — dostali
+sa tak na úplný vrch, presne tam, kde ich Rastio uvidí ako prvé bez
+scrollovania.
+
+**Prečo to vyzeralo ako prázdne pole, nie ako „Bez fotky":** `cover`
+(URL) bol NEPRÁZDNY reťazec (`example.invalid/x.jpg`), takže appka
+vybrala vetvu `<Image>`, nie textový fallback „Bez fotky" (ten sa
+spúšťal len pri PRÁZDNOM `cover`). `<Image>` s nedostupnou adresou
+jednoducho nič nevykreslí — zostane viditeľné len sivé pozadie karty.
+Presne to Rastio opísal.
+
+**Zmerané, nie predpokladané:**
+
+```sql
+select count(*) as broken from offerra.media where url like '%example.invalid%';
+-- pred opravou: 12 (naprieč 12 ACTIVE inzerátmi z dnešných testov)
+-- po zmazaní testovacích účtov: 0
+```
+
+Rotujúca titulná fotka (`cover-photo.ts`) aj seed dáta (dvojnásobný seed,
+Fáza 11.28) sú v poriadku — overené naživo na reálnych dátach (24.3).
+
+### 24.2 Oprava — zmazanie testovacích dát
+
+10 testovacích účtov (`GdprA`, `GdprB`, `RlAlice…`, `RlBob…`, `RlAdmin…`)
+zmazaných cez Auth Admin API (`DELETE /auth/v1/admin/users/{id}`) —
+kaskáda (`profile_id_fkey`, `media_property_id_fkey` atď., všetky
+`ON DELETE CASCADE`) sama zmazala ich 12 inzerátov aj fotky. Žiadny ručný
+SQL DELETE nebol treba, jeden čistý zásah na koreni namiesto čistenia
+každej tabuľky zvlášť.
+
+**Poučenie do budúcna**: runtime dôkazové skripty s reálnymi Auth
+používateľmi (zavedený vzor tejto appky, CLAUDE.md §4) musia po sebe
+ČISTIŤ, keď vytvárajú ACTIVE (verejne viditeľné) dáta — nie len keď
+vytvárajú DRAFT/testovacie účty, ktoré cudzí nevidí. Doteraz som to pri
+DRAFT-only skriptoch nepotreboval riešiť; pri ACTIVE inzerátoch to bola
+chyba, ktorú by som mal robiť vždy, nie len teraz spätne.
+
+### 24.3 Oprava — fallback placeholder pre nedostupnú fotku
+
+`property-card.tsx`: `<Image>` teraz má `onError`, ktorý prepne kartu na
+ten istý placeholder, aký doteraz platil len pre PRÁZDNE `cover` — ikona
+domu (`Icon name="house"`) + text „Bez fotky" na sivom pozadí, nikdy viac
+holé farebné pole bez signálu. Platí to isté pre PRÁZDNU aj NEDOSTUPNÚ
+titulnú URL, jedna spoločná vetva namiesto dvoch.
+
+### 24.4 Dôkaz
+
+`foto_regresia_test.py` (mimo repa), **4/4** — simuluje presne to, čo
+appka robí (`useProperties()` cez anon REST + `coverPhotoIndex()`):
+žiadny ACTIVE inzerát nemá prázdnu titulnú URL, žiadna media URL v DB už
+neobsahuje `example.invalid`, a vzorka 15 titulných URL sa naozaj stiahne
+(HTTP 200) — nie len že existuje záznam v DB, ale že fotka je skutočne
+dostupná.
+
+`npx tsc --noEmit` čisté.
+
+🟡 **Čo Rastio otestuje**: otvoriť appku, katalóg — fotky sa majú
+zobrazovať normálne na viacerých kartách. Fallback placeholder
+(ikona domu na sivom) sa dá reálne vyvolať len s naozaj rozbitou URL,
+takže jeho vzhľad je 🟡 aj po tomto dôkaze — vizuálne overenie, či ikona
+vyzerá dobre, nie len že sa kód spustí.
+
+### 24.5 Nasadenie
+
+**IDE OTA** — len JS zmena v `property-card.tsx`, `package.json` sa
+nedotkol. Dátové čistenie bolo priamo v DB (bez migračného súboru,
+nebola to zmena schémy).
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

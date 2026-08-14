@@ -18,7 +18,7 @@
  */
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
@@ -87,6 +87,16 @@ export function PropertyCard({
   // `cover-photo.ts`.
   const coverIdx = coverPhotoIndex(item.id, item.media.length);
   const cover = item.media[coverIdx]?.url;
+  // REGRESIA (Rastio, 14.8.2026): keď je `cover` neprázdny reťazec, ale
+  // adresa sa nedá natiahnuť (napr. zlé dáta), appka doteraz ukázala len
+  // prázdne farebné pozadie bez signálu, že niečo chýba — `noPhoto` fallback
+  // nižšie sa spúšťal LEN keď `cover` bol prázdny, nie keď zlyhalo sťahovanie.
+  // `imgFailed` chytá aj tento druhý prípad.
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => {
+    setImgFailed(false);
+  }, [cover]);
+  const showPlaceholder = !cover || imgFailed;
   const deadline = deadlineLabel(item.offer_deadline);
   // Menej než 3 dni = štítok sa sfarbí varovne. Urgencia patrí do FARBY,
   // text ostáva ten istý.
@@ -136,10 +146,19 @@ export function PropertyCard({
         { backgroundColor: palette.surface, borderColor: palette.border },
       ]}>
       <View style={[styles.photo, { backgroundColor: palette.surfacePressed }]}>
-        {cover ? (
-          <Image source={{ uri: cover }} style={StyleSheet.absoluteFill} contentFit="cover" transition={160} />
+        {!showPlaceholder ? (
+          <Image
+            source={{ uri: cover }}
+            style={StyleSheet.absoluteFill}
+            contentFit="cover"
+            transition={160}
+            onError={() => setImgFailed(true)}
+          />
         ) : (
-          <Text style={[styles.noPhoto, { color: palette.textMuted }]}>Bez fotky</Text>
+          <View style={styles.noPhotoWrap}>
+            <Icon name="house" size={32} color={palette.textMuted} />
+            <Text style={[styles.noPhoto, { color: palette.textMuted }]}>Bez fotky</Text>
+          </View>
         )}
         <View style={styles.badges}>
           <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
@@ -287,6 +306,7 @@ const styles = StyleSheet.create({
   card: { borderWidth: 1, borderRadius: Radius.lg, overflow: 'hidden' },
   // ~60 % karty. Telo pod ňou má zámerne len tri riadky.
   photo: { height: 208, justifyContent: 'center', alignItems: 'center' },
+  noPhotoWrap: { alignItems: 'center', gap: 4 },
   noPhoto: { ...Type.caption },
   actions: {
     position: 'absolute',

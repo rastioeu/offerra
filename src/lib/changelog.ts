@@ -21,6 +21,14 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '14. augusta 2026',
+    title: 'Fotky v katalógu opravené',
+    items: [
+      'Niektoré karty v katalógu dočasne ukazovali prázdne miesto namiesto fotky. Opravené — a appka teraz vždy ukáže aspoň jasný náhradný obrázok, aj keby sa fotka z akéhokoľvek dôvodu nedala načítať.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '14. augusta 2026',
     title: 'Rozpracovaný inzerát sa už neztratí',
     items: [
       'Formulár nového inzerátu sa teraz priebežne ukladá — aj keď appku medzi písaním zavrieš alebo ju preruší telefonát.',
