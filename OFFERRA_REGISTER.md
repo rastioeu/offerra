@@ -4925,7 +4925,12 @@ nasadení + 3 pre triedenie v Dopytoch). Prvá kontrola
 naschvál vyrobí pôvodný stav („Predaj · Prenájom · Byt · Dom"), inak by test
 nedokazoval nič — rovnaký princíp ako `check-realtime.ts`.
 
-### 27.3 Vizuálne oddelenie — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+### 27.3 Vizuálne oddelenie — 🟡 ČIASTOČNE POTVRDENÉ
+
+**Rastio, 17.8.2026: „funguje"** — bez menovitého bodu. Beriem to ako
+potvrdenie, že **filtre fungujú** (vrátane triedenia v Dopytoch), NIE ako
+odpoveď na otázku, či sú tri skupiny na prvý pohľad rozlíšiteľné. Tá ostáva
+otvorená; §1 nedovoľuje odvodiť B z A.
 
 - medzera medzi riadkami = **dvojnásobok** medzery medzi čipmi (8 vs. 4 px)
 - **tenká linka nad tretím riadkom** — tretí riadok je iná kategória: prvé
