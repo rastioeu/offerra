@@ -4761,6 +4761,127 @@ fullscreen nemenia mechaniku appky.
 
 ---
 
+## Fáza 26 — Galéria sľubovala gestá, ktoré nefungovali (17.8.2026)
+
+Nahlásené hodinu po Fáze 25: fullscreen sa otvorí, nápoveda sa zobrazí,
+ale swipe do strán nelistuje (počítadlo stojí na `3/3`), swipe dole
+nezatvára, funguje len X. Podrobne:
+`reports/GESTA_GALERIE_NEFUNGOVALI.md`.
+
+### 26.1 Koreňová príčina — ✅ OVERENÉ (zo zdrojov RNGH 2.32, s riadkami)
+
+Dvojitá, a ani jedna polovica nič nenahlási:
+
+1. **`Gesture.Exclusive(doubleTap, pan)`** = `requireToFail`
+   (`gestureComposition.ts:115`) → ťah čaká, kým zlyhá dvojťap. Dvojťap bez
+   `maxDistance` na pohyb prsta **nezlyhá**: `RNTapHandler.m:57` má
+   `maxDeltaX/maxDeltaY/maxDistSq = NAN`, `shouldFailUnderCustomCriteria`
+   (`:226`) ich s NAN preskočí. Zlyhá až na časovači → prst je hore →
+   `pan.onEnd` nepríde nikdy. **Preto swipe dole nerobil nič.**
+2. **`Gesture.Pan` vnútri `ScrollView`** — RNGH povolí súbežné rozpoznávanie
+   s pan gestom scroll view len natívnemu handleru
+   (`RNGestureHandler.mm:582`), inak `NO` (`:579`). Čakajúci ťah teda
+   **zablokoval scrollovanie**, a keďže sám nesmel začať, nepohnulo sa nič.
+   **Preto nelistovalo ani počítadlo.**
+
+X fungovalo, pretože je `Pressable` mimo `GestureDetector` — súhlasí
+s nahlásením a je to ďalší dôkaz, že chyba bola v gestách, nie v modale.
+
+### 26.2 Čo príčina NEBOLA — 🔴 môj prvý tip bol nesprávny
+
+Chýbajúci `GestureHandlerRootView` v `Modal`e je **Androidí** problém, nie
+iOS-ový: na iOSe je to obyčajný `View` + kontext
+(`GestureHandlerRootView.tsx`), natívny komponent má len Android
+(`RNGestureHandlerRootViewComponentView.mm:7` — *„RNGestureHandlerRootView
+is Android-only"*), a RNGH si modal ošetruje sám
+(`RNGestureHandlerManager.mm:285`, vetva
+`RCTFabricModalHostViewController`). Rastio hlásil z iPhonu, takže toto
+jeho problém nevysvetľuje. Do modalu som ho **aj tak pridal** — Androidu
+treba — ale ako príčinu som ho takmer nahlásil nesprávne a zachytilo to len
+prečítanie zdrojov namiesto prevzatia najčastejšej rady.
+
+Zapísané v CLAUDE.md §12b, aby sa tento tip nehádal znova.
+
+### 26.3 Oprava — ✅ súboje odstránené, nie doladené
+
+| Predtým | Teraz |
+|---|---|
+| `ScrollView` + `pagingEnabled` + `Gesture.Pan` vnútri | žiadny ScrollView — pás fotiek posúva jedno `Gesture.Pan` cez reanimated |
+| `Simultaneous(pinch, Exclusive(doubleTap, pan))` | `Simultaneous(pinch, pan, doubleTap)` |
+| dvojťap bez `maxDistance` | `.maxDistance(16)` (`TAP_SLOP`) |
+| logika v workletoch | `src/lib/gallery-gesture.ts`, rozhodnutia cez `runOnJS` |
+| priblíženie vypínalo `scrollEnabled` | priblíženie prepína, čo ten istý ťah robí |
+
+Nové: pružný odpor na krajoch pásu, bledenie pri ťahu dole, snap-back pri
+prerušenom geste, zrušenie priblíženia pri prechode na inú fotku.
+
+### 26.4 Dôkaz — ✅ OVERENÉ RUNTIME (33/33), a čo z neho NEVYPLÝVA
+
+`npx --yes tsx scripts/check-gallery.ts` → **33/33 OK**. Pokrýva presne
+nahlásené symptómy — vrátane sekcie „POČÍTADLO sa MUSÍ meniť (Rastio:
+„zostáva 3/3")", ktorá prejde postup `3/3 → 2/3 → 1/3 → 1/3 → 2/3`, a
+sekcie o zatváraní (130 px zatvorí, 50 px nie, ťah nahor nikdy).
+
+**NEDOKAZUJE**, že gesto do kódu dorazí — to je natívna vrstva a pocit
+v ruke, teda vec zariadenia (§1). Skript to na konci sám vypíše, aby to
+nešlo prehliadnuť. Galéria je preto **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE
+OVERENIE**, nie ✅.
+
+Ostatné: `npx tsc --noEmit` čisté · `check-realtime` 20/20 ·
+`check-deadline` 12/12 · `expo export --platform ios` prešlo, texty
+nápovedy aj `__workletHash` (35×) v bundle.
+
+### 26.5 §10 kontrola — ✅ OVERENÉ RUNTIME
+
+- countdown logika 12/12; **dáta:** 3 ACTIVE inzeráty s uzávierkou
+  v budúcnosti (Prievidza 4 dni, Poprad 11, Martin 20)
+- dáta na listovanie: **49 z 50** ACTIVE inzerátov má 2+ fotky
+- `grep "\.channel("` mimo registra: len komentáre (§11 drží)
+
+### 26.6 Knižnica vs. vlastné — 🟡 rozhodnutie ostáva Rastiovi
+
+Zadanie žiadalo overiť hotovú knižnicu a nahlásiť pred implementáciou.
+
+- Sesterské projekty **žiadnu knižnicu na galériu nemajú**. Famiglia má
+  `fullscreen-photo.tsx`, ale je to jedna fotka **bez gest** (len
+  `Pressable`), rovnako `story-viewer.tsx` → ako vzor nepomôžu.
+- `react-native-awesome-gallery` **nepribudne natívny modul** (stojí na
+  reanimated + gesture-handler, oboje v binárke od buildu #5).
+- **Fingerprint (§9) sa NEDOMERAL.** Zmerané: `package.json` so záznamom
+  knižnice **bez inštalácie** runtime nezmenil (oboje
+  `24919867e1bcc84715b1b4d6998cb6b27886e5d9`, merané na zahodenej vetve
+  `fingerprint-test`, nie na produkcii). To je **proti očakávaniu** —
+  fingerprint teda počíta nainštalovaný stav, nie text `package.json`.
+  Skutočnú odpoveď so **nainštalovanou** knižnicou som nezmeral:
+  prostredie `npm install` zablokovalo a obchádzať to nebudem.
+
+Preto bod 4 zadania: vlastné riešenie, opravené poriadne, ide dnes cez OTA.
+Ak gestá na telefóne aj tak nesedia, knižnica je ďalší krok **s novým
+buildom** (a vtedy sa fingerprint aj domerá) — to je Rastiovo „OK build",
+nie moje rozhodnutie.
+
+### 26.7 OTA — nový natívny modul nepribudol → **IDE OTA**
+
+`package.json` nedotknutý (`git status` pred aj po meraní fingerprintu).
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | *doplnené po publikovaní nižšie* |
+
+### 26.8 Nápoveda — ✅ sľubuje len implementované gestá
+
+Text: „Potiahni do strán · Dvojťap alebo štipni priblíži · Potiahni dole
+zavrie" — všetky štyri gestá sú implementované, „Potiahni do strán" len pri
+2+ fotkách. Pravidlo, že text v UI nesmie sľubovať neoverené chovanie, je
+v CLAUDE.md **§12a**; pasce RNGH v **§12b**; zákaz logiky vo workletoch
+v **§12c**.
+
+§8 („Ako funguje Offerra") **zámerne nemenené** — mechanika appky sa
+nezmenila, opravilo sa chovanie, ktoré už bolo opísané.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

@@ -242,3 +242,61 @@ obrazovke, ktorá ostala otvorená — druhá, tichá chyba toho istého vzoru).
       (prvá kontrola v ňom presne to dokazuje, inak by test nedokazoval nič)
 - [ ] `tsx` **nepridávaj** do `package.json` — mení EAS fingerprint a
       odstrihne OTA (§9). Vždy `npx --yes tsx`.
+
+---
+
+## 👆 12. GESTÁ (gesture-handler) A SĽUBY V UI
+
+**Pravidlo (Rastio, 17.8.2026):** fullscreen galéria sa otvorila, nápovedu
+„Potiahni do strán · Dvojťap priblíži · Potiahni dole zavrie" zobrazila —
+a **žiadne z tých gest nefungovalo.** Rastiova veta, ktorá sem patrí
+celá: *„Appka teda SĽUBUJE gestá, ktoré nerobia nič — horšie než keby tam
+nápoveda nebola."*
+
+### 12a. Text v UI smie sľubovať LEN overené chovanie
+
+- Nápoveda gesta, prázdny stav ani hint sa **nepíše dopredu.** Napíše sa až
+  keď gesto funguje — a ak sa niektoré gesto nestihne alebo nepôjde,
+  **vypadne z textu**, nie z overenia.
+- Platí to aj naopak: keď sa gesto odstráni, v tom istom kroku sa
+  odstráni aj jeho nápoveda (rovnaká logika ako §8 pre
+  `how-it-works.ts` — text, ktorý klame, je horší než žiadny).
+
+### 12b. Dve pasce v `react-native-gesture-handler`, ktoré nič nenahlásia
+
+Obe naraz spôsobili ten pád vyššie. Ani jedna nič nevypíše — appka
+nespadne, gesto sa len nikdy nestane.
+
+- ⛔ **`Gesture.Exclusive(tap, pan)`** — `Exclusive` sa prekladá na
+  `requireToFail` (`gestureComposition.ts:115`), takže ťah **čaká, kým ťap
+  zlyhá**. A `Gesture.Tap()` bez `.maxDistance(...)` na pohyb prsta
+  **nezlyhá**: `apple/Handlers/RNTapHandler.m:57` má
+  `maxDeltaX/maxDeltaY/maxDistSq = NAN` a `shouldFailUnderCustomCriteria`
+  ich s `NAN` preskočí. Ťap zlyhá až na časovači → prst je dávno hore →
+  `pan` sa neaktivuje nikdy. **Používaj `Gesture.Simultaneous` a ťapu
+  VŽDY nastav `.maxDistance(...)`.**
+- ⛔ **`Gesture.Pan` vnútri natívneho `ScrollView`** — RNGH povolí súbežné
+  rozpoznávanie s pan gestom scroll view len natívnemu handleru
+  (`apple/RNGestureHandler.mm:582`), inak vracia `NO` (`:579`). Ťah tak
+  scrollovanie **zablokuje**. Keď treba listovať aj ťahať, **nemiešaj to:
+  urob pás cez reanimated a jedno `Gesture.Pan`** (tak je to
+  v `photo-lightbox.tsx`), alebo použi
+  `.simultaneousWithExternalGesture(scrollRef)`.
+- ℹ️ **`GestureHandlerRootView` v `Modal`e je ANDROIDÍ vec, nie iOS-ová.**
+  Na iOSe je to obyčajný `View` + kontext (natívny komponent má len
+  Android — `apple/RNGestureHandlerRootViewComponentView.mm:7`
+  *„RNGestureHandlerRootView is Android-only"*) a RNGH si modal ošetruje
+  sám (`apple/RNGestureHandlerManager.mm:285`, vetva
+  `RCTFabricModalHostViewController`). Do modalu ho dávaj — ale keď gestá
+  nefungujú na iPhone, **príčina je inde**, nehádaj toto (mne to bol prvý
+  tip a bol nesprávny).
+
+### 12c. Rozhodovanie gesta patrí MIMO worklet
+
+Logika pomiešaná s animáciami vo workletoch sa dá overiť len prstom na
+telefóne — to je presne ten stav, v ktorom sa chyba vyššie dostala do
+TestFlightu. Rozhodnutia (kam odlistovať, kedy zavrieť, meze priblíženia)
+patria do čistého modulu (`src/lib/gallery-gesture.ts`), volajú sa cez
+`runOnJS` z `onEnd`, a overuje ich Node test
+(`npx --yes tsx scripts/check-gallery.ts`, 33/33). Vo worklete ostáva len
+aritmetika posunu.

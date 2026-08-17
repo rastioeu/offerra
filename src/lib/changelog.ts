@@ -21,10 +21,11 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '17. augusta 2026',
-    title: 'Fotky na celú obrazovku',
+    title: 'Fotky na celú obrazovku — gestá opravené',
     items: [
-      'Fotku v inzeráte si teraz otvoríš na celú obrazovku — buď ťuknutím priamo na ňu, alebo ikonou v rohu galérie.',
-      'Vo fullscreene sa medzi fotkami listuje do strán, vidíš koľkú z koľkých pozeráš, dvojťap fotku priblíži a potiahnutie dole ju zavrie.',
+      'Fotku v inzeráte si otvoríš na celú obrazovku — buď ťuknutím priamo na ňu, alebo ikonou v rohu galérie.',
+      'Prvá verzia gestá iba sľubovala: listovanie do strán nefungovalo a potiahnutie dole nezatváralo. Opravené — listovanie s počítadlom, dvojťap, štipnutie dvoma prstami aj zatvorenie potiahnutím dole robia presne to, čo je v nápovede.',
+      'Kým je fotka priblížená, ťah po nej fotku posúva a nelistuje — priblížený detail sa ti tak nestratí pod prstom.',
     ],
   },
   {
