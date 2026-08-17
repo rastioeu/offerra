@@ -4998,10 +4998,11 @@ stavu appky.
 | | Runtime |
 |---|---|
 | posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
-| publikovaná OTA (iOS), group `2f157477-b508-4a43-bf8e-27719aa7fb0b` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| OTA „tri riadky" (iOS), group `2f157477-b508-4a43-bf8e-27719aa7fb0b` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| OTA „Najnovšie v Dopytoch" (iOS), group `581443eb-5b73-462c-9a96-3e9e4ba395aa` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
 
-Zhodné → balík sa na Rastiov TestFlight build dostane (§9). Commit v OTA:
-`10ad946`. `package.json` nedotknutý.
+Zhodné → balík sa na Rastiov TestFlight build dostane (§9). Commity v OTA:
+`10ad946` a `a60b7f1`. `package.json` nedotknutý.
 
 **🔴 Publikovanie oboch platforiem naraz v tomto prostredí NEPREJDE.**
 `expo export --platform=all` dostal `SIGKILL` (OOM) dvakrát — prostredie má
@@ -5010,8 +5011,9 @@ zbundlovaní Androidu, pri tvorbe asset mapy. Rieši sa **publikovaním po
 platformách**: `eas update … --platform ios`, potom `--platform android`.
 Nie je to chyba appky ani balíka. Zapísané, aby sa to nehľadalo v kóde.
 Android publikovaný zvlášť: runtime
-`eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7`, group
-`1d42aa73-87dc-4e70-b843-57ed17d92802`.
+`eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7`, groups
+`1d42aa73-87dc-4e70-b843-57ed17d92802` (tri riadky) a
+`81e21a43-9cd3-4a52-aa91-1894d14bd5e8` (Najnovšie v Dopytoch).
 
 ### 27.9 §10 kontrola — ✅ OVERENÉ RUNTIME
 

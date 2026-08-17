@@ -144,9 +144,12 @@ Nový natívny modul nepribudol, `package.json` sa nemenil → **IDE OTA.**
 | | Runtime |
 |---|---|
 | posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
-| publikovaná OTA (iOS), group `2f157477-b508-4a43-bf8e-27719aa7fb0b` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| OTA s tromi riadkami (iOS), group `2f157477-b508-4a43-bf8e-27719aa7fb0b` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| OTA s triedením v Dopytoch (iOS), group `581443eb-5b73-462c-9a96-3e9e4ba395aa` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
 
-Zhodné → balík k tebe dorazí (§9). Commit v OTA: `10ad946`.
+Zhodné → balík k tebe dorazí (§9). Commity v OTA: `10ad946`, `a60b7f1`.
+Ak si prvý balík ešte nestihol otvoriť, dostaneš priamo ten druhý — sú to
+kumulatívne balíky, nie záplaty na seba.
 
 Poznámka pre budúcnosť: publikovanie **oboch platforiem naraz** tu padá na
 `SIGKILL` (prostredie má 3,8 GB RAM, Metro bundluje iOS aj Android
