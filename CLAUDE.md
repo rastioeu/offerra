@@ -159,6 +159,15 @@ Karta je na hlavnej obrazovke aj v Nastaveniach.
 > prostredí ukázal nespoľahlivý pri opakovaných behoch — ako zdroj
 > pravdy použi vždy skutočnú `eas update`/`eas build:list` odpoveď,
 > nikdy len lokálne opakované meranie.
+>
+> 📏 **Zmerané 17.8.2026 (register 26.6):** pridanie riadku do
+> `dependencies` **bez `npm install`** iOS runtime **nezmenilo** (obe
+> `24919867e…`). Fingerprint teda vychádza z NAINŠTALOVANÉHO stavu, nie zo
+> samotného textu `package.json` — čo je proti očakávaniu a **nie je to
+> povolenie meniť `package.json` bez merania**: incident z 13.8.2026
+> (`tsx`) bol nainštalovaný, a či runtime zmení reálna inštalácia knižnice,
+> **zmerané nie je** (prostredie `npm install` blokuje). Pravidlo vyššie
+> platí bez zmeny: merať pred každou zmenou, nie odvodzovať.
 
 ---
 
