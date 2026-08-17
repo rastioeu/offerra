@@ -4920,7 +4920,8 @@ vracia tri riadky (`TRANSACTION` → `PROPERTY_TYPE` → `VIEW`). **Tú istú
 funkciu** čítajú oba taby, takže sa poradie medzi nimi nemôže rozísť.
 Riadok bez čipov sa nevracia (prázdna medzera v UI vyzerá ako chyba).
 
-`npx --yes tsx scripts/check-filters.ts` → **19/19 OK**. Prvá kontrola
+`npx --yes tsx scripts/check-filters.ts` → **22/22 OK** (19 pri prvom
+nasadení + 3 pre triedenie v Dopytoch). Prvá kontrola
 naschvál vyrobí pôvodný stav („Predaj · Prenájom · Byt · Dom"), inak by test
 nedokazoval nič — rovnaký princíp ako `check-realtime.ts`.
 
@@ -4947,16 +4948,32 @@ nájsť. Teraz je v druhom riadku, posledný.
 chyba filtra, len stav dát. Rozdelenie ACTIVE: byt 23, dom 17, pozemok 4,
 komerčný 6.
 
-### 27.5 🔴 Tab Dopyty nemá tretí riadok — vedome, nie prehliadnutím
+### 27.5 Tretí riadok v Dopytoch — ✅ ROZHODNUTÉ RASTIOM, dodané (22/22)
 
-Nie je tam triedenie (`buyer_request` nemá v modeli uzávierku → „Čoskoro
-končí" nemá podľa čoho triediť, rozhodnuté 8.8.2026) ani srdiečko (dopyt sa
-nedá „obľúbiť"). Riadok bez čipov sa nevykreslí.
+Pri prvom nasadení tab Dopyty tretí riadok NEMAL (nebolo tam triedenie ani
+srdiečko) a nahlásil som to ako rozhodnutie preň. **Rastio 17.8.2026:
+„pridaj Najnovšie do Dopytov"** — dodané.
 
-Ak Rastio chce v Dopytoch triediť: „Najnovšie" by šlo hneď (`created_at`
-existuje), „Čoskoro končí" by potrebovalo pridať dopytom uzávierku do
-modelu. **Sám som to nepridal — mení to mechaniku appky, a zadanie bolo
-preorganizovať poradie.** Čaká na Rastiovo rozhodnutie.
+- `DEMAND_SORTS = ['NEWEST']` v `lib/filter-rows.ts`; katalóg má
+  `CATALOG_SORTS = ['NEWEST', 'ENDING_SOON']`. Ktorý zoznam sa použije,
+  vyplýva zo strany trhu, takže sa to nedá zabudnúť podať.
+- `useRequests(mineOf, filter, sort)` — triedenie prešlo do dotazu
+  (`created_at` zostupne). Keby sa doň dostala nepodporovaná možnosť,
+  **vypíše to do logu** a zoradí podľa novosti (§2 — žiadny tichý catch),
+  vybrať sa v Dopytoch nedá.
+- **„Čoskoro končí" tam NIE JE a nie je to prehliadnutie:** `buyer_request`
+  nemá v modeli uzávierku. Pridať by ju znamenalo zmeniť model, čo je iné
+  zadanie než poradie filtrov.
+- Srdiečko tam nie je — dopyt sa nedá „obľúbiť".
+
+**Dôsledok, ktorý si Rastio má všimnúť:** jediná možnosť = čip je **vždy
+aktívny**, je to rádio s jednou voľbou (ukazovateľ zoradenia). Katalóg sa
+chová rovnako — ťuknutie na už aktívne triedenie tam tiež nič nemení. Ak má
+byť z toho skutočná voľba, dá sa doplniť druhé triedenie zo stĺpcov, ktoré
+dopyt má (napr. rozpočet) — to je rozhodnutie Rastia, sám som ho nepridal.
+
+Poistka na prázdny riadok ostáva v teste: keby obrazovka triedenie nepodala,
+riadok bez čipov sa nevykreslí (žiadna medzera bez obsahu).
 
 ### 27.6 Vedľajší presun — ✅ štítky do modulu bez importov
 

@@ -13,7 +13,12 @@
  * SPUSTENIE: `npx --yes tsx scripts/check-filters.ts`
  * (`tsx` NIKDY nepridávaj do `package.json` — §9, mení EAS fingerprint.)
  */
-import { filterRows, type FilterRow } from '../src/lib/filter-rows';
+import {
+  CATALOG_SORTS,
+  DEMAND_SORTS,
+  filterRows,
+  type FilterRow,
+} from '../src/lib/filter-rows';
 
 let fails = 0;
 
@@ -31,8 +36,8 @@ function flat(rows: FilterRow[]): string[] {
   return rows.flatMap(labels);
 }
 
-const KATALOG = filterRows({ side: 'PROPERTY', hasSort: true, canFavorite: true });
-const DOPYTY = filterRows({ side: 'DEMAND', hasSort: false, canFavorite: false });
+const KATALOG = filterRows({ side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: true });
+const DOPYTY = filterRows({ side: 'DEMAND', sorts: DEMAND_SORTS, canFavorite: false });
 
 console.log('── 1. pôvodná chyba: jeden zoznam mieša kategórie ──');
 {
@@ -94,13 +99,29 @@ console.log('\n── 3. tab DOPYTY: iné slová v 1. riadku, rovnaká štruktú
     DOPYTY.slice(0, 2).map((r) => r.kind).join(',') === 'TRANSACTION,PROPERTY_TYPE',
     DOPYTY.map((r) => r.kind).join(' → '),
   );
-  // Dopyty nemajú ani triedenie (`buyer_request` nemá uzávierku, rozhodnuté
-  // 8.8.2026), ani obľúbené. Prázdny tretí riadok by nechal v UI medzeru,
-  // ktorá vyzerá ako chyba.
+  // TRIEDENIE V DOPYTOCH (Rastio, 17.8.2026: „pridaj Najnovšie do Dopytov").
+  check(
+    'Dopyty majú TRI riadky — tretí je „Najnovšie"',
+    DOPYTY.length === 3 && labels(DOPYTY[2]).join(' · ') === 'Najnovšie',
+    `${DOPYTY.length} riadky, 3. = „${DOPYTY[2] ? labels(DOPYTY[2]).join(' · ') : '—'}"`,
+  );
+  check(
+    '„Čoskoro končí" v Dopytoch NIE JE (dopyt nemá uzávierku v modeli)',
+    !labels(DOPYTY[2]).includes('Čoskoro končí'),
+    `3. riadok = „${labels(DOPYTY[2]).join(' · ')}"`,
+  );
+  check(
+    'srdiečko v Dopytoch NIE JE (dopyt sa nedá obľúbiť)',
+    !DOPYTY[2].chips.some((c) => c.kind === 'FAVORITES'),
+    'tretí riadok obsahuje len triedenie',
+  );
+  // Poistka na prázdny riadok ostáva: keby obrazovka triedenie nepodala,
+  // prázdny tretí riadok by nechal v UI medzeru, ktorá vyzerá ako chyba.
+  const dopytyBezTriedenia = filterRows({ side: 'DEMAND', sorts: [], canFavorite: true });
   check(
     'PRÁZDNY tretí riadok sa NEVYKRESLÍ (žiadna medzera bez obsahu)',
-    DOPYTY.length === 2 && !DOPYTY.some((r) => r.kind === 'VIEW'),
-    `počet riadkov v Dopytoch: ${DOPYTY.length} (${DOPYTY.map((r) => r.kind).join(', ')})`,
+    dopytyBezTriedenia.length === 2 && !dopytyBezTriedenia.some((r) => r.kind === 'VIEW'),
+    `bez triedenia: ${dopytyBezTriedenia.length} riadky (${dopytyBezTriedenia.map((r) => r.kind).join(', ')})`,
   );
 }
 
@@ -126,7 +147,7 @@ console.log('\n── 4. žiadny riadok nesmie miešať kategórie ──');
 
 console.log('\n── 5. prihlásenie a triedenie menia LEN tretí riadok ──');
 {
-  const neprihlaseny = filterRows({ side: 'PROPERTY', hasSort: true, canFavorite: false });
+  const neprihlaseny = filterRows({ side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: false });
   check(
     'neprihlásený: srdiečko nie je, triedenie ostáva',
     labels(neprihlaseny[2]).join(' · ') === 'Najnovšie · Čoskoro končí',
@@ -143,13 +164,13 @@ console.log('\n── 5. prihlásenie a triedenie menia LEN tretí riadok ──
         .join('|'),
     'typ obchodu aj typ nehnuteľnosti sú rovnaké ako pre prihláseného',
   );
-  const lenSrdiecko = filterRows({ side: 'PROPERTY', hasSort: false, canFavorite: true });
+  const lenSrdiecko = filterRows({ side: 'PROPERTY', sorts: [], canFavorite: true });
   check(
     'bez triedenia ostane v treťom riadku samotné srdiečko',
     labels(lenSrdiecko[2]).join(' · ') === '♥',
     `3. riadok = „${labels(lenSrdiecko[2]).join(' · ')}"`,
   );
-  const nic = filterRows({ side: 'PROPERTY', hasSort: false, canFavorite: false });
+  const nic = filterRows({ side: 'PROPERTY', sorts: [], canFavorite: false });
   check(
     'bez triedenia aj bez srdiečka ostanú DVA riadky, nie prázdny tretí',
     nic.length === 2,

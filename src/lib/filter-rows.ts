@@ -11,6 +11,7 @@
  *   1. TYP OBCHODU        Predaj · Prenájom      (dopyty: Kúpim · Hľadám prenájom)
  *   2. TYP NEHNUTEĽNOSTI  Byt · Dom · Pozemok · Komerčný priestor · Iné
  *   3. TRIEDENIE A OBĽÚBENÉ  Najnovšie · Čoskoro končí · ♥
+ *                            (dopyty: Najnovšie — viď `DEMAND_SORTS`)
  *
  * Vďaka tomu sa poradie dá overiť v Node (`scripts/check-filters.ts`) a nie
  * len okom na telefóne — a nemôže sa rozísť medzi tabom Nehnuteľnosti a
@@ -32,11 +33,27 @@ export const PROPERTY_TYPE_ORDER: PropertyType[] = [
   'OTHER',
 ];
 
-/** Poradie triedenia v treťom riadku. */
-export const SORT_ORDER: { value: CatalogSort; label: string }[] = [
-  { value: 'NEWEST', label: 'Najnovšie' },
-  { value: 'ENDING_SOON', label: 'Čoskoro končí' },
-];
+export const SORT_LABEL: Record<CatalogSort, string> = {
+  NEWEST: 'Najnovšie',
+  ENDING_SOON: 'Čoskoro končí',
+};
+
+/** Triedenie v katalógu — poradie čipov v treťom riadku. */
+export const CATALOG_SORTS: CatalogSort[] = ['NEWEST', 'ENDING_SOON'];
+
+/**
+ * Triedenie v Dopytoch (Rastio, 17.8.2026: „pridaj Najnovšie do Dopytov").
+ *
+ * `ENDING_SOON` tu NIE JE a nie je to prehliadnutie: `buyer_request` nemá
+ * v modeli uzávierku, takže „Čoskoro končí" by nemalo podľa čoho triediť
+ * (overené v modeli 8.8.2026). Pridať by ho znamenalo najprv pridať dopytom
+ * uzávierku — to je rozhodnutie o mechanike appky, nie o poradí filtrov.
+ *
+ * Jediná možnosť znamená, že čip je **vždy aktívny** — je to rádio s jednou
+ * voľbou, teda ukazovateľ toho, ako je zoznam zoradený. Rovnako sa chová aj
+ * katalóg: ťuknutie na už aktívne triedenie tam tiež nič nemení.
+ */
+export const DEMAND_SORTS: CatalogSort[] = ['NEWEST'];
 
 export type FilterRowKind = 'TRANSACTION' | 'PROPERTY_TYPE' | 'VIEW';
 
@@ -60,12 +77,15 @@ export type FilterRow = {
  */
 export function filterRows({
   side,
-  hasSort,
+  sorts,
   canFavorite,
 }: {
   side: FilterSide;
-  /** Podáva obrazovka triedenie? Dopyty nie — `buyer_request` nemá uzávierku. */
-  hasSort: boolean;
+  /**
+   * Ktoré triedenia obrazovka ponúka — `CATALOG_SORTS` alebo `DEMAND_SORTS`.
+   * Prázdne pole = obrazovka triedenie nemá (vtedy o ňom nie je ani čip).
+   */
+  sorts: CatalogSort[];
   /** Prihlásený? Neprihlásenému sa srdiečko neponúka, nemá ho kam uložiť. */
   canFavorite: boolean;
 }): FilterRow[] {
@@ -94,9 +114,7 @@ export function filterRows({
       kind: 'VIEW',
       title: 'Triedenie a obľúbené',
       chips: [
-        ...(hasSort
-          ? SORT_ORDER.map(({ value, label }) => ({ kind: 'SORT' as const, value, label }))
-          : []),
+        ...sorts.map((value) => ({ kind: 'SORT' as const, value, label: SORT_LABEL[value] })),
         // Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa nedali
         // skombinovať s „Prenájom" ani s hľadaním, čo je presne to, na čo
         // ich človek chce. Samotné srdiečko, bez slova (Rastio, 12.8.2026).

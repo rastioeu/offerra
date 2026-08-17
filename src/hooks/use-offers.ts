@@ -16,7 +16,7 @@ import {
   type Outreach,
   type TenantProfile,
 } from '@/lib/offers';
-import { db } from '@/lib/property';
+import { db, type CatalogSort } from '@/lib/property';
 import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { errorText } from '@/lib/errors';
 
@@ -147,7 +147,7 @@ export function useMyOffers(userId: string | undefined) {
  * inak by človek hľadajúci kupcov na byt prišiel práve o tých, ktorí sú
  * ochotní vziať čokoľvek. Preto je pri každom poli `or (… is null)`.
  */
-export function useRequests(mineOf?: string, filter?: CatalogFilter) {
+export function useRequests(mineOf?: string, filter?: CatalogFilter, sort: CatalogSort = 'NEWEST') {
   const [items, setItems] = useState<BuyerRequest[] | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
   // Filter je objekt — bez tohto by sa `reload` menil pri každom rendere.
@@ -175,8 +175,18 @@ export function useRequests(mineOf?: string, filter?: CatalogFilter) {
         }
       }
 
-      const { data, error: e } = await q.order('created_at', { ascending: false }).limit(200);
+      // Triedenie (Rastio, 17.8.2026). Dopyty ponúkajú LEN „Najnovšie"
+      // (`DEMAND_SORTS`) — `buyer_request` nemá uzávierku, takže „Čoskoro
+      // končí" tu nemá podľa čoho triediť a keby ho niekto aj tak podal,
+      // zoznam ostane podľa novosti. Nie je to tichý pád: iná možnosť sa
+      // v Dopytoch nedá ani vybrať.
+      const { data, error: e } = await q
+        .order('created_at', { ascending: false })
+        .limit(200);
       if (e) throw e;
+      if (sort !== 'NEWEST') {
+        console.log(`[DOPYTY] Triedenie ${sort} dopyty nepodporujú — zoradené podľa novosti`);
+      }
       setItems((data ?? []) as BuyerRequest[]);
     } catch (e: unknown) {
       const m = errorText(e);
@@ -184,7 +194,7 @@ export function useRequests(mineOf?: string, filter?: CatalogFilter) {
       setError(m);
       setItems([]);
     }
-  }, [mineOf, key]);
+  }, [mineOf, key, sort]);
 
   useEffect(() => {
     void reload();

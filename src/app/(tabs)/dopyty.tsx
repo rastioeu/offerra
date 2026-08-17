@@ -7,6 +7,10 @@
  * FILTRE (Rastio 8.8.2026, možnosť B): tá istá lišta ako v katalógu,
  * len so slovami hľadajúceho — „Kúpim / Hľadám prenájom". Nie je to druhý
  * komponent; `SearchBar` dostane `side="DEMAND"`.
+ *
+ * TRIEDENIE (Rastio 17.8.2026): pribudlo „Najnovšie". Je to jediná možnosť —
+ * „Čoskoro končí" by potrebovalo uzávierku, ktorú `buyer_request` v modeli
+ * nemá. Čip je preto vždy aktívny; ukazuje, ako je zoznam zoradený.
  */
 import { Link, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
@@ -22,7 +26,7 @@ import { AppHeader } from '@/components/app-header';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
 import { formatBudget } from '@/lib/offers';
-import { DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
+import { DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type CatalogSort, type PropertyType } from '@/lib/property';
 import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -32,7 +36,11 @@ export default function DopytyScreen() {
   const myId = session?.user.id;
   const router = useRouter();
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
-  const { items, error, reload } = useRequests(undefined, filter);
+  // Triedenie v Dopytoch (Rastio, 17.8.2026). Jediná možnosť je „Najnovšie"
+  // — `buyer_request` nemá uzávierku, takže „Čoskoro končí" by tu nemalo
+  // podľa čoho triediť (`DEMAND_SORTS` v `lib/filter-rows.ts`).
+  const [sort, setSort] = useState<CatalogSort>('NEWEST');
+  const { items, error, reload } = useRequests(undefined, filter, sort);
   const [refreshing, setRefreshing] = useState(false);
   useRefreshOnFocus(reload);
 
@@ -62,7 +70,7 @@ export default function DopytyScreen() {
           ) : null}
         </View>
 
-        <SearchBar filter={filter} onChange={setFilter} side="DEMAND" />
+        <SearchBar filter={filter} onChange={setFilter} side="DEMAND" sort={sort} onSortChange={setSort} />
 
         <ErrorNote error={error} />
 

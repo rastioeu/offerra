@@ -35,7 +35,8 @@ TYP OBCHODU          [Predaj] [Prenájom]                        ← Nehnuteľno
                           ↕ 8 px (dvojnásobok medzery medzi čipmi)
 TYP NEHNUTEĽNOSTI    [Byt] [Dom] [Pozemok] [Komerčný priestor] [Iné]
                           ↕ 8 px + tenká linka
-TRIEDENIE A OBĽÚBENÉ [Najnovšie] [Čoskoro končí] [♥]
+TRIEDENIE A OBĽÚBENÉ [Najnovšie] [Čoskoro končí] [♥]      ← Nehnuteľnosti
+                     [Najnovšie]                          ← Dopyty
 ```
 
 Vizuálne oddelenie robia dve veci, obe zámerne jemné (ako si písal):
@@ -63,23 +64,29 @@ je to chyba filtra, len stav dát.
 
 ---
 
-## 3. Jedna vec, ktorú som NEDOROBIL — a prečo
+## 3. Tretí riadok v Dopytoch — doplnené na tvoje slovo
 
-**Tab Dopyty nemá tretí riadok.** Nie je tam triedenie ani srdiečko:
+Pri prvom nasadení tab Dopyty tretí riadok nemal a nahlásil som to ako
+rozhodnutie pre teba. Povedal si **„pridaj Najnovšie do Dopytov"** — hotové.
 
-- **Triedenie**: `buyer_request` nemá v modeli uzávierku, takže „Čoskoro
-  končí" by nemalo podľa čoho triediť — rozhodnuté a zapísané 8.8.2026,
-  nevymyslel som to teraz.
-- **Obľúbené**: srdiečko je filter nad inzerátmi, dopyty sa nedajú
-  „obľúbiť".
+- V Dopytoch je tretí riadok: **`Najnovšie`**.
+- Triedenie ide **do dotazu** (`created_at` zostupne), nie je to len štítok.
+  Keby sa do neho dostala nepodporovaná možnosť, vypíše to do logu a zoradí
+  podľa novosti — nie tichý catch (§2).
+- **„Čoskoro končí" tam nie je.** `buyer_request` nemá v modeli uzávierku,
+  takže by nemalo podľa čoho triediť. Pridať ju znamená zmeniť model — to je
+  iné zadanie, povedz, ak to chceš.
+- **Srdiečko tam nie je** — dopyt sa nedá „obľúbiť".
 
-Prázdny riadok by nechal v UI medzeru, ktorá vyzerá ako chyba, takže sa
-riadok bez čipov **nevykreslí** (overené testom).
+**Čo si na tom všimneš:** keď je možnosť jediná, čip je **vždy aktívny** —
+je to rádio s jednou voľbou, teda ukazovateľ toho, ako je zoznam zoradený.
+Katalóg sa chová rovnako: ťuknutie na už aktívne triedenie tam tiež nič
+nemení. Ak z toho má byť skutočná voľba, dá sa pridať druhé triedenie zo
+stĺpcov, ktoré dopyt má (napr. podľa rozpočtu) — nepridal som ho, je to tvoje
+rozhodnutie.
 
-**Ak chceš v Dopytoch triediť, dá sa — ale je to tvoje rozhodnutie**, nie
-moje: „Najnovšie" by fungovalo hneď (`created_at` existuje), „Čoskoro končí"
-by potrebovalo pridať dopytom uzávierku do modelu. Sám som to nepridal,
-lebo to mení mechaniku appky, a to nie je „preorganizuj poradie".
+Poistka ostáva: keby obrazovka triedenie vôbec nepodala, riadok bez čipov sa
+**nevykreslí** (žiadna medzera bez obsahu) — overené testom.
 
 ---
 
@@ -92,7 +99,7 @@ nemôžu rozísť.
 
 | Čo | Ako | Výsledok |
 |---|---|---|
-| poradie a zloženie riadkov | `npx --yes tsx scripts/check-filters.ts` | **19/19 OK** |
+| poradie a zloženie riadkov | `npx --yes tsx scripts/check-filters.ts` | **22/22 OK** |
 | gestá galérie | `check-gallery.ts` | 33/33 OK |
 | Realtime register (§11) | `check-realtime.ts` | 20/20 OK |
 | countdown (§10) | `check-deadline.ts` | 12/12 OK |
@@ -110,6 +117,8 @@ nedokazoval nič:
   OK   v troch riadkoch sa to už stať NEMÔŽE — prvý riadok má len typ obchodu
 ── 3. tab DOPYTY: iné slová v 1. riadku, rovnaká štruktúra ──
   OK   1. riadok — smer trhu z pohľadu hľadajúceho: Kúpim · Hľadám prenájom
+  OK   Dopyty majú TRI riadky — tretí je „Najnovšie"
+  OK   „Čoskoro končí" v Dopytoch NIE JE (dopyt nemá uzávierku v modeli)
   OK   PRÁZDNY tretí riadok sa NEVYKRESLÍ (žiadna medzera bez obsahu)
 ── 4. žiadny riadok nesmie miešať kategórie ──
   OK   Nehnuteľnosti: každý čip patrí do kategórie svojho riadku
@@ -166,8 +175,8 @@ CLAUDE.md §1, aby to nezáviselo od pamäti. Stačí mi, čo vidíš:
 
 5. Prvý riadok hovorí **`Kúpim · Hľadám prenájom`** (nie Predaj/Prenájom)?
 6. Druhý riadok je rovnaký ako v Nehnuteľnostiach, vrátane **Iné**?
-7. **Chýba** tretí riadok — a nie je po ňom prázdna medzera ani linka? (Tak
-   to má byť, viď §3. Ak tam triedenie chceš, povedz.)
+7. Tretí riadok obsahuje **`Najnovšie`** (a nič iné) — nad ním linka?
+   Čip je vždy aktívny, to je zámer (viď §3).
 
 **Že sa nič nestratilo (§10):** na karte v katalógu je stále vidieť
 **„Ponuky do… · ostáva X dní"** a **„Pridané [dátum]"**.

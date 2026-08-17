@@ -20,7 +20,7 @@ import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { db, type CatalogSort } from '@/lib/property';
-import { filterRows } from '@/lib/filter-rows';
+import { CATALOG_SORTS, DEMAND_SORTS, filterRows } from '@/lib/filter-rows';
 import {
   describeFilter,
   EMPTY_FILTER,
@@ -44,6 +44,7 @@ export function SearchBar({
   side = 'PROPERTY',
   sort,
   onSortChange,
+  sorts,
   canFavorite,
 }: {
   filter: CatalogFilter;
@@ -51,12 +52,19 @@ export function SearchBar({
   /** Ktorá strana trhu — mení SLOVÁ, nie mechaniku. */
   side?: FilterSide;
   /**
-   * Triedenie. Zobrazí sa LEN keď ho obrazovka podá — Dopyty ho nemajú,
-   * lebo `buyer_request` žiadnu uzávierku v modeli nemá a „Čoskoro končí"
-   * by tam nemalo podľa čoho triediť (overené v modeli, 8.8.2026).
+   * Triedenie. Zobrazí sa LEN keď ho obrazovka podá. Katalóg ponúka
+   * „Najnovšie" aj „Čoskoro končí"; Dopyty len „Najnovšie" (Rastio,
+   * 17.8.2026) — `buyer_request` nemá v modeli uzávierku, takže „Čoskoro
+   * končí" by tam nemalo podľa čoho triediť (overené v modeli 8.8.2026).
+   * Ktoré možnosti sa ukážu, rieši `sorts`.
    */
   sort?: CatalogSort;
   onSortChange?: (s: CatalogSort) => void;
+  /**
+   * Ktoré triedenia ponúknuť. Keď to obrazovka nepodá, riadi sa to stranou
+   * trhu: katalóg `CATALOG_SORTS`, Dopyty `DEMAND_SORTS`.
+   */
+  sorts?: CatalogSort[];
   /** Prihlásený? Neprihlásenému sa „Obľúbené" neponúka — nemá ich kam uložiť. */
   canFavorite?: boolean;
 }) {
@@ -65,7 +73,8 @@ export function SearchBar({
   // poradie nemohlo rozísť medzi tabmi (`src/lib/filter-rows.ts`).
   const rows = filterRows({
     side,
-    hasSort: Boolean(sort && onSortChange),
+    sorts:
+      sort && onSortChange ? (sorts ?? (side === 'DEMAND' ? DEMAND_SORTS : CATALOG_SORTS)) : [],
     canFavorite: Boolean(canFavorite),
   });
   const [text, setText] = useState('');

@@ -25,7 +25,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     items: [
       'Filtre nad katalógom sa lámali podľa šírky obrazovky, takže v jednom riadku skončil typ obchodu spolu s typom nehnuteľnosti. Teraz sú v troch riadkoch podľa významu: čo chceš (predaj/prenájom), aký typ nehnuteľnosti, a nakoniec triedenie so srdiečkom.',
       'Pribudol filter „Iné" — taký inzerát sa dal vytvoriť, ale nedal sa nájsť.',
-      'V Dopytoch prvý riadok hovorí „Kúpim · Hľadám prenájom", teda z pohľadu toho, kto hľadá.',
+      'V Dopytoch prvý riadok hovorí „Kúpim · Hľadám prenájom", teda z pohľadu toho, kto hľadá — a pribudlo tam triedenie „Najnovšie".',
     ],
   },
   {
