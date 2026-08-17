@@ -128,7 +128,25 @@ existujúce miesto sa nemenilo — presne ako pri `deadline.ts` 13.8.2026.
 
 ---
 
-## 5. Čo mi máš potvrdiť (slovami, žiadne screenshoty)
+## 5. OTA
+
+Nový natívny modul nepribudol, `package.json` sa nemenil → **IDE OTA.**
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS), group `2f157477-b508-4a43-bf8e-27719aa7fb0b` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Zhodné → balík k tebe dorazí (§9). Commit v OTA: `10ad946`.
+
+Poznámka pre budúcnosť: publikovanie **oboch platforiem naraz** tu padá na
+`SIGKILL` (prostredie má 3,8 GB RAM, Metro bundluje iOS aj Android
+súčasne). Odteraz publikujem **po platformách** — najprv iOS, potom
+Android. Nie je to chyba appky.
+
+---
+
+## 6. Čo mi máš potvrdiť (slovami, žiadne screenshoty)
 
 Screenshoty od teba nechcem a už ich ani nebudem navrhovať — zapísané do
 CLAUDE.md §1, aby to nezáviselo od pamäti. Stačí mi, čo vidíš:
