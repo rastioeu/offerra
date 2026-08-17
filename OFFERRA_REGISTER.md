@@ -4867,7 +4867,18 @@ nie moje rozhodnutie.
 | | Runtime |
 |---|---|
 | posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
-| publikovaná OTA (iOS) | *doplnené po publikovaní nižšie* |
+| publikovaná OTA (iOS), group `13ec66b7-01dd-4607-b4c4-83c1f640f102` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+**Zhodné → balík sa na Rastiov TestFlight build dostane** (§9 overené
+skutočnou odpoveďou `eas update` + `eas build:list`, `Status: finished`).
+Android runtime `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7`, group
+`69c8d063-2398-4dd9-afdb-a1468c8de6db`. Commit v OTA: `a1698b8`.
+
+**Poznámka k publikovaniu:** prvý pokus **zlyhal** — `expo export` dostal
+`SIGKILL` (v prostredí bolo ~1,3 GB voľnej pamäte, Metro bundluje obe
+platformy s `--clear`). Nešlo o chybu kódu; druhý pokus po uvoľnení `dist/`
+prešiel. Zapísané preto, že „Export failed / SIGKILL" vyzerá ako chyba
+appky a nie je.
 
 ### 26.8 Nápoveda — ✅ sľubuje len implementované gestá
 

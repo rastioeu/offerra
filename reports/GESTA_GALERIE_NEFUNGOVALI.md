@@ -212,9 +212,20 @@ vyvolala.
 
 Nový natívny modul nepribudol, `package.json` sa nemenil → **IDE OTA.**
 `reanimated` (4.5.1), `gesture-handler` (~2.32.0) aj `worklets` (0.10.1) sú
-v binárke buildu #5. Runtime publikovanej OTA musí sedieť s
-`24919867e1bcc84715b1b4d6998cb6b27886e5d9` (§9) — kontrola je v registri
-26.7.
+v binárke buildu #5.
+
+**Publikované** (§9 overené, zhoda runtime = balík na tvoj build dorazí):
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS), group `13ec66b7-01dd-4607-b4c4-83c1f640f102` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Android runtime `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7`. Commit v OTA:
+`a1698b8`.
+
+Prvý pokus o publikovanie **zlyhal** na `SIGKILL` v `expo export` (málo
+voľnej pamäte v prostredí, nie chyba kódu); druhý prešiel.
 
 ---
 
