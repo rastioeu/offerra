@@ -5103,9 +5103,18 @@ violates row-level security policy`), takže cudzí nič nenahrá.
 **Oprava = jedna politika na `storage.objects`, žiadna zmena v appke** —
 appka `storage.list()` nepoužíva nikde (len `upload`, `remove`,
 `getPublicUrl`, a to je len skladanie textu). SQL je v
-`reports/FOTKY_EXPOZICIA.md`. **Spustiť ho musí Rastio:** `drop/create policy`
-potrebuje servisný kľúč alebo dashboard, a servisný kľúč sa do tohto
-verejného repa nesmie dostať (§4).
+`reports/FOTKY_EXPOZICIA.md` a je to **`as restrictive` politika**, takže sa
+existujúce politiky NERUŠIA (permissive politiky sa sčítavajú — pridanie
+ďalšej by nič nezavrelo, `restrictive` sa spája AND-om). Iných bucketov sa
+netýka, verejné čítanie ide mimo RLS, späť sa berie jedným `drop policy`.
+
+**Rastio 17.8.2026: „spusť ty" — NEDÁ SA, overené:** `/root/.offerra-secrets`
+má len GitHub/Pages tokeny a demo heslo, `.env` len anon kľúč, v prostredí
+žiadna `SUPABASE_*`/`PG*`/`DATABASE_URL`, `npx supabase projects list` vracia
+`Access token not provided` (CLI nebol nikdy prihlásený). `create policy` je
+DDL — anon kľúč na to nestačí a ani servisný kľúč cez REST DDL nespúšťa.
+Ponúknutá cesta: `SUPABASE_DB_URL` do `/root/.offerra-secrets` (mimo repa),
+potom to spustím `psql`-om a overím skriptom.
 
 ### 28.6 Kontrola expozície ako skript — ✅ OVERENÉ RUNTIME (dnes zlyhá zámerne)
 

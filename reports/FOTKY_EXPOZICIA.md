@@ -52,34 +52,44 @@ Appka `storage.list()` **nepoužíva nikde** (overené: používa len `upload`,
 `remove` a `getPublicUrl`, a `getPublicUrl` je len skladanie textu, žiadne
 volanie servera). Zavretie výpisu preto appku nijako nezasiahne.
 
-Spusti v **Supabase → SQL editor**:
+Vlož do **Supabase → SQL editor** tento jeden blok a spusti:
 
 ```sql
--- 1) NAJPRV sa pozri, čo tam dnes je (názov politiky potrebuješ v kroku 2)
-select policyname, cmd, roles, qual
-from pg_policies
-where schemaname = 'storage' and tablename = 'objects';
-
--- 2) zruš tú politiku, ktorá pustí SELECT komukoľvek na offerra-media
---    (názov doplň z výpisu; býva to niečo ako "Public read" alebo
---     "Allow public select on offerra-media")
-drop policy "SEM_NAZOV_Z_KROKU_1" on storage.objects;
-
--- 3) nahraď ju politikou, ktorá pustí výpis LEN vlastníkovi jeho priečinka
+-- Zavrie VYPISOVANIE bucketu offerra-media pre cudzie oko.
+-- Vlastník vidí svoj priečinok ďalej, iné buckety sa to netýka,
+-- verejné čítanie zverejnených fotiek to NEOVPLYVNÍ.
 create policy "offerra-media: vypisat smie len vlastnik"
-on storage.objects for select
-to authenticated
+on storage.objects
+as restrictive
+for select
 using (
-  bucket_id = 'offerra-media'
-  and (storage.foldername(name))[1] = auth.uid()::text
+  bucket_id <> 'offerra-media'
+  or (storage.foldername(name))[1] = auth.uid()::text
 );
 ```
 
-Prečo `to authenticated` a vlastník podľa prvého segmentu cesty: fotky sa
-ukladajú do `<user_id>/<property_id>/<súbor>`, takže „môj priečinok" je
-presne to, čo appka potrebuje na mazanie vlastných fotiek. Verejné čítanie
-zverejnených fotiek ide **mimo RLS** (bucket je public), takže sa ho to
-netýka.
+Späť sa to vezme jediným riadkom, keby čokoľvek:
+
+```sql
+drop policy "offerra-media: vypisat smie len vlastnik" on storage.objects;
+```
+
+### Prečo práve takto (a nie „zruš tú starú politiku")
+
+- **`as restrictive`** znamená, že sa politika s existujúcimi **spojí
+  spojkou AND**, nie OR. Preto **nič nemusíš rušiť** a nehrozí, že
+  odstránením politiky pokazíš niečo iné, čo o nej nevieš. (Bežné politiky
+  sú „permissive" a sčítavajú sa — pridanie ďalšej by samo nič nezavrelo,
+  preto tu `restrictive` byť MUSÍ.)
+- **`bucket_id <> 'offerra-media' or …`** — iných bucketov sa politika
+  nedotkne vôbec.
+- **Vlastník podľa prvého segmentu cesty**: fotky sa ukladajú do
+  `<user_id>/<property_id>/<súbor>`, takže „môj priečinok" je presne to, čo
+  appka potrebuje na mazanie vlastných fotiek. Anonym má `auth.uid()`
+  prázdny → nevypíše nič.
+- **Verejné čítanie ide MIMO RLS** (bucket je public, adresa
+  `/object/public/…`), takže katalóg ostane s fotkami. Skript to kontroluje
+  ako samostatný bod.
 
 ### Po spustení over dvoma vecami
 
@@ -115,8 +125,27 @@ neprihlásený prehliadač, a že cudzí nesmie zapisovať.
 
 ## 4. Prečo som to nespustil sám
 
-Na `drop policy` / `create policy` nad `storage.objects` treba **servisný
-kľúč alebo prístup do dashboardu**. Mám len `EXPO_PUBLIC_SUPABASE_ANON_KEY`,
-a servisný kľúč sa podľa CLAUDE.md §4 do tohto repa nikdy nesmie dostať
-(`rastioeu/offerra` je verejný). Takže: zmerané, pripravené, overiteľné —
-ale spustiť to musíš ty.
+Rastio 17.8.2026: „spusť ty". **Nedá sa** — overené, nie odhadnuté:
+
+| Čo som skúsil | Výsledok |
+|---|---|
+| `/root/.offerra-secrets` | len `DEMO_PASSWORD`, `GITHUB_TOKEN`, `PAGES_ADMIN_TOKEN`, `PAGES_TOKEN` — žiadny prístup k DB |
+| `.env` v repe | len `EXPO_PUBLIC_SUPABASE_URL`, `…_ANON_KEY`, `…_DEMO_PASSWORD` |
+| premenné prostredia | žiadna `SUPABASE_*`, `PG*` ani `DATABASE_URL` |
+| `npx supabase projects list` | `Access token not provided` — CLI nebol nikdy prihlásený |
+| `psql` | nainštalovaný, ale bez pripojenia sa nemá kam prihlásiť |
+
+`create policy` nad `storage.objects` je DDL — anon kľúčom sa spustiť nedá a
+ani servisný kľúč na to nestačí (ten cez REST DDL nespúšťa). Treba
+**dashboard alebo pripojenie k databáze**.
+
+**Ak to mám spustiť ja**, stačí do `/root/.offerra-secrets` (mimo repa, tam
+už tvoje tajomstvá žijú) pridať riadok s pripojením z Supabase → Project
+Settings → Database → *Connection string* (URI, s heslom):
+
+```
+SUPABASE_DB_URL=postgresql://postgres:<heslo>@db.<ref>.supabase.co:5432/postgres
+```
+
+Potom to spustím `psql`-om, overím skriptom a napíšem výsledok. Do repa sa
+tá hodnota nedostane — `rastioeu/offerra` je verejný (§4).
