@@ -123,29 +123,49 @@ neprihlásený prehliadač, a že cudzí nesmie zapisovať.
 
 ---
 
-## 4. Prečo som to nespustil sám
+## 4. Čím sa to spustí — a čo mi chýba
 
-Rastio 17.8.2026: „spusť ty". **Nedá sa** — overené, nie odhadnuté:
-
-| Čo som skúsil | Výsledok |
-|---|---|
-| `/root/.offerra-secrets` | len `DEMO_PASSWORD`, `GITHUB_TOKEN`, `PAGES_ADMIN_TOKEN`, `PAGES_TOKEN` — žiadny prístup k DB |
-| `.env` v repe | len `EXPO_PUBLIC_SUPABASE_URL`, `…_ANON_KEY`, `…_DEMO_PASSWORD` |
-| premenné prostredia | žiadna `SUPABASE_*`, `PG*` ani `DATABASE_URL` |
-| `npx supabase projects list` | `Access token not provided` — CLI nebol nikdy prihlásený |
-| `psql` | nainštalovaný, ale bez pripojenia sa nemá kam prihlásiť |
-
-`create policy` nad `storage.objects` je DDL — anon kľúčom sa spustiť nedá a
-ani servisný kľúč na to nestačí (ten cez REST DDL nespúšťa). Treba
-**dashboard alebo pripojenie k databáze**.
-
-**Ak to mám spustiť ja**, stačí do `/root/.offerra-secrets` (mimo repa, tam
-už tvoje tajomstvá žijú) pridať riadok s pripojením z Supabase → Project
-Settings → Database → *Connection string* (URI, s heslom):
+Rastio 17.8.2026 správne pripomenul, že **všetky doterajšie DB zmeny v tomto
+projekte išli cez Supabase Management API**, nie cez psql — schéma `offerra`,
+tabuľky, RLS aj migrácie (register 0.6, 1.4). Mechanizmus je v repe:
 
 ```
-SUPABASE_DB_URL=postgresql://postgres:<heslo>@db.<ref>.supabase.co:5432/postgres
+POST https://api.supabase.com/v1/projects/vxqvpgzwefcehugmhaft/database/query
+Authorization: Bearer $SUPABASE_ACCESS_TOKEN
 ```
 
-Potom to spustím `psql`-om, overím skriptom a napíšem výsledok. Do repa sa
-tá hodnota nedostane — `rastioeu/offerra` je verejný (§4).
+(`scripts/import-streets.mjs:127` — token sa berie **z prostredia**, nikdy zo
+súboru v repe.)
+
+**Priame DB pripojenie teda netreba a moje predchádzajúce odporúčanie
+`SUPABASE_DB_URL` bolo zlé** — Management API na `create policy` stačí, je to
+tá istá cesta, akou vznikli všetky ostatné politiky.
+
+Pripravené je to na jeden príkaz:
+
+```bash
+SUPABASE_ACCESS_TOKEN=sbp_… node scripts/apply-storage-policy.mjs --dry-run   # len vypíše politiky
+SUPABASE_ACCESS_TOKEN=sbp_… node scripts/apply-storage-policy.mjs             # vytvorí ju
+```
+
+Skript je idempotentný (keď politika existuje, nič nemení), vypíše politiky
+pred aj po, a pri chybe ukáže celú odpoveď API (401 = vypršaný token, 403 =
+chýbajúce právo).
+
+### Čo mi chýba
+
+**Token v `/root/.offerra-secrets` NIE JE.** Ten súbor má štyri riadky:
+`GITHUB_TOKEN`, `DEMO_PASSWORD`, `PAGES_TOKEN`, `PAGES_ADMIN_TOKEN`.
+V prostredí tiež žiadna `SUPABASE_*` premenná nie je, takže platnosť
+neexistujúceho tokenu sa nedá overiť.
+
+`SUPABASE_ACCESS_TOKEN` existuje v `/root/.mutark-secrets` a
+`/root/.famiglia-secrets`. Supabase projekt `vxqvpgzwefcehugmhaft` je
+**zdieľaný s MUTARKom** (register 0.6), takže ten token by na to technicky
+sedel — ale CLAUDE.md §4 hovorí, že **tokeny sa medzi projektmi
+nepožičiavajú**, takže som doň nesiahol a čakám na Rastiovo slovo:
+
+- **buď** vygeneruje token pre Offerru a dá ho do `/root/.offerra-secrets`
+  ako `SUPABASE_ACCESS_TOKEN=…` (jeho pôvodný návrh, a čisté podľa §4),
+- **alebo** výslovne povie, že mám použiť ten z `.mutark-secrets`, keďže
+  databáza je aj tak spoločná.

@@ -5108,13 +5108,27 @@ existujúce politiky NERUŠIA (permissive politiky sa sčítavajú — pridanie
 ďalšej by nič nezavrelo, `restrictive` sa spája AND-om). Iných bucketov sa
 netýka, verejné čítanie ide mimo RLS, späť sa berie jedným `drop policy`.
 
-**Rastio 17.8.2026: „spusť ty" — NEDÁ SA, overené:** `/root/.offerra-secrets`
-má len GitHub/Pages tokeny a demo heslo, `.env` len anon kľúč, v prostredí
-žiadna `SUPABASE_*`/`PG*`/`DATABASE_URL`, `npx supabase projects list` vracia
-`Access token not provided` (CLI nebol nikdy prihlásený). `create policy` je
-DDL — anon kľúč na to nestačí a ani servisný kľúč cez REST DDL nespúšťa.
-Ponúknutá cesta: `SUPABASE_DB_URL` do `/root/.offerra-secrets` (mimo repa),
-potom to spustím `psql`-om a overím skriptom.
+**Rastio 17.8.2026: „spusť ty" → 🔴 CHÝBA MI TOKEN, nie prístup k DB.**
+
+Rastio pripomenul, že všetky doterajšie DB zmeny šli cez **Management API**
+(register 0.6, 1.4), nie psql — a má pravdu, mechanizmus je v repe:
+`scripts/import-streets.mjs:127`, `POST /v1/projects/{ref}/database/query`
+s `Bearer $SUPABASE_ACCESS_TOKEN` z prostredia. **Moje predchádzajúce
+odporúčanie priameho `SUPABASE_DB_URL` bolo zlé** — Management API na
+`create policy` stačí a je to tá istá cesta ako pri všetkých ostatných
+politikách.
+
+Pripravené: `scripts/apply-storage-policy.mjs` (idempotentné, `--dry-run`,
+vypíše politiky pred aj po, pri chybe celá odpoveď API).
+
+Čo chýba: **`SUPABASE_ACCESS_TOKEN` v `/root/.offerra-secrets` NIE JE** (ten
+súbor má `GITHUB_TOKEN`, `DEMO_PASSWORD`, `PAGES_TOKEN`,
+`PAGES_ADMIN_TOKEN`), a v prostredí žiadna `SUPABASE_*` premenná nie je —
+platnosť neexistujúceho tokenu sa overiť nedá. Token existuje
+v `/root/.mutark-secrets` a `/root/.famiglia-secrets` a Supabase projekt je
+so MUTARKom **zdieľaný**, ale §4 zakazuje požičiavanie tokenov medzi
+projektmi, takže som doň nesiahol. Čaká sa na Rastiovo rozhodnutie: nový
+token pre Offerru, alebo výslovné povolenie použiť mutarkovský.
 
 ### 28.6 Kontrola expozície ako skript — ✅ OVERENÉ RUNTIME (dnes zlyhá zámerne)
 
