@@ -97,7 +97,21 @@ databázy na telefóne. Preto je to nižšie 🟡.
 
 ---
 
-## 4. Čo mi máš potvrdiť (slovami)
+## 4. OTA
+
+Nový natívny modul nepribudol, `package.json` nedotknutý → **IDE OTA**.
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS), group `d46c1e65-3160-4085-b538-b89413a64175` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Zhodné → dorazí k tebe (§9). Commit `1302dba`. Android publikovaný zvlášť
+(group `7a1e9629-90fc-49f3-9d8b-81230f13d909`).
+
+---
+
+## 5. Čo mi máš potvrdiť (slovami)
 
 Potrebuješ **vlastný** inzerát s uzávierkou v minulosti. Ak taký nemáš,
 najrýchlejšie: uprav si vlastný inzerát a daj uzávierku na dnes/včera.
