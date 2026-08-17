@@ -40,6 +40,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 import { FavoriteHeart } from '@/components/favorite-heart';
 import { Icon } from '@/components/icon';
 import { PhotoLightbox } from '@/components/photo-lightbox';
+import { DeadlineDecision } from '@/components/deadline-decision';
 import { PropertyTabs } from '@/components/property-tabs';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
@@ -67,6 +68,7 @@ import {
   PROPERTY_LABEL,
   buildingRows,
   closedLabel,
+  deadlineOutcome,
   rentalRows,
   TRANSACTION_LABEL,
 } from '@/lib/property';
@@ -171,6 +173,18 @@ export default function PropertyDetailScreen() {
    * ktorým sa prehliadač otvoril.
    */
   const [lightbox, setLightbox] = useState<number | null>(null);
+
+  // Uzávierka prešla a inzerát je stále živý? Potom majiteľ musí dostať
+  // otázku „a teraz čo" — dovtedy odpočet dobehol a nestalo sa nič
+  // (Rastio, 17.8.2026). Texty aj akcie rozhoduje `deadlineOutcome`.
+  const outcome = deadlineOutcome({
+    deadline: item?.offer_deadline ?? null,
+    active: item?.status === 'ACTIVE',
+    offerCount: offers?.length ?? 0,
+  });
+  // „Vybrať z ponúk" vedie na `/ponuky/[id]` — obrazovku správy ponúk, kde
+  // má majiteľ inzerát sám pre seba, bez galérie a verejnej časti. Vedie tam
+  // aj upozornenie o novej ponuke, takže je to tá istá cesta, akú už pozná.
   function openLightbox(i: number) {
     console.log(`[GALÉRIA] Otváram fullscreen na fotke ${i + 1}`);
     setLightbox(i);
@@ -420,6 +434,21 @@ export default function PropertyDetailScreen() {
                   </Text>
                 ) : null}
               </View>
+
+              {/* Výzva majiteľovi po uzávierke. Neprihlásený ani záujemca ju
+                  nevidí — jemu už štítok „Príjem ponúk ukončený" povedal
+                  všetko, čo ho týka. */}
+              {isOwner ? (
+                <DeadlineDecision
+                  outcome={outcome}
+                  propertyId={item.id}
+                  onDone={() => {
+                    void reloadProperty();
+                    void reloadOffers();
+                  }}
+                  onPickOffer={() => router.push({ pathname: '/ponuky/[id]', params: { id: item.id } })}
+                />
+              ) : null}
 
               {/* ── parametre 2×2 ── */}
               <View style={styles.grid}>

@@ -13,10 +13,32 @@ import { supabase } from './supabase';
 // testovať v Node bez appky — dôvod je celý zapísaný v `deadline.ts`.
 // Re-exportuje sa ďalej, aby sa nemuseli meniť miesta, čo ju importujú
 // odtiaľto (`@/lib/property`).
-import { deadlineLabel, deadlineUrgency, isDeadlinePassed, SOON_DAYS, type DeadlineUrgency } from './deadline';
+import {
+  deadlineLabel,
+  deadlineOutcome,
+  deadlineUrgency,
+  EXTEND_DAYS,
+  extendedDeadline,
+  isDeadlinePassed,
+  SOON_DAYS,
+  type DeadlineAction,
+  type DeadlineOutcome,
+  type DeadlineUrgency,
+} from './deadline';
 
 export const db = () => supabase.schema('offerra');
-export { deadlineLabel, deadlineUrgency, isDeadlinePassed, SOON_DAYS, type DeadlineUrgency };
+export {
+  deadlineLabel,
+  deadlineOutcome,
+  deadlineUrgency,
+  EXTEND_DAYS,
+  extendedDeadline,
+  isDeadlinePassed,
+  SOON_DAYS,
+  type DeadlineAction,
+  type DeadlineOutcome,
+  type DeadlineUrgency,
+};
 
 export type TransactionType = 'SALE' | 'RENT';
 export type PropertyType = 'APARTMENT' | 'HOUSE' | 'LAND' | 'COMMERCIAL' | 'OTHER';

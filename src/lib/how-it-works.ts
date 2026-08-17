@@ -104,6 +104,23 @@ export const HOW_SECTIONS: HowSection[] = [
     ],
   },
   {
+    icon: 'clock',
+    title: 'Uzávierka ponúk — a čo po nej',
+    paragraphs: [
+      'Uzávierka je nepovinná. Keď ju k inzerátu zadáš, na karte aj v detaile beží odpočet ' +
+        '(„Ponuky do… · ostáva X dní") a po termíne už nikto ponuku nepodá — drží to aj ' +
+        'databáza, nie len tlačidlo v appke.',
+      'Po uzávierke sa inzerát NEZMAŽE a nezmizne. Dostaneš na ňom otázku, čo s ním: vybrať ' +
+        'z ponúk, ktoré prišli, predĺžiť uzávierku o 7 dní, alebo inzerát archivovať. Kým sa ' +
+        'nerozhodneš, ostáva v katalógu so štítkom „Príjem ponúk ukončený" — aby ľudia videli, ' +
+        'že sa naň už neponúka.',
+      'Archivovaný inzerát zmizne z katalógu a nikto naň už neponúkne. Ponuky, ktoré prišli, ' +
+        'ostávajú v tvojom prehľade.',
+      'Upozornenie na prešlú uzávierku ti appka NEPOŠLE — otázku uvidíš, keď si inzerát ' +
+        'otvoríš. Radšej to napíšeme priamo, než by si čakal na oznámenie, ktoré nepríde.',
+    ],
+  },
+  {
     icon: 'checkmark.seal',
     title: 'Uzavretie obchodu',
     paragraphs: [

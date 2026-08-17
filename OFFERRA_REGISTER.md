@@ -5028,6 +5028,116 @@ registra len komentáre · `npx tsc --noEmit` čisté.
 
 ---
 
+## Fáza 28 — Po uzávierke + expozícia fotiek v bucketе (17.8.2026)
+
+Rastio si z návrhu ďalších krokov vybral **body 1 a 5**: čo sa stane po
+uzávierke, a fotky konceptov prístupné cudzím. Reporty:
+`reports/PO_UZAVIERKE.md`, `reports/FOTKY_EXPOZICIA.md`.
+
+### 28.1 Po uzávierke sa nedialo nič — ✅ OVERENÉ v dátach
+
+```
+ACTIVE inzeráty s prešlou uzávierkou: 2
+  · Zvolen: Stavebný pozemok              — pred 2 dňami
+  · Trenčín: Obchodný priestor na prenájom — pred 5 dňami
+```
+
+Sedeli v katalógu ako živé, ponuku na ne už nikto podať nemohol (uzávierku
+drží RLS) a majiteľ o tom nevedel ani nemal ako z toho vyjsť. Verejná strana
+bola pritom v poriadku už predtým — `deadlineLabel` po termíne vracia
+„Príjem ponúk ukončený" a karta to zobrazuje.
+
+### 28.2 Rozhodnutie ako čistá funkcia — ✅ OVERENÉ RUNTIME (30/30)
+
+`deadlineOutcome({ deadline, active, offerCount })` v `src/lib/deadline.ts`
+vracia `NONE | RUNNING | AWAITING_OWNER | SETTLED` **aj s textami a zoznamom
+akcií**. Komponent `deadline-decision.tsx` iba kreslí — ten istý text nemôže
+vzniknúť druhý raz na inej obrazovke.
+
+`scripts/check-deadline.ts` je z 12 na **30/30**. Test si našiel chybu
+v mojom texte: prvá verzia písala „Máš 1 **ponuka**" namiesto akuzatívu
+(„ponuku") — preto má skloňovanie po číslovke vlastných 5 kontrol.
+
+`deadline.ts` ostáva **bez jediného importu** (jeho podmienka z 13.8.2026);
+`deadlineLabel` dostal nepovinný parameter `now`, takže je teraz úplne čistý.
+
+### 28.3 Výzva majiteľovi — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Tri cesty von: **Vybrať z ponúk** (→ `/ponuky/[id]`, kam vedie aj upozornenie
+o novej ponuke), **Predĺžiť o 7 dní** (odo DNEŠKA, nie od pôvodného termínu),
+**Archivovať** (undo okno ako pri „Zmazať inzerát", Fáza 23). Bez ponúk sa
+„Vybrať z ponúk" nezobrazí — viedlo by na prázdny zoznam. Kartu vidí **len
+majiteľ**.
+
+**Archivovanie predtým v appke NEŠLO** — `ARCHIVED` bol stav s názvom, ktorý
+sa nedal nastaviť; dalo sa len zmazať. Katalóg filtruje `status = 'ACTIVE'`,
+takže archivovaný inzerát zmizne.
+
+**Push/notifikácia sa neposiela a netvrdí sa to** — appka nemá serverovú
+časť, takže nemá kto poslať. Napísané aj v §8 texte (§12a).
+
+### 28.4 §8 „Ako funguje Offerra" — ✅ upravené v TOM ISTOM kroku
+
+Nová sekcia **„Uzávierka ponúk — a čo po nej"**: že uzávierka je nepovinná,
+že po termíne inzerát nezmizne, tri cesty von, čo znamená archivovanie, a
+priamo aj to, že **upozornenie nepríde**. Pribudla ikona `clock` do
+`icon.tsx` (mala by inak prepadnúť na neznámy názov).
+
+### 28.5 🔴 Fotky v bucketе sa dajú VYPÍSAŤ — NEOPRAVENÉ, treba Rastiovu ruku
+
+Register 1.7 tvrdil „dostupná pri znalosti UUID cesty". Meranie ukázalo, že
+cestu **netreba poznať** — bucket `offerra-media` sa dá vypísať anon kľúčom
+(`POST /storage/v1/object/list/…` → HTTP 200):
+
+| | |
+|---|---|
+| používateľských priečinkov | 11 |
+| priečinkov inzerátov | 21 |
+| vypísateľných fotiek | **122** |
+| z toho inzerátov, ktoré anonym cez REST nevidí | **20 z 21** |
+
+RLS na `property` a `media` je pritom správna (anonym nevidí ani jeden DRAFT
+riadok). Storage o tom nevie. **Zápis je zamietnutý** (skúšané: `new row
+violates row-level security policy`), takže cudzí nič nenahrá.
+
+**Oprava = jedna politika na `storage.objects`, žiadna zmena v appke** —
+appka `storage.list()` nepoužíva nikde (len `upload`, `remove`,
+`getPublicUrl`, a to je len skladanie textu). SQL je v
+`reports/FOTKY_EXPOZICIA.md`. **Spustiť ho musí Rastio:** `drop/create policy`
+potrebuje servisný kľúč alebo dashboard, a servisný kľúč sa do tohto
+verejného repa nesmie dostať (§4).
+
+### 28.6 Kontrola expozície ako skript — ✅ OVERENÉ RUNTIME (dnes zlyhá zámerne)
+
+`npx --yes tsx scripts/check-storage-exposure.ts` — **dnes 2 FAIL** (výpis
+otvorený, fotky nezverejnených inzerátov prístupné), po oprave musí prejsť.
+Kontroluje aj to, čo sa NESMIE pokaziť: zverejnenú fotku prečíta aj
+neprihlásený prehliadač (inak by katalóg ostal bez fotiek — regresia z Fázy
+24) a cudzí nesmie zapisovať.
+
+Kľúče berie z gitignorovaného `.env`, do repa sa nedostanú (§4).
+
+### 28.7 Čo tým NEBUDE vyriešené (zapísané, aby sa nezabudlo)
+
+- Fotka ostane čitateľná, kto pozná presnú URL. Skutočná dôvernosť =
+  neverejný bucket + podpísané URL, teda prerobenie celej cesty k fotkám
+  (karta, detail, fullscreen, obľúbené). Tá cesta už dvakrát spadla (Fáza
+  24) → vlastná fáza, nie prílepok. Natívny modul netreba, teda OTA.
+- **Fotky zmazaných inzerátov ostávajú v bucketе** (časť tých 20
+  priečinkov). Vyčistenie potrebuje servisný kľúč → Rastio alebo neskoršia
+  serverová časť.
+
+### 28.8 OTA
+
+Nový natívny modul nepribudol, `package.json` nedotknutý → **IDE OTA**.
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | *dopĺňa sa po publikovaní* |
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
@@ -5067,8 +5177,11 @@ Nové otvorené body:
 - **Zmenšovanie fotiek pri uploade** — dnes len prekódovanie `quality 0.6`
   + poistka 8 MB. Skutočný resize potrebuje `expo-image-manipulator`, čo je
   nový natívny modul → nový EAS build. Zvážiť pri najbližšom builde (1.7).
-- **Verejný bucket a DRAFT fotky** — fotka rozrobeného inzerátu je pri
-  znalosti UUID cesty dostupná. Ak má vadiť, riešením sú podpísané URL (1.7).
+- **Verejný bucket a DRAFT fotky** — PREMERANÉ 17.8.2026 a je to horšie, než
+  tento bod tvrdil: cestu netreba poznať, bucket sa dá **vypísať** anon
+  kľúčom (122 fotiek, 20 z 21 inzerátov nezverejnených). Oprava je jedna
+  politika na `storage.objects`, appku nemení — SQL a dôkaz vo Fáze 28.5,
+  spustiť ju musí Rastio (servisný kľúč do repa nepatrí, §4).
 - **Notifikácie** — Offerra ich nemá vôbec. „Osloviť" je zatiaľ záznam
   v appke, nie push (2.7).
 - **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.

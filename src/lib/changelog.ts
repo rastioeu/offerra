@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '17. augusta 2026',
+    title: 'Po uzávierke sa appka ozve',
+    items: [
+      'Keď uzávierka ponúk prejde a inzerát je ešte živý, na svojom inzeráte dostaneš otázku, čo s ním: vybrať z ponúk, predĺžiť uzávierku o 7 dní, alebo inzerát archivovať. Doteraz odpočet dobehol a nestalo sa nič.',
+      'Archivovanie inzerátu je nové — dovtedy sa dal len zmazať. Archivovaný zmizne z katalógu, ale ponuky, ktoré prišli, ti ostanú.',
+      'Upozornenie ti appka na prešlú uzávierku neposiela — otázku uvidíš, keď si inzerát otvoríš. Je to tak napísané aj v „Ako funguje Offerra", aby sa na to nikto nespoliehal.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '17. augusta 2026',
     title: 'Filtre v troch jasných riadkoch',
     items: [
       'Filtre nad katalógom sa lámali podľa šírky obrazovky, takže v jednom riadku skončil typ obchodu spolu s typom nehnuteľnosti. Teraz sú v troch riadkoch podľa významu: čo chceš (predaj/prenájom), aký typ nehnuteľnosti, a nakoniec triedenie so srdiečkom.',

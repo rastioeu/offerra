@@ -35,6 +35,7 @@ export type IconName =
   | 'chevron.left'
   | 'key'
   | 'arrow.up.left.and.arrow.down.right'
+  | 'clock'
   | 'xmark';
 
 /** Textová náhrada, keď natívny modul chýba (starý build, web). */
@@ -56,6 +57,7 @@ const FALLBACK: Record<IconName, string> = {
   'chevron.left': '‹',
   key: '⚿',
   'arrow.up.left.and.arrow.down.right': '⤢',
+  clock: '◷',
   xmark: '✕',
 };
 
