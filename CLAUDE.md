@@ -188,3 +188,57 @@ nehlásilo chybu. Zmizli len vizuálne, a to sa dá overiť LEN pohľadom na
 skutočnú kartu/detail, nie čítaním kódu (§1 — „grep a čítanie kódu
 nedokazuje NIČ"). Zoznam sa dopĺňa, keď pribudne ďalší podobný prípad —
 nie preventívne, len keď sa naozaj stane.
+
+---
+
+## 🔁 11. SUPABASE REALTIME — LEN CEZ `useRealtimeChannel`
+
+**Pravidlo (Rastio, 17.8.2026):** v appke sa **NIKDY nepíše
+`supabase.channel(...)` ručne.** Každý Realtime odber ide výhradne cez
+`src/hooks/use-realtime-channel.ts` (čistá vrstva: `src/lib/realtime.ts`).
+
+```ts
+// ⛔ ZAKÁZANÉ — takto vznikol pád dvakrát
+const ch = supabase.channel(`property-${id}`).on('postgres_changes', …).subscribe();
+
+// ✅ JEDINÝ povolený spôsob — odbery ako DÁTA, kanál skladá register
+useRealtimeChannel({
+  topic: id ? `property-${id}` : null,
+  bindings: [{ event: 'UPDATE', schema: 'offerra', table: 'property', filter: `id=eq.${id}` }],
+  onChange: () => void reload(),
+});
+```
+
+### Prečo — a prečo NIE preto, čo sa zdalo
+
+Hláška `cannot add postgres_changes callbacks for realtime:… after
+subscribe()` padla **dvakrát**: `NotificationBell` (8.8.2026) a editor
+inzerátu (17.8.2026).
+
+**Príčinou NIKDY nebolo poradie `.on()` / `.subscribe()`** — to bolo na
+oboch miestach správne, v jednej reťazi. Skutočná príčina je v
+`realtime-js`: `supabase.channel(topic)` pri rovnakom názve **vráti už
+existujúci, často už pripojený kanál** namiesto nového. Dva nezávislí
+vlastníci toho istého topicu (napr. detail + editor s tým istým `id`,
+alebo `AppHeader` na štyroch namontovaných taboch) tak sadli na jeden
+kanál a druhý `.on()` padol.
+
+Preto sa oprava nedala urobiť „správnym poradím" — musela odstrániť
+možnosť kolízie. Register to robí troma vecami naraz: `.on()` sa nedá
+napísať po `.subscribe()` (volajúci ich nevidí), jeden kanál na topic so
+**počítadlom odberateľov**, a zatvorenie až pri odchode **posledného**
+odberateľa (per-instance `removeChannel` predtým vypínal Realtime aj tej
+obrazovke, ktorá ostala otvorená — druhá, tichá chyba toho istého vzoru).
+
+### Pri každej zmene Realtime kódu over
+
+- [ ] `grep -rn "\.channel(" src/` nevráti **žiadne** volanie mimo
+      `src/lib/realtime.ts` (jediné miesto, kde kanál naozaj vzniká — a to
+      cez vpichnutého klienta) a `src/hooks/use-realtime-channel.ts` (kde
+      sa doň vpichne `supabase`). Komentáre nepočítajú.
+      K 17.8.2026 sedia len tieto dva + tri komentáre.
+- [ ] `npx --yes tsx scripts/check-realtime.ts` je 20/20 — test má vlastnú
+      napodobeninu `realtime-js`, ktorá pôvodný pád vie naozaj vyrobiť
+      (prvá kontrola v ňom presne to dokazuje, inak by test nedokazoval nič)
+- [ ] `tsx` **nepridávaj** do `package.json` — mení EAS fingerprint a
+      odstrihne OTA (§9). Vždy `npx --yes tsx`.

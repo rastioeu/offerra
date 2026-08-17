@@ -27,7 +27,7 @@ import { AppState } from 'react-native';
 
 import { errorText } from '@/lib/errors';
 import { db } from '@/lib/property';
-import { supabase } from '@/lib/supabase';
+import { useRealtimeChannel } from '@/hooks/use-realtime-channel';
 
 export function usePendingReports(isAdmin: boolean): number {
   const [count, setCount] = useState(0);
@@ -54,33 +54,26 @@ export function usePendingReports(isAdmin: boolean): number {
   }, [reload]);
 
   // ── 1. živo ─────────────────────────────────────────────────────────
-  useEffect(() => {
-    if (!isAdmin) return;
-
-    const topic = `reports-${suffix.current}`;
-    console.log(`[ODZNAK] 1 otváram kanál ${topic}`);
-
-    // INSERT = nové nahlásenie, UPDATE = vybavené alebo zamietnuté. Obe
-    // menia číslo, takže sa obe len prepočítajú — dopočítavať +1/−1 z
-    // payloadu by znamenalo držať druhú kópiu pravidla „čo je otvorené".
-    const channel = supabase
-      .channel(topic)
-      .on('postgres_changes', { event: '*', schema: 'offerra', table: 'report' }, () => {
-        console.log('[ODZNAK] Zmena v nahláseniach — prepočítavam');
-        void reload();
-      })
-      .subscribe((status) => {
-        console.log(`[ODZNAK] 2 stav kanála: ${status}`);
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log(`[ODZNAK] Kanál sa neotvoril: ${status} — ostáva obnova pri návrate do appky`);
-        }
-      });
-
-    return () => {
-      console.log(`[ODZNAK] 3 zatváram kanál ${topic}`);
-      void supabase.removeChannel(channel);
-    };
-  }, [isAdmin, reload]);
+  // Prevedené na zdieľaný register (17.8.2026, §CLAUDE.md 11).
+  //
+  // INSERT = nové nahlásenie, UPDATE = vybavené alebo zamietnuté. Obe menia
+  // číslo, takže sa obe len prepočítajú — dopočítavať +1/−1 z payloadu by
+  // znamenalo držať druhú kópiu pravidla „čo je otvorené".
+  useRealtimeChannel({
+    topic: `reports-${suffix.current}`,
+    enabled: isAdmin,
+    label: '[ODZNAK]',
+    bindings: [{ event: '*', schema: 'offerra', table: 'report' }],
+    onChange: () => {
+      console.log('[ODZNAK] Zmena v nahláseniach — prepočítavam');
+      void reload();
+    },
+    onStatus: (status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.log(`[ODZNAK] Kanál sa neotvoril: ${status} — ostáva obnova pri návrate do appky`);
+      }
+    },
+  });
 
   // ── 2. návrat do appky ──────────────────────────────────────────────
   useEffect(() => {

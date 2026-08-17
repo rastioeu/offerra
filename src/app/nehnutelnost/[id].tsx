@@ -39,6 +39,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { FavoriteHeart } from '@/components/favorite-heart';
 import { Icon } from '@/components/icon';
+import { PhotoLightbox } from '@/components/photo-lightbox';
 import { PropertyTabs } from '@/components/property-tabs';
 import { shareProperty } from '@/components/property-card';
 import { ReportButton } from '@/components/report-button';
@@ -164,6 +165,17 @@ export default function PropertyDetailScreen() {
     if (i !== photo) setPhoto(i);
   }
 
+  /**
+   * Fullscreen sa otvára na TEJ fotke, ktorú človek práve pozerá — nie od
+   * prvej. `photo` drží pozíciu v hero galérii, `lightbox` je index, s
+   * ktorým sa prehliadač otvoril.
+   */
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  function openLightbox(i: number) {
+    console.log(`[GALÉRIA] Otváram fullscreen na fotke ${i + 1}`);
+    setLightbox(i);
+  }
+
   /** Text hlavného tlačidla + čo spraví. Jedno miesto, nie štyri vetvy v JSX. */
   function primaryAction(): { title: string; onPress: () => void } | null {
     if (!item) return null;
@@ -234,14 +246,25 @@ export default function PropertyDetailScreen() {
                   pagingEnabled
                   showsHorizontalScrollIndicator={false}
                   onMomentumScrollEnd={onGalleryScroll}>
-                  {item.media.map((m) => (
-                    <Image
+                  {item.media.map((m, i) => (
+                    // Tap na fotku otvára fullscreen — prirodzenejšie gesto
+                    // než ikona (Rastio, 17.8.2026). `Pressable` nesmie
+                    // prekryť listovanie, preto bez `onPressIn`.
+                    <Pressable
                       key={m.id}
-                      source={{ uri: m.url }}
+                      onPress={() => openLightbox(i)}
+                      // Rozmer stránky musí byť na obálke, nie len na fotke —
+                      // inak by `pagingEnabled` počítalo šírku z obsahu.
                       style={styles.heroPhoto}
-                      contentFit="cover"
-                      transition={160}
-                    />
+                      accessibilityRole="button"
+                      accessibilityLabel={`Zobraziť fotku ${i + 1} na celú obrazovku`}>
+                      <Image
+                        source={{ uri: m.url }}
+                        style={styles.heroPhoto}
+                        contentFit="cover"
+                        transition={160}
+                      />
+                    </Pressable>
                   ))}
                 </ScrollView>
               ) : (
@@ -261,6 +284,22 @@ export default function PropertyDetailScreen() {
               </View>
 
               <View style={styles.heroActions}>
+                {/* Viditeľná nápoveda, že sa fotka dá zväčšiť — tap na fotku
+                    robí to isté, ale nikde by nebolo vidieť, že sa to dá. */}
+                {item.media.length > 0 ? (
+                  <Pressable
+                    onPress={() => openLightbox(photo)}
+                    hitSlop={10}
+                    accessibilityRole="button"
+                    accessibilityLabel="Zobraziť fotky na celú obrazovku">
+                    <Icon
+                      name="arrow.up.left.and.arrow.down.right"
+                      size={22}
+                      color={palette.surface}
+                      weight="semibold"
+                    />
+                  </Pressable>
+                ) : null}
                 <Pressable
                   onPress={() => void shareProperty(item)}
                   hitSlop={10}
@@ -298,6 +337,13 @@ export default function PropertyDetailScreen() {
                 </View>
               ) : null}
             </View>
+
+            <PhotoLightbox
+              visible={lightbox !== null}
+              photos={item.media.map((m) => ({ id: m.id, url: m.url }))}
+              initialIndex={lightbox ?? 0}
+              onClose={() => setLightbox(null)}
+            />
 
             <View style={styles.body}>
               <View>

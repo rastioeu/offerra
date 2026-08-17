@@ -33,7 +33,9 @@ export type IconName =
   | 'person.circle'
   | 'checkmark.seal'
   | 'chevron.left'
-  | 'key';
+  | 'key'
+  | 'arrow.up.left.and.arrow.down.right'
+  | 'xmark';
 
 /** Textová náhrada, keď natívny modul chýba (starý build, web). */
 const FALLBACK: Record<IconName, string> = {
@@ -53,6 +55,8 @@ const FALLBACK: Record<IconName, string> = {
   'checkmark.seal': '✓',
   'chevron.left': '‹',
   key: '⚿',
+  'arrow.up.left.and.arrow.down.right': '⤢',
+  xmark: '✕',
 };
 
 export function Icon({

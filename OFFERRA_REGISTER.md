@@ -4593,6 +4593,163 @@ nebola to zmena schémy).
 
 ---
 
+## Fáza 25 — Pád pri „Upraviť" systémovo + fullscreen galéria (17.8.2026)
+
+Report: `reports/REALTIME_REGISTER_A_FULLSCREEN_GALERIA.md`.
+Rastio žiadal pri bode 1 výslovne architektonické riešenie, nie tretiu
+záplatu — bol to druhý výskyt toho istého vzoru.
+
+### 25.1 Koreňová príčina — ✅ OVERENÉ RUNTIME, a je INÁ než hovorilo zadanie
+
+Zadanie: „`.on()` MUSÍ byť pred `.subscribe()`". **Toto nebola príčina —
+ani teraz, ani 8.8.2026 pri `NotificationBell`.** Poradie bolo na oboch
+miestach správne a v jednej reťazi (`git show 83d6009`).
+
+Skutočná príčina, `realtime-js` `RealtimeClient.channel()`:
+
+```js
+const exists = this.getChannels().find((c) => c.topic === realtimeTopic);
+if (!exists) { …vytvor nový… } else { return exists; }
+```
+
+`supabase.channel(topic)` pri rovnakom názve vracia **už existujúci, často
+už pripojený** kanál. `useProperty(id)` je na ŠTYROCH obrazovkách (detail,
+editor, ponuka, ponuky) a expo-router necháva predošlú namontovanú → klik
+na „Upraviť" sadol na kanál detailu → `.on()` naň → pád. Ten istý
+mechanizmus ako `AppHeader` na štyroch taboch.
+
+**Druhá, TICHÁ chyba toho istého vzoru:** per-instance `removeChannel`
+v cleanupe vypol Realtime aj obrazovke, ktorá ostala otvorená. Appka
+nespadla, nič nenahlásila — len prestali chodiť živé zmeny. Samotná oprava
+crashu by to nechala nedotknuté.
+
+### 25.2 Zdieľaný register — ✅ OVERENÉ RUNTIME (20/20)
+
+`src/lib/realtime.ts` (čistá vrstva, v Node testovateľná — vzor `deadline.ts`)
++ `src/hooks/use-realtime-channel.ts` (vpichne `supabase`).
+
+Volajúci nedostane `.on()`, `.subscribe()` ani kanál — odovzdá odbery ako
+DÁTA. Tri garancie, každá zabíja jednu pozorovanú chybu:
+
+| Garancia | Čo tým zaniklo |
+|---|---|
+| reťaz skladá register, `.on()` po `.subscribe()` sa nedá napísať | nesprávne poradie sa nedá vyjadriť |
+| jeden kanál na topic + počítadlo odberateľov | **pád, ktorý Rastio nahlásil** |
+| zatvorenie až pri odchode POSLEDNÉHO odberateľa | tichá strata živých zmien |
+
+Názov kanála obsahuje odtlačok odberov → dva rôzne odbery pod tým istým
+logickým topicom dostanú dva kanály a oba fungujú.
+
+### 25.3 Zoznam VŠETKÝCH miest s Realtime kanálom — ✅ všetky prevedené
+
+`grep -rn "\.channel(" src/` pred prácou = tri skutočné volania:
+
+| Miesto | Topic | Stav |
+|---|---|---|
+| `use-properties.ts` (`useProperty`) | `property-<id>` | ✅ prevedené — **toto padalo** |
+| `use-notifications.ts` (zvonček) | `notif-<userId>-<suffix>` | ✅ prevedené |
+| `use-pending-reports.ts` (admin odznak) | `reports-<suffix>` | ✅ prevedené |
+
+Po prevode grep nevracia **žiadne** ručné volanie; kanál vzniká jedine
+v registri. Zostali tri zásahy v komentároch.
+
+### 25.4 Dôkaz — ✅ OVERENÉ RUNTIME, 20/20
+
+`npx --yes tsx scripts/check-realtime.ts`. Napodobenina klienta kopíruje
+`realtime-js` v oboch vlastnostiach, ktoré pád spôsobili. **Prvá kontrola
+priamo dokazuje, že napodobenina pôvodný pád vie vyrobiť** — pustí starý
+ručný kód a čaká chybu `cannot add postgres_changes callbacks for
+realtime:property-9a0aac62 after subscribe()`. Bez nej by test nedokazoval
+nič.
+
+Ďalej: scenár detail+editor (bez pádu, 1 kanál, poradie `on → subscribe`,
+zmena dorazí obom), 4 obrazovky naraz, životnosť kanála pri postupnom
+odchode, rôzne odbery na tom istom topicu, stav pre neskorého odberateľa,
+dvojitý cleanup, chyba v jednom handleri.
+
+**Test našiel skutočnú dieru v mojom kóde:** register otváral kanál aj pri
+prázdnych odberoch — pripojil by sa a nikdy nič nedoručil. Poistka je teraz
+v registri, nie len v hooku.
+
+### 25.5 Fullscreen galéria — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+`src/components/photo-lightbox.tsx`. Otvára sa ťapnutím na fotku aj ikonou
+`arrow.up.left.and.arrow.down.right`, na TEJ fotke, ktorú človek pozerá.
+Listovanie, počítadlo (`PhotoBadge` z `ui.tsx` — neprepisované druhý raz),
+pinch-to-zoom + dvojťap, zatvorenie X / potiahnutím dole / systémovým Späť.
+Kým je fotka priblížená, paging sa vypína (inak si pinch a paging kradnú
+gesto). Do `icon.tsx` pribudli `arrow.up.left.and.arrow.down.right` a
+`xmark` vrátane textových náhrad.
+
+Čierne pozadie je jediná hardcodovaná farba — vedomá výnimka z §5,
+zapísaná v komentári.
+
+### 25.6 Dôkaz k galérii — 🟡, a čo z neho NEVYPLÝVA
+
+`npx tsc --noEmit` čisté, `npx expo export --platform ios` prešiel (5,2 MB
+Hermes). To dokazuje, že sa kód **preloží a je v balíku** — NIE že gestá na
+telefóne fungujú (§1: neodvodzuj B z A).
+
+Overené, že nový kód v balíku naozaj JE. Hermes ukladá ne-ASCII ako UTF-16,
+takže prvé hľadanie `grep`om falošne hlásilo „chýba"; po prehľadaní oboma
+kódovaniami sedí `Dvojťap priblíži`, `[GALÉRIA] Otváram fullscreen`,
+`Zavrieť fotku`, `pripájam sa na existujúci kanál`, `posledný odberateľ`
+(utf-16-le) a `__workletHash` (utf-8). `__workletHash` = babel plugin pre
+worklety sa naozaj spustil (`babel.config.js` v repe nie je, rieši to
+`babel-preset-expo`).
+
+### 25.7 OTA — ✅ OVERENÉ, prvé použitie reanimated
+
+Fullscreen je prvé použitie `react-native-reanimated` v appke, takže
+overené, či je v binárke buildu #5:
+
+```
+$ git show 40e3db0:package.json | grep -E "reanimated|worklets|gesture-handler"
+    "react-native-gesture-handler": "~2.32.0",
+    "react-native-reanimated": "4.5.1",
+    "react-native-worklets": "0.10.1"
+```
+
+`40e3db0` = commit buildu #5. Verzie **identické** s dnešnými → moduly sú
+skompilované v binárke. **IDE OTA**, nový build netreba. `package.json` ani
+`package-lock.json` sa nezmenili.
+
+### 25.8 🔴 Skoro som zopakoval incident z 13.8.2026
+
+`npx expo lint` si **sám doinštaloval `eslint` + `eslint-config-expo` do
+`devDependencies`** — presne tá trieda zmeny `package.json`, ktorá
+13.8.2026 odstrihla dva OTA balíky od buildu #5 (§9). Zachytené hneď po
+behu, `git checkout -- package.json package-lock.json` vrátil, finálna
+kontrola čistá (`git diff --stat` prázdny).
+
+**Dôsledok: `expo lint` sa v tomto repe nedá spustiť bez porušenia §9.
+Lint v tejto dávke NEPREBEHOL** — vedomá diera v overení, nie
+prehliadnutie. Rozhodnutie, či eslint pridať (znamená nový build), je
+Rastiovo.
+
+### 25.9 §10 kontrola — ✅ OVERENÉ RUNTIME
+
+Dotkol som sa obrazovky detailu, takže povinné:
+
+- countdown logika `check-deadline.ts` 12/12 OK
+- countdown DÁTA: 3 ACTIVE s uzávierkou v budúcnosti (Prievidza 5 dní,
+  Poprad 12, Martin 21) — štítok má na čom byť vidieť
+- „Pridané [dátum]" na karte: `property-card.tsx:233`, nedotknuté
+- `example.invalid` v `media` = 0, ACTIVE bez fotky = 0, vzorka titulných
+  fotiek 12/12 HTTP 200
+
+### 25.10 Pravidlo v CLAUDE.md — ✅ zapísané
+
+Nová sekcia **§11 „SUPABASE REALTIME — LEN CEZ `useRealtimeChannel`"**:
+zákaz ručného `supabase.channel(...)`, vysvetlenie, prečo príčinou nikdy
+nebolo poradie `.on()`/`.subscribe()`, kontrolný zoznam (grep, test 20/20,
+zákaz `tsx` v `package.json`).
+
+§8 („Ako funguje Offerra") **zámerne nemenené** — ani oprava pádu, ani
+fullscreen nemenia mechaniku appky.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

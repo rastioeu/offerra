@@ -20,6 +20,24 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '17. augusta 2026',
+    title: 'Fotky na celú obrazovku',
+    items: [
+      'Fotku v inzeráte si teraz otvoríš na celú obrazovku — buď ťuknutím priamo na ňu, alebo ikonou v rohu galérie.',
+      'Vo fullscreene sa medzi fotkami listuje do strán, vidíš koľkú z koľkých pozeráš, dvojťap fotku priblíži a potiahnutie dole ju zavrie.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '17. augusta 2026',
+    title: 'Opravený pád pri úprave inzerátu',
+    items: [
+      'Ťuknutie na „Upraviť" pri vlastnom inzeráte appku zhodilo. Opravené.',
+      'Tá istá chyba sa už raz stala pri prepínaní tabov, preto je oprava spoločná pre celú appku — nie záplata na jednom mieste.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '14. augusta 2026',
     title: 'Fotky v katalógu opravené',
     items: [

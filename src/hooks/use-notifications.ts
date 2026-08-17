@@ -56,8 +56,8 @@ import {
 
 import type { NotificationType } from '@/lib/notifications';
 import { db } from '@/lib/property';
-import { supabase } from '@/lib/supabase';
 import { errorText } from '@/lib/errors';
+import { useRealtimeChannel } from '@/hooks/use-realtime-channel';
 
 export type AppNotification = {
   id: string;
@@ -123,36 +123,26 @@ export function NotificationsProvider({
   }, [reload]);
 
   // ── živé obnovenie ─────────────────────────────────────────────────
-  useEffect(() => {
-    if (!userId) return;
-
-    const topic = `notif-${userId}-${suffix.current}`;
-    console.log(`[ZVONČEK] 1 otváram kanál ${topic}`);
-
-    // `.on()` MUSÍ byť pred `.subscribe()` a v jednej reťazi — a keďže
-    // provider je jeden, tento kód nebeží druhýkrát na ten istý kanál.
-    const channel = supabase
-      .channel(topic)
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'offerra', table: 'notification', filter: `user_id=eq.${userId}` },
-        (payload) => {
-          console.log('[ZVONČEK] Nové oznámenie cez Realtime');
-          setItems((prev) => [payload.new as AppNotification, ...prev]);
-        }
-      )
-      .subscribe((status) => {
-        console.log(`[ZVONČEK] 2 stav kanála: ${status}`);
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log(`[ZVONČEK] Kanál sa neotvoril: ${status} — appka funguje ďalej bez neho`);
-        }
-      });
-
-    return () => {
-      console.log(`[ZVONČEK] 3 zatváram kanál ${topic}`);
-      void supabase.removeChannel(channel);
-    };
-  }, [userId]);
+  // Prevedené na zdieľaný register (17.8.2026, §CLAUDE.md 11). Jednorazová
+  // prípona v názve tu ZOSTÁVA: register síce kolíziu názvov už zvláda
+  // zdieľaním, ale prípona drží pôvodný zámer z 8.8.2026 — dva provideri
+  // (keby omylom vznikli) majú mať aj tak vlastný kanál a vlastný stav.
+  useRealtimeChannel({
+    topic: userId ? `notif-${userId}-${suffix.current}` : null,
+    label: '[ZVONČEK]',
+    bindings: userId
+      ? [{ event: 'INSERT', schema: 'offerra', table: 'notification', filter: `user_id=eq.${userId}` }]
+      : [],
+    onChange: (payload) => {
+      console.log('[ZVONČEK] Nové oznámenie cez Realtime');
+      setItems((prev) => [payload.new as AppNotification, ...prev]);
+    },
+    onStatus: (status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.log(`[ZVONČEK] Kanál sa neotvoril: ${status} — appka funguje ďalej bez neho`);
+      }
+    },
+  });
 
   const unread = items.filter((n) => !n.read_at).length;
 

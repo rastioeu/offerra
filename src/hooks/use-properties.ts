@@ -12,7 +12,15 @@ import { useCallback, useEffect, useState } from 'react';
 import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
 import { errorText } from '@/lib/errors';
-import { supabase } from '@/lib/supabase';
+import type { PgBinding } from '@/lib/realtime';
+import { useRealtimeChannel } from '@/hooks/use-realtime-channel';
+
+/**
+ * Odbery detailu inzerátu ako DÁTA, nie ako reťaz volaní — presne to je
+ * dôvod, prečo sa `.on()` po `.subscribe()` už nedá napísať (§CLAUDE.md 11).
+ */
+const PROPERTY_DETAIL_BINDINGS = (id: string | undefined): PgBinding[] =>
+  id ? [{ event: 'UPDATE', schema: 'offerra', table: 'property', filter: `id=eq.${id}` }] : [];
 
 /** Fotky sa doťahujú jedným dotazom pre celý zoznam, nie N+1 na kartu. */
 async function attachMedia(rows: Property[]): Promise<PropertyWithMedia[]> {
@@ -181,26 +189,27 @@ export function useProperty(id: string | undefined) {
   // ešte niekoľko minút a klik na akciu (napr. „Chcem obhliadku") by narazil
   // na nezrozumiteľnú RLS chybu namiesto jasnej správy (Rastio, 13.8.2026).
   // Kanál je len doplnok — `useRefreshOnFocus` na obrazovke je druhá poistka.
-  useEffect(() => {
-    if (!id) return;
-    const topic = `property-${id}`;
-    const channel = supabase
-      .channel(topic)
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'offerra', table: 'property', filter: `id=eq.${id}` },
-        () => {
-          console.log('[DETAIL] Zmena inzerátu — obnovujem');
-          void reload();
-        },
-      )
-      .subscribe((status) => {
-        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-          console.log(`[DETAIL] Kanál sa neotvoril: ${status} — ostáva obnova pri návrate na obrazovku`);
-        }
-      });
-    return () => void supabase.removeChannel(channel);
-  }, [id, reload]);
+  //
+  // PADALO TU (Rastio, 17.8.2026): `useProperty(id)` je na ŠTYROCH
+  // obrazovkách (detail, editor, ponuka, ponuky) a expo-router necháva
+  // predchádzajúcu obrazovku namontovanú. Klik na „Upraviť" na detaile teda
+  // otvoril editor s TÝM ISTÝM `id` → `supabase.channel('property-X')`
+  // vrátilo ten už pripojený kanál detailu → `.on()` naň → pád. Odteraz to
+  // rieši zdieľaný register (§CLAUDE.md 11), ručný kanál tu už nie je.
+  useRealtimeChannel({
+    topic: id ? `property-${id}` : null,
+    label: '[DETAIL]',
+    bindings: PROPERTY_DETAIL_BINDINGS(id),
+    onChange: () => {
+      console.log('[DETAIL] Zmena inzerátu — obnovujem');
+      void reload();
+    },
+    onStatus: (status) => {
+      if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+        console.log(`[DETAIL] Kanál sa neotvoril: ${status} — ostáva obnova pri návrate na obrazovku`);
+      }
+    },
+  });
 
   return { item, error, reload };
 }
