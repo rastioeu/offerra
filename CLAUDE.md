@@ -25,6 +25,12 @@ Ku každej položke napíš **presne jeden** z týchto troch statusov:
 - **`grep` a čítanie kódu nedokazuje NIČ.**
 - **„Malo by fungovať" je ZAKÁZANÉ.**
 - **NIKDY nedávaj ✅ ničomu, čo vyžaduje vizuálne overenie. To robí Rastio.**
+- **ŽIADNE SCREENSHOTY** (Rastio, 17.8.2026: „screenshoty nechcem, nemám
+  ich ako zobraziť — to platí aj do budúcna"). Vizuálne overenie je jeho
+  **slovné potvrdenie**. V 🟡 bodoch preto píš, na čo sa má pozrieť a čo má
+  opísať slovami — nikdy „pošli screenshot", a to ani keď si to sám napíše
+  do zadania. Ako dôkaz ich nevyrábam ani ja: v tomto prostredí nie je
+  prehliadač ani simulátor a nakreslený mockup nie je dôkaz stavu appky.
 - **„✅ POTVRDENÉ POUŽÍVATEĽOM"** smieš napísať len ku konkrétnej obrazovke,
   ktorú Rastio **menovite** potvrdil.
 - **Neodvodzuj B z A.** Ak si overil sadenie, neznamená to, že si overil

@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '17. augusta 2026',
+    title: 'Filtre v troch jasných riadkoch',
+    items: [
+      'Filtre nad katalógom sa lámali podľa šírky obrazovky, takže v jednom riadku skončil typ obchodu spolu s typom nehnuteľnosti. Teraz sú v troch riadkoch podľa významu: čo chceš (predaj/prenájom), aký typ nehnuteľnosti, a nakoniec triedenie so srdiečkom.',
+      'Pribudol filter „Iné" — taký inzerát sa dal vytvoriť, ale nedal sa nájsť.',
+      'V Dopytoch prvý riadok hovorí „Kúpim · Hľadám prenájom", teda z pohľadu toho, kto hľadá.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '17. augusta 2026',
     title: 'Fotky na celú obrazovku — gestá opravené',
     items: [
       'Fotku v inzeráte si otvoríš na celú obrazovku — buď ťuknutím priamo na ňu, alebo ikonou v rohu galérie.',

@@ -19,7 +19,8 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
-import { db, DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL, type CatalogSort, type PropertyType } from '@/lib/property';
+import { db, type CatalogSort } from '@/lib/property';
+import { filterRows } from '@/lib/filter-rows';
 import {
   describeFilter,
   EMPTY_FILTER,
@@ -30,8 +31,6 @@ import {
 } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
-
-const TYPES: PropertyType[] = ['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL'];
 
 /** Príklad vety musí sedieť na to, čo sa práve prehľadáva. */
 const PLACEHOLDER: Record<FilterSide, string> = {
@@ -62,7 +61,13 @@ export function SearchBar({
   canFavorite?: boolean;
 }) {
   const palette = useTheme();
-  const label = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
+  // Riadky filtrov sú DÁTA — tá istá funkcia pre katalóg aj Dopyty, aby sa
+  // poradie nemohlo rozísť medzi tabmi (`src/lib/filter-rows.ts`).
+  const rows = filterRows({
+    side,
+    hasSort: Boolean(sort && onSortChange),
+    canFavorite: Boolean(canFavorite),
+  });
   const [text, setText] = useState('');
   const [understood, setUnderstood] = useState<string[]>([]);
   const [thinking, setThinking] = useState(false);
@@ -156,60 +161,71 @@ export function SearchBar({
         </Text>
       ) : null}
 
-      {/* PORADIE (Rastio, 12.8.2026): najprv to, ČO človek hľadá — predaj,
-          prenájom, typ nehnuteľnosti. Až za tým triedenie a úplne na konci
-          srdiečko. Triedenie ani obľúbené nezužujú, čo sa hľadá, len menia
-          pohľad na výsledok — preto sú za, nie pred. */}
-      <View style={styles.row}>
-        {(['SALE', 'RENT'] as const).map((t) => (
-          <Chip
-            key={t}
-            label={label[t]}
-            active={filter.transaction === t}
-            onPress={() => toggle('transaction', t)}
-          />
-        ))}
-        {TYPES.map((t) => (
-          <Chip
-            key={t}
-            label={PROPERTY_LABEL[t]}
-            active={filter.propertyType === t}
-            onPress={() => toggle('propertyType', t)}
-          />
-        ))}
+      {/* TRI RIADKY PODĽA VÝZNAMU (Rastio, 17.8.2026). Predtým to bol jeden
+          zalamovaný zoznam čipov, takže sa lámal podľa ŠÍRKY obrazovky, nie
+          podľa významu — „Predaj/Prenájom/Byt/Dom" skončilo v jednom riadku.
+          Riadky sú teraz dáta z `filterRows()`, takže poradie sa dá overiť
+          testom a nemôže sa rozísť medzi tabom Nehnuteľnosti a Dopytmi.
 
-        {sort && onSortChange
-          ? (
-              [
-                ['NEWEST', 'Najnovšie'],
-                ['ENDING_SOON', 'Čoskoro končí'],
-              ] as [CatalogSort, string][]
-            ).map(([value, sortLabel]) => (
-              <Chip
-                key={value}
-                label={sortLabel}
-                active={sort === value}
-                onPress={() => onSortChange(value)}
-              />
-            ))
-          : null}
-
-        {/* Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa
-            nedali skombinovať s „Prenájom" ani s hľadaním, čo je presne
-            to, na čo ich človek chce. Neprihlásenému sa neukazuje:
-            srdiečko si nemá kam uložiť.
-
-            SAMOTNÉ SRDIEČKO, bez slova (Rastio, 12.8.2026). Je to jediný
-            čip s ikonou, takže sa nedá pomýliť s ničím iným, a keď je
-            úplne na konci, nemá s čím splynúť. */}
-        {side === 'PROPERTY' && canFavorite ? (
-          <Chip
-            label="♥"
-            accessibilityLabel="Iba obľúbené"
-            active={filter.onlyFavorites === true}
-            onPress={() => onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })}
-          />
-        ) : null}
+          Poradie samo (Rastio, 12.8.2026): najprv to, ČO človek hľadá —
+          typ obchodu, typ nehnuteľnosti. Až za tým triedenie a srdiečko;
+          tie nezužujú, čo sa hľadá, len menia pohľad na výsledok. */}
+      <View style={styles.filters}>
+      {rows.map((row) => (
+        <View
+          key={row.kind}
+          // Riadok „Triedenie a obľúbené" je oddelený linkou: je to iná
+          // kategória než dva riadky nad ním (zužovanie vs. pohľad).
+          style={[
+            styles.row,
+            row.kind === 'VIEW' ? [styles.viewRow, { borderTopColor: palette.border }] : null,
+          ]}
+          accessibilityLabel={row.title}>
+          {row.chips.map((chip) => {
+            switch (chip.kind) {
+              case 'TRANSACTION':
+                return (
+                  <Chip
+                    key={chip.value}
+                    label={chip.label}
+                    active={filter.transaction === chip.value}
+                    onPress={() => toggle('transaction', chip.value)}
+                  />
+                );
+              case 'PROPERTY_TYPE':
+                return (
+                  <Chip
+                    key={chip.value}
+                    label={chip.label}
+                    active={filter.propertyType === chip.value}
+                    onPress={() => toggle('propertyType', chip.value)}
+                  />
+                );
+              case 'SORT':
+                return (
+                  <Chip
+                    key={chip.value}
+                    label={chip.label}
+                    active={sort === chip.value}
+                    onPress={() => onSortChange?.(chip.value)}
+                  />
+                );
+              case 'FAVORITES':
+                return (
+                  <Chip
+                    key="FAVORITES"
+                    label={chip.label}
+                    accessibilityLabel={chip.accessibilityLabel}
+                    active={filter.onlyFavorites === true}
+                    onPress={() =>
+                      onChange({ ...filter, onlyFavorites: filter.onlyFavorites ? null : true })
+                    }
+                  />
+                );
+            }
+          })}
+        </View>
+      ))}
       </View>
 
       {!isFilterEmpty(filter) ? (
@@ -273,7 +289,15 @@ const styles = StyleSheet.create({
     ...Type.bodyLg,
   },
   hint: { ...Type.caption, fontWeight: Weight.medium },
+  /**
+   * Medzera MEDZI riadkami je dvojnásobok medzery medzi čipmi v riadku
+   * (8 vs. 4). To je celé, čo z troch riadkov robí tri kategórie namiesto
+   * jedného zalamovaného zoznamu — plus linka nad posledným riadkom.
+   */
+  filters: { rowGap: Spacing.sm },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.xs },
+  /** „Triedenie a obľúbené" — iná kategória než dva riadky nad ním. */
+  viewRow: { borderTopWidth: StyleSheet.hairlineWidth, paddingTop: Spacing.sm },
   chip: {
     borderWidth: 1,
     borderRadius: Radius.full,

@@ -144,28 +144,11 @@ export const REGIONS = [
   'Košický kraj',
 ] as const;
 
-export const TRANSACTION_LABEL: Record<TransactionType, string> = {
-  SALE: 'Predaj',
-  RENT: 'Prenájom',
-};
-
-export const PROPERTY_LABEL: Record<PropertyType, string> = {
-  APARTMENT: 'Byt',
-  HOUSE: 'Dom',
-  LAND: 'Pozemok',
-  COMMERCIAL: 'Komerčný priestor',
-  OTHER: 'Iné',
-};
-
-/**
- * Tá istá dvojica typov obchodu, ale z pohľadu HĽADAJÚCEHO. Dopyt je opačný
- * smer než inzerát — „Predaj" pri dopyte znie, akoby človek predával
- * (Rastio, 8.8.2026).
- */
-export const DEMAND_LABEL: Record<TransactionType, string> = {
-  SALE: 'Kúpim',
-  RENT: 'Hľadám prenájom',
-};
+// Štítky typu obchodu a typu nehnuteľnosti sú v `labels.ts` — čistý modul
+// bez importov, aby sa poradie a názvy filtrov dali overiť v Node
+// (`scripts/check-filters.ts`). Re-export nech sa nemusia meniť miesta,
+// ktoré ich importujú odtiaľto — rovnako ako pri `deadline.ts`.
+export { DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL } from './labels';
 
 export const FURNISHING_LABEL: Record<Furnishing, string> = {
   FURNISHED: 'Zariadený',

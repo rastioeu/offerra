@@ -4898,6 +4898,101 @@ nezmenila, opravilo sa chovanie, ktoré už bolo opísané.
 
 ---
 
+## Fáza 27 — Filtre v troch riadkoch podľa významu (17.8.2026)
+
+Zadanie: filtre sú premiešané, preorganizovať do troch jasných riadkov
+(typ obchodu · typ nehnuteľnosti · triedenie a obľúbené), v OBOCH taboch,
+s prispôsobenými slovami v prvom riadku. Podrobne:
+`reports/FILTRE_TRI_RIADKY.md`.
+
+### 27.1 Príčina — ✅ OVERENÉ, a nebola v poradí
+
+Poradie čipov v kóde bolo správne od 12.8.2026. Chyba bola, že **všetky
+čipy boli v jednom `flexWrap` riadku**, takže sa lámali podľa ŠÍRKY
+obrazovky, nie podľa významu → „Predaj · Prenájom · Byt · Dom" v prvom
+riadku. Oprava teda nie je prehodenie poradia, ale **zrušenie závislosti na
+zalamovaní**: riadky sú dáta, každý vo vlastnom `View`.
+
+### 27.2 Riadky ako dáta — ✅ OVERENÉ RUNTIME (19/19)
+
+Nový `src/lib/filter-rows.ts` — `filterRows({ side, hasSort, canFavorite })`
+vracia tri riadky (`TRANSACTION` → `PROPERTY_TYPE` → `VIEW`). **Tú istú
+funkciu** čítajú oba taby, takže sa poradie medzi nimi nemôže rozísť.
+Riadok bez čipov sa nevracia (prázdna medzera v UI vyzerá ako chyba).
+
+`npx --yes tsx scripts/check-filters.ts` → **19/19 OK**. Prvá kontrola
+naschvál vyrobí pôvodný stav („Predaj · Prenájom · Byt · Dom"), inak by test
+nedokazoval nič — rovnaký princíp ako `check-realtime.ts`.
+
+### 27.3 Vizuálne oddelenie — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+- medzera medzi riadkami = **dvojnásobok** medzery medzi čipmi (8 vs. 4 px)
+- **tenká linka nad tretím riadkom** — tretí riadok je iná kategória: prvé
+  dva ZUŽUJÚ, čo sa hľadá, tretí len mení POHĽAD (rozhodnutie z 12.8.2026,
+  teraz je aj vidieť)
+- názvy kategórií sa nevykresľujú (zabrali by výšku), ale idú čítačke
+  obrazovky ako `accessibilityLabel` riadku
+
+🟡 **Čo Rastio potvrdí slovami:** vidno na prvý pohľad tri skupiny? Je nad
+tretím riadkom linka? Ak nie, ďalší krok sú viditeľné názvy kategórií.
+
+### 27.4 Pribudol filter „Iné" — ✅ OVERENÉ RUNTIME (dáta zmerané)
+
+`OTHER` sa dá vybrať pri inzeráte (`inzerat/[id].tsx:325`) aj pri dopyte
+(`dopyt/novy.tsx:133`), ale filter naň neexistoval — taký inzerát sa nedal
+nájsť. Teraz je v druhom riadku, posledný.
+
+**Dáta:** typ „Iné" dnes nemá **ani jeden** inzerát (0 z 50 ACTIVE) ani dopyt
+(0 z 26) — merané cez REST. Čip teda dnes vráti prázdny výsledok; nie je to
+chyba filtra, len stav dát. Rozdelenie ACTIVE: byt 23, dom 17, pozemok 4,
+komerčný 6.
+
+### 27.5 🔴 Tab Dopyty nemá tretí riadok — vedome, nie prehliadnutím
+
+Nie je tam triedenie (`buyer_request` nemá v modeli uzávierku → „Čoskoro
+končí" nemá podľa čoho triediť, rozhodnuté 8.8.2026) ani srdiečko (dopyt sa
+nedá „obľúbiť"). Riadok bez čipov sa nevykreslí.
+
+Ak Rastio chce v Dopytoch triediť: „Najnovšie" by šlo hneď (`created_at`
+existuje), „Čoskoro končí" by potrebovalo pridať dopytom uzávierku do
+modelu. **Sám som to nepridal — mení to mechaniku appky, a zadanie bolo
+preorganizovať poradie.** Čaká na Rastiovo rozhodnutie.
+
+### 27.6 Vedľajší presun — ✅ štítky do modulu bez importov
+
+`TRANSACTION_LABEL`, `DEMAND_LABEL`, `PROPERTY_LABEL` → nový
+`src/lib/labels.ts`, pretože `property.ts` importuje `./supabase` a v Node
+sa načítať nedá (test potrebuje overiť skutočné slová „Kúpim" / „Hľadám
+prenájom"). `property.ts` ich **re-exportuje**, takže žiadne existujúce
+miesto sa nemenilo — presne ako pri `deadline.ts` 13.8.2026.
+
+### 27.7 ŽIADNE SCREENSHOTY — zapísané do CLAUDE.md §1
+
+Rastio (17.8.2026): *„screenshoty nechcem, nemám ich ako zobraziť — to platí
+aj do budúcna."* Jeho vizuálne overenie je **slovné potvrdenie**. V zadaní
+Fázy 27 si screenshoty pýtal sám (dva body), ale to bolo skôr, než to
+napísal — takže sa nahrádzajú slovným potvrdením. Ani ja ich nevyrábam: v
+tomto prostredí nie je prehliadač ani simulátor (overené: žiadny
+chromium/firefox/playwright/puppeteer) a nakreslený mockup nie je dôkaz
+stavu appky.
+
+### 27.8 OTA — nový natívny modul nepribudol → **IDE OTA**
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | *dopĺňa sa po publikovaní* |
+
+`package.json` nedotknutý.
+
+### 27.9 §10 kontrola — ✅ OVERENÉ RUNTIME
+
+`check-deadline` 12/12 · countdown dáta: 3 ACTIVE s uzávierkou v budúcnosti ·
+`check-gallery` 33/33 · `check-realtime` 20/20 · `grep "\.channel("` mimo
+registra len komentáre · `npx tsc --noEmit` čisté.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
