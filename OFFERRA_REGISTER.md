@@ -4824,8 +4824,13 @@ sekcie o zatváraní (130 px zatvorí, 50 px nie, ťah nahor nikdy).
 
 **NEDOKAZUJE**, že gesto do kódu dorazí — to je natívna vrstva a pocit
 v ruke, teda vec zariadenia (§1). Skript to na konci sám vypíše, aby to
-nešlo prehliadnuť. Galéria je preto **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE
-OVERENIE**, nie ✅.
+nešlo prehliadnuť.
+
+**✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 17.8.2026):** „Gestá fungujú, listuje
+aj zatvára" — na TestFlight builde #5 po tejto OTA. Menovite potvrdené je
+**listovanie do strán** a **zatvorenie potiahnutím dole**. Dvojťap a
+štipnutie Rastio menovite nepotvrdil, tie ostávajú **🟡** (§1 — neodvodzuje
+sa B z A).
 
 Ostatné: `npx tsc --noEmit` čisté · `check-realtime` 20/20 ·
 `check-deadline` 12/12 · `expo export --platform ios` prešlo, texty
