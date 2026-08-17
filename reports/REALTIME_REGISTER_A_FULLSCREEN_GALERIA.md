@@ -186,6 +186,15 @@ s dnešnými → moduly sú skompilované v binárke, nový build netreba.
 
 **IDE OTA.** `package.json` ani `package-lock.json` sa nezmenili.
 
+**Publikované 17.8.2026, runtime overený podľa §9:**
+
+| | Runtime |
+|---|---|
+| publikovaná OTA (iOS), group `e67997d3` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Zhodné → balík sa na TestFlight build **dostane**. Commit v OTA `8a8a1fa`.
+
 ### 🔴 Skoro som zopakoval incident z 13.8.2026
 
 `npx expo lint` si **sám doinštaloval `eslint` a `eslint-config-expo` do

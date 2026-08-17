@@ -4714,6 +4714,17 @@ $ git show 40e3db0:package.json | grep -E "reanimated|worklets|gesture-handler"
 skompilované v binárke. **IDE OTA**, nový build netreba. `package.json` ani
 `package-lock.json` sa nezmenili.
 
+**Publikované 17.8.2026 — runtime overený podľa §9:**
+
+| | Runtime |
+|---|---|
+| publikovaná OTA (iOS), group `e67997d3` | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| posledný `finished` iOS build (#5, 9.8.2026) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+
+Zhodné → balík sa na Rastiov TestFlight **dostane**. Commit v OTA:
+`8a8a1fa`. Android runtime `eaadbb7e…` (vlastná vetva, bez iOS buildu).
+`git status` po publikovaní čistý, `package.json` nedotknutý.
+
 ### 25.8 🔴 Skoro som zopakoval incident z 13.8.2026
 
 `npx expo lint` si **sám doinštaloval `eslint` + `eslint-config-expo` do
