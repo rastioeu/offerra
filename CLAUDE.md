@@ -77,6 +77,23 @@ natívny build cez `eas build --platform ios` + `eas submit` do TestFlight.
   tokeny — sa sem nesmie dostať, ani v skriptoch, ani v reportoch.
 - Každý projekt (MUTARK / Famiglia / Offerra) má **vlastný** GitHub token.
   Tokeny sa medzi projektmi **nepožičiavajú**.
+- **Zmeny v databáze idú cez Supabase Management API**, nie cez psql:
+  `POST https://api.supabase.com/v1/projects/vxqvpgzwefcehugmhaft/database/query`
+  s `Bearer $SUPABASE_ACCESS_TOKEN` (vzor: `scripts/import-streets.mjs`,
+  register 0.6/1.4). Takto vznikla schéma `offerra`, tabuľky, RLS aj všetky
+  migrácie. **Priame DB heslo nežiadaj** — Management API na DDL stačí,
+  vrátane `create policy`.
+- ⚠️ **`SUPABASE_ACCESS_TOKEN` NIE JE v `/root/.offerra-secrets`** (ten má len
+  `GITHUB_TOKEN`, `DEMO_PASSWORD`, `PAGES_TOKEN`, `PAGES_ADMIN_TOKEN`). Je
+  v `/root/.mutark-secrets` a Supabase projekt je s MUTARKom **zdieľaný** —
+  **Rastio 17.8.2026 výslovne povolil ten token na DB zmeny v Offerre**
+  („použi ten z .mutark-secrets, databáza je spoločná"). Je to výnimka
+  z pravidla o nepožičiavaní, nie jeho zrušenie: platí pre Supabase
+  Management API, nie pre GitHub tokeny. Načítaj ho do premennej prostredia
+  pre jediný príkaz a **nikdy** ho nezapisuj do repa.
+- Databáza je spoločná pre tri projekty — sú v nej buckety `offerra-media`,
+  `avatars` (MUTARK) a `eleven-media`. **Každá politika musí byť viazaná na
+  svoj bucket**, inak zasiahne cudzí projekt.
 
 ---
 

@@ -5083,7 +5083,7 @@ Nová sekcia **„Uzávierka ponúk — a čo po nej"**: že uzávierka je nepov
 priamo aj to, že **upozornenie nepríde**. Pribudla ikona `clock` do
 `icon.tsx` (mala by inak prepadnúť na neznámy názov).
 
-### 28.5 🔴 Fotky v bucketе sa dajú VYPÍSAŤ — NEOPRAVENÉ, treba Rastiovu ruku
+### 28.5 Fotky v bucketе sa dali VYPÍSAŤ — ✅ OPRAVENÉ A OVERENÉ RUNTIME
 
 Register 1.7 tvrdil „dostupná pri znalosti UUID cesty". Meranie ukázalo, že
 cestu **netreba poznať** — bucket `offerra-media` sa dá vypísať anon kľúčom
@@ -5108,39 +5108,63 @@ existujúce politiky NERUŠIA (permissive politiky sa sčítavajú — pridanie
 ďalšej by nič nezavrelo, `restrictive` sa spája AND-om). Iných bucketov sa
 netýka, verejné čítanie ide mimo RLS, späť sa berie jedným `drop policy`.
 
-**Rastio 17.8.2026: „spusť ty" → 🔴 CHÝBA MI TOKEN, nie prístup k DB.**
+**Ktorá politika to bola** (výpis pred zmenou):
+`offerra_media_select_public [SELECT, permissive, {anon,authenticated}]` s
+podmienkou iba `bucket_id = 'offerra-media'` — žiadny vlastník. Pre porovnanie
+`offerra_media_delete_own` má aj
+`AND (storage.foldername(name))[1] = auth.uid()::text`, teda správne.
 
-Rastio pripomenul, že všetky doterajšie DB zmeny šli cez **Management API**
-(register 0.6, 1.4), nie psql — a má pravdu, mechanizmus je v repe:
-`scripts/import-streets.mjs:127`, `POST /v1/projects/{ref}/database/query`
-s `Bearer $SUPABASE_ACCESS_TOKEN` z prostredia. **Moje predchádzajúce
-odporúčanie priameho `SUPABASE_DB_URL` bolo zlé** — Management API na
-`create policy` stačí a je to tá istá cesta ako pri všetkých ostatných
-politikách.
+**NASADENÉ 17.8.2026** cez `scripts/apply-storage-policy.mjs` (Management API,
+`POST /v1/projects/{ref}/database/query`) — nová politika
+`offerra-media: vypisat smie len vlastnik [SELECT, RESTRICTIVE, {public}]`.
+Nič sa nerušilo. Iných bucketov sa netýka, čo je pri **spoločnej databáze**
+podstatné: v projekte žijú aj `avatars` (MUTARK, verejný) a `eleven-media`
+(neverejný), ich politiky sú viazané na svoje buckety (overené pred zmenou).
 
-Pripravené: `scripts/apply-storage-policy.mjs` (idempotentné, `--dry-run`,
-vypíše politiky pred aj po, pri chybe celá odpoveď API).
+**Dôkaz — cudzie oko:** `check-storage-exposure.ts` pred opravou **2 FAIL**, po
+oprave **4/4 OK** (výpis zavretý · zverejnená fotka sa číta aj bez kľúča ·
+zápis zamietla RLS so `statusCode 403`). Ten istý skript teda dokázal chybu aj
+opravu.
 
-Čo chýba: **`SUPABASE_ACCESS_TOKEN` v `/root/.offerra-secrets` NIE JE** (ten
-súbor má `GITHUB_TOKEN`, `DEMO_PASSWORD`, `PAGES_TOKEN`,
-`PAGES_ADMIN_TOKEN`), a v prostredí žiadna `SUPABASE_*` premenná nie je —
-platnosť neexistujúceho tokenu sa overiť nedá. Token existuje
-v `/root/.mutark-secrets` a `/root/.famiglia-secrets` a Supabase projekt je
-so MUTARKom **zdieľaný**, ale §4 zakazuje požičiavanie tokenov medzi
-projektmi, takže som doň nesiahol. Čaká sa na Rastiovo rozhodnutie: nový
-token pre Offerru, alebo výslovné povolenie použiť mutarkovský.
+**Dôkaz — vlastník (prihlásená session, demo účet):** výpis vlastného
+priečinka HTTP 200 (vidí svoje) · výpis celého bucketu vráti **len jeho
+priečinok** · nahranie fotky 200 · vo výpise 200 · **zmazanie 200** · po sebe
+uklidené (0 položiek). Toto je tá polovica, na ktorú sa pri zatváraní práv
+zabúda — že sa nezavrie aj tomu, kto tam prístup mať má.
+*(Prvé mazanie vrátilo 400 — chyba MÔJHO testu, `DELETE` s
+`Content-Type: application/json` bez tela. Nie politika. Zapísané, lebo taká
+chyba sa dá ľahko vyhlásiť za „RLS blokuje mazanie".)*
 
-### 28.6 Kontrola expozície ako skript — ✅ OVERENÉ RUNTIME (dnes zlyhá zámerne)
+🟡 **Ostáva Rastiovi:** pridať a zmazať fotku **z appky** (appka volá
+`supabase.storage.remove()`, nie priamo REST — to som overiť nemohol).
 
-`npx --yes tsx scripts/check-storage-exposure.ts` — **dnes 2 FAIL** (výpis
-otvorený, fotky nezverejnených inzerátov prístupné), po oprave musí prejsť.
+**Token — pozor na §4:** `SUPABASE_ACCESS_TOKEN` v `/root/.offerra-secrets`
+NIE JE (má len `GITHUB_TOKEN`, `DEMO_PASSWORD`, `PAGES_TOKEN`,
+`PAGES_ADMIN_TOKEN`). Existuje v `/root/.mutark-secrets` a Supabase projekt je
+s MUTARKom **zdieľaný** (register 0.6). §4 zakazuje požičiavanie tokenov medzi
+projektmi, takže som naň sám nesiahol; **Rastio to 17.8.2026 výslovne povolil**
+(„použi ten z .mutark-secrets, databáza je spoločná"). Načítaný do premennej
+prostredia pre jediný príkaz, do repa sa nedostal.
+
+**Ako to bolo spustené — a moja chyba v odporúčaní:** Rastio pripomenul, že
+všetky doterajšie DB zmeny šli cez **Management API** (register 0.6, 1.4), nie
+psql — a má pravdu, mechanizmus je v repe (`scripts/import-streets.mjs:127`).
+**Moje odporúčanie priameho `SUPABASE_DB_URL` bolo zlé**; Management API na
+`create policy` stačí. Priame DB heslo teda netreba a nežiadam ho.
+
+### 28.6 Kontrola expozície ako skript — ✅ OVERENÉ RUNTIME (2 FAIL → 4/4 OK)
+
+`npx --yes tsx scripts/check-storage-exposure.ts` — pred opravou **2 FAIL**
+(výpis otvorený, fotky nezverejnených inzerátov prístupné), po oprave
+**4/4 OK**. To je na tom skripte to podstatné: dokázal chybu AJ opravu. Keby
+prechádzal vždy, nedokazoval by nič.
 Kontroluje aj to, čo sa NESMIE pokaziť: zverejnenú fotku prečíta aj
 neprihlásený prehliadač (inak by katalóg ostal bez fotiek — regresia z Fázy
 24) a cudzí nesmie zapisovať.
 
 Kľúče berie z gitignorovaného `.env`, do repa sa nedostanú (§4).
 
-### 28.7 Čo tým NEBUDE vyriešené (zapísané, aby sa nezabudlo)
+### 28.7 Čo tým NIE JE vyriešené (zapísané, aby sa nezabudlo)
 
 - Fotka ostane čitateľná, kto pozná presnú URL. Skutočná dôvernosť =
   neverejný bucket + podpísané URL, teda prerobenie celej cesty k fotkám
@@ -5205,11 +5229,12 @@ Nové otvorené body:
 - **Zmenšovanie fotiek pri uploade** — dnes len prekódovanie `quality 0.6`
   + poistka 8 MB. Skutočný resize potrebuje `expo-image-manipulator`, čo je
   nový natívny modul → nový EAS build. Zvážiť pri najbližšom builde (1.7).
-- **Verejný bucket a DRAFT fotky** — PREMERANÉ 17.8.2026 a je to horšie, než
-  tento bod tvrdil: cestu netreba poznať, bucket sa dá **vypísať** anon
-  kľúčom (122 fotiek, 20 z 21 inzerátov nezverejnených). Oprava je jedna
-  politika na `storage.objects`, appku nemení — SQL a dôkaz vo Fáze 28.5,
-  spustiť ju musí Rastio (servisný kľúč do repa nepatrí, §4).
+- **Verejný bucket a DRAFT fotky** — ČIASTOČNE VYRIEŠENÉ 17.8.2026 (Fáza
+  28.5): vypisovanie bucketu je **zavreté** restrictive politikou, takže sa
+  fotky nezverejnených inzerátov nedajú prejsť (predtým 122 fotiek, 20 z 21
+  inzerátov nezverejnených). **Ostáva otvorené:** fotka je stále čitateľná,
+  kto pozná presnú URL — na to treba neverejný bucket + podpísané URL, teda
+  prerobenie celej cesty k fotkám (vlastná fáza, ide OTA).
 - **Notifikácie** — Offerra ich nemá vôbec. „Osloviť" je zatiaľ záznam
   v appke, nie push (2.7).
 - **Filtre a mapa** — Fáza 6. Katalóg zatiaľ radí len podľa dátumu.
