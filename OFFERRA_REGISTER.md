@@ -5249,6 +5249,20 @@ aktualizované v tom istom kroku (§7/§8).
 **Čo test NEDOKAZUJE:** že appka tlačidlo v UI naozaj zobrazí a ťuknutie
 zavolá tento UPDATE — 🟡, presný postup v reporte.
 
+### 29.4 Publikované OTA — ✅ OVERENÉ RUNTIME
+
+Commit `876278f`. Runtime **nezmenené** oproti buildu #5 (žiadny zásah do
+`package.json`) — overené priamo z odpovede `eas update`, nie odhadom:
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (Android) | `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7` (zhodné s Fázou 27/28) |
+
+Publikované **po platformách** (`--platform=all` v tomto prostredí padá
+na OOM, viď 27.8) — iOS update `01a018d2-…`, Android update `01a018d6-…`.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
