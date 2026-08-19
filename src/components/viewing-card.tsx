@@ -92,7 +92,16 @@ export function ViewingCard({
     setBusy(true);
     setError(null);
     try {
-      await requestViewing(propertyId, myId);
+      // ZNOVU-ŽIADOSŤ (Rastio, 19.8.2026): `viewing` má `unique
+      // (property_id, requester_id)` — druhá žiadosť na ten istý inzerát
+      // NIKDY nie je nový riadok, vždy je to UPDATE tej istej CANCELLED
+      // riadky. Databáza (`guard_viewing_update`) to isté presadzuje aj
+      // nezávisle od appky — toto len volí správnu cestu.
+      if (mine && mine.status === 'CANCELLED') {
+        await setViewingStatus(mine.id, 'REQUESTED');
+      } else {
+        await requestViewing(propertyId, myId);
+      }
       await reload();
       toast('Žiadosť odoslaná — čaká na potvrdenie vlastníkom', 'info');
     } catch (e: unknown) {
@@ -156,22 +165,36 @@ export function ViewingCard({
       <Eyebrow>Obhliadka</Eyebrow>
       <ErrorNote error={error} />
 
-      {!isOwner && !mine ? (
+      {/* ZRUŠENÁ/ODMIETNUTÁ obhliadka NIE JE mŕtvy stav (Rastio, 19.8.2026,
+          screenshot) — kým je `mine.status === 'CANCELLED'`, tlačidlo sa
+          ukáže znova. Databáza to isté presadzuje nezávisle
+          (`guard_viewing_update`), takže appka tu len ponúka cestu, ktorú
+          server aj tak dovolí. */}
+      {!isOwner && (!mine || mine.status === 'CANCELLED') ? (
         <>
           <Text style={[styles.note, { color: palette.textSecondary }]}>{VIEWING_CONSENT}</Text>
+          {mine?.status === 'CANCELLED' ? (
+            <Text style={[styles.note, { color: palette.textMuted }]}>
+              Predošlá žiadosť bola zrušená · Môžeš požiadať znova.
+            </Text>
+          ) : null}
           {closed ? (
             <Text style={[styles.note, { color: palette.textMuted }]}>
               Inzerát už ponuky neprijíma — obhliadku cezeň dohodnúť nemožno.
             </Text>
           ) : (
             <Button
-              title={busy ? 'Odosielam…' : 'Chcem obhliadku'}
+              title={busy ? 'Odosielam…' : mine ? 'Požiadať znova' : 'Chcem obhliadku'}
               disabled={busy}
               onPress={() =>
-                Alert.alert('Požiadať o obhliadku?', VIEWING_CONSENT, [
-                  { text: 'Zrušiť', style: 'cancel' },
-                  { text: 'Áno, požiadať', onPress: () => void ask() },
-                ])
+                Alert.alert(
+                  mine ? 'Požiadať o obhliadku znova?' : 'Požiadať o obhliadku?',
+                  VIEWING_CONSENT,
+                  [
+                    { text: 'Zrušiť', style: 'cancel' },
+                    { text: 'Áno, požiadať', onPress: () => void ask() },
+                  ],
+                )
               }
             />
           )}

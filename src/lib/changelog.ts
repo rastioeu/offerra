@@ -20,6 +20,31 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '19. augusta 2026',
+    title: 'Zrušená obhliadka už nie je koniec',
+    items: [
+      'Keď vlastník žiadosť o obhliadku odmietne, alebo ju sám stiahneš, tlačidlo „Chcem obhliadku" sa objaví znova — dá sa požiadať znova, ak si to rozmyslíš alebo sa okolnosti zmenia.',
+      'Proti spamovaniu je znova-žiadosť obmedzená časovým odstupom.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '19. augusta 2026',
+    title: '„Ako funguje Offerra" v hornej lište',
+    items: [
+      'Vedľa zvončeka a ozubeného kolieska pribudla ikona otáznika — kedykoľvek otvorí plné vysvetlenie appky, aj po tom, čo si kartu na hlavnej obrazovke zavrel.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '19. augusta 2026',
+    title: 'Opravený pád v detaile inzerátu',
+    items: [
+      'Prepínanie medzi podtabmi na detaile inzerátu mohlo appku zhodiť. Opravené.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '17. augusta 2026',
     title: 'Po uzávierke sa appka ozve',
     items: [

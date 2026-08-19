@@ -45,6 +45,19 @@ export function AppHeader({ title }: { title?: string }) {
       <View style={styles.right}>
         {title ? <Text style={[styles.title, { color: palette.textMuted }]}>{title}</Text> : null}
         <NotificationBell />
+        {/* Karta „Ako funguje Offerra" sa dá na hlavnej obrazovke zavrieť
+            krížikom (a v Nastaveniach treba najprv prejsť inam) — potom
+            nemal používateľ ako sa k vysvetleniu dostať znova. Toto tlačidlo
+            je preto TRVALO dostupné, na všetkých hlavných taboch, a vedie na
+            plnú verziu (`/ako-funguje`), rovnakú ako karta aj Nastavenia
+            (Rastio, 19.8.2026). */}
+        <Pressable
+          onPress={() => router.push('/ako-funguje')}
+          accessibilityRole="button"
+          accessibilityLabel="Ako funguje Offerra"
+          hitSlop={12}>
+          <Icon name="questionmark.circle" size={24} color={palette.textSecondary} />
+        </Pressable>
         {/* Nastavenia sú GLOBÁLNE, nie na jednej obrazovke. Predtým boli
             len v rohu Profilu — kto bol v katalógu, musel najprv prejsť
             inam. Hlavička je na všetkých hlavných taboch, takže patria sem. */}

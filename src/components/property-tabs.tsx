@@ -211,9 +211,25 @@ export function PropertyTabs({
           horizontal
           showsHorizontalScrollIndicator={false}
           scrollEventThrottle={16}
-          onLayout={(e) => setScrollMeta((m) => ({ ...m, viewportW: e.nativeEvent.layout.width }))}
+          onLayout={(e) => {
+            const w = e.nativeEvent?.layout?.width;
+            if (w != null) setScrollMeta((m) => ({ ...m, viewportW: w }));
+          }}
           onContentSizeChange={(w) => setScrollMeta((m) => ({ ...m, contentW: w }))}
-          onScroll={(e) => setScrollMeta((m) => ({ ...m, scrollX: e.nativeEvent.contentOffset.x }))}
+          onScroll={(e) => {
+            // Pád „Cannot read property 'contentOffset' of null" (Rastio,
+            // 19.8.2026) — `e.nativeEvent.contentOffset.x` sa čítalo bez
+            // ochrany. Presnú príčinu prečo bol `nativeEvent` null sa v tomto
+            // prostredí nedá reprodukovať (žiadny simulátor, §3) — namiesto
+            // hádania sa pridáva ochrana na PRESNE to miesto, čo hlásenie
+            // ukazuje, a log, aby bolo vidieť, ak sa to stane znova.
+            const x = e.nativeEvent?.contentOffset?.x;
+            if (x == null) {
+              console.log('[TABY] onScroll bez contentOffset — event preskočený');
+              return;
+            }
+            setScrollMeta((m) => ({ ...m, scrollX: x }));
+          }}
           contentContainerStyle={styles.barInner}>
           {tabs.map(([value, label]) => {
             const active = tab === value;

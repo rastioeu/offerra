@@ -96,6 +96,9 @@ export const HOW_SECTIONS: HowSection[] = [
       'Vlastník žiadosť v tabe Obhliadka POTVRDÍ alebo ODMIETNE. Až potvrdením sa meno, ' +
         'telefón a e-mail odkryjú OBOM stranám naraz — rovnaký mechanizmus ako pri prijatí ' +
         'ponuky.',
+      'Zrušená alebo odmietnutá žiadosť nie je koniec — tlačidlo sa objaví znova a môžeš ' +
+        'požiadať znova. Aby to niekto nezneužil na spamovanie, znova sa dá požiadať až po ' +
+        'chvíli čakania.',
       'Appka termíny NENAVRHUJE ani nepotvrdzuje. Kedy a kde sa stretnete, si po odkrytí ' +
         'kontaktu dohodnete telefonicky.',
       'Čo sa stane potvrdením, je napísané NAD tlačidlom, nie až po ňom. A späť sa to vziať ' +

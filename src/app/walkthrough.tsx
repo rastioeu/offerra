@@ -37,7 +37,11 @@ export default function WalkthroughScreen() {
   }
 
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const i = Math.round(e.nativeEvent.contentOffset.x / SCREEN_WIDTH);
+    // Rovnaká ochrana ako v `property-tabs.tsx` — hlásený pád „Cannot read
+    // property 'contentOffset' of null" (Rastio, 19.8.2026).
+    const x = e.nativeEvent?.contentOffset?.x;
+    if (x == null) return;
+    const i = Math.round(x / SCREEN_WIDTH);
     if (i !== index) setIndex(i);
   }
 

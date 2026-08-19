@@ -163,7 +163,14 @@ export default function PropertyDetailScreen() {
   const isOffer = Boolean(pd && pd.headline === 'TOP_OFFER' && pd.topOffer != null);
 
   function onGalleryScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
-    const i = Math.round(e.nativeEvent.contentOffset.x / SCREEN_W);
+    // Rovnaká ochrana ako v `property-tabs.tsx` — hlásený pád „Cannot read
+    // property 'contentOffset' of null" (Rastio, 19.8.2026).
+    const x = e.nativeEvent?.contentOffset?.x;
+    if (x == null) {
+      console.log('[GALÉRIA] onScroll bez contentOffset — event preskočený');
+      return;
+    }
+    const i = Math.round(x / SCREEN_W);
     if (i !== photo) setPhoto(i);
   }
 

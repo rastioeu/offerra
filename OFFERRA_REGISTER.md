@@ -5190,6 +5190,67 @@ Zhodné → balík dorazí na Rastiov TestFlight build (§9). Commit v OTA:
 
 ---
 
+## Fáza 29 — Pád v PropertyTabs, tlačidlo „Ako to funguje", zrušená obhliadka (19.8.2026)
+
+Tri body zo zadania Rastia. Report:
+`reports/PAD_TABOV_APKA_TLACIDLO_OBHLIADKA_ZNOVA.md`.
+
+### 29.1 Pád „Cannot read property 'contentOffset' of null" — 🟡 OPRAVENÉ, ČAKÁ 5× NA TELEFÓNE
+
+Jediné tri miesta v appke čítajúce `e.nativeEvent.contentOffset`
+(`property-tabs.tsx` tab bar, `nehnutelnost/[id].tsx` hero galéria,
+`walkthrough.tsx`) nemali ochranu — presne ten prístup, čo hlásenie
+cituje. Prečo je `nativeEvent` niekedy `null` sa v tomto prostredí
+nedá zmerať (žiadny simulátor, §3) — namiesto hádania pridaná ochrana
+(`e.nativeEvent?.contentOffset?.x`, tichý `return` + log) na presne tie
+tri miesta. `check-gallery.ts` 33/33 nezmenené (logika sa nemenila, len
+ochrana pred ňou).
+
+### 29.2 Tlačidlo „Ako to funguje" v hornej lište — 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+`questionmark.circle` v `AppHeader`, medzi zvončekom a nastaveniami, na
+všetkých piatich hlavných taboch. Vedie na existujúcu `/ako-funguje`
+(žiadny nový text, CLAUDE.md §8). `expo-symbols` je v builde od Fázy 7,
+ide OTA.
+
+### 29.3 Zrušená obhliadka bola mŕtvy stav — ✅ OVERENÉ RUNTIME (DB, 6/6), 🟡 appka
+
+`viewing` má `unique (property_id, requester_id)` — druhá žiadosť na ten
+istý inzerát od toho istého záujemcu je vždy UPDATE tej istej riadky,
+nikdy nový INSERT. `guard_viewing_update()` mal CANCELLED aj COMPLETED
+v spoločnom bloku „uzavretá sa nemení" — oprava musela ísť do DB
+(Management API, token z `/root/.mutark-secrets`, §4), nešlo to len
+appkou.
+
+**`scripts/apply-viewing-reopen.mjs`** — CANCELLED → REQUESTED povolené,
+ale len pôvodnému záujemcovi, s kontrolou blokovania
+(`offerra.is_blocked()`, doteraz len na INSERTe) a s cooldownom proti
+spamu (`rate_limit_viewings_window_minutes`, rovnaký admin-nastaviteľný
+prah ako Fáza 23.3 — `trg_viewing_rate_limit` beží len na INSERT, reopen
+by inak nemal limit vôbec). COMPLETED nezmenené. `on_viewing_decided()`
+pri reopene pošle vlastníkovi notifikáciu `ZIADOST_O_OBHLIADKU`, inak by
+o novej žiadosti nevedel.
+
+`scripts/check-viewing-reopen.mjs`, **6/6**, priamo cez Management API na
+reálnych seedovaných riadkach, `auth.uid()` simulované cez
+`set local request.jwt.claim.sub` (tá istá funkcia, akú číta aj RLS):
+vlastník nesmie reopenúť cudziu žiadosť · cudzí used nesmie · pôvodný
+záujemca smie · vlastník dostane notifikáciu · okamžitý reopen po
+zrušení blokuje cooldown (P0429) · COMPLETED ostáva uzavreté. Opakovateľné
+aj v tej istej hodine (testovacia riadka sa pred behom resetne mimo
+cooldownu).
+
+Appka (`viewing-card.tsx`): tlačidlo „Chcem obhliadku" sa zobrazí znova
+ako „Požiadať znova", keď `mine.status === 'CANCELLED'`, s vetou
+„Predošlá žiadosť bola zrušená · Môžeš požiadať znova." Stará CANCELLED
+riadka ostáva pod kartou ako história. `how-it-works.ts` + changelog
+aktualizované v tom istom kroku (§7/§8).
+
+**Čo test NEDOKAZUJE:** že appka tlačidlo v UI naozaj zobrazí a ťuknutie
+zavolá tento UPDATE — 🟡, presný postup v reporte.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

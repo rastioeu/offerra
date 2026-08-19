@@ -36,7 +36,8 @@ export type IconName =
   | 'key'
   | 'arrow.up.left.and.arrow.down.right'
   | 'clock'
-  | 'xmark';
+  | 'xmark'
+  | 'questionmark.circle';
 
 /** Textová náhrada, keď natívny modul chýba (starý build, web). */
 const FALLBACK: Record<IconName, string> = {
@@ -59,6 +60,7 @@ const FALLBACK: Record<IconName, string> = {
   'arrow.up.left.and.arrow.down.right': '⤢',
   clock: '◷',
   xmark: '✕',
+  'questionmark.circle': '?',
 };
 
 export function Icon({
