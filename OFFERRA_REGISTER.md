@@ -5338,6 +5338,27 @@ Nedá sa overiť v tomto prostredí (žiadny simulátor, §3):
 Žiadny natívny modul nepribudol, `package.json` nedotknutý — `eas update`
 stačí.
 
+### 30.7 Publikované OTA — ✅ OVERENÉ RUNTIME
+
+Commit `b3f71be`. Runtime **nezmenené** oproti buildu #5 (overené priamo
+z odpovede `eas update`, nie odhadom):
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (Android) | `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7` |
+
+iOS update `01a02b75-3270-76f6-8b84-3feb38c59e89` (skupina
+`84d45c53-fdc0-4723-acec-f85fffb96a01`), Android update
+`01a02b75-3270-7d42-b058-576a5483ecd5` (skupina
+`632a9bbb-20f9-422e-8724-01a01f4bd72b`).
+
+**Predošlý stav appky na telefóne (pred touto OTA):** posledná
+publikovaná OTA bola z Fázy 29 (3 dni staré, `eafd9b6e…`/`272132a1…`) —
+appka bola stále len po slovensky, presne ako to Rastio 22.8.2026 nahlásil
+(„mam tam stale iba slovencinu"). Táto OTA to opravuje.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
