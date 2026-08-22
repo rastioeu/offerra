@@ -21,6 +21,7 @@ import { Animated, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { tickUndo } from '@/lib/undo-countdown';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -62,6 +63,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const undoTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const undoCommit = useRef<(() => void | Promise<void>) | null>(null);
   const palette = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
   const hide = useCallback(() => {
@@ -165,10 +167,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <Pressable
               onPress={cancelUndo}
               accessibilityRole="button"
-              accessibilityLabel={`Zrušiť (${undo.secondsLeft} s)`}
+              accessibilityLabel={t('toast.cancelAccessibility', { seconds: undo.secondsLeft })}
               hitSlop={8}>
               <Text style={[styles.undoAction, { color: palette.warning }]}>
-                Zrušiť ({undo.secondsLeft})
+                {t('toast.cancelWithSeconds', { seconds: undo.secondsLeft })}
               </Text>
             </Pressable>
           </View>

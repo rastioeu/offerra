@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText, isNotDeployedYet } from '@/lib/errors';
 import type { Offer } from '@/lib/offers';
 import { buildTimeline, fetchPriceHistory, type PricePoint } from '@/lib/price-history';
@@ -31,6 +32,7 @@ export function PriceTimeline({
   transaction: TransactionType;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const [points, setPoints] = useState<PricePoint[] | null>(null);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export function PriceTimeline({
 
   return (
     <Card>
-      <Eyebrow>Vývoj ceny</Eyebrow>
+      <Eyebrow>{t('priceTimeline.title')}</Eyebrow>
       {points.map((p, i) => {
         const isOffer = p.kind === 'OFFER';
         const cheaper = !isOffer && p.from != null && p.value != null && p.value < p.from;
@@ -78,12 +80,12 @@ export function PriceTimeline({
             />
             <View style={styles.body}>
               <Text style={[styles.value, { color: isOffer ? palette.accent : palette.textPrimary }]}>
-                {formatPrice(p.value, transaction) ?? '—'}
+                {formatPrice(t, p.value, transaction) ?? '—'}
               </Text>
               <Text style={[styles.label, { color: palette.textMuted }]}>
-                {isOffer ? 'nová najvyššia ponuka' : cheaper ? 'cena znížená' : 'cena upravená'}
+                {isOffer ? t('priceTimeline.newHighest') : cheaper ? t('priceTimeline.priceLowered') : t('priceTimeline.priceAdjusted')}
                 {' · '}
-                {formatDate(p.at)}
+                {formatDate(language, p.at)}
               </Text>
             </View>
           </View>

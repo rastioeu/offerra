@@ -18,7 +18,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
-import { formatAmount, OFFER_STATUS_LABEL, type Offer } from '@/lib/offers';
+import { useTranslation } from '@/i18n';
+import { formatAmount, getOfferStatusLabel, type Offer } from '@/lib/offers';
 import { formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -44,13 +45,12 @@ export function OfferList({
   onPressOffer?: (offer: Offer) => void;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const ratings = useRatings(offers.map((o) => o.bidder_id));
 
   if (offers.length === 0) {
     return (
-      <Text style={[styles.empty, { color: palette.textMuted }]}>
-        Zatiaľ žiadne ponuky. Buď prvý.
-      </Text>
+      <Text style={[styles.empty, { color: palette.textMuted }]}>{t('offerList.empty')}</Text>
     );
   }
 
@@ -83,8 +83,8 @@ export function OfferList({
 
             <View style={styles.body}>
               <Text style={[styles.nick, { color: palette.textPrimary }]}>
-                {o.bidder?.nickname ?? 'neznámy'}
-                {mine ? ' · ty' : ''}
+                {o.bidder?.nickname ?? t('offerList.unknown')}
+                {mine ? t('offerList.mineSuffix') : ''}
               </Text>
               {/* Hviezdičky pri prezývke sú celý zmysel hodnotení — v profile,
                   kam nikto nechodí, by nikomu nepomohli. */}
@@ -93,7 +93,7 @@ export function OfferList({
                   {ratingLabel(ratings[o.bidder_id])}
                 </Text>
               ) : null}
-              <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(o.created_at)}</Text>
+              <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(language, o.created_at)}</Text>
               {/* Správa je tu, LEN ak na ňu volajúci má nárok — `message` je
                   `null` pre všetkých ostatných a rozhodla o tom databáza,
                   nie táto podmienka. Do 8.8.2026 ju videl ktokoľvek. */}
@@ -102,15 +102,15 @@ export function OfferList({
               ) : null}
               {allowReport && !mine ? (
                 <View style={styles.reports}>
-                  <ReportButton targetType="OFFER" targetId={o.id} label="Nahlásiť ponuku" compact />
-                  <ReportButton targetType="USER" targetId={o.bidder_id} label="Nahlásiť používateľa" compact />
+                  <ReportButton targetType="OFFER" targetId={o.id} label={t('offerList.reportOffer')} compact />
+                  <ReportButton targetType="USER" targetId={o.bidder_id} label={t('offerList.reportUser')} compact />
                   {/* Vlastné tlačidlo, nie položka v zozname dôvodov. Kto ho
                       stlačí, dôvod už povedal — hľadať ho ešte raz je krok
                       navyše presne tam, kde na ňom záleží. */}
                   <ReportButton
                     targetType="USER"
                     targetId={o.bidder_id}
-                    label="Nahlásiť realitku"
+                    label={t('offerList.reportAgency')}
                     presetReason="REALITKA"
                     compact
                   />
@@ -125,14 +125,14 @@ export function OfferList({
                   best ? MoneyType.medium : MoneyType.small,
                   { color: best ? palette.accent : palette.textPrimary },
                 ]}>
-                {formatAmount(o.amount, transaction)}
+                {formatAmount(t, o.amount, transaction)}
               </Text>
               {o.status === 'ACCEPTED' ? (
-                <Pill text="PRIJATÁ" tone="success" />
+                <Pill text={t('offerList.pillAccepted')} tone="success" />
               ) : o.status !== 'PENDING' ? (
-                <Pill text={OFFER_STATUS_LABEL[o.status].toUpperCase()} tone="neutral" />
+                <Pill text={getOfferStatusLabel(t)[o.status].toUpperCase()} tone="neutral" />
               ) : best ? (
-                <Pill text="NAJVYŠŠIA" tone="accent" />
+                <Pill text={t('offerList.pillHighest')} tone="accent" />
               ) : null}
             </View>
           </Wrap>

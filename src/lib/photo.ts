@@ -21,6 +21,7 @@
 import type * as ImagePickerType from 'expo-image-picker';
 
 import { supabase } from './supabase';
+import type { TFunc } from '@/i18n';
 import { errorText } from '@/lib/errors';
 
 export const BUCKET = 'offerra-media';
@@ -48,7 +49,7 @@ function decodeBase64(base64: string): Uint8Array {
 export type PickedPhoto = { bytes: Uint8Array; contentType: string; ext: string };
 
 /** Vráti `null`, keď používateľ výber zrušil — to nie je chyba. */
-export async function pickPhoto(aspect: [number, number]): Promise<PickedPhoto | null> {
+export async function pickPhoto(t: TFunc, aspect: [number, number]): Promise<PickedPhoto | null> {
   console.log('[FOTKA] 1 ŠTART');
 
   let ImagePicker: typeof ImagePickerType;
@@ -56,19 +57,13 @@ export async function pickPhoto(aspect: [number, number]): Promise<PickedPhoto |
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     ImagePicker = require('expo-image-picker');
   } catch {
-    throw new PhotoError(
-      '1 modul',
-      'Táto verzia appky nemá modul na výber fotiek. Nainštaluj si najnovší build z TestFlightu.'
-    );
+    throw new PhotoError('1 modul', t('photo.noModule'));
   }
 
   console.log('[FOTKA] 2 pýtam povolenie');
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (!permission.granted) {
-    throw new PhotoError(
-      '2 povolenie',
-      'Offerra nemá prístup k tvojim fotkám. Povoľ ho v Nastaveniach telefónu → Offerra → Fotky.'
-    );
+    throw new PhotoError('2 povolenie', t('photo.noPermission'));
   }
 
   console.log('[FOTKA] 3 otváram galériu');
@@ -86,20 +81,14 @@ export async function pickPhoto(aspect: [number, number]): Promise<PickedPhoto |
 
   const asset = result.assets[0];
   if (!asset?.base64) {
-    throw new PhotoError(
-      '4 načítanie',
-      'Fotku sa nepodarilo načítať zo zariadenia. Skús inú fotku alebo ju najprv ulož do Fotiek.'
-    );
+    throw new PhotoError('4 načítanie', t('photo.loadFailed'));
   }
 
   const bytes = decodeBase64(asset.base64);
   console.log(`[FOTKA] 4 načítané ${bytes.byteLength} B`);
 
   if (bytes.byteLength > MAX_BYTES) {
-    throw new PhotoError(
-      '4 veľkosť',
-      `Fotka má ${(bytes.byteLength / 1048576).toFixed(1)} MB, limit je 8 MB. Skús menšiu.`
-    );
+    throw new PhotoError('4 veľkosť', t('photo.tooLarge', { mb: (bytes.byteLength / 1048576).toFixed(1) }));
   }
 
   const ext = (asset.uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
@@ -123,7 +112,7 @@ export async function uploadPhoto(path: string, photo: PickedPhoto, upsert: bool
 }
 
 /** Text pre používateľa vrátane kroku — aby sa nehádalo, kde to padlo. */
-export function photoErrorMessage(e: unknown): string {
-  if (e instanceof PhotoError) return `${e.message}\n\n(krok ${e.step})`;
+export function photoErrorMessage(t: TFunc, e: unknown): string {
+  if (e instanceof PhotoError) return t('photo.stepSuffix', { message: e.message, step: e.step });
   return errorText(e);
 }

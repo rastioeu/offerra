@@ -19,7 +19,8 @@ import { Icon } from '@/components/icon';
 import { Button } from '@/components/ui';
 import { useWalkthrough } from '@/hooks/use-walkthrough';
 import { useTheme } from '@/hooks/use-theme';
-import { HOW_STEPS } from '@/lib/how-it-works';
+import { useTranslation } from '@/i18n';
+import { getHowSteps } from '@/lib/how-it-works';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -27,6 +28,8 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function WalkthroughScreen() {
   const palette = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
+  const steps = getHowSteps(t);
   const { markSeen } = useWalkthrough();
   const [index, setIndex] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
@@ -46,19 +49,19 @@ export default function WalkthroughScreen() {
   }
 
   function next() {
-    if (index >= HOW_STEPS.length - 1) {
+    if (index >= steps.length - 1) {
       void finish();
       return;
     }
     scrollRef.current?.scrollTo({ x: (index + 1) * SCREEN_WIDTH, animated: true });
   }
 
-  const isLast = index === HOW_STEPS.length - 1;
+  const isLast = index === steps.length - 1;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]}>
       <View style={styles.top}>
-        <Button title="Preskočiť" onPress={() => void finish()} variant="outline" />
+        <Button title={t('common.skip')} onPress={() => void finish()} variant="outline" />
       </View>
 
       <ScrollView
@@ -68,8 +71,8 @@ export default function WalkthroughScreen() {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScroll}
         style={styles.pager}>
-        {HOW_STEPS.map((step) => (
-          <View key={step.title} style={[styles.page, { width: SCREEN_WIDTH }]}>
+        {steps.map((step, i) => (
+          <View key={i} style={[styles.page, { width: SCREEN_WIDTH }]}>
             <View style={[styles.iconWrap, { backgroundColor: palette.surface, borderColor: palette.accent }]}>
               <Icon name={step.icon as never} size={40} color={palette.accentDeep} />
             </View>
@@ -80,9 +83,9 @@ export default function WalkthroughScreen() {
       </ScrollView>
 
       <View style={styles.dots}>
-        {HOW_STEPS.map((step, i) => (
+        {steps.map((step, i) => (
           <View
-            key={step.title}
+            key={i}
             style={[
               styles.dot,
               { backgroundColor: i === index ? palette.accentDeep : palette.border },
@@ -92,7 +95,7 @@ export default function WalkthroughScreen() {
       </View>
 
       <View style={styles.bottom}>
-        <Button title={isLast ? 'Začať' : 'Ďalej'} onPress={next} />
+        <Button title={isLast ? t('common.start') : t('common.next')} onPress={next} />
       </View>
     </SafeAreaView>
   );

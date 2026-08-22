@@ -22,7 +22,8 @@ import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { maybeOfferPush } from '@/lib/push-prompt';
 import { useTheme } from '@/hooks/use-theme';
-import { EMPLOYMENT_OPTIONS, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
+import { useTranslation } from '@/i18n';
+import { getEmploymentOptions, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -36,6 +37,7 @@ function num(text: string): number | null {
 
 export default function OfferFormScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -62,7 +64,7 @@ export default function OfferFormScreen() {
   const [pets, setPets] = useState<'NO' | 'YES'>('NO');
   const [petDetails, setPetDetails] = useState('');
   const [months, setMonths] = useState('');
-  const [employment, setEmployment] = useState(EMPLOYMENT_OPTIONS[0]);
+  const [employment, setEmployment] = useState(getEmploymentOptions(t)[0]);
   const [income, setIncome] = useState('');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -89,7 +91,7 @@ export default function OfferFormScreen() {
     setPets(myTenant.has_pets ? 'YES' : 'NO');
     setPetDetails(myTenant.pet_details ?? '');
     setMonths(myTenant.lease_duration_months != null ? String(myTenant.lease_duration_months) : '');
-    setEmployment(myTenant.employment_status ?? EMPLOYMENT_OPTIONS[0]);
+    setEmployment(myTenant.employment_status ?? getEmploymentOptions(t)[0]);
     setIncome(myTenant.monthly_income_hint != null ? String(myTenant.monthly_income_hint) : '');
     setNote(myTenant.note ?? '');
   }, [myTenant]);
@@ -123,7 +125,7 @@ export default function OfferFormScreen() {
     if (!item || !myId || busy) return;
     const value = num(amount);
     if (value == null || value <= 0) {
-      setError('Zadaj sumu ponuky.');
+      setError(t('ponukaForm.amountRequired'));
       return;
     }
     // Počet osôb bol doteraz len ZOBRAZENÝ, nie vyžadovaný — 4 z 19
@@ -131,7 +133,7 @@ export default function OfferFormScreen() {
     // prenajímateľ položí, takže sa pýta hneď. Drží to aj DB.
     const peopleCount = num(people);
     if (isRent && (peopleCount == null || peopleCount < 1)) {
-      setError('Zadaj počet osôb, ktoré sa nasťahujú — bez toho ponuku poslať nemožno.');
+      setError(t('ponukaForm.peopleRequired'));
       return;
     }
     setBusy(true);
@@ -176,9 +178,9 @@ export default function OfferFormScreen() {
       }
 
       await reloadOffers();
-      toast(mine ? 'Ponuka upravená' : 'Ponuka odoslaná');
+      toast(mine ? t('ponukaForm.updatedToast') : t('ponukaForm.sentToast'));
       // Až TERAZ má otázka o upozorneniach zmysel — človek čaká odpoveď.
-      if (!mine) void maybeOfferPush(myId, 'OFFER');
+      if (!mine) void maybeOfferPush(t, myId, 'OFFER');
       router.back();
     } catch (e: unknown) {
       const m = errorText(e);
@@ -191,10 +193,10 @@ export default function OfferFormScreen() {
 
   async function withdraw() {
     if (!mine) return;
-    Alert.alert('Stiahnuť ponuku?', 'Zo zoznamu zmizne ako aktívna.', [
-      { text: 'Zrušiť', style: 'cancel' },
+    Alert.alert(t('ponukaForm.withdrawTitle'), t('ponukaForm.withdrawBody'), [
+      { text: t('ponukaForm.cancel'), style: 'cancel' },
       {
-        text: 'Stiahnuť',
+        text: t('ponukaForm.withdraw'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -208,7 +210,7 @@ export default function OfferFormScreen() {
           } catch (e: unknown) {
             const m = errorText(e);
             console.log(`[PONUKA] Stiahnutie zlyhalo: ${m}`);
-            Alert.alert('Stiahnutie zlyhalo', m);
+            Alert.alert(t('ponukaForm.withdrawFailedTitle'), m);
           }
         },
       },
@@ -220,7 +222,7 @@ export default function OfferFormScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: mine ? 'Upraviť ponuku' : 'Podať ponuku',
+          title: mine ? t('ponukaForm.editScreenTitle') : t('ponukaForm.newScreenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -232,20 +234,19 @@ export default function OfferFormScreen() {
           <>
             <Text style={[styles.title, { color: palette.textPrimary }]}>{item.title}</Text>
             <Text style={[styles.sub, { color: palette.textMuted }]}>
-              {formatPrice(item.asking_price_hint, item.transaction_type)
-                ? `Orientačná cena ${formatPrice(item.asking_price_hint, item.transaction_type)}`
-                : 'Predávajúci cenu neuviedol.'}
+              {formatPrice(t, item.asking_price_hint, item.transaction_type)
+                ? t('ponukaForm.askingPrice', { price: formatPrice(t, item.asking_price_hint, item.transaction_type) ?? '' })
+                : t('ponukaForm.noPriceGiven')}
             </Text>
             {highest ? (
               <Text style={[styles.sub, { color: palette.link }]}>
-                Najvyššia ponuka zatiaľ: {formatAmount(highest.amount, item.transaction_type)}
+                {t('ponukaForm.highestSoFar', { amount: formatAmount(t, highest.amount, item.transaction_type) })}
               </Text>
             ) : null}
 
             {closed ? (
               <Text style={[styles.closed, { color: palette.warning }]}>
-                Uzávierka ponúk už uplynula. Túto ponuku sa nedá podať ani zmeniť —
-                stiahnuť ju však môžeš.
+                {t('ponukaForm.deadlinePassed')}
               </Text>
             ) : null}
 
@@ -253,27 +254,26 @@ export default function OfferFormScreen() {
                 Bez neho tu bolo len ticho, kým majiteľ nerozhodol. */}
             {mine ? (
               <Card>
-                <Eyebrow>Priebeh mojej ponuky</Eyebrow>
+                <Eyebrow>{t('ponukaForm.myOfferProgress')}</Eyebrow>
                 <OfferTimeline offer={mine} />
               </Card>
             ) : null}
 
             {accepted ? (
               <Card>
-                <Eyebrow>Odkrytý kontakt na predávajúceho</Eyebrow>
+                <Eyebrow>{t('ponukaForm.revealedContact')}</Eyebrow>
                 <Text style={[styles.note, { color: palette.textMuted }]}>
-                  Ponuka bola prijatá, takže vidíte na seba obaja. Údaje použi
-                  výhradne na dohodu o tejto nehnuteľnosti.
+                  {t('ponukaForm.revealedContactNote')}
                 </Text>
                 {contact ? (
                   <View style={styles.contactGrid}>
-                    <ParamCell value={contact.nickname ?? '—'} label="Prezývka" />
-                    <ParamCell value={contact.full_name ?? 'nevyplnené'} label="Meno" />
-                    <ParamCell value={contact.phone ?? 'nevyplnený'} label="Telefón" />
-                    <ParamCell value={contact.email ?? 'nedostupný'} label="E-mail" />
+                    <ParamCell value={contact.nickname ?? t('ponukaForm.dash')} label={t('ponukaForm.nicknameLabel')} />
+                    <ParamCell value={contact.full_name ?? t('ponukaForm.nameNotGiven')} label={t('ponukaForm.nameLabel')} />
+                    <ParamCell value={contact.phone ?? t('ponukaForm.phoneNotGiven')} label={t('ponukaForm.phoneLabel')} />
+                    <ParamCell value={contact.email ?? t('ponukaForm.emailNotGiven')} label={t('ponukaForm.emailLabel')} />
                   </View>
                 ) : (
-                  <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam kontakt…</Text>
+                  <Text style={[styles.note, { color: palette.textMuted }]}>{t('ponukaForm.loadingContact')}</Text>
                 )}
               </Card>
             ) : null}
@@ -283,29 +283,29 @@ export default function OfferFormScreen() {
             {!accepted ? (
             <>
             <Field
-              label="Moja ponuka (€)"
+              label={t('ponukaForm.amountLabel')}
               hint={
                 isRent
-                  ? 'Suma za mesiac. Bude verejná spolu s tvojou prezývkou.'
-                  : 'Celková suma. Bude verejná spolu s tvojou prezývkou.'
+                  ? t('ponukaForm.amountHintRent')
+                  : t('ponukaForm.amountHintSale')
               }
               value={amount}
               onChangeText={setAmount}
               keyboardType="decimal-pad"
-              placeholder={isRent ? 'napr. 780 za mesiac' : 'napr. 215000'}
+              placeholder={isRent ? t('ponukaForm.amountPlaceholderRent') : t('ponukaForm.amountPlaceholderSale')}
             />
 
             <Field
-              label={isRent ? 'Správa pre prenajímateľa (nepovinné)' : 'Správa pre predávajúceho (nepovinné)'}
-              hint="Vidí ju len druhá strana — v zozname ponúk verejne nie je."
+              label={isRent ? t('ponukaForm.messageLabelRent') : t('ponukaForm.messageLabelSale')}
+              hint={t('ponukaForm.messageHint')}
               value={message}
               onChangeText={setMessage}
               // Príklad musí sedieť na obchod. Hypotéka pri nájme nedáva
               // zmysel a rovno hovorí, že si to nikto neprečítal.
               placeholder={
                 isRent
-                  ? 'napr. sťahujem sa kvôli práci, zmluvu viem podpísať do týždňa'
-                  : 'napr. mám schválenú hypotéku, viem sa dohodnúť rýchlo'
+                  ? t('ponukaForm.messagePlaceholderRent')
+                  : t('ponukaForm.messagePlaceholderSale')
               }
               multiline
             />
@@ -313,59 +313,58 @@ export default function OfferFormScreen() {
             {isRent ? (
               <Card>
                 <Text style={[styles.section, { color: palette.textMuted }]}>
-                  O NÁJOMCOVI — VIDÍ LEN MAJITEĽ
+                  {t('ponukaForm.tenantSection')}
                 </Text>
                 <Text style={[styles.note, { color: palette.textMuted }]}>
-                  Tieto údaje sa NEZOBRAZUJÚ vo verejnom zozname ponúk. Vidí ich
-                  len majiteľ nehnuteľnosti a ty.
+                  {t('ponukaForm.tenantNote')}
                 </Text>
 
                 <Field
-                  label="Počet osôb — povinné"
-                  hint="Koľko ľudí sa nasťahuje vrátane teba."
+                  label={t('ponukaForm.peopleLabel')}
+                  hint={t('ponukaForm.peopleHint')}
                   value={people}
                   onChangeText={setPeople}
                   keyboardType="numeric"
-                  placeholder="napr. 2"
+                  placeholder={t('ponukaForm.peoplePlaceholder')}
                 />
                 <ChoiceRow<'NO' | 'YES'>
-                  label="Domáce zvieratá"
+                  label={t('ponukaForm.petsLabel')}
                   options={[
-                    { value: 'NO', label: 'Nemám' },
-                    { value: 'YES', label: 'Mám' },
+                    { value: 'NO', label: t('ponukaForm.petsNo') },
+                    { value: 'YES', label: t('ponukaForm.petsYes') },
                   ]}
                   value={pets}
                   onChange={setPets}
                 />
                 {pets === 'YES' ? (
                   <Field
-                    label="Aké zviera"
+                    label={t('ponukaForm.petDetailsLabel')}
                     value={petDetails}
                     onChangeText={setPetDetails}
-                    placeholder="napr. malý pes, 8 kg"
+                    placeholder={t('ponukaForm.petDetailsPlaceholder')}
                   />
                 ) : null}
                 <Field
-                  label="Na ako dlho (mesiace)"
+                  label={t('ponukaForm.monthsLabel')}
                   value={months}
                   onChangeText={setMonths}
                   keyboardType="numeric"
-                  placeholder="napr. 24"
+                  placeholder={t('ponukaForm.monthsPlaceholder')}
                 />
                 <ChoiceRow<string>
-                  label="Zamestnanie"
-                  options={EMPLOYMENT_OPTIONS.map((o) => ({ value: o, label: o }))}
+                  label={t('ponukaForm.employmentLabel')}
+                  options={getEmploymentOptions(t).map((o) => ({ value: o, label: o }))}
                   value={employment}
                   onChange={setEmployment}
                 />
                 <Field
-                  label="Mesačný príjem — orientačne (nepovinné)"
+                  label={t('ponukaForm.incomeLabel')}
                   value={income}
                   onChangeText={setIncome}
                   keyboardType="decimal-pad"
-                  placeholder="napr. 2000"
+                  placeholder={t('ponukaForm.incomePlaceholder')}
                 />
-                <Field label="Poznámka" value={note} onChangeText={setNote} multiline placeholder="napr. pracujem z domu, budem tam sám" />
+                <Field label={t('ponukaForm.noteLabel')} value={note} onChangeText={setNote} multiline placeholder={t('ponukaForm.notePlaceholder')} />
               </Card>
             ) : null}
 
@@ -377,13 +376,13 @@ export default function OfferFormScreen() {
             <View style={styles.actions}>
               {!closed ? (
                 <Button
-                  title={busy ? 'Odosielam…' : mine ? 'Uložiť zmeny' : 'Podať ponuku'}
+                  title={busy ? t('ponukaForm.sendingButton') : mine ? t('ponukaForm.saveChangesButton') : t('ponukaForm.submitButton')}
                   onPress={submit}
                   disabled={busy}
                 />
               ) : null}
               {mine ? (
-                <Button title="Stiahnuť ponuku" onPress={withdraw} variant="danger" disabled={busy} />
+                <Button title={t('ponukaForm.withdrawButton')} onPress={withdraw} variant="danger" disabled={busy} />
               ) : null}
             </View>
           </>

@@ -8,6 +8,8 @@
  * Schému `offerra` neuvádzame v `createClient`, ale cez `supabase.schema()` —
  * ten istý klient musí súčasne vedieť na `auth`, ktorý žije inde.
  */
+import type { TFunc } from '@/i18n';
+
 import { supabase } from './supabase';
 // Uzávierka je ČISTÁ logika bez importov, presunutá 13.8.2026 nech sa dá
 // testovať v Node bez appky — dôvod je celý zapísaný v `deadline.ts`.
@@ -170,33 +172,35 @@ export const REGIONS = [
 // bez importov, aby sa poradie a názvy filtrov dali overiť v Node
 // (`scripts/check-filters.ts`). Re-export nech sa nemusia meniť miesta,
 // ktoré ich importujú odtiaľto — rovnako ako pri `deadline.ts`.
-export { DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL } from './labels';
+export { getDemandLabel, getPropertyLabel, getTransactionLabel } from './labels';
 
-export const FURNISHING_LABEL: Record<Furnishing, string> = {
-  FURNISHED: 'Zariadený',
-  PARTIAL: 'Čiastočne',
-  UNFURNISHED: 'Nezariadený',
-};
+export function getFurnishingLabel(t: TFunc): Record<Furnishing, string> {
+  return {
+    FURNISHED: t('property.furnishingFurnished'),
+    PARTIAL: t('property.furnishingPartial'),
+    UNFURNISHED: t('property.furnishingUnfurnished'),
+  };
+}
 
-export const UTILITIES_LABEL: Record<Utilities, string> = {
-  YES: 'Áno',
-  NO: 'Nie',
-  PARTIAL: 'Čiastočne',
-};
+export function getUtilitiesLabel(t: TFunc): Record<Utilities, string> {
+  return { YES: t('property.utilitiesYes'), NO: t('property.utilitiesNo'), PARTIAL: t('property.utilitiesPartial') };
+}
 
-export const STATUS_LABEL: Record<PropertyStatus, string> = {
-  DRAFT: 'Rozpracované',
-  ACTIVE: 'Zverejnené',
-  REJECTED: 'Skryté správcom',
-  ARCHIVED: 'Archivované',
-  // Jeden stav pre predaj aj prenájom. Slovo vyrobí `transaction_type` —
-  // dva stavy by boli dve miesta, kde sa dá zabudnúť na jedno z nich.
-  CLOSED: 'Uzavreté',
-};
+export function getStatusLabel(t: TFunc): Record<PropertyStatus, string> {
+  return {
+    DRAFT: t('property.statusDraft'),
+    ACTIVE: t('property.statusActive'),
+    REJECTED: t('property.statusRejected'),
+    ARCHIVED: t('property.statusArchived'),
+    // Jeden stav pre predaj aj prenájom. Slovo vyrobí `transaction_type` —
+    // dva stavy by boli dve miesta, kde sa dá zabudnúť na jedno z nich.
+    CLOSED: t('property.statusClosed'),
+  };
+}
 
 /** „Predané" alebo „Prenajaté" — podľa toho, o aký obchod išlo. */
-export function closedLabel(t: TransactionType): string {
-  return t === 'RENT' ? 'Prenajaté' : 'Predané';
+export function closedLabel(t: TFunc, transaction: TransactionType): string {
+  return transaction === 'RENT' ? t('property.closedRent') : t('property.closedSale');
 }
 
 /**
@@ -204,6 +208,7 @@ export function closedLabel(t: TransactionType): string {
  * s iným štítkom (upresnenie rozsahu, 7.8.2026).
  */
 export function formatPrice(
+  t: TFunc,
   value: number | null,
   transaction: TransactionType
 ): string | null {
@@ -213,30 +218,42 @@ export function formatPrice(
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(value);
-  return transaction === 'RENT' ? `${amount} / mesiac` : amount;
+  return transaction === 'RENT' ? t('property.priceMonthly', { amount }) : amount;
 }
 
 /**
  * „3 izby" so správnym skloňovaním. Vytiahnuté z karty (9.8.2026), keď to
  * isté potreboval aj výber inzerátu pri oslovení dopytu — dve kópie
  * skloňovania by sa časom rozišli.
+ *
+ * OD LOKALIZÁCIE (19.8.2026): slovenčina má TRI tvary (izba/izby/izieb),
+ * EN/DE len dva (jednotné/množné) — preto `language` rozhoduje, ktorý pár
+ * kľúčov sa použije. `roomsFew` existuje len v `sk.json`.
  */
-export function formatRooms(value: number | null): string | null {
+export function formatRooms(t: TFunc, language: string, value: number | null): string | null {
   if (value == null) return null;
-  const word = value === 1 ? 'izba' : value < 5 ? 'izby' : 'izieb';
-  return `${value} ${word}`;
+  if (language === 'sk') {
+    const key = value === 1 ? 'roomsOne' : value < 5 ? 'roomsFew' : 'roomsMany';
+    return t(`property.${key}`, { count: value });
+  }
+  return t(value === 1 ? 'property.roomsOne' : 'property.roomsMany', { count: value });
 }
 
 export function formatArea(value: number | null): string | null {
   return value == null ? null : `${new Intl.NumberFormat('sk-SK').format(value)} m²`;
 }
 
-export function formatDate(iso: string): string {
-  return new Intl.DateTimeFormat('sk-SK', {
+export function formatDate(language: string, iso: string): string {
+  return new Intl.DateTimeFormat(localeTag(language), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
   }).format(new Date(iso));
+}
+
+/** BCP-47 tag pre `Intl` — appka pozná len ISO 639-1 kód jazyka. */
+function localeTag(language: string): string {
+  return language === 'sk' ? 'sk-SK' : language === 'de' ? 'de-DE' : 'en-GB';
 }
 
 /**
@@ -244,11 +261,11 @@ export function formatDate(iso: string): string {
  * `new Date('2026-09-01')` je polnoc UTC a v našom pásme by z toho v zime
  * vyšiel predošlý deň.
  */
-export function formatDay(day: string | null): string | null {
+export function formatDay(language: string, day: string | null): string | null {
   if (!day) return null;
   const [y, m, d] = day.split('-').map(Number);
   if (!y || !m || !d) return null;
-  return new Intl.DateTimeFormat('sk-SK', {
+  return new Intl.DateTimeFormat(localeTag(language), {
     day: 'numeric',
     month: 'long',
     year: 'numeric',
@@ -293,63 +310,72 @@ export function parseSkDate(text: string): string | null {
  * Zobrazujú sa pri byte, a to pri predaji ROVNAKO ako pri prenájme.
  * Fond opráv nie je vec nájmu; kupca zaujíma presne tak isto.
  */
-export function buildingRows(p: Property): { label: string; value: string }[] {
+export function buildingRows(t: TFunc, language: string, p: Property): { label: string; value: string }[] {
   if (p.property_type !== 'APARTMENT') return [];
   const rows: { label: string; value: string }[] = [];
 
   if (p.floor != null) {
-    const where = p.floor < 0 ? 'Suterén' : p.floor === 0 ? 'Prízemie' : `${p.floor}. poschodie`;
+    const where =
+      p.floor < 0 ? t('property.basement') : p.floor === 0 ? t('property.groundFloor') : t('property.floorN', { n: p.floor });
     rows.push({
-      label: 'Poschodie',
-      value: p.floors_total != null ? `${where} z ${p.floors_total}` : where,
+      label: t('property.floorLabel'),
+      value: p.floors_total != null ? t('property.floorOfTotal', { where, total: p.floors_total }) : where,
     });
   } else if (p.floors_total != null) {
-    rows.push({ label: 'Počet poschodí', value: String(p.floors_total) });
+    rows.push({ label: t('property.floorsTotalLabel'), value: String(p.floors_total) });
   }
 
-  if (p.has_elevator != null) rows.push({ label: 'Výťah', value: p.has_elevator ? 'Áno' : 'Nie' });
+  if (p.has_elevator != null) {
+    rows.push({ label: t('property.elevatorLabel'), value: p.has_elevator ? t('common.yes') : t('common.no') });
+  }
   if (p.monthly_costs != null) {
     rows.push({
-      label: 'Mesačné náklady',
+      label: t('property.monthlyCostsLabel'),
       // `SALE` je tu len preto, aby sa suma nevypísala ako „…/mesiac" —
       // slovo „mesačné" je už v názve riadku a dvakrát by to bolo hlúpe.
-      value: formatPrice(p.monthly_costs, 'SALE') ?? '—',
+      value: formatPrice(t, p.monthly_costs, 'SALE') ?? '—',
     });
   }
   return rows;
 }
 
-export function rentalRows(p: Property): { label: string; value: string }[] {
+export function rentalRows(t: TFunc, language: string, p: Property): { label: string; value: string }[] {
   if (p.transaction_type !== 'RENT') return [];
   const rows: { label: string; value: string }[] = [];
 
   if (p.deposit_amount != null) {
-    const eur = formatPrice(p.deposit_amount, 'SALE');
+    const eur = formatPrice(t, p.deposit_amount, 'SALE');
     rows.push({
-      label: 'Zábezpeka',
+      label: t('property.depositLabel'),
       value:
         p.deposit_months != null
-          ? `${eur} (${p.deposit_months}× mesačný nájom)`
+          ? t('property.depositWithMonths', { amount: eur as string, months: p.deposit_months })
           : (eur as string),
     });
   } else if (p.deposit_months != null) {
-    rows.push({ label: 'Zábezpeka', value: `${p.deposit_months}× mesačný nájom` });
+    rows.push({ label: t('property.depositLabel'), value: t('property.depositMonthsOnly', { months: p.deposit_months }) });
   }
 
-  const from = formatDay(p.available_from);
-  if (from) rows.push({ label: 'Dostupné od', value: from });
+  const from = formatDay(language, p.available_from);
+  if (from) rows.push({ label: t('property.availableFromLabel'), value: from });
   if (p.min_lease_months != null) {
-    rows.push({ label: 'Minimálna doba nájmu', value: `${p.min_lease_months} mesiacov` });
+    rows.push({ label: t('property.minLeaseLabel'), value: t('property.monthsCount', { count: p.min_lease_months }) });
   }
-  if (p.furnishing) rows.push({ label: 'Zariadenie', value: FURNISHING_LABEL[p.furnishing] });
+  if (p.furnishing) rows.push({ label: t('property.furnishingLabel'), value: getFurnishingLabel(t)[p.furnishing] });
   if (p.utilities_included) {
-    rows.push({ label: 'Energie v nájme', value: UTILITIES_LABEL[p.utilities_included] });
+    rows.push({ label: t('property.utilitiesLabel'), value: getUtilitiesLabel(t)[p.utilities_included] });
   }
   if (p.internet_included != null) {
-    rows.push({ label: 'Internet v nájme', value: p.internet_included ? 'Áno' : 'Nie' });
+    rows.push({
+      label: t('property.internetLabel'),
+      value: p.internet_included ? t('common.yes') : t('common.no'),
+    });
   }
   if (p.pets_allowed != null) {
-    rows.push({ label: 'Domáce zvieratá', value: p.pets_allowed ? 'Povolené' : 'Nepovolené' });
+    rows.push({
+      label: t('property.petsLabel'),
+      value: p.pets_allowed ? t('property.petsAllowed') : t('property.petsNotAllowed'),
+    });
   }
   return rows;
 }

@@ -7,6 +7,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { ErrorBoundary } from '@/components/error-boundary';
+import { I18nProvider, useTranslation } from '@/i18n';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ToastProvider } from '@/components/toast';
 import { NotificationsProvider } from '@/hooks/use-notifications';
@@ -44,6 +45,9 @@ export default function RootLayout() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
+        {/* Jazyk je NAJVYŠŠIE hneď po bezpečnej zóne — všetko pod ním
+            (vzhľad, spätná väzba, brána) už môže volať `t()`. */}
+        <I18nProvider>
         {/* Vzhľad je NAJVYŠŠIE hneď po bezpečnej zóne: appka sa doteraz
             riadila výhradne systémovou témou a kto mal tmavý telefón,
             nemal sa ako vrátiť na schválenú svetlú (Rastio, 8.8.2026). */}
@@ -68,6 +72,7 @@ export default function RootLayout() {
         </WalkthroughProvider>
         </ToastProvider>
         </AppThemeProvider>
+        </I18nProvider>
       </SafeAreaProvider>
     </ErrorBoundary>
   );
@@ -77,6 +82,7 @@ function RootLayoutInner() {
   // ZÁMERNE nie `useColorScheme()` — voľba používateľa má prednosť pred
   // nastavením telefónu.
   const { effective } = useThemeMode();
+  const { t } = useTranslation();
   const isDark = effective === 'dark';
   const palette = Colors[isDark ? 'dark' : 'light'];
   const { session } = useSession();
@@ -156,14 +162,14 @@ function RootLayoutInner() {
           <StatusBar style={isDark ? 'light' : 'dark'} />
           <View style={{ flex: 1, backgroundColor: palette.background, padding: 24, justifyContent: 'center', gap: 12 }}>
             <Text style={{ color: palette.textPrimary, fontSize: 20, fontWeight: '700' }}>
-              Nepodarilo sa načítať profil
+              {t('rootLayout.profileLoadFailedTitle')}
             </Text>
             <Text style={{ color: palette.textSecondary, fontSize: 14 }}>{profileError}</Text>
             <Pressable
               onPress={() => void reloadProfile()}
               accessibilityRole="button"
               style={{ backgroundColor: palette.primary, borderRadius: 12, padding: 16, alignItems: 'center' }}>
-              <Text style={{ color: palette.onPrimary, fontSize: 16, fontWeight: '600' }}>Skúsiť znova</Text>
+              <Text style={{ color: palette.onPrimary, fontSize: 16, fontWeight: '600' }}>{t('rootLayout.retryButton')}</Text>
             </Pressable>
           </View>
         </ThemeProvider>
@@ -187,7 +193,7 @@ function RootLayoutInner() {
             // ktorý nemôže ukázať nič nesprávne. `headerBackTitle` je poistka
             // pre prípad, že by systém text napriek tomu vykreslil.
             headerBackButtonDisplayMode: 'minimal',
-            headerBackTitle: 'Späť',
+            headerBackTitle: t('rootLayout.back'),
           }}>
           <Stack.Screen name="walkthrough" />
           <Stack.Screen name="login" />

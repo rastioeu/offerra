@@ -8,6 +8,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation, type TFunc } from '@/i18n';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export type ActivityEvent = {
@@ -19,35 +20,40 @@ export type ActivityEvent = {
   onPress?: () => void;
 };
 
-const KIND_LABEL: Record<ActivityEvent['kind'], string> = {
-  INZERAT: 'Pridal si inzerát',
-  PONUKA_ODOSLANA: 'Podal si ponuku',
-  PONUKA_PRIJATA: 'Dostal si ponuku',
-  DOPYT: 'Pridal si dopyt',
-  // Jediná udalosť, ktorú nespôsobil používateľ — preto formulácia
-  // v tretej osobe. Chýbala úplne (Rastio, 9.8.2026): dopytová strana
-  // sa na časovej osi neprejavila vôbec.
-  OSLOVENIE_DOPYTU: 'Niekto oslovil tvoj dopyt',
-};
+function kindLabel(t: TFunc): Record<ActivityEvent['kind'], string> {
+  return {
+    INZERAT: t('activityTimeline.kindListing'),
+    PONUKA_ODOSLANA: t('activityTimeline.kindOfferSent'),
+    PONUKA_PRIJATA: t('activityTimeline.kindOfferReceived'),
+    DOPYT: t('activityTimeline.kindDemand'),
+    // Jediná udalosť, ktorú nespôsobil používateľ — preto formulácia
+    // v tretej osobe. Chýbala úplne (Rastio, 9.8.2026): dopytová strana
+    // sa na časovej osi neprejavila vôbec.
+    OSLOVENIE_DOPYTU: t('activityTimeline.kindOutreach'),
+  };
+}
 
-function dayLabel(iso: string): string {
+function dayLabel(t: TFunc, language: string, iso: string): string {
   const d = new Date(iso);
   const today = new Date();
   const sameDay = d.toDateString() === today.toDateString();
   const yesterday = new Date(today);
   yesterday.setDate(today.getDate() - 1);
-  if (sameDay) return 'Dnes';
-  if (d.toDateString() === yesterday.toDateString()) return 'Včera';
-  return new Intl.DateTimeFormat('sk-SK', { day: 'numeric', month: 'long' }).format(d);
+  if (sameDay) return t('activityTimeline.today');
+  if (d.toDateString() === yesterday.toDateString()) return t('activityTimeline.yesterday');
+  const tag = language === 'de' ? 'de-DE' : language === 'en' ? 'en-GB' : 'sk-SK';
+  return new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long' }).format(d);
 }
 
 export function ActivityTimeline({ events }: { events: ActivityEvent[] }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
+  const KIND_LABEL = kindLabel(t);
 
   if (events.length === 0) {
     return (
       <Text style={[styles.empty, { color: palette.textMuted }]}>
-        Zatiaľ tu nič nie je. Pridaj inzerát alebo podaj ponuku.
+        {t('activityTimeline.empty')}
       </Text>
     );
   }
@@ -57,7 +63,7 @@ export function ActivityTimeline({ events }: { events: ActivityEvent[] }) {
   return (
     <View style={styles.wrap}>
       {events.map((e) => {
-        const day = dayLabel(e.at);
+        const day = dayLabel(t, language, e.at);
         const newDay = day !== lastDay;
         lastDay = day;
         // Celý riadok je klikateľný, nie len názov (Rastio, 8.8.2026).

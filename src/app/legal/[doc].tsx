@@ -14,6 +14,7 @@ import { Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-na
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { LEGAL_DOCS, LEGAL_UPDATED, type LegalDoc } from '@/lib/legal';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -22,6 +23,7 @@ const WEB_BASE = 'https://rastioeu.github.io/offerra_web';
 
 export default function LegalScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const { doc } = useLocalSearchParams<{ doc: string }>();
   const key = (doc === 'terms' ? 'terms' : 'privacy') as LegalDoc['slug'];
   const content = LEGAL_DOCS[key];
@@ -41,7 +43,7 @@ export default function LegalScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.lead, { color: palette.textSecondary }]}>{content.lead}</Text>
         <Text style={[styles.updated, { color: palette.textMuted }]}>
-          Aktualizované {LEGAL_UPDATED}
+          {t('legal.updatedOn', { date: LEGAL_UPDATED })}
         </Text>
 
         {content.sections.map((s) => (
@@ -66,7 +68,7 @@ export default function LegalScreen() {
           accessibilityRole="link"
           style={({ pressed }) => [styles.link, { opacity: pressed ? 0.6 : 1 }]}>
           <Text style={[styles.linkText, { color: palette.link }]}>
-            Otvoriť verejnú verziu v prehliadači
+            {t('legal.openWebVersion')}
           </Text>
         </Pressable>
 

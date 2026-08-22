@@ -17,6 +17,7 @@
  */
 import { createContext, createElement, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
+import type { TFunc } from '@/i18n';
 import { db } from '@/lib/property';
 import { errorText } from '@/lib/errors';
 
@@ -147,6 +148,7 @@ export function profileForm(p: MyProfile): ProfileForm {
 
 /** Vracia chybovú hlášku, alebo `null` pri úspechu. */
 export async function saveProfile(
+  t: TFunc,
   userId: string,
   patch: Partial<Omit<MyProfile, 'id'>>,
   isNew: boolean
@@ -166,10 +168,10 @@ export async function saveProfile(
       return null;
     }
     if (/profile_nickname_key|duplicate key/i.test(m)) {
-      return 'Túto prezývku už niekto má. Skús inú.';
+      return t('useProfile.nicknameTaken');
     }
     if (/check constraint|nickname_check/i.test(m)) {
-      return 'Prezývka musí mať 3 až 20 znakov.';
+      return t('useProfile.nicknameLength');
     }
     return m;
   }

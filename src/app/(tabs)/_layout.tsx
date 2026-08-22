@@ -7,6 +7,7 @@ import { useIsAdmin } from '@/hooks/use-is-admin';
 import { usePendingReports } from '@/hooks/use-pending-reports';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Type, Weight } from '@/theme/tokens';
 
 /**
@@ -23,6 +24,7 @@ import { Type, Weight } from '@/theme/tokens';
  */
 export default function TabsLayout() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const { session } = useSession();
   const isAdmin = useIsAdmin(session?.user.id);
   // Odznak na tabe „Správa". Neadminovi vráti funkcia v DB nulu, takže sa
@@ -41,28 +43,28 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Nehnuteľnosti',
+          title: t('tabs.properties'),
           tabBarIcon: ({ color }) => <TabGlyph name="house" color={color} />,
         }}
       />
       <Tabs.Screen
         name="dopyty"
         options={{
-          title: 'Dopyty',
+          title: t('tabs.demands'),
           tabBarIcon: ({ color }) => <TabGlyph name="envelope" color={color} />,
         }}
       />
       <Tabs.Screen
         name="pridat"
         options={{
-          title: 'Pridať',
+          title: t('tabs.add'),
           tabBarIcon: ({ color }) => <TabGlyph name="plus.circle" color={color} />,
         }}
       />
       <Tabs.Screen
         name="profil"
         options={{
-          title: 'Moje',
+          title: t('tabs.mine'),
           tabBarIcon: ({ color }) => <TabGlyph name="person.circle" color={color} />,
         }}
       />
@@ -72,7 +74,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="admin"
         options={{
-          title: 'Správa',
+          title: t('tabs.admin'),
           href: isAdmin ? undefined : null,
           // Odznak nesie ten istý komponent ako zvonček — dve kópie tých
           // istých štýlov by sa časom rozišli.
@@ -84,8 +86,8 @@ export default function TabsLayout() {
           ),
           tabBarAccessibilityLabel:
             pendingReports > 0
-              ? `Správa, ${pendingReports} otvorených nahlásení`
-              : 'Správa',
+              ? t('tabs.adminWithReports', { count: pendingReports })
+              : t('tabs.admin'),
         }}
       />
     </Tabs>

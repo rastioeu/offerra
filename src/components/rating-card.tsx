@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import { db } from '@/lib/property';
 import { canRate, saveRating, type Rating } from '@/lib/rating';
@@ -30,6 +31,7 @@ export function RatingCard({
   myId: string | undefined;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [allowed, setAllowed] = useState(false);
   const [mine, setMine] = useState<Rating | null>(null);
@@ -70,14 +72,14 @@ export function RatingCard({
   async function submit() {
     if (!myId || !rateeId || busy) return;
     if (stars < 1) {
-      setError('Vyber počet hviezdičiek — bez toho hodnotenie neuložím.');
+      setError(t('ratingCard.starsRequired'));
       return;
     }
     setBusy(true);
     setError(null);
     try {
       await saveRating(propertyId, rateeId, myId, stars, comment.trim() || null);
-      toast(mine ? 'Hodnotenie upravené' : 'Hodnotenie odoslané');
+      toast(mine ? t('ratingCard.updatedToast') : t('ratingCard.sentToast'));
       await load();
     } catch (e: unknown) {
       const m = errorText(e);
@@ -92,14 +94,12 @@ export function RatingCard({
 
   return (
     <Card>
-      <Eyebrow>Hodnotenie</Eyebrow>
+      <Eyebrow>{t('ratingCard.title')}</Eyebrow>
 
       {allowed ? (
         <>
           <Text style={[styles.note, { color: palette.textSecondary }]}>
-            Ako sa ti jednalo s {rateeNickname}? Hodnotenie je VEREJNÉ — hviezdičky
-            aj text uvidí každý, kto o obchod s ním uvažuje. Píš tak, aby to
-            pomohlo ďalšiemu človeku.
+            {t('ratingCard.howWasIt', { nickname: rateeNickname })}
           </Text>
 
           <View style={styles.stars}>
@@ -108,7 +108,7 @@ export function RatingCard({
                 key={n}
                 onPress={() => setStars(n)}
                 accessibilityRole="button"
-                accessibilityLabel={`${n} z 5`}
+                accessibilityLabel={t('ratingCard.starOutOfFive', { n })}
                 hitSlop={6}>
                 <Text style={[styles.star, { color: n <= stars ? palette.accentDeep : palette.border }]}>★</Text>
               </Pressable>
@@ -116,29 +116,29 @@ export function RatingCard({
           </View>
 
           <Field
-            label="Pár slov (nepovinné)"
-            hint="Uvidí to každý pri jeho prezývke. Píš vecne — je to o obchode, nie o človeku."
+            label={t('ratingCard.commentLabel')}
+            hint={t('ratingCard.commentHint')}
             value={comment}
             onChangeText={setComment}
-            placeholder="napr. dohoda bez problémov, prišiel načas"
+            placeholder={t('ratingCard.commentPlaceholder')}
             multiline
           />
 
           <ErrorNote error={error} />
           <Button
-            title={busy ? 'Ukladám…' : mine ? 'Upraviť hodnotenie' : 'Odoslať hodnotenie'}
+            title={busy ? t('ratingCard.savingButton') : mine ? t('ratingCard.editButton') : t('ratingCard.submitButton')}
             onPress={submit}
             disabled={busy}
           />
           <Text style={[styles.note, { color: palette.textMuted }]}>
-            Zmeniť sa to dá kedykoľvek.
+            {t('ratingCard.editAnytime')}
           </Text>
         </>
       ) : null}
 
       {received ? (
         <View style={styles.receivedBox}>
-          <Text style={[styles.note, { color: palette.textMuted }]}>Ako {rateeNickname} ohodnotil teba:</Text>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{t('ratingCard.howTheyRatedYou', { nickname: rateeNickname })}</Text>
           <Text style={[styles.star, { color: palette.accentDeep }]}>{'★'.repeat(received.stars)}</Text>
           {received.comment ? (
             <Text style={[styles.note, { color: palette.textSecondary }]}>„{received.comment}"</Text>

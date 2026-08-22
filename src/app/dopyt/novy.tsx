@@ -22,7 +22,8 @@ import { Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
-import { db, DEMAND_LABEL, PROPERTY_LABEL, REGIONS, type PropertyType, type TransactionType } from '@/lib/property';
+import { useTranslation } from '@/i18n';
+import { db, getDemandLabel, getPropertyLabel, REGIONS, type PropertyType, type TransactionType } from '@/lib/property';
 import { Type } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
@@ -37,6 +38,7 @@ function num(text: string): number | null {
 
 export default function NewRequestScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
@@ -60,11 +62,11 @@ export default function NewRequestScreen() {
     const min = num(budgetMin);
     const max = num(budgetMax);
     if (min != null && max != null && max < min) {
-      setError('Horná hranica rozpočtu nemôže byť nižšia než dolná.');
+      setError(t('dopytNovy.budgetMaxTooLow'));
       return;
     }
     if (!description.trim()) {
-      setError('Napíš aspoň krátko, čo hľadáš — inak dopytu nikto nerozumie.');
+      setError(t('dopytNovy.descriptionRequired'));
       return;
     }
     setBusy(true);
@@ -85,7 +87,7 @@ export default function NewRequestScreen() {
         status: 'ACTIVE',
       });
       if (e) throw e;
-      toast('Dopyt zverejnený');
+      toast(t('dopytNovy.publishedToast'));
       router.back();
     } catch (e: unknown) {
       const m = errorText(e);
@@ -101,38 +103,36 @@ export default function NewRequestScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Nový dopyt',
+          title: t('dopytNovy.screenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
       />
       <FormScreen>
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
-          Dopyt je verejný pod tvojou prezývkou. Majitelia ťa naň môžu osloviť
-          svojím inzerátom.
+          {t('dopytNovy.leadPublic')}
         </Text>
         <Text style={[styles.lead, { color: palette.textMuted }]}>
-          Tvoje meno ani telefón sa nikde nezobrazia — rovnako ako pri ponukách.
-          Rozpočet je orientačný, nie záväzok.
+          {t('dopytNovy.leadPrivate')}
         </Text>
 
         <ChoiceRow<TransactionType>
-          label="Čo hľadám"
+          label={t('dopytNovy.whatSeekingLabel')}
           options={(['SALE', 'RENT'] as TransactionType[]).map((v) => ({
             value: v,
-            label: DEMAND_LABEL[v],
+            label: getDemandLabel(t)[v],
           }))}
           value={transaction}
           onChange={setTransaction}
         />
 
         <ChoiceRow<AnyType>
-          label="Typ nehnuteľnosti"
+          label={t('dopytNovy.propertyTypeLabel')}
           options={[
-            { value: 'ANY', label: 'Akýkoľvek' },
+            { value: 'ANY', label: t('dopytNovy.propertyTypeAny') },
             ...(['APARTMENT', 'HOUSE', 'LAND', 'COMMERCIAL', 'OTHER'] as PropertyType[]).map((v) => ({
               value: v as AnyType,
-              label: PROPERTY_LABEL[v],
+              label: getPropertyLabel(t)[v],
             })),
           ]}
           value={type}
@@ -150,8 +150,8 @@ export default function NewRequestScreen() {
         />
 
         <ChoiceRow<string>
-          label="Kraj"
-          hint="Dopĺňa sa podľa obce. Dá sa vybrať aj sám, keď je jedno ktorá obec."
+          label={t('dopytNovy.regionLabel')}
+          hint={t('dopytNovy.regionHint')}
           options={REGIONS.map((r) => ({ value: r, label: r.replace(' kraj', '') }))}
           value={region}
           onChange={setRegion}
@@ -160,44 +160,44 @@ export default function NewRequestScreen() {
         {/* Pri kúpe je to suma, ktorú je záujemca ochotný dať — nie
             „rozpočet" v zmysle mesačnej platby. Pri prenájme mesačný nájom. */}
         <Field
-          label={transaction === 'RENT' ? 'Nájom od (€/mesiac)' : 'Ponúkam od (€)'}
+          label={transaction === 'RENT' ? t('dopytNovy.budgetMinRentLabel') : t('dopytNovy.budgetMinSaleLabel')}
           value={budgetMin}
           onChangeText={setBudgetMin}
           keyboardType="decimal-pad"
-          placeholder={transaction === 'RENT' ? 'napr. 400 za mesiac' : 'napr. 120000'}
+          placeholder={transaction === 'RENT' ? t('dopytNovy.budgetMinRentPlaceholder') : t('dopytNovy.budgetMinSalePlaceholder')}
         />
         <Field
-          label={transaction === 'RENT' ? 'Nájom do (€/mesiac)' : 'Ponúkam do (€)'}
+          label={transaction === 'RENT' ? t('dopytNovy.budgetMaxRentLabel') : t('dopytNovy.budgetMaxSaleLabel')}
           hint={
             transaction === 'RENT'
-              ? 'Najviac, koľko si vieš dovoliť mesačne.'
-              : 'Najviac, koľko si za takú nehnuteľnosť ochotný ponúknuť.'
+              ? t('dopytNovy.budgetMaxRentHint')
+              : t('dopytNovy.budgetMaxSaleHint')
           }
           value={budgetMax}
           onChangeText={setBudgetMax}
           keyboardType="decimal-pad"
-          placeholder={transaction === 'RENT' ? 'napr. 650 za mesiac' : 'napr. 200000'}
+          placeholder={transaction === 'RENT' ? t('dopytNovy.budgetMaxRentPlaceholder') : t('dopytNovy.budgetMaxSalePlaceholder')}
         />
 
-        <Field label="Aspoň izieb" value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder="napr. 2" />
-        <Field label="Aspoň m²" value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder="napr. 55" />
+        <Field label={t('dopytNovy.roomsLabel')} value={rooms} onChangeText={setRooms} keyboardType="numeric" placeholder={t('dopytNovy.roomsPlaceholder')} />
+        <Field label={t('dopytNovy.areaLabel')} value={area} onChangeText={setArea} keyboardType="decimal-pad" placeholder={t('dopytNovy.areaPlaceholder')} />
 
         <Field
-          label="Čo hľadáš"
-          hint="Toto je jediné povinné pole — podľa neho sa majiteľ rozhodne, či ťa osloví."
+          label={t('dopytNovy.descriptionLabel')}
+          hint={t('dopytNovy.descriptionHint')}
           value={description}
           onChangeText={setDescription}
           multiline
           placeholder={
             transaction === 'RENT'
-              ? 'napr. Hľadám svetlý 2-izbový byt bližšie k centru, ideálne s balkónom, nasťahovanie od septembra'
-              : 'napr. Hľadám 3-izbový byt pre rodinu, ideálne s balkónom a parkovaním, do 20 minút od centra'
+              ? t('dopytNovy.descriptionPlaceholderRent')
+              : t('dopytNovy.descriptionPlaceholderSale')
           }
         />
 
         <ErrorNote error={error} />
 
-        <Button title={busy ? 'Ukladám…' : 'Zverejniť dopyt'} onPress={submit} disabled={busy} />
+        <Button title={busy ? t('dopytNovy.savingButton') : t('dopytNovy.publishButton')} onPress={submit} disabled={busy} />
       </FormScreen>
     </SafeAreaView>
   );

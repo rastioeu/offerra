@@ -19,6 +19,18 @@ import {
   filterRows,
   type FilterRow,
 } from '../src/lib/filter-rows';
+import skJson from '../src/i18n/locales/sk.json';
+
+/** Lokálna napodobenina `t()` LEN pre tento test (19.8.2026, lokalizácia) — pozri `check-deadline.ts`. */
+type Locale = Record<string, Record<string, string>>;
+function t(key: string, params?: Record<string, string | number>): string {
+  const [domain, ...rest] = key.split('.');
+  const k = rest.join('.');
+  const raw = (skJson as Locale)[domain]?.[k];
+  if (typeof raw !== 'string') return key;
+  if (!params) return raw;
+  return raw.replace(/\{\{(\w+)\}\}/g, (m, name: string) => (params[name] != null ? String(params[name]) : m));
+}
 
 let fails = 0;
 
@@ -36,8 +48,8 @@ function flat(rows: FilterRow[]): string[] {
   return rows.flatMap(labels);
 }
 
-const KATALOG = filterRows({ side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: true });
-const DOPYTY = filterRows({ side: 'DEMAND', sorts: DEMAND_SORTS, canFavorite: false });
+const KATALOG = filterRows({ t, side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: true });
+const DOPYTY = filterRows({ t, side: 'DEMAND', sorts: DEMAND_SORTS, canFavorite: false });
 
 console.log('── 1. pôvodná chyba: jeden zoznam mieša kategórie ──');
 {
@@ -117,7 +129,7 @@ console.log('\n── 3. tab DOPYTY: iné slová v 1. riadku, rovnaká štruktú
   );
   // Poistka na prázdny riadok ostáva: keby obrazovka triedenie nepodala,
   // prázdny tretí riadok by nechal v UI medzeru, ktorá vyzerá ako chyba.
-  const dopytyBezTriedenia = filterRows({ side: 'DEMAND', sorts: [], canFavorite: true });
+  const dopytyBezTriedenia = filterRows({ t, side: 'DEMAND', sorts: [], canFavorite: true });
   check(
     'PRÁZDNY tretí riadok sa NEVYKRESLÍ (žiadna medzera bez obsahu)',
     dopytyBezTriedenia.length === 2 && !dopytyBezTriedenia.some((r) => r.kind === 'VIEW'),
@@ -147,7 +159,7 @@ console.log('\n── 4. žiadny riadok nesmie miešať kategórie ──');
 
 console.log('\n── 5. prihlásenie a triedenie menia LEN tretí riadok ──');
 {
-  const neprihlaseny = filterRows({ side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: false });
+  const neprihlaseny = filterRows({ t, side: 'PROPERTY', sorts: CATALOG_SORTS, canFavorite: false });
   check(
     'neprihlásený: srdiečko nie je, triedenie ostáva',
     labels(neprihlaseny[2]).join(' · ') === 'Najnovšie · Čoskoro končí',
@@ -164,13 +176,13 @@ console.log('\n── 5. prihlásenie a triedenie menia LEN tretí riadok ──
         .join('|'),
     'typ obchodu aj typ nehnuteľnosti sú rovnaké ako pre prihláseného',
   );
-  const lenSrdiecko = filterRows({ side: 'PROPERTY', sorts: [], canFavorite: true });
+  const lenSrdiecko = filterRows({ t, side: 'PROPERTY', sorts: [], canFavorite: true });
   check(
     'bez triedenia ostane v treťom riadku samotné srdiečko',
     labels(lenSrdiecko[2]).join(' · ') === '♥',
     `3. riadok = „${labels(lenSrdiecko[2]).join(' · ')}"`,
   );
-  const nic = filterRows({ side: 'PROPERTY', sorts: [], canFavorite: false });
+  const nic = filterRows({ t, side: 'PROPERTY', sorts: [], canFavorite: false });
   check(
     'bez triedenia aj bez srdiečka ostanú DVA riadky, nie prázdny tretí',
     nic.length === 2,

@@ -12,8 +12,9 @@ import { Alert, Platform, Pressable, ScrollView, StyleSheet, Text, View } from '
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { db } from '@/lib/property';
-import { REPORT_REASONS, type ReportTarget, type ReportReason } from '@/lib/report';
+import { getReportReasons, type ReportTarget, type ReportReason } from '@/lib/report';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Button, ErrorNote, Field, KeyboardDoneBar } from './ui';
@@ -53,6 +54,7 @@ export function ReportButton({
   presetReason?: ReportReason;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const { session } = useSession();
   const myId = session?.user.id;
   const toast = useToast();
@@ -115,11 +117,11 @@ export function ReportButton({
       close();
       setAlready(true);
       setNote('');
-      toast('Nahlásenie prijaté, pozrieme sa na to');
+      toast(t('report.acceptedToast'));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[NAHLÁSENIE] Odoslanie zlyhalo: ${m}`);
-      setError(/duplicate key/i.test(m) ? 'Toto si už nahlásil.' : m);
+      setError(/duplicate key/i.test(m) ? t('report.alreadyReportedError') : m);
     } finally {
       setBusy(false);
     }
@@ -131,7 +133,7 @@ export function ReportButton({
   // najhoršom slučku prekreslení.
   useEffect(() => {
     if (hideTrigger && openExternally && already) {
-      Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.');
+      Alert.alert(t('report.alreadyReportedTitle'), t('report.alreadyReportedBody'));
       onExternalClose?.();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,7 +145,7 @@ export function ReportButton({
     <>
       {hideTrigger ? null : (
         <Pressable
-          onPress={() => (already ? Alert.alert('Už nahlásené', 'Toto si už nahlásil, stačí raz.') : openForm())}
+          onPress={() => (already ? Alert.alert(t('report.alreadyReportedTitle'), t('report.alreadyReportedBody')) : openForm())}
           accessibilityRole="button"
           hitSlop={8}>
           <Text
@@ -151,7 +153,7 @@ export function ReportButton({
               compact ? styles.compact : styles.link,
               { color: already ? palette.textMuted : palette.danger },
             ]}>
-            {already ? 'Nahlásené' : label}
+            {already ? t('report.alreadyReportedButton') : label}
           </Text>
         </Pressable>
       )}
@@ -163,12 +165,12 @@ export function ReportButton({
             keyboardDismissMode="interactive"
             automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
             <Text style={[styles.lead, { color: palette.textSecondary }]}>
-              Nič sa nezmaže automaticky. Nahlásenie si pozrie človek a rozhodne.
+              {t('report.nothingDeletedLead')}
             </Text>
 
-            <Text style={[styles.section, { color: palette.textMuted }]}>DÔVOD</Text>
+            <Text style={[styles.section, { color: palette.textMuted }]}>{t('report.reasonSection')}</Text>
             <View style={styles.reasons}>
-              {REPORT_REASONS.map((r) => {
+              {getReportReasons(t).map((r) => {
                 const active = reason === r.value;
                 return (
                   <Pressable
@@ -192,17 +194,17 @@ export function ReportButton({
             </View>
 
             <Field
-              label="Čo sa stalo (nepovinné)"
-              hint="Čím konkrétnejšie, tým rýchlejšie sa to dá posúdiť."
+              label={t('report.noteLabel')}
+              hint={t('report.noteHint')}
               value={note}
               onChangeText={setNote}
               multiline
-              placeholder="napr. rovnaká fotka je aj na inom inzeráte s inou adresou"
+              placeholder={t('report.notePlaceholder')}
             />
 
             <ErrorNote error={error} />
 
-            <Button title={busy ? 'Odosielam…' : 'Odoslať nahlásenie'} onPress={submit} disabled={busy} />
+            <Button title={busy ? t('report.sendingButton') : t('report.submitButton')} onPress={submit} disabled={busy} />
           </ScrollView>
           <KeyboardDoneBar />
       </ModalScreen>

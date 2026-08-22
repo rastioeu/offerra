@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Logo } from '@/components/logo';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { demoEmail, isDemoConfigured, signInWithApple, signInWithDemo, signInWithEmail, signInWithGoogle, type AuthResult } from '@/lib/auth';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -32,6 +33,7 @@ const TAPS_TO_UNLOCK = 5;
 export default function LoginScreen() {
   const router = useRouter();
   const palette = useTheme();
+  const { t } = useTranslation();
   const [busy, setBusy] = useState<null | 'apple' | 'google' | 'email'>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -71,14 +73,14 @@ export default function LoginScreen() {
     if (busy) return;
     setBusy('email');
     setError(null);
-    handleResult(await signInWithDemo());
+    handleResult(await signInWithDemo(t));
   }
 
   async function handleEmailSubmit() {
     if (busy) return;
     setBusy('email');
     setError(null);
-    handleResult(await signInWithEmail(email, password));
+    handleResult(await signInWithEmail(t, email, password));
   }
 
   function handleLogoTap() {
@@ -113,19 +115,18 @@ export default function LoginScreen() {
                 chýbal. */}
             <Logo width={200} height={50} />
             <Text style={[styles.subtitle, { color: palette.textMuted }]}>
-              Nehnuteľnosti na predaj aj prenájom
+              {t('login.subtitle')}
             </Text>
           </Pressable>
 
           <View style={styles.actions}>
             <Text style={[styles.why, { color: palette.textSecondary }]}>
-              Prihlás sa cez Apple alebo Google — overený účet znamená, že za
-              každým inzerátom stojí skutočný človek.
+              {t('login.why')}
             </Text>
 
             {Platform.OS === 'ios' ? (
               <Pressable
-                onPress={() => run('apple', signInWithApple)}
+                onPress={() => run('apple', () => signInWithApple(t))}
                 disabled={busy !== null}
                 accessibilityRole="button"
                 style={({ pressed }) => [
@@ -139,14 +140,14 @@ export default function LoginScreen() {
                   <ActivityIndicator color={palette.background} />
                 ) : (
                   <Text style={[styles.buttonText, { color: palette.background }]}>
-                     Pokračovať cez Apple
+                     {t('login.continueApple')}
                   </Text>
                 )}
               </Pressable>
             ) : null}
 
             <Pressable
-              onPress={() => run('google', signInWithGoogle)}
+              onPress={() => run('google', () => signInWithGoogle(t))}
               disabled={busy !== null}
               accessibilityRole="button"
               style={({ pressed }) => [
@@ -162,7 +163,7 @@ export default function LoginScreen() {
                 <ActivityIndicator color={palette.textPrimary} />
               ) : (
                 <Text style={[styles.buttonText, { color: palette.textPrimary }]}>
-                  Pokračovať cez Google
+                  {t('login.continueGoogle')}
                 </Text>
               )}
             </Pressable>
@@ -180,7 +181,7 @@ export default function LoginScreen() {
             {emailUnlocked ? (
               <View style={[styles.hidden, { borderTopColor: palette.border }]}>
                 <Text style={[styles.label, { color: palette.textMuted }]}>
-                  Prístup pre recenziu App Store
+                  {t('login.reviewAccessLabel')}
                 </Text>
 
                 {isDemoConfigured() ? (
@@ -196,18 +197,18 @@ export default function LoginScreen() {
                       },
                     ]}>
                     <Text style={[styles.buttonText, { color: palette.onPrimary }]}>
-                      {busy === 'email' ? 'Prihlasujem…' : 'Prihlásiť sa ako recenzent'}
+                      {busy === 'email' ? t('login.signingIn') : t('login.signInAsReviewer')}
                     </Text>
                   </Pressable>
                 ) : null}
 
                 <Text style={[styles.label, { color: palette.textMuted }]}>
-                  alebo ručne e-mailom
+                  {t('login.orManualEmail')}
                 </Text>
                 <TextInput
                   value={email}
                   onChangeText={setEmail}
-                  placeholder="e-mail"
+                  placeholder={t('login.emailPlaceholder')}
                   placeholderTextColor={palette.textPlaceholder}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -225,7 +226,7 @@ export default function LoginScreen() {
                 <TextInput
                   value={password}
                   onChangeText={setPassword}
-                  placeholder="heslo"
+                  placeholder={t('login.passwordPlaceholder')}
                   placeholderTextColor={palette.textPlaceholder}
                   autoCapitalize="none"
                   autoCorrect={false}
@@ -258,7 +259,7 @@ export default function LoginScreen() {
                   {busy === 'email' ? (
                     <ActivityIndicator color={palette.primary} />
                   ) : (
-                    <Text style={[styles.buttonText, { color: palette.primary }]}>Prihlásiť sa</Text>
+                    <Text style={[styles.buttonText, { color: palette.primary }]}>{t('login.signIn')}</Text>
                   )}
                 </Pressable>
               </View>
@@ -270,21 +271,21 @@ export default function LoginScreen() {
                 chystá dôverovať. Text sa berie z toho istého zdroja
                 (`src/lib/legal.ts`) ako obrazovka v Nastaveniach. */}
             <Text style={[styles.legal, { color: palette.textMuted }]}>
-              Prihlásením súhlasíš s{' '}
+              {t('login.legalPrefix')}{' '}
               <Text
                 style={[styles.legalLink, { color: palette.link }]}
                 accessibilityRole="link"
                 onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}>
-                Podmienkami používania
+                {t('login.termsOfUse')}
               </Text>{' '}
-              a berieš na vedomie{' '}
+              {t('login.legalAnd')}{' '}
               <Text
                 style={[styles.legalLink, { color: palette.link }]}
                 accessibilityRole="link"
                 onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}>
-                Ochranu osobných údajov
+                {t('login.privacyPolicy')}
               </Text>
-              .
+              {t('login.legalSuffix')}.
             </Text>
           </View>
         </ScrollView>

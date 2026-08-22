@@ -17,6 +17,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatDay, isoDay, parseSkDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -32,14 +33,6 @@ function firstOfMonthIn(n: number): string {
   return isoDay(new Date(d.getFullYear(), d.getMonth() + n, 1));
 }
 
-const CHOICES: { label: string; value: () => string | null }[] = [
-  { label: 'Neuvedené', value: () => null },
-  { label: 'Ihneď', value: today },
-  { label: 'Od budúceho mesiaca', value: () => firstOfMonthIn(1) },
-  { label: 'O 2 mesiace', value: () => firstOfMonthIn(2) },
-  { label: 'O 3 mesiace', value: () => firstOfMonthIn(3) },
-];
-
 export function AvailableFromPicker({
   value,
   onChange,
@@ -48,8 +41,16 @@ export function AvailableFromPicker({
   onChange: (day: string | null) => void;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const [manual, setManual] = useState('');
   const [manualError, setManualError] = useState<string | null>(null);
+  const CHOICES: { label: string; value: () => string | null }[] = [
+    { label: t('availableFrom.notGiven'), value: () => null },
+    { label: t('availableFrom.now'), value: today },
+    { label: t('availableFrom.nextMonth'), value: () => firstOfMonthIn(1) },
+    { label: t('availableFrom.inMonths', { count: 2 }), value: () => firstOfMonthIn(2) },
+    { label: t('availableFrom.inMonths', { count: 3 }), value: () => firstOfMonthIn(3) },
+  ];
 
   function applyManual(text: string) {
     setManual(text);
@@ -59,7 +60,7 @@ export function AvailableFromPicker({
     }
     const parsed = parseSkDate(text);
     if (!parsed) {
-      setManualError('Zadaj dátum v tvare 1.9.2026.');
+      setManualError(t('availableFrom.invalidDate'));
       return;
     }
     setManualError(null);
@@ -68,7 +69,7 @@ export function AvailableFromPicker({
 
   return (
     <View style={styles.group}>
-      <Label hint="Odkedy sa dá nasťahovať. Nepovinné.">Dostupné od</Label>
+      <Label hint={t('availableFrom.hint')}>{t('availableFrom.label')}</Label>
 
       <View style={styles.choices}>
         {CHOICES.map((c) => {
@@ -103,7 +104,7 @@ export function AvailableFromPicker({
       <TextInput
         value={manual}
         onChangeText={applyManual}
-        placeholder="alebo konkrétny dátum — 1.9.2026"
+        placeholder={t('availableFrom.manualPlaceholder')}
         placeholderTextColor={palette.textPlaceholder}
         keyboardType="numbers-and-punctuation"
         returnKeyType="done"
@@ -120,7 +121,7 @@ export function AvailableFromPicker({
       {manualError ? (
         <Text style={[styles.note, { color: palette.danger }]}>{manualError}</Text>
       ) : value ? (
-        <Text style={[styles.note, { color: palette.link }]}>Nasťahovanie od {formatDay(value)}</Text>
+        <Text style={[styles.note, { color: palette.link }]}>{t('availableFrom.moveInFrom', { date: formatDay(language, value) ?? '' })}</Text>
       ) : null}
     </View>
   );

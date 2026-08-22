@@ -13,13 +13,15 @@
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { offerSteps, type Offer } from '@/lib/offers';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export function OfferTimeline({ offer }: { offer: Offer }) {
   const palette = useTheme();
-  const steps = offerSteps(offer);
+  const { t, language } = useTranslation();
+  const steps = offerSteps(t, offer);
 
   return (
     <View style={styles.wrap}>
@@ -55,7 +57,7 @@ export function OfferTimeline({ offer }: { offer: Offer }) {
                 {s.label}
               </Text>
               {s.at ? (
-                <Text style={[styles.at, { color: palette.textMuted }]}>{formatDate(s.at)}</Text>
+                <Text style={[styles.at, { color: palette.textMuted }]}>{formatDate(language, s.at)}</Text>
               ) : null}
             </View>
           </View>

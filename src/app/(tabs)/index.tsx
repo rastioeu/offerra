@@ -26,12 +26,14 @@ import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { SavedSearches } from '@/components/saved-searches';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import type { CatalogSort } from '@/lib/property';
 import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function NehnutelnostiScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const [filter, setFilter] = useState<CatalogFilter>(EMPTY_FILTER);
   // Predvolene VŽDY od najnovšieho, nezávisle od filtrov.
@@ -59,7 +61,7 @@ export default function NehnutelnostiScreen() {
   const head = (
     <View style={styles.head}>
       <View style={styles.headRow}>
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Nehnuteľnosti</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('catalog.title')}</Text>
         <View style={[styles.toggle, { backgroundColor: palette.surfacePressed }]}>
           {(['LIST', 'MAP'] as const).map((v) => (
             <Pressable
@@ -73,7 +75,7 @@ export default function NehnutelnostiScreen() {
                   styles.toggleText,
                   { color: view === v ? palette.primary : palette.textMuted },
                 ]}>
-                {v === 'LIST' ? 'Zoznam' : 'Mapa'}
+                {v === 'LIST' ? t('catalog.viewList') : t('catalog.viewMap')}
               </Text>
             </Pressable>
           ))}
@@ -82,8 +84,10 @@ export default function NehnutelnostiScreen() {
       {items ? (
         <Text style={[styles.count, { color: palette.textMuted }]}>
           {items.length === 0
-            ? 'Zatiaľ tu nič nie je'
-            : `${items.length} ${items.length === 1 ? 'inzerát' : items.length < 5 ? 'inzeráty' : 'inzerátov'}`}
+            ? t('catalog.emptyCount')
+            : language === 'sk'
+              ? t(items.length === 1 ? 'catalog.countOne' : items.length < 5 ? 'catalog.countFew' : 'catalog.countMany', { count: items.length })
+              : t(items.length === 1 ? 'catalog.countOne' : 'catalog.countMany', { count: items.length })}
         </Text>
       ) : null}
     </View>
@@ -146,17 +150,17 @@ export default function NehnutelnostiScreen() {
           isFilterEmpty(filter) ? (
             <EmptyState
               icon="house"
-              title="Zatiaľ tu nič nie je"
-              body="Žiadny zverejnený inzerát. Prvý môžeš pridať ty — a nemusíš pri tom povedať cenu."
-              actionTitle="Pridať nehnuteľnosť"
+              title={t('catalog.emptyTitle')}
+              body={t('catalog.emptyBody')}
+              actionTitle={t('catalog.emptyAction')}
               onAction={() => router.push('/pridat')}
             />
           ) : (
             <EmptyState
               icon="magnifyingglass"
-              title="Tomuto hľadaniu nič nezodpovedá"
-              body="Skús ubrať niektorý filter alebo napísať hľadanie voľnejšie."
-              actionTitle="Zrušiť filtre"
+              title={t('catalog.noMatchTitle')}
+              body={t('catalog.noMatchBody')}
+              actionTitle={t('catalog.noMatchAction')}
               onAction={() => setFilter({ ...EMPTY_FILTER })}
             />
           )
@@ -186,7 +190,7 @@ export default function NehnutelnostiScreen() {
         <ReportButton
           targetType="PROPERTY"
           targetId={reporting}
-          label="Nahlásiť inzerát"
+          label={t('catalog.reportListing')}
           hideTrigger
           openExternally
           onExternalClose={() => setReporting(null)}

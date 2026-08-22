@@ -10,7 +10,8 @@ import { useRouter } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
-import { HOW_LEAD } from '@/lib/how-it-works';
+import { useTranslation } from '@/i18n';
+import { getHowLead } from '@/lib/how-it-works';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Icon } from './icon';
@@ -18,6 +19,7 @@ import { Icon } from './icon';
 export function HowItWorksCard({ onDismiss }: { onDismiss?: () => void }) {
   const palette = useTheme();
   const router = useRouter();
+  const { t } = useTranslation();
 
   return (
     <Pressable
@@ -34,15 +36,15 @@ export function HowItWorksCard({ onDismiss }: { onDismiss?: () => void }) {
       ]}>
       <View style={styles.head}>
         <Icon name="house" size={18} color={palette.accentDeep} />
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Ako funguje Offerra</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('nastavenia.howItWorks')}</Text>
         {onDismiss ? (
-          <Pressable onPress={onDismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel="Skryť">
+          <Pressable onPress={onDismiss} hitSlop={12} accessibilityRole="button" accessibilityLabel={t('common.close')}>
             <Text style={[styles.close, { color: palette.textMuted }]}>✕</Text>
           </Pressable>
         ) : null}
       </View>
-      <Text style={[styles.body, { color: palette.textSecondary }]}>{HOW_LEAD}</Text>
-      <Text style={[styles.more, { color: palette.accentDeep }]}>Čítať ďalej →</Text>
+      <Text style={[styles.body, { color: palette.textSecondary }]}>{getHowLead(t)}</Text>
+      <Text style={[styles.more, { color: palette.accentDeep }]}>{t('howItWorks.readMore')}</Text>
     </Pressable>
   );
 }

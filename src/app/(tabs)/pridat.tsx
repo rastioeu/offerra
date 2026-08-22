@@ -18,13 +18,15 @@ import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { AppHeader } from '@/components/app-header';
 import { useTheme } from '@/hooks/use-theme';
-import { db, formatDate, PROPERTY_LABEL, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
+import { useTranslation } from '@/i18n';
+import { db, formatDate, getPropertyLabel, getStatusLabel, getTransactionLabel } from '@/lib/property';
 import { pickLatestDraft } from '@/lib/draft-resume';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
 export default function PridatScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const { session } = useSession();
   const userId = session?.user.id;
@@ -59,7 +61,7 @@ export default function PridatScreen() {
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PRIDAŤ] Vytvorenie konceptu zlyhalo: ${m}`);
-      Alert.alert('Nepodarilo sa založiť inzerát', m);
+      Alert.alert(t('pridat.createFailedTitle'), m);
     } finally {
       setCreating(false);
     }
@@ -69,15 +71,10 @@ export default function PridatScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Pridať</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('pridat.title')}</Text>
 
-        <Text style={[styles.lead, { color: palette.textSecondary }]}>
-          Ponúkaš nehnuteľnosť, alebo naopak niečo hľadáš? Offerra vie oboje.
-        </Text>
-        <Text style={[styles.lead, { color: palette.textMuted }]}>
-          Nový inzerát vznikne ako rozpracovaný a nikto ho nevidí, kým ho
-          sám nezverejníš. Cenu uvádzať nemusíš — o to tu ide.
-        </Text>
+        <Text style={[styles.lead, { color: palette.textSecondary }]}>{t('pridat.lead1')}</Text>
+        <Text style={[styles.lead, { color: palette.textMuted }]}>{t('pridat.lead2')}</Text>
 
         {latestDraft ? (
           <Pressable
@@ -87,22 +84,20 @@ export default function PridatScreen() {
               styles.resume,
               { backgroundColor: pressed ? palette.surfacePressed : palette.surface, borderColor: palette.primary },
             ]}>
-            <Text style={[styles.resumeTitle, { color: palette.primary }]}>
-              Pokračovať v rozpracovanom inzeráte?
-            </Text>
+            <Text style={[styles.resumeTitle, { color: palette.primary }]}>{t('pridat.resumeDraftTitle')}</Text>
             <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
-              {latestDraft.title.trim() || 'Bez názvu'} · upravené {formatDate(latestDraft.updated_at)}
+              {t('pridat.resumeDraftMeta', { title: latestDraft.title.trim() || t('pridat.noTitle'), date: formatDate(language, latestDraft.updated_at) })}
             </Text>
           </Pressable>
         ) : null}
 
         <Button
-          title={creating ? 'Zakladám…' : '+ Pridať nehnuteľnosť'}
+          title={creating ? t('pridat.creating') : t('pridat.addProperty')}
           onPress={createDraft}
           disabled={creating || !userId}
         />
         <Button
-          title="+ Pridať dopyt"
+          title={t('pridat.addDemand')}
           onPress={() => router.push('/dopyt/novy')}
           variant="outline"
           disabled={!userId}
@@ -110,12 +105,12 @@ export default function PridatScreen() {
 
         <ErrorNote error={error} />
 
-        <Text style={[styles.section, { color: palette.textMuted }]}>MOJE INZERÁTY</Text>
+        <Text style={[styles.section, { color: palette.textMuted }]}>{t('pridat.myListings')}</Text>
 
         {items === undefined ? <ActivityIndicator color={palette.primary} /> : null}
 
         {items?.length === 0 ? (
-          <EmptyNote>Zatiaľ nemáš žiadny inzerát. Založ prvý tlačidlom vyššie.</EmptyNote>
+          <EmptyNote>{t('pridat.noListingsYet')}</EmptyNote>
         ) : null}
 
         {items?.map((p) => (
@@ -132,23 +127,23 @@ export default function PridatScreen() {
             ]}>
             <View style={styles.rowHead}>
               <Text numberOfLines={1} style={[styles.rowTitle, { color: palette.textPrimary }]}>
-                {p.title.trim() || 'Bez názvu'}
+                {p.title.trim() || t('pridat.noTitle')}
               </Text>
               <Badge
-                text={STATUS_LABEL[p.status]}
+                text={getStatusLabel(t)[p.status]}
                 tone={p.status === 'ACTIVE' ? 'accent' : p.status === 'REJECTED' ? 'warning' : p.status === 'DRAFT' ? 'warning' : 'neutral'}
               />
             </View>
             <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
-              {TRANSACTION_LABEL[p.transaction_type]} · {PROPERTY_LABEL[p.property_type]}
-              {p.city ? ` · ${p.city}` : ''} · {p.media.length} fotiek
+              {getTransactionLabel(t)[p.transaction_type]} · {getPropertyLabel(t)[p.property_type]}
+              {p.city ? ` · ${p.city}` : ''} · {t('pridat.photoCount', { count: p.media.length })}
             </Text>
             <Text style={[styles.rowMeta, { color: palette.textMuted }]}>
-              Upravené {formatDate(p.updated_at)}
+              {t('pridat.updatedOn', { date: formatDate(language, p.updated_at) })}
             </Text>
             {p.status === 'REJECTED' ? (
               <Text style={[styles.rowMeta, { color: palette.danger }]}>
-                Skryté správcom{p.rejection_reason ? `: ${p.rejection_reason}` : ''}
+                {t('pridat.hiddenByAdmin')}{p.rejection_reason ? `: ${p.rejection_reason}` : ''}
               </Text>
             ) : null}
           </Pressable>

@@ -10,18 +10,11 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Label } from './ui';
-
-const CHOICES: { days: number | null; label: string }[] = [
-  { days: null, label: 'Bez časovača' },
-  { days: 7, label: '7 dní' },
-  { days: 14, label: '14 dní' },
-  { days: 30, label: '30 dní' },
-  { days: 60, label: '60 dní' },
-];
 
 function daysFromNow(days: number): string {
   const d = new Date();
@@ -49,12 +42,18 @@ export function DeadlinePicker({
   onChange: (iso: string | null) => void;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
+  const CHOICES: { days: number | null; label: string }[] = [
+    { days: null, label: t('deadlinePicker.none') },
+    { days: 7, label: t('deadlinePicker.days', { count: 7 }) },
+    { days: 14, label: t('deadlinePicker.days', { count: 14 }) },
+    { days: 30, label: t('deadlinePicker.days', { count: 30 }) },
+    { days: 60, label: t('deadlinePicker.days', { count: 60 }) },
+  ];
 
   return (
     <View style={styles.group}>
-      <Label hint="Po uplynutí sa prestanú prijímať ponuky. Nepovinné.">
-        Uzávierka ponúk
-      </Label>
+      <Label hint={t('deadlinePicker.hint')}>{t('deadlinePicker.label')}</Label>
 
       <View style={styles.choices}>
         {CHOICES.map((c) => {
@@ -84,7 +83,7 @@ export function DeadlinePicker({
 
       {value ? (
         <Text style={[styles.current, { color: palette.link }]}>
-          Ponuky sa uzatvoria {formatDate(value)}
+          {t('deadlinePicker.closesOn', { date: formatDate(language, value) })}
         </Text>
       ) : null}
     </View>

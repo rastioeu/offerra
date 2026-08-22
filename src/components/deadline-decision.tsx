@@ -22,6 +22,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import { db, EXTEND_DAYS, extendedDeadline, type DeadlineOutcome } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -40,6 +41,7 @@ export function DeadlineDecision({
   onPickOffer: () => void;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   // Archivácia je nezvratná akcia → rovnaké undo okno ako „Zmazať inzerát"
   // a „Odmietnuť ponuku" (Fáza 23). Nie Alert: jeden vzor, nie dva.
@@ -54,23 +56,23 @@ export function DeadlineDecision({
     if (error) {
       // §2: chyba sa NESMIE stratiť. Používateľ vidí celý dôvod.
       console.log(`[UZÁVIERKA] Predĺženie zlyhalo: ${errorText(error)}`);
-      toast(`Predĺženie zlyhalo: ${errorText(error)}`, 'warning');
+      toast(t('deadlineDecision.extendFailed', { error: errorText(error) }), 'warning');
       return;
     }
-    toast(`Uzávierka predĺžená o ${EXTEND_DAYS} dní`);
+    toast(t('deadlineDecision.extendedToast', { days: EXTEND_DAYS }));
     onDone();
   }
 
   function askArchive() {
-    confirmWithUndo('Inzerát bude archivovaný', async () => {
+    confirmWithUndo(t('deadlineDecision.archivePending'), async () => {
       console.log(`[UZÁVIERKA] Archivujem inzerát ${propertyId}`);
       const { error } = await db().from('property').update({ status: 'ARCHIVED' }).eq('id', propertyId);
       if (error) {
         console.log(`[UZÁVIERKA] Archivácia zlyhala: ${errorText(error)}`);
-        toast(`Archivácia zlyhala: ${errorText(error)}`, 'warning');
+        toast(t('deadlineDecision.archiveFailed', { error: errorText(error) }), 'warning');
         return;
       }
-      toast('Inzerát je archivovaný');
+      toast(t('deadlineDecision.archivedToast'));
       onDone();
     });
   }
@@ -89,10 +91,10 @@ export function DeadlineDecision({
           const primary = action === 'PICK_OFFER';
           const label =
             action === 'PICK_OFFER'
-              ? 'Vybrať z ponúk'
+              ? t('deadlineDecision.pickOfferAction')
               : action === 'EXTEND'
-                ? `Predĺžiť o ${EXTEND_DAYS} dní`
-                : 'Archivovať';
+                ? t('deadlineDecision.extendAction', { days: EXTEND_DAYS })
+                : t('deadlineDecision.archiveAction');
           const onPress =
             action === 'PICK_OFFER' ? onPickOffer : action === 'EXTEND' ? () => void extend() : askArchive;
 

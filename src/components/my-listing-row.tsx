@@ -13,24 +13,27 @@ import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation, type TFunc } from '@/i18n';
 import {
   closedLabel,
   deadlineLabel,
   deadlineUrgency,
   formatPrice,
-  STATUS_LABEL,
+  getStatusLabel,
   type PropertyWithMedia,
 } from '@/lib/property';
 import { Money as MoneyType, Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Badge } from './ui';
 
-/** „3 ponuky" po slovensky. Bez toho by tam bolo „3 ponuka". */
-export function offersWord(n: number): string {
-  if (n === 0) return 'Zatiaľ žiadne ponuky';
-  if (n === 1) return '1 ponuka';
-  if (n < 5) return `${n} ponuky`;
-  return `${n} ponúk`;
+/** „3 ponuky" so správnym tvarom. Bez toho by tam bolo „3 ponuka". */
+export function offersWord(t: TFunc, language: string, n: number): string {
+  if (n === 0) return t('myListingRow.noOffersYet');
+  if (language === 'sk') {
+    const key = n === 1 ? 'offersOne' : n < 5 ? 'offersFew' : 'offersMany';
+    return t(`myListingRow.${key}`, { count: n });
+  }
+  return t(n === 1 ? 'myListingRow.offersOne' : 'myListingRow.offersMany', { count: n });
 }
 
 /**
@@ -38,9 +41,9 @@ export function offersWord(n: number): string {
  * ktoré vlastníkovi povie, či je problém v NÁVŠTEVNOSTI, alebo v CENE:
  * veľa zobrazení a žiadna ponuka znamená niečo iné než žiadne zobrazenia.
  */
-export function conversionLabel(views: number, offers: number): string | null {
+export function conversionLabel(t: TFunc, views: number, offers: number): string | null {
   if (views < 5) return null; // pri troch návštevách je percento nezmysel
-  return `${Math.round((offers / views) * 100)} % z pozretí ponúklo`;
+  return t('myListingRow.conversion', { pct: Math.round((offers / views) * 100) });
 }
 
 export function MyListingRow({
@@ -51,28 +54,29 @@ export function MyListingRow({
   onPress: () => void;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const pending = item.pending_count ?? 0;
   const offers = item.offer_count ?? 0;
   const thumb = item.media[0]?.url;
   const urgency = deadlineUrgency(item.offer_deadline);
-  const deadline = deadlineLabel(item.offer_deadline);
-  const conversion = conversionLabel(item.view_count, offers);
+  const deadline = deadlineLabel(t, language, item.offer_deadline);
+  const conversion = conversionLabel(t, item.view_count, offers);
 
   // Najvyššia ponuka má prednosť pred orientačnou cenou — je to živý údaj
   // a je to to, na čo sa vlastník pozerá.
   const money =
     item.top_offer != null
-      ? formatPrice(item.top_offer, item.transaction_type)
+      ? formatPrice(t, item.top_offer, item.transaction_type)
       : item.status === 'CLOSED' && item.final_amount != null
-        ? formatPrice(item.final_amount, item.transaction_type)
-        : formatPrice(item.asking_price_hint, item.transaction_type);
+        ? formatPrice(t, item.final_amount, item.transaction_type)
+        : formatPrice(t, item.asking_price_hint, item.transaction_type);
   const moneyIsOffer = item.top_offer != null;
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${item.title || 'Bez názvu'}, ${offersWord(offers)}`}
+      accessibilityLabel={t('myListingRow.accessibilityLabel', { title: item.title || t('myListingRow.noTitle'), offers: offersWord(t, language, offers) })}
       style={({ pressed }) => [
         styles.row,
         {
@@ -91,22 +95,22 @@ export function MyListingRow({
         <Image source={{ uri: thumb }} style={styles.thumb} contentFit="cover" transition={120} />
       ) : (
         <View style={[styles.thumb, styles.noThumb, { backgroundColor: palette.surfacePressed }]}>
-          <Text style={[styles.noThumbText, { color: palette.textMuted }]}>bez{'\n'}fotky</Text>
+          <Text style={[styles.noThumbText, { color: palette.textMuted }]}>{t('myListingRow.noPhoto')}</Text>
         </View>
       )}
 
       <View style={styles.body}>
         <Text numberOfLines={1} style={[styles.title, { color: palette.textPrimary }]}>
-          {item.title.trim() || 'Bez názvu'}
+          {item.title.trim() || t('myListingRow.noTitle')}
         </Text>
 
         {money ? (
           <Text style={[styles.money, { color: moneyIsOffer ? palette.accent : palette.textSecondary }]}>
             {money}
-            {moneyIsOffer ? ' · najvyššia ponuka' : ''}
+            {moneyIsOffer ? t('myListingRow.highestOfferSuffix') : ''}
           </Text>
         ) : (
-          <Text style={[styles.meta, { color: palette.textMuted }]}>Cena neuvedená</Text>
+          <Text style={[styles.meta, { color: palette.textMuted }]}>{t('myListingRow.noPrice')}</Text>
         )}
 
         <Text
@@ -114,12 +118,12 @@ export function MyListingRow({
             styles.meta,
             { color: pending > 0 ? palette.accentDeep : palette.textMuted, fontWeight: pending > 0 ? Weight.semibold : Weight.regular },
           ]}>
-          {offersWord(offers)}
-          {pending > 0 ? ` · ${pending} čaká na teba` : ''}
+          {offersWord(t, language, offers)}
+          {pending > 0 ? t('myListingRow.pendingSuffix', { count: pending }) : ''}
         </Text>
 
         <Text style={[styles.meta, { color: palette.textMuted }]}>
-          {[item.city, `${item.view_count} zobrazení`, conversion].filter(Boolean).join(' · ')}
+          {[item.city, t('propertyCard.viewCount', { count: item.view_count }), conversion].filter(Boolean).join(' · ')}
         </Text>
 
         {deadline ? (
@@ -135,7 +139,7 @@ export function MyListingRow({
 
       <View style={styles.right}>
         <Badge
-          text={item.status === 'CLOSED' ? closedLabel(item.transaction_type) : STATUS_LABEL[item.status]}
+          text={item.status === 'CLOSED' ? closedLabel(t, item.transaction_type) : getStatusLabel(t)[item.status]}
         />
       </View>
     </Pressable>

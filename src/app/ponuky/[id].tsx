@@ -17,10 +17,12 @@ import { useOffers } from '@/hooks/use-offers';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ManageOffersScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, reload: reloadProperty } = useProperty(id);
@@ -35,7 +37,7 @@ export default function ManageOffersScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Ponuky na inzerát',
+          title: t('manageOffers.screenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
           // Z profilu sa ťuknutím ide sem, nie do úpravy — inzerát sa
@@ -46,7 +48,7 @@ export default function ManageOffersScreen() {
               onPress={() => router.push({ pathname: '/inzerat/[id]', params: { id: String(id) } })}
               accessibilityRole="button"
               hitSlop={12}>
-              <Text style={[styles.headerAction, { color: palette.primary }]}>Upraviť</Text>
+              <Text style={[styles.headerAction, { color: palette.primary }]}>{t('manageOffers.editAction')}</Text>
             </Pressable>
           ),
         }}

@@ -12,6 +12,9 @@
  * Čo NEVIE: preklepy v názvoch obcí a voľné formulácie („niečo pri lese").
  * Zvyšok textu preto ide do fulltextu nad názvom a popisom — nič sa nestratí.
  */
+import type { TFunc } from '@/i18n';
+
+import { getDemandLabel, getPropertyLabel, getTransactionLabel } from './labels';
 import type { PropertyType, TransactionType } from './property';
 
 /**
@@ -285,38 +288,37 @@ export function parseQuery(raw: string): Parsed {
   return { filter: f, understood, cityGuess: cityCandidates[0] ?? null, cityCandidates };
 }
 
-/** Krátky ľudský popis filtra pre lištu nad výsledkami. */
-export function describeFilter(f: CatalogFilter, side: FilterSide = 'PROPERTY'): string[] {
+/**
+ * Krátky ľudský popis filtra pre lištu nad výsledkami.
+ *
+ * OD LOKALIZÁCIE (19.8.2026): `getDemandLabel`/`getTransactionLabel`/
+ * `getPropertyLabel` sú tie isté mapy ako v `labels.ts`, nie kópia — inak
+ * by sa časom rozišli od skutočných štítkov na čipoch filtra.
+ */
+export function describeFilter(t: TFunc, f: CatalogFilter, side: FilterSide = 'PROPERTY'): string[] {
   const out: string[] = [];
-  if (f.onlyFavorites) out.push('Obľúbené');
+  if (f.onlyFavorites) out.push(t('search.favoritesChip'));
   if (f.transaction) {
-    out.push(
-      side === 'DEMAND'
-        ? f.transaction === 'RENT'
-          ? 'Hľadám prenájom'
-          : 'Kúpim'
-        : f.transaction === 'RENT'
-          ? 'Prenájom'
-          : 'Predaj'
-    );
+    out.push((side === 'DEMAND' ? getDemandLabel(t) : getTransactionLabel(t))[f.transaction]);
   }
-  if (f.propertyType) {
-    out.push(
-      f.propertyType === 'APARTMENT' ? 'Byt'
-        : f.propertyType === 'HOUSE' ? 'Dom'
-        : f.propertyType === 'LAND' ? 'Pozemok'
-        : f.propertyType === 'COMMERCIAL' ? 'Komerčné' : 'Iné'
-    );
-  }
+  if (f.propertyType) out.push(getPropertyLabel(t)[f.propertyType]);
   if (f.city) out.push(f.city);
-  if (f.roomsMin != null) out.push(`od ${f.roomsMin} izieb`);
-  if (f.areaMin != null) out.push(`od ${f.areaMin} m²`);
+  if (f.roomsMin != null) out.push(t('search.roomsMinChip', { count: f.roomsMin }));
+  if (f.areaMin != null) out.push(t('search.areaMinChip', { count: f.areaMin }));
   // Pri dopyte to nie je cena nehnuteľnosti, ale koľko je človek ochotný dať.
   if (f.priceMin != null) {
-    out.push(`${side === 'DEMAND' ? 'ponúka od' : 'od'} ${f.priceMin.toLocaleString('sk-SK')} €`);
+    out.push(
+      t(side === 'DEMAND' ? 'search.priceMinDemandChip' : 'search.priceMinChip', {
+        amount: f.priceMin.toLocaleString('sk-SK'),
+      }),
+    );
   }
   if (f.priceMax != null) {
-    out.push(`${side === 'DEMAND' ? 'ponúka do' : 'do'} ${f.priceMax.toLocaleString('sk-SK')} €`);
+    out.push(
+      t(side === 'DEMAND' ? 'search.priceMaxDemandChip' : 'search.priceMaxChip', {
+        amount: f.priceMax.toLocaleString('sk-SK'),
+      }),
+    );
   }
   if (f.text) out.push(`„${f.text}"`);
   return out;

@@ -10,6 +10,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-nati
 
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import type { CatalogSort } from '@/lib/property';
 import {
@@ -36,6 +37,7 @@ export function SavedSearches({
   onApply: (f: CatalogFilter, s: CatalogSort) => void;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const [items, setItems] = useState<SavedSearch[]>([]);
   const [counts, setCounts] = useState<Record<string, number>>({});
@@ -73,15 +75,15 @@ export function SavedSearches({
     if (!myId || busy) return;
     setBusy(true);
     try {
-      await saveSearch(myId, suggestName(filter), filter, sort);
+      await saveSearch(myId, suggestName(t, filter), filter, sort);
       await load();
-      toast('Hľadanie uložené');
+      toast(t('savedSearches.savedToast'));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[HĽADANIA] Uloženie zlyhalo: ${m}`);
       Alert.alert(
-        'Uložiť sa nepodarilo',
-        /duplicate key/i.test(m) ? 'Hľadanie s týmto názvom už máš uložené.' : m
+        t('savedSearches.saveFailedTitle'),
+        /duplicate key/i.test(m) ? t('savedSearches.duplicateNameError') : m
       );
     } finally {
       setBusy(false);
@@ -89,18 +91,18 @@ export function SavedSearches({
   }
 
   function remove(s: SavedSearch) {
-    Alert.alert('Zmazať uložené hľadanie?', s.name, [
-      { text: 'Zrušiť', style: 'cancel' },
+    Alert.alert(t('savedSearches.deleteTitle'), s.name, [
+      { text: t('savedSearches.cancel'), style: 'cancel' },
       {
-        text: 'Zmazať',
+        text: t('savedSearches.delete'),
         style: 'destructive',
         onPress: async () => {
           try {
             await deleteSavedSearch(s.id);
             await load();
-            toast('Hľadanie zmazané', 'info');
+            toast(t('savedSearches.deletedToast'), 'info');
           } catch (e: unknown) {
-            Alert.alert('Zmazanie zlyhalo', errorText(e));
+            Alert.alert(t('savedSearches.deleteFailedTitle'), errorText(e));
           }
         },
       },
@@ -114,8 +116,7 @@ export function SavedSearches({
   return (
     <View style={styles.wrap}>
       <Text style={[styles.lead, { color: palette.textMuted }]}>
-        Uložené hľadanie si pamätá filter aj poradie. Číslo hovorí, koľko inzerátov
-        pribudlo odvtedy, čo si ho naposledy otvoril. Vidíš ho len ty.
+        {t('savedSearches.lead')}
       </Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
@@ -126,7 +127,7 @@ export function SavedSearches({
             accessibilityRole="button"
             style={[styles.chip, { borderColor: palette.accent, backgroundColor: palette.surface }]}>
             <Text style={[styles.chipText, { color: palette.accentDeep }]}>
-              {busy ? 'Ukladám…' : '+ Uložiť toto hľadanie'}
+              {busy ? t('savedSearches.savingButton') : t('savedSearches.saveThisSearch')}
             </Text>
           </Pressable>
         ) : null}
@@ -148,7 +149,7 @@ export function SavedSearches({
               }}
               onLongPress={() => remove(s)}
               accessibilityRole="button"
-              accessibilityHint="Podržaním zmažeš"
+              accessibilityHint={t('savedSearches.holdToDeleteHint')}
               style={[
                 styles.chip,
                 {

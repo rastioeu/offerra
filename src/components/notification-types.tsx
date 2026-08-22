@@ -16,12 +16,13 @@
 import { StyleSheet, Switch, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import type {
   NotificationFrequency,
   NotificationPreference,
   NotificationType,
 } from '@/lib/notifications';
-import { NOTIFICATION_TYPES } from '@/lib/notifications';
+import { getNotificationTypes } from '@/lib/notifications';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 /** Sú denný a týždenný súhrn už funkčné? */
@@ -37,27 +38,29 @@ type Props = {
 
 export function NotificationTypeList({ prefs, onChange }: Props) {
   const palette = useTheme();
+  const { t } = useTranslation();
+  const notificationTypes = getNotificationTypes(t);
 
   return (
     <>
-      {NOTIFICATION_TYPES.map((t) => {
-        const pref = prefs[t.type];
+      {notificationTypes.map((nt) => {
+        const pref = prefs[nt.type];
         // Bez uloženej preferencie platí ZAPNUTÉ — to je aj default v DB.
         // Systémové sa vypnúť nedá a `check` v DB to drží aj proti appke.
-        const enabled = t.system ? true : (pref?.enabled ?? true);
+        const enabled = nt.system ? true : (pref?.enabled ?? true);
         return (
-          <View key={t.type} style={[styles.row, { borderTopColor: palette.border }]}>
+          <View key={nt.type} style={[styles.row, { borderTopColor: palette.border }]}>
             <View style={styles.switchRow}>
               <View style={styles.switchText}>
-                <Text style={[styles.label, { color: palette.textPrimary }]}>{t.label}</Text>
-                {t.hint ? (
-                  <Text style={[styles.hint, { color: palette.textMuted }]}>{t.hint}</Text>
+                <Text style={[styles.label, { color: palette.textPrimary }]}>{nt.label}</Text>
+                {nt.hint ? (
+                  <Text style={[styles.hint, { color: palette.textMuted }]}>{nt.hint}</Text>
                 ) : null}
               </View>
               <Switch
                 value={enabled}
-                disabled={t.system}
-                onValueChange={(v) => onChange(t.type, { enabled: v })}
+                disabled={nt.system}
+                onValueChange={(v) => onChange(nt.type, { enabled: v })}
                 trackColor={{ true: palette.secondary, false: palette.border }}
               />
             </View>

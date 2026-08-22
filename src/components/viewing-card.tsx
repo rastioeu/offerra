@@ -18,14 +18,15 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import {
   confirmViewing,
   fetchViewingContact,
+  getViewingConsent,
+  getViewingStatusLabel,
   requestViewing,
   setViewingStatus,
-  VIEWING_CONSENT,
-  VIEWING_STATUS_LABEL,
   type Viewing,
   type ViewingContact,
 } from '@/lib/viewing';
@@ -57,6 +58,9 @@ export function ViewingCard({
 }) {
   const palette = useTheme();
   const toast = useToast();
+  const { t } = useTranslation();
+  const VIEWING_CONSENT = getViewingConsent(t);
+  const VIEWING_STATUS_LABEL = getViewingStatusLabel(t);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<Record<string, ViewingContact>>({});
@@ -103,7 +107,7 @@ export function ViewingCard({
         await requestViewing(propertyId, myId);
       }
       await reload();
-      toast('Žiadosť odoslaná — čaká na potvrdenie vlastníkom', 'info');
+      toast(t('viewing.requestSentToast'), 'info');
     } catch (e: unknown) {
       // Surová chyba (aj s Postgres kódom) ide vždy do logu — nikdy sa
       // nezahadzuje (CLAUDE.md §2). Používateľovi sa ale pri tomto
@@ -116,7 +120,7 @@ export function ViewingCard({
       const code = (e as { code?: unknown } | null)?.code;
       console.log(`[OBHLIADKA] Žiadosť zlyhala: ${errorText(e)}`);
       if (code === '42501') {
-        setError('Tento inzerát už nie je dostupný.');
+        setError(t('viewing.listingUnavailable'));
         void reloadProperty();
       } else {
         setError(errorText(e));
@@ -132,7 +136,7 @@ export function ViewingCard({
     try {
       await confirmViewing(v.id);
       await reload();
-      toast('Obhliadka potvrdená — kontakty odkryté', 'info');
+      toast(t('viewing.confirmedToast'), 'info');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OBHLIADKA] Potvrdenie zlyhalo: ${m}`);
@@ -148,7 +152,7 @@ export function ViewingCard({
     try {
       await setViewingStatus(v.id, status);
       await reload();
-      toast(status === 'COMPLETED' ? 'Označené ako po obhliadke' : 'Obhliadka zrušená', 'info');
+      toast(status === 'COMPLETED' ? t('viewing.markedCompletedToast') : t('viewing.markedCancelledToast'), 'info');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[OBHLIADKA] Zmena stavu zlyhala: ${m}`);
@@ -162,7 +166,7 @@ export function ViewingCard({
 
   return (
     <Card>
-      <Eyebrow>Obhliadka</Eyebrow>
+      <Eyebrow>{t('viewing.eyebrow')}</Eyebrow>
       <ErrorNote error={error} />
 
       {/* ZRUŠENÁ/ODMIETNUTÁ obhliadka NIE JE mŕtvy stav (Rastio, 19.8.2026,
@@ -174,25 +178,21 @@ export function ViewingCard({
         <>
           <Text style={[styles.note, { color: palette.textSecondary }]}>{VIEWING_CONSENT}</Text>
           {mine?.status === 'CANCELLED' ? (
-            <Text style={[styles.note, { color: palette.textMuted }]}>
-              Predošlá žiadosť bola zrušená · Môžeš požiadať znova.
-            </Text>
+            <Text style={[styles.note, { color: palette.textMuted }]}>{t('viewing.previousCancelledHint')}</Text>
           ) : null}
           {closed ? (
-            <Text style={[styles.note, { color: palette.textMuted }]}>
-              Inzerát už ponuky neprijíma — obhliadku cezeň dohodnúť nemožno.
-            </Text>
+            <Text style={[styles.note, { color: palette.textMuted }]}>{t('viewing.closedHint')}</Text>
           ) : (
             <Button
-              title={busy ? 'Odosielam…' : mine ? 'Požiadať znova' : 'Chcem obhliadku'}
+              title={busy ? t('viewing.sending') : mine ? t('viewing.askAgain') : t('viewing.ask')}
               disabled={busy}
               onPress={() =>
                 Alert.alert(
-                  mine ? 'Požiadať o obhliadku znova?' : 'Požiadať o obhliadku?',
+                  mine ? t('viewing.askAgainConfirmTitle') : t('viewing.askConfirmTitle'),
                   VIEWING_CONSENT,
                   [
-                    { text: 'Zrušiť', style: 'cancel' },
-                    { text: 'Áno, požiadať', onPress: () => void ask() },
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('viewing.askConfirmYes'), onPress: () => void ask() },
                   ],
                 )
               }
@@ -202,9 +202,7 @@ export function ViewingCard({
       ) : null}
 
       {isOwner && visible.length === 0 ? (
-        <Text style={[styles.note, { color: palette.textMuted }]}>
-          Zatiaľ nikto o obhliadku nepožiadal. Keď požiada, uvidíš tu jeho žiadosť.
-        </Text>
+        <Text style={[styles.note, { color: palette.textMuted }]}>{t('viewing.noRequestsYet')}</Text>
       ) : null}
 
       {visible.map((v) => {
@@ -222,27 +220,27 @@ export function ViewingCard({
                     — z aktuálneho riadku sa to nedá zistiť (`CANCELLED` už
                     nenesie, z akého stavu prišla) a klamať by bolo horšie
                     než napísať menej. */}
-                Zrušená.
+                {t('viewing.cancelledShort')}
               </Text>
             ) : v.status === 'REQUESTED' ? (
               isOwner ? (
                 <>
                   <Text style={[styles.note, { color: palette.textSecondary }]}>
-                    Kontakt sa odkryje obom stranám až po potvrdení.
+                    {t('viewing.ownerPendingHint')}
                   </Text>
                   <View style={styles.actions}>
                     <Button
-                      title="Potvrdiť obhliadku"
+                      title={t('viewing.confirmButton')}
                       disabled={busy}
                       onPress={() =>
-                        Alert.alert('Potvrdiť obhliadku?', VIEWING_CONSENT, [
-                          { text: 'Späť', style: 'cancel' },
-                          { text: 'Potvrdiť', onPress: () => void confirm(v) },
+                        Alert.alert(t('viewing.confirmConfirmTitle'), VIEWING_CONSENT, [
+                          { text: t('common.back'), style: 'cancel' },
+                          { text: t('common.continue'), onPress: () => void confirm(v) },
                         ])
                       }
                     />
                     <Button
-                      title="Odmietnuť"
+                      title={t('viewing.declineButton')}
                       variant="outline"
                       disabled={busy}
                       onPress={() => void mark(v, 'CANCELLED')}
@@ -252,10 +250,10 @@ export function ViewingCard({
               ) : (
                 <>
                   <Text style={[styles.note, { color: palette.textSecondary }]}>
-                    Vlastník ešte nerozhodol. Dáme ti vedieť, keď žiadosť potvrdí.
+                    {t('viewing.requesterPendingHint')}
                   </Text>
                   <Button
-                    title="Stiahnuť žiadosť"
+                    title={t('viewing.withdrawButton')}
                     variant="outline"
                     disabled={busy}
                     onPress={() => void mark(v, 'CANCELLED')}
@@ -264,36 +262,32 @@ export function ViewingCard({
               )
             ) : revealed && c ? (
               <View style={styles.grid}>
-                <ParamCell value={c.nickname ?? '—'} label="Prezývka" />
-                <ParamCell value={c.full_name ?? 'nevyplnené'} label="Meno" />
-                <ParamCell value={c.phone ?? 'nevyplnený'} label="Telefón" />
-                <ParamCell value={c.email ?? 'nedostupný'} label="E-mail" />
+                <ParamCell value={c.nickname ?? '—'} label={t('viewing.paramNickname')} />
+                <ParamCell value={c.full_name ?? t('viewing.paramNameEmpty')} label={t('viewing.paramName')} />
+                <ParamCell value={c.phone ?? t('viewing.paramPhoneEmpty')} label={t('viewing.paramPhone')} />
+                <ParamCell value={c.email ?? t('viewing.paramEmailEmpty')} label={t('viewing.paramEmail')} />
               </View>
             ) : revealed ? (
-              <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam kontakt…</Text>
+              <Text style={[styles.note, { color: palette.textMuted }]}>{t('viewing.loadingContact')}</Text>
             ) : null}
 
             {revealed ? (
               <View style={styles.actions}>
                 <Button
-                  title="Bol som na obhliadke"
+                  title={t('viewing.attendedButton')}
                   variant="outline"
                   disabled={busy}
                   onPress={() => void mark(v, 'COMPLETED')}
                 />
                 <Button
-                  title="Zrušiť"
+                  title={t('common.cancel')}
                   variant="outline"
                   disabled={busy}
                   onPress={() =>
-                    Alert.alert(
-                      'Zrušiť obhliadku?',
-                      'Kontakt, ktorý druhá strana už videla, sa tým nezmaže — len sa dohoda označí za neplatnú.',
-                      [
-                        { text: 'Späť', style: 'cancel' },
-                        { text: 'Zrušiť obhliadku', style: 'destructive', onPress: () => void mark(v, 'CANCELLED') },
-                      ]
-                    )
+                    Alert.alert(t('viewing.cancelConfirmTitle'), t('viewing.cancelConfirmBody'), [
+                      { text: t('common.back'), style: 'cancel' },
+                      { text: t('viewing.cancelConfirmYes'), style: 'destructive', onPress: () => void mark(v, 'CANCELLED') },
+                    ])
                   }
                 />
               </View>

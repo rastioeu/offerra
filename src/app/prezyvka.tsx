@@ -18,11 +18,13 @@ import { isUsablePhone } from '@/lib/phone';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { suggestedFullName } from '@/lib/signin-name';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function PrezyvkaScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const { session } = useSession();
   const userId = session?.user.id;
   const { reload } = useProfile();
@@ -52,33 +54,28 @@ export default function PrezyvkaScreen() {
   async function submit() {
     if (!userId || busy) return;
     if (trimmed.length < 3) {
-      setError('Prezývka musí mať aspoň 3 znaky.');
+      setError(t('nickname.nicknameTooShort'));
       return;
     }
     if (!adult) {
-      setError('Bez potvrdenia veku sa registrovať nedá — inzerovať a podávať ponuky môžu len plnoletí.');
+      setError(t('nickname.ageRequired'));
       return;
     }
     // Telefón je POVINNÝ (Rastio, 9.8.2026): appka stojí na tom, že sa
     // dvaja ľudia dohodnú telefonicky — pri obhliadke aj po prijatí
     // ponuky. Bez neho stráca hlavnú funkciu.
     if (!isUsablePhone(phone)) {
-      setError(
-        'Zadaj telefónne číslo. Bez neho sa s tebou druhá strana nemá ako spojiť ' +
-          'pri obhliadke ani po prijatí ponuky.'
-      );
+      setError(t('nickname.phoneRequired'));
       return;
     }
     if (!ownName) {
-      setError(
-        'Bez potvrdenia, že konáš vo vlastnom mene, sa registrovať nedá. ' +
-          'Offerra je trh medzi ľuďmi, nie pre realitné kancelárie.'
-      );
+      setError(t('nickname.ownNameRequired'));
       return;
     }
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
+      t,
       userId,
       {
         nickname: trimmed,
@@ -105,51 +102,48 @@ export default function PrezyvkaScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]}>
       <FormScreen>
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Ako ťa máme volať?</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('nickname.title')}</Text>
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
-          Pod prezývkou budú tvoje ponuky vidieť všetci — aj neprihlásení.
-          Tvoje skutočné meno a telefón ostávajú skryté a odkryjú sa až vtedy,
-          keď niekto tvoju ponuku prijme alebo si vypýta obhliadku.
+          {t('nickname.lead')}
         </Text>
 
         <Field
-          label="Prezývka"
-          hint="3 až 20 znakov. Vidí ju každý."
+          label={t('nickname.nicknameLabel')}
+          hint={t('nickname.nicknameHint')}
           value={nickname}
           onChangeText={setNickname}
-          placeholder="napr. tichy_kupec"
+          placeholder={t('nickname.nicknamePlaceholder')}
         />
         {tooShort ? (
-          <Text style={[styles.warn, { color: palette.warning }]}>Ešte aspoň {3 - trimmed.length} znaky.</Text>
+          <Text style={[styles.warn, { color: palette.warning }]}>{t('nickname.atLeastMoreChars', { count: 3 - trimmed.length })}</Text>
         ) : null}
 
         <View style={[styles.divider, { borderTopColor: palette.border }]} />
 
         <Text style={[styles.section, { color: palette.textMuted }]}>
-          SKRYTÉ ÚDAJE — ODKRYJÚ SA AŽ PRI DOHODE
+          {t('nickname.hiddenSection')}
         </Text>
         <Text style={[styles.note, { color: palette.textMuted }]}>
-          Nevidí ich nikto — odkryjú sa výhradne druhej strane, a to až keď
-          si vypýta obhliadku alebo keď sa prijme ponuka.
+          {t('nickname.hiddenNote')}
         </Text>
 
         <Field
-          label="Meno a priezvisko (nepovinné)"
+          label={t('nickname.fullNameLabel')}
           hint={
             suggestedName
-              ? 'Doplnili sme ho z tvojho prihlásenia. Pokojne ho prepíš.'
-              : 'Doplniť sa dá aj neskôr v Nastaveniach.'
+              ? t('nickname.fullNameHintSuggested')
+              : t('nickname.fullNameHintManual')
           }
           value={fullName}
           onChangeText={setFullName}
-          placeholder="napr. Ján Novák"
+          placeholder={t('nickname.fullNamePlaceholder')}
         />
         <Field
-          label="Telefón — povinné"
-          hint="Bez neho sa s tebou druhá strana nemá ako dohodnúť na obhliadke ani po prijatí ponuky. Zostáva skrytý, kým na to nepríde čas."
+          label={t('nickname.phoneLabel')}
+          hint={t('nickname.phoneHint')}
           value={phone}
           onChangeText={setPhone}
-          placeholder="+421 9xx xxx xxx"
+          placeholder={t('nickname.phonePlaceholder')}
           keyboardType="numbers-and-punctuation"
         />
 
@@ -162,20 +156,20 @@ export default function PrezyvkaScreen() {
         <CheckRow
           checked={adult}
           onToggle={() => setAdult((v) => !v)}
-          label="Mám 18 rokov alebo viac."
-          hint="Inzerovať a podávať ponuky môžu len plnoletí."
+          label={t('nickname.adultLabel')}
+          hint={t('nickname.adultHint')}
         />
 
         <CheckRow
           checked={ownName}
           onToggle={() => setOwnName((v) => !v)}
-          label="Konám vo vlastnom mene ako fyzická osoba — nie som realitná kancelária ani sprostredkovateľ."
-          hint="Offerra je trh medzi ľuďmi. Nepravdivé potvrdenie je dôvod na zablokovanie účtu."
+          label={t('nickname.ownNameLabel')}
+          hint={t('nickname.ownNameHint')}
         />
 
         <ErrorNote error={error} />
 
-      <Button title={busy ? 'Ukladám…' : 'Pokračovať'} onPress={submit} disabled={busy} />
+      <Button title={busy ? t('nickname.savingButton') : t('nickname.continueButton')} onPress={submit} disabled={busy} />
       </FormScreen>
     </SafeAreaView>
   );

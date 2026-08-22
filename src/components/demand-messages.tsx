@@ -17,6 +17,7 @@ import { Text, View } from 'react-native';
 import { Card, ErrorNote, Eyebrow } from '@/components/ui';
 import { Conversation, OwnerThreads } from '@/components/message-thread';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import { fetchNicknames } from '@/lib/messages';
 import { type Outreach } from '@/lib/offers';
@@ -39,14 +40,14 @@ export function DemandMessages({
   isMine: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
 
   if (!myId) {
     return (
       <Card>
-        <Eyebrow>Správy</Eyebrow>
+        <Eyebrow>{t('messages.messagesTitle')}</Eyebrow>
         <Text style={{ color: palette.textMuted }}>
-          Na písanie správ sa treba prihlásiť. Konverzácia je vždy len medzi tebou
-          a druhou stranou — nikto iný ju nevidí.
+          {t('messages.loginRequired')}
         </Text>
       </Card>
     );
@@ -58,7 +59,7 @@ export function DemandMessages({
   if (!isMine) {
     return (
       <View style={{ gap: 12 }}>
-        <Conversation subject={{ requestId }} myId={myId} otherId={requestOwnerId} otherName="zadávateľom" />
+        <Conversation subject={{ requestId }} myId={myId} otherId={requestOwnerId} otherName={t('demandMessages.withRequesterName')} />
       </View>
     );
   }
@@ -77,6 +78,7 @@ function DemandOwnerThreads({
   outreachError?: string | null;
   myId: string;
 }) {
+  const { t } = useTranslation();
   // `Outreach` nenesie prezývku — appka ju pri oslovení nenačítava. Dotiahne
   // sa tu, nech „tichý" riadok v zozname vlákien ukáže meno, nie id. Zlyhanie
   // nie je kritické — riadok potom ukáže neutrálny popisok namiesto mena.
@@ -105,8 +107,8 @@ function DemandOwnerThreads({
   // vlákna).
   const silentEntries = outreach.map((o) => ({
     id: o.from_id,
-    nickname: names[o.from_id] ?? 'Ten, kto ťa oslovil',
-    note: 'Oslovil ťa svojím inzerátom, nepísali ste si. Ozvi sa prvý.',
+    nickname: names[o.from_id] ?? t('demandMessages.silentOutreachFallback'),
+    note: t('demandMessages.silentOutreachNote'),
   }));
 
   return (

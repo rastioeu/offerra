@@ -17,6 +17,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { db } from '@/lib/property';
 import { normalizeText, stemSk } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -38,6 +39,7 @@ export function StreetPicker({
   onChange: (street: string) => void;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [cityId, setCityId] = useState<number | null>(null);
   const [items, setItems] = useState<Suggestion[]>([]);
   const [busy, setBusy] = useState(false);
@@ -130,10 +132,10 @@ export function StreetPicker({
       <Label
         hint={
           city
-            ? 'Bez čísla domu — presnú adresu si dohodnete až po prijatí ponuky. Ulice ponúkame z Registra adries, napísať sa dá aj iná.'
-            : 'Najprv vyber obec, potom ti ulice ponúkneme z Registra adries.'
+            ? t('streetPicker.hintWithCity')
+            : t('streetPicker.hintWithoutCity')
         }>
-        Ulica (nepovinné)
+        {t('streetPicker.label')}
       </Label>
 
       <TextInput
@@ -142,7 +144,7 @@ export function StreetPicker({
           setPicked(false);
           onChange(v);
         }}
-        placeholder="napr. Šancová"
+        placeholder={t('streetPicker.placeholder')}
         placeholderTextColor={palette.textPlaceholder}
         returnKeyType="done"
         style={[

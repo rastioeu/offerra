@@ -29,10 +29,11 @@ import { Button, Card, Eyebrow, ParamCell } from '@/components/ui';
 import { useTenantProfiles } from '@/hooks/use-offers';
 import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import {
   fetchOfferContact,
   formatAmount,
-  OFFER_STATUS_LABEL,
+  getOfferStatusLabel,
   type Offer,
   type OfferContact,
   type TenantProfile,
@@ -54,6 +55,7 @@ export function OwnerOffers({
   reloadProperty: () => Promise<void>;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const insets = useSafeAreaInsets();
   const toast = useToast();
   const confirmWithUndo = useUndoToast();
@@ -102,11 +104,11 @@ export function OwnerOffers({
       await reload();
       await reloadProperty();
       setOpenId(null);
-      toast('Obchod uzavretý — teraz sa môžete ohodnotiť');
+      toast(t('ownerOffers.dealClosedToast'));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKY] Uzavretie zlyhalo: ${m}`);
-      Alert.alert('Uzavretie zlyhalo', m);
+      Alert.alert(t('ownerOffers.closeFailedTitle'), m);
     } finally {
       setBusy(null);
     }
@@ -119,17 +121,17 @@ export function OwnerOffers({
    */
   function rejectOffer(offerId: string) {
     setOpenId(null);
-    confirmWithUndo('Ponuka bude odmietnutá', async () => {
+    confirmWithUndo(t('ownerOffers.willBeRejected'), async () => {
       setBusy(offerId);
       try {
         const { error: e } = await db().from('property_offer').update({ status: 'REJECTED' }).eq('id', offerId);
         if (e) throw e;
         await reload();
-        toast('Ponuka odmietnutá', 'info');
+        toast(t('ownerOffers.rejectedToast'), 'info');
       } catch (e: unknown) {
         const m = errorText(e);
         console.log(`[PONUKY] Odmietnutie zlyhalo: ${m}`);
-        Alert.alert('Nepodarilo sa uložiť', m);
+        Alert.alert(t('ownerOffers.saveFailedTitle'), m);
       } finally {
         setBusy(null);
       }
@@ -149,15 +151,15 @@ export function OwnerOffers({
       const c = await fetchOfferContact(offerId);
       setContacts((prev) => ({ ...prev, [offerId]: c }));
       Alert.alert(
-        'Ponuka prijatá',
+        t('ownerOffers.acceptedTitle'),
         c?.full_name || c?.phone || c?.email
-          ? `Kontakt na záujemcu je teraz odkrytý: ${[c.full_name, c.phone, c.email].filter(Boolean).join('\n')}`
-          : 'Záujemca si zatiaľ nevyplnil meno ani telefón. Odkryje sa ti, hneď ako to spraví.'
+          ? t('ownerOffers.contactRevealed', { contact: [c.full_name, c.phone, c.email].filter(Boolean).join('\n') })
+          : t('ownerOffers.contactNotFilledYet'),
       );
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKY] Rozhodnutie zlyhalo: ${m}`);
-      Alert.alert('Nepodarilo sa uložiť', m);
+      Alert.alert(t('ownerOffers.saveFailedTitle'), m);
     } finally {
       setBusy(null);
     }
@@ -167,9 +169,9 @@ export function OwnerOffers({
     try {
       const c = await fetchOfferContact(offerId);
       setContacts((prev) => ({ ...prev, [offerId]: c }));
-      if (!c) Alert.alert('Kontakt nie je dostupný', 'Odkryje sa až po prijatí ponuky.');
+      if (!c) Alert.alert(t('ownerOffers.contactUnavailableTitle'), t('ownerOffers.contactUnavailableBody'));
     } catch (e: unknown) {
-      Alert.alert('Načítanie kontaktu zlyhalo', errorText(e));
+      Alert.alert(t('ownerOffers.contactLoadFailedTitle'), errorText(e));
     }
   }
 
@@ -180,10 +182,7 @@ export function OwnerOffers({
   return (
     <>
       {offers.length > 0 ? (
-        <Text style={[styles.lead, { color: palette.textMuted }]}>
-          Ťukni na ponuku a uvidíš všetko, čo o nej vieš — aj tlačidlá Prijať
-          a Odmietnuť.
-        </Text>
+        <Text style={[styles.lead, { color: palette.textMuted }]}>{t('ownerOffers.lead')}</Text>
       ) : null}
 
       <OfferList
@@ -199,7 +198,7 @@ export function OwnerOffers({
           <Pressable
             style={[styles.scrim, { backgroundColor: palette.scrim }]}
             onPress={() => setOpenId(null)}
-            accessibilityLabel="Zavrieť"
+            accessibilityLabel={t('common.close')}
           />
 
           {selected ? (
@@ -220,14 +219,14 @@ export function OwnerOffers({
                   </View>
                   <View style={styles.headText}>
                     <Text style={[styles.nick, { color: palette.textPrimary }]}>
-                      {selected.bidder?.nickname ?? 'neznámy'}
+                      {selected.bidder?.nickname ?? t('offerList.unknown')}
                     </Text>
                     <Text style={[styles.meta, { color: palette.textMuted }]}>
-                      {formatDate(selected.created_at)} · {OFFER_STATUS_LABEL[selected.status].toLowerCase()}
+                      {formatDate(language, selected.created_at)} · {getOfferStatusLabel(t)[selected.status].toLowerCase()}
                     </Text>
                   </View>
                   <Text style={[styles.amount, { color: palette.accent }]}>
-                    {formatAmount(selected.amount, item.transaction_type)}
+                    {formatAmount(t, selected.amount, item.transaction_type)}
                   </Text>
                 </View>
 
@@ -236,25 +235,25 @@ export function OwnerOffers({
                 ) : null}
 
                 <View style={styles.section}>
-                  <Eyebrow>Priebeh</Eyebrow>
+                  <Eyebrow>{t('ownerOffers.progress')}</Eyebrow>
                   <OfferTimeline offer={selected} />
                 </View>
 
                 {isRent ? (
                   tenant ? (
                     <View style={styles.section}>
-                      <Eyebrow>O nájomcovi</Eyebrow>
+                      <Eyebrow>{t('ownerOffers.aboutTenant')}</Eyebrow>
                       <View style={styles.grid}>
-                        <ParamCell value={tenant.num_people != null ? String(tenant.num_people) : '—'} label="Osôb" />
+                        <ParamCell value={tenant.num_people != null ? String(tenant.num_people) : '—'} label={t('ownerOffers.peopleLabel')} />
                         <ParamCell
-                          value={tenant.has_pets ? tenant.pet_details || 'Áno' : 'Nemá'}
-                          label="Zvieratá"
+                          value={tenant.has_pets ? tenant.pet_details || t('common.yes') : t('ownerOffers.noPets')}
+                          label={t('ownerOffers.petsLabel')}
                         />
                         <ParamCell
-                          value={tenant.lease_duration_months != null ? `${tenant.lease_duration_months} mes.` : '—'}
-                          label="Dĺžka nájmu"
+                          value={tenant.lease_duration_months != null ? t('ownerOffers.monthsAbbrev', { count: tenant.lease_duration_months }) : '—'}
+                          label={t('ownerOffers.leaseLengthLabel')}
                         />
-                        <ParamCell value={tenant.employment_status ?? '—'} label="Zamestnanie" />
+                        <ParamCell value={tenant.employment_status ?? '—'} label={t('ownerOffers.employmentLabel')} />
                         <ParamCell
                           value={
                             tenant.monthly_income_hint != null
@@ -265,7 +264,7 @@ export function OwnerOffers({
                                 }).format(tenant.monthly_income_hint)
                               : '—'
                           }
-                          label="Príjem orientačne"
+                          label={t('ownerOffers.incomeLabel')}
                         />
                       </View>
                       {tenant.note ? (
@@ -273,24 +272,22 @@ export function OwnerOffers({
                       ) : null}
                     </View>
                   ) : (
-                    <Text style={[styles.meta, { color: palette.textMuted }]}>
-                      Záujemca dotazník nevyplnil.
-                    </Text>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>{t('ownerOffers.noTenantForm')}</Text>
                   )
                 ) : null}
 
                 {selected.status === 'ACCEPTED' ? (
                   <Card>
-                    <Eyebrow>Odkrytý kontakt</Eyebrow>
+                    <Eyebrow>{t('ownerOffers.revealedContact')}</Eyebrow>
                     {contact ? (
                       <View style={styles.grid}>
-                        <ParamCell value={contact.full_name ?? 'nevyplnené'} label="Meno" />
-                        <ParamCell value={contact.phone ?? 'nevyplnený'} label="Telefón" />
-                        <ParamCell value={contact.email ?? 'nedostupný'} label="E-mail" />
+                        <ParamCell value={contact.full_name ?? t('viewing.paramNameEmpty')} label={t('viewing.paramName')} />
+                        <ParamCell value={contact.phone ?? t('viewing.paramPhoneEmpty')} label={t('viewing.paramPhone')} />
+                        <ParamCell value={contact.email ?? t('viewing.paramEmailEmpty')} label={t('viewing.paramEmail')} />
                       </View>
                     ) : (
                       <Button
-                        title="Zobraziť kontakt"
+                        title={t('ownerOffers.showContact')}
                         onPress={() => revealContact(selected.id)}
                         variant="outline"
                       />
@@ -301,13 +298,13 @@ export function OwnerOffers({
                 {selected.status === 'PENDING' ? (
                   <View style={styles.actions}>
                     <Button
-                      title="Prijať ponuku"
+                      title={t('ownerOffers.acceptOffer')}
                       onPress={() => decide(selected.id, 'ACCEPTED')}
                       loading={busy === selected.id}
                       disabled={busy !== null}
                     />
                     <Button
-                      title="Odmietnuť"
+                      title={t('viewing.declineButton')}
                       onPress={() => decide(selected.id, 'REJECTED')}
                       variant="outline"
                       disabled={busy !== null}
@@ -322,24 +319,23 @@ export function OwnerOffers({
                 {item.status === 'ACTIVE' &&
                 (selected.status === 'ACCEPTED' || selected.status === 'PENDING') ? (
                   <Button
-                    title={`${closedLabel(item.transaction_type)} tomuto záujemcovi`}
+                    title={t('ownerOffers.closeDealTo', { label: closedLabel(t, item.transaction_type) })}
                     variant="outline"
                     disabled={busy !== null}
                     onPress={() =>
                       Alert.alert(
-                        `${closedLabel(item.transaction_type)}?`,
-                        `Inzerát zmizne z katalógu, ostatné čakajúce ponuky sa uzavrú a ` +
-                          `vy dvaja sa budete môcť navzájom ohodnotiť. Späť sa to vziať nedá.`,
+                        t('ownerOffers.closeDealConfirmTitle', { label: closedLabel(t, item.transaction_type) }),
+                        t('ownerOffers.closeDealConfirmBody'),
                         [
-                          { text: 'Zrušiť', style: 'cancel' },
-                          { text: 'Uzavrieť obchod', onPress: () => void finish(selected.id) },
+                          { text: t('common.cancel'), style: 'cancel' },
+                          { text: t('ownerOffers.closeDealConfirmYes'), onPress: () => void finish(selected.id) },
                         ]
                       )
                     }
                   />
                 ) : null}
 
-                <Button title="Zavrieť" onPress={() => setOpenId(null)} variant="outline" />
+                <Button title={t('common.close')} onPress={() => setOpenId(null)} variant="outline" />
               </ScrollView>
             </View>
           ) : null}

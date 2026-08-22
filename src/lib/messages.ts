@@ -15,6 +15,8 @@
  * prijatú ponuku a na obhliadku a chat to obchádzať nesmie — preto sa
  * v ňom kontaktné údaje ani nedajú napísať (`send_message` ich odmietne).
  */
+import type { TFunc } from '@/i18n';
+
 import { db } from './property';
 
 export type Message = {
@@ -56,12 +58,12 @@ export const MESSAGE_MAX = 2000;
  * Skutočný strážca je `offerra.contact_in_text()` v databáze; táto funkcia
  * je jej kópia a keď sa niekedy rozídu, platí databáza.
  */
-export function contactInText(text: string): 'e-mail' | 'telefónne číslo' | null {
+export function contactInText(text: string): 'email' | 'phone' | null {
   const t = (text ?? '').toLowerCase();
 
-  if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/.test(t)) return 'e-mail';
+  if (/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/.test(t)) return 'email';
   if (/[a-z0-9._%+-]+\s*(\(at\)|\[at\]|\s+at\s+|zavinac|zavináč)\s*[a-z0-9.-]+\s*(\.|\s+bodka\s+)\s*[a-z]{2,}/.test(t)) {
-    return 'e-mail';
+    return 'email';
   }
 
   // Oddeľovače sa zahodia a pozerá sa na SÚVISLÉ skupiny číslic. „0902 123
@@ -69,17 +71,16 @@ export function contactInText(text: string): 'e-mail' | 'telefónne číslo' | n
   // krátke skupiny. Prah 9 je dĺžka slovenského čísla bez predvoľby.
   const zlepene = t.replace(/[\s\-./()]+/g, '');
   for (const skupina of zlepene.split(/[^0-9+]+/)) {
-    if (skupina.replace(/[^0-9]/g, '').length >= 9) return 'telefónne číslo';
+    if (skupina.replace(/[^0-9]/g, '').length >= 9) return 'phone';
   }
   return null;
 }
 
 /** Hláška, ktorú človek uvidí. Musí povedať, ČO prekáža aj KEDY kontakt dostane. */
-export function contactBlockedText(reason: 'e-mail' | 'telefónne číslo'): string {
-  return (
-    `Správa vyzerá, že obsahuje ${reason}. Zdieľanie kontaktných údajov v správach nie je ` +
-    'povolené — kontakt sa odkryje automaticky po prijatí ponuky alebo dohodnutí obhliadky.'
-  );
+export function contactBlockedText(t: TFunc, reason: 'email' | 'phone'): string {
+  return t('messages.contactBlocked', {
+    reason: reason === 'email' ? t('messages.reasonEmail') : t('messages.reasonPhone'),
+  });
 }
 
 /**

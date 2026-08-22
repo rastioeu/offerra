@@ -30,12 +30,14 @@ import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import { enablePush, getPushStatus, type PushStatus } from '@/lib/push';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function UpozorneniaScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const { session } = useSession();
   const userId = session?.user.id;
   const { reload } = useProfile();
@@ -60,10 +62,8 @@ export default function UpozorneniaScreen() {
         // ŽIADNY TICHÝ NEÚSPECH (§2). Kto klikol „Nepovoliť", musí sa
         // dozvedieť, že to už z appky zapnúť nejde.
         Alert.alert(
-          'Systém to nepovolil',
-          'Zapnúť sa to dá už len v nastaveniach telefónu: Nastavenia → Offerra → Oznámenia. ' +
-            'Výber nižšie si aj tak nastav — bude platiť pre upozornenia v appke a zafunguje ' +
-            'hneď, ako povolenie dodatočne zapneš.'
+          t('upozornenia.systemDeniedTitle'),
+          t('upozornenia.systemDeniedBody')
         );
       }
     } catch (e: unknown) {
@@ -81,6 +81,7 @@ export default function UpozorneniaScreen() {
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
+      t,
       userId,
       { notif_onboarded_at: new Date().toISOString() },
       false
@@ -101,42 +102,39 @@ export default function UpozorneniaScreen() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]}>
       <FormScreen>
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Chceš o tom vedieť?</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('upozornenia.title')}</Text>
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
-          Offerra ti vie dať vedieť na telefón, keď sa niečo stane s tvojím inzerátom
-          alebo s ponukou, ktorú si podal — aj keď máš appku zavretú.
+          {t('upozornenia.lead')}
         </Text>
 
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>UPOZORNENIA NA TELEFÓN</Text>
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('upozornenia.phoneSection')}</Text>
 
           {/* Konkrétne príklady, nie abstraktný sľub. Človek sa rozhoduje
               podľa toho, čo mu to dá — nie podľa slova „notifikácie". */}
           {!granted && !unavailable ? (
             <View style={styles.bullets}>
-              <Bullet text="Niekto podal ponuku na tvoj inzerát." />
-              <Bullet text="Tvoju ponuku prijali — vtedy sa odkryje kontakt." />
-              <Bullet text="Niekto si vypýtal obhliadku." />
+              <Bullet text={t('upozornenia.bulletOffer')} />
+              <Bullet text={t('upozornenia.bulletAccepted')} />
+              <Bullet text={t('upozornenia.bulletViewing')} />
             </View>
           ) : null}
 
           {unavailable ? (
             <Text style={[styles.state, { color: palette.textSecondary }]}>
-              Táto verzia appky push notifikácie nevie. Upozornenia budeš mať v appke
-              pri zvončeku.
+              {t('upozornenia.unavailable')}
             </Text>
           ) : granted ? (
             <Text style={[styles.state, { color: palette.success }]}>
-              Upozornenia sú zapnuté. Vypnúť sa dajú kedykoľvek v Nastaveniach.
+              {t('upozornenia.granted')}
             </Text>
           ) : denied ? (
             <Text style={[styles.state, { color: palette.textSecondary }]}>
-              Telefón upozornenia zablokoval. Zapnúť sa dajú v Nastaveniach telefónu:
-              Nastavenia → Offerra → Oznámenia.
+              {t('upozornenia.denied')}
             </Text>
           ) : (
             <Button
-              title={busy ? 'Moment…' : 'Zapnúť upozornenia'}
+              title={busy ? t('upozornenia.moment') : t('upozornenia.enableButton')}
               onPress={ask}
               disabled={busy}
             />
@@ -147,26 +145,24 @@ export default function UpozorneniaScreen() {
             Ukazuje sa vždy — aj keď človek push nepovolil — lebo tie isté
             preferencie riadia aj zvonček v appke. */}
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>ČO TI MÁME POSIELAŤ</Text>
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('upozornenia.whatToSendSection')}</Text>
           <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Všetko je zapnuté a chodí to ihneď. Čokoľvek tu vypneš, nepríde ti ani
-            na telefón, ani do zvončeka v appke. Dá sa to kedykoľvek zmeniť
-            v Nastaveniach.
+            {t('upozornenia.whatToSendHint')}
           </Text>
           <ErrorNote error={prefError} />
-          <NotificationTypeList prefs={prefs} onChange={(t, patch) => void save(t, patch)} />
+          <NotificationTypeList prefs={prefs} onChange={(nt, patch) => void save(nt, patch)} />
         </Card>
 
         <ErrorNote error={error} />
 
         <Button
-          title={busy ? 'Ukladám…' : granted ? 'Hotovo' : 'Pokračovať'}
+          title={busy ? t('upozornenia.savingButton') : granted ? t('upozornenia.doneButton') : t('upozornenia.continueButton')}
           onPress={finish}
           disabled={busy}
         />
         {!granted && !unavailable ? (
           <Text style={[styles.skip, { color: palette.textMuted }]}>
-            Bez povolenia appka funguje normálne — upozornenia nájdeš pri zvončeku.
+            {t('upozornenia.skipNote')}
           </Text>
         ) : null}
       </FormScreen>

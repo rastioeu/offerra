@@ -22,6 +22,7 @@ import { useMemo, useState } from 'react';
 import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatAmount } from '@/lib/offers';
 import { priceDisplay } from '@/lib/price-display';
 import type { PropertyWithMedia } from '@/lib/property';
@@ -46,6 +47,7 @@ export function PropertyMap({
   onPress: (id: string) => void;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [mapType, setMapType] = useState<MapType>('standard');
 
   const withCoords = useMemo(
@@ -80,10 +82,8 @@ export function PropertyMap({
   } catch {
     return (
       <View style={[styles.missing, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.missingTitle, { color: palette.textPrimary }]}>Mapa v tejto verzii nie je</Text>
-        <Text style={[styles.missingBody, { color: palette.textMuted }]}>
-          Potrebuje novšiu verziu appky z TestFlightu. Zoznam funguje ďalej.
-        </Text>
+        <Text style={[styles.missingTitle, { color: palette.textPrimary }]}>{t('propertyMap.notInThisVersion')}</Text>
+        <Text style={[styles.missingBody, { color: palette.textMuted }]}>{t('propertyMap.needsNewerVersion')}</Text>
       </View>
     );
   }
@@ -92,13 +92,13 @@ export function PropertyMap({
     <View style={styles.wrap}>
       <MapView style={StyleSheet.absoluteFill} provider={provider} mapType={mapType} initialRegion={region}>
         {withCoords.map((p) => {
-          const pd = priceDisplay(p.asking_price_hint, p.top_offer ?? null, p.offer_count ?? 0);
+          const pd = priceDisplay(t, p.asking_price_hint, p.top_offer ?? null, p.offer_count ?? 0);
           const value =
             pd.headline === 'TOP_OFFER' && pd.topOffer != null
-              ? formatAmount(pd.topOffer, p.transaction_type)
+              ? formatAmount(t, pd.topOffer, p.transaction_type)
               : pd.asking != null
-                ? formatAmount(pd.asking, p.transaction_type)
-                : 'bez ceny';
+                ? formatAmount(t, pd.asking, p.transaction_type)
+                : t('propertyMap.noPrice');
           const isOffer = pd.headline === 'TOP_OFFER';
           return (
             <Marker
@@ -128,19 +128,19 @@ export function PropertyMap({
 
       {/* Štandardná / satelitná — nad mapou, aby sa nemiešala s obsahom. */}
       <View style={[styles.switch, Shadow.card, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        {(['standard', 'satellite'] as MapType[]).map((t) => (
+        {(['standard', 'satellite'] as MapType[]).map((mt) => (
           <Pressable
-            key={t}
-            onPress={() => setMapType(t)}
+            key={mt}
+            onPress={() => setMapType(mt)}
             accessibilityRole="button"
-            accessibilityState={{ selected: mapType === t }}
-            style={[styles.switchBtn, mapType === t ? { backgroundColor: palette.primary } : null]}>
+            accessibilityState={{ selected: mapType === mt }}
+            style={[styles.switchBtn, mapType === mt ? { backgroundColor: palette.primary } : null]}>
             <Text
               style={[
                 styles.switchText,
-                { color: mapType === t ? palette.onPrimary : palette.textSecondary },
+                { color: mapType === mt ? palette.onPrimary : palette.textSecondary },
               ]}>
-              {t === 'standard' ? 'Mapa' : 'Satelit'}
+              {mt === 'standard' ? t('propertyMap.mapView') : t('propertyMap.satelliteView')}
             </Text>
           </Pressable>
         ))}
@@ -149,13 +149,13 @@ export function PropertyMap({
       {withCoords.length < items.length ? (
         <View style={[styles.badge, { backgroundColor: palette.surface, borderColor: palette.border }]}>
           <Text style={[styles.badgeText, { color: palette.textMuted }]}>
-            {items.length - withCoords.length} bez polohy
+            {t('propertyMap.withoutLocation', { count: items.length - withCoords.length })}
           </Text>
         </View>
       ) : null}
 
       <View style={[styles.badge, styles.badgeRight, { backgroundColor: palette.surface, borderColor: palette.border }]}>
-        <Text style={[styles.badgeText, { color: palette.textMuted }]}>Poloha je obec, nie adresa</Text>
+        <Text style={[styles.badgeText, { color: palette.textMuted }]}>{t('propertyMap.townNotAddress')}</Text>
       </View>
     </View>
   );

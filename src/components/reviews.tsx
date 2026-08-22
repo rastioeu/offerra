@@ -13,6 +13,7 @@ import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText, isNotDeployedYet } from '@/lib/errors';
 import { formatDate } from '@/lib/property';
 import { fetchReviews, ratingLabel, type Review, type RatingSummary } from '@/lib/rating';
@@ -31,6 +32,7 @@ export function Reviews({
   summary: RatingSummary | undefined;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const [items, setItems] = useState<Review[] | null>(null);
 
   useEffect(() => {
@@ -57,27 +59,25 @@ export function Reviews({
 
   return (
     <Card>
-      <Eyebrow>{`Hodnotenia — ${nickname}`}</Eyebrow>
+      <Eyebrow>{t('reviews.title', { nickname })}</Eyebrow>
       {label ? (
         <Text style={[styles.avg, { color: palette.accentDeep }]}>{label}</Text>
       ) : null}
-      <Text style={[styles.note, { color: palette.textMuted }]}>
-        Hodnotiť môžu len tí, s ktorými obchod naozaj uzavrel.
-      </Text>
+      <Text style={[styles.note, { color: palette.textMuted }]}>{t('reviews.whoCanRate')}</Text>
 
       {(items ?? []).map((r) => (
         <View key={r.id} style={[styles.item, { borderTopColor: palette.border }]}>
           <View style={styles.head}>
             <Avatar name={r.rater?.nickname ?? '?'} uri={r.rater?.avatar_url} size={28} />
             <Text style={[styles.nick, { color: palette.textPrimary }]}>
-              {r.rater?.nickname ?? 'neznámy'}
+              {r.rater?.nickname ?? t('reviews.unknown')}
             </Text>
             <Text style={[styles.stars, { color: palette.accentDeep }]}>{'★'.repeat(r.stars)}</Text>
           </View>
           {r.comment ? (
             <Text style={[styles.comment, { color: palette.textSecondary }]}>„{r.comment}"</Text>
           ) : null}
-          <Text style={[styles.note, { color: palette.textMuted }]}>{formatDate(r.created_at)}</Text>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{formatDate(language, r.created_at)}</Text>
         </View>
       ))}
     </Card>

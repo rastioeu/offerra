@@ -23,13 +23,15 @@ import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatBudget } from '@/lib/offers';
-import { db, DEMAND_LABEL, formatArea, formatDate, formatPrice, formatRooms, PROPERTY_LABEL, type PropertyType } from '@/lib/property';
+import { db, formatArea, formatDate, formatPrice, formatRooms, getDemandLabel, getPropertyLabel, type PropertyType } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
 
 export default function RequestDetailScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const toast = useToast();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -69,7 +71,7 @@ export default function RequestDetailScreen() {
       setPickerOpen(false);
       setChosen(null);
       setMessage('');
-      toast('Oslovenie odoslané');
+      toast(t('dopytDetail.outreachSentToast'));
       // NÁVRAT DO INZERÁTU, KTORÝM OSLOVIL (Rastio, 9.8.2026): zostať na
       // cudzom dopyte po odoslaní nedáva zmysel — spravil tam všetko, čo
       // sa dalo. Vedie to na VEREJNÝ detail, nie do editora: presne to
@@ -79,8 +81,8 @@ export default function RequestDetailScreen() {
       const m = errorText(e);
       console.log(`[OSLOVENIE] Odoslanie zlyhalo: ${m}`);
       Alert.alert(
-        'Oslovenie sa nepodarilo',
-        /duplicate key/i.test(m) ? 'Týmto inzerátom si tento dopyt už oslovil.' : m
+        t('dopytDetail.outreachFailedTitle'),
+        /duplicate key/i.test(m) ? t('dopytDetail.outreachDuplicate') : m
       );
     } finally {
       setBusy(false);
@@ -92,7 +94,7 @@ export default function RequestDetailScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Dopyt',
+          title: t('dopytDetail.screenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -102,34 +104,37 @@ export default function RequestDetailScreen() {
         <ErrorNote error={error} />
         {item === undefined ? <ActivityIndicator color={palette.primary} style={styles.spinner} /> : null}
         {item === null && !error ? (
-          <Text style={[styles.empty, { color: palette.textMuted }]}>Dopyt sa nenašiel.</Text>
+          <Text style={[styles.empty, { color: palette.textMuted }]}>{t('dopytDetail.notFound')}</Text>
         ) : null}
 
         {item ? (
           <>
             <View style={styles.badges}>
-              <Badge text={DEMAND_LABEL[item.transaction_type].toUpperCase()} tone="accent" />
-              {item.property_type ? <Badge text={PROPERTY_LABEL[item.property_type as PropertyType]} /> : null}
+              <Badge text={getDemandLabel(t)[item.transaction_type].toUpperCase()} tone="accent" />
+              {item.property_type ? <Badge text={getPropertyLabel(t)[item.property_type as PropertyType]} /> : null}
             </View>
 
             <Text style={[styles.budget, { color: palette.primary }]}>
-              {formatBudget(item.budget_min, item.budget_max)}
+              {formatBudget(t, item.budget_min, item.budget_max)}
             </Text>
             <Text style={[styles.author, { color: palette.textMuted }]}>
-              Hľadá {item.author?.nickname ?? 'neznámy'} · {formatDate(item.created_at)}
+              {t('dopytDetail.seekingBy', {
+                nickname: item.author?.nickname ?? t('dopytDetail.unknownAuthor'),
+                date: formatDate(language, item.created_at),
+              })}
             </Text>
 
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>ČO HĽADÁ</Text>
-              <Row label="Lokalita" value={[item.city, item.district, item.region].filter(Boolean).join(' · ') || '—'} />
-              <Row label="Typ" value={item.property_type ? PROPERTY_LABEL[item.property_type as PropertyType] : 'akýkoľvek'} />
-              <Row label="Izby" value={item.rooms_min != null ? `aspoň ${item.rooms_min}` : '—'} />
-              <Row label="Výmera" value={item.area_min != null ? `aspoň ${formatArea(item.area_min)}` : '—'} />
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('dopytDetail.whatSeekingSection')}</Text>
+              <Row label={t('dopytDetail.locationLabel')} value={[item.city, item.district, item.region].filter(Boolean).join(' · ') || t('dopytDetail.emptyDash')} />
+              <Row label={t('dopytDetail.typeLabel')} value={item.property_type ? getPropertyLabel(t)[item.property_type as PropertyType] : t('dopytDetail.typeAny')} />
+              <Row label={t('dopytDetail.roomsRowLabel')} value={item.rooms_min != null ? t('dopytDetail.roomsAtLeast', { count: item.rooms_min }) : t('dopytDetail.emptyDash')} />
+              <Row label={t('dopytDetail.areaRowLabel')} value={item.area_min != null ? t('dopytDetail.areaAtLeast', { area: formatArea(item.area_min) ?? '' }) : t('dopytDetail.emptyDash')} />
             </Card>
 
             {item.description ? (
               <Card>
-                <Text style={[styles.section, { color: palette.textMuted }]}>POPIS</Text>
+                <Text style={[styles.section, { color: palette.textMuted }]}>{t('dopytDetail.descriptionSection')}</Text>
                 <Text style={[styles.desc, { color: palette.textPrimary }]}>{item.description}</Text>
               </Card>
             ) : null}
@@ -149,19 +154,17 @@ export default function RequestDetailScreen() {
             {isMine ? (
               <Card>
                 <Text style={[styles.section, { color: palette.textMuted }]}>
-                  OSLOVENIA ({(mine ?? []).length})
+                  {t('dopytDetail.outreachSection', { count: (mine ?? []).length })}
                 </Text>
                 <ErrorNote error={mineError} />
                 {(mine ?? []).length === 0 ? (
                   <Text style={[styles.desc, { color: palette.textMuted }]}>
-                    Zatiaľ ťa nikto neoslovil. Keď niekto ponúkne inzerát, ktorý sedí na tvoj
-                    dopyt, objaví sa tu — a dáme ti vedieť.
+                    {t('dopytDetail.outreachEmpty')}
                   </Text>
                 ) : (
                   <>
                     <Text style={[styles.hint, { color: palette.textMuted }]}>
-                      Ťukni na oslovenie a otvorí sa inzerát, ktorý ti ponúkajú. Odtiaľ si
-                      môžeš vypýtať obhliadku.
+                      {t('dopytDetail.outreachHint')}
                     </Text>
                     {(mine ?? []).map((o) => {
                       // Inzerát medzičasom mohol zmiznúť alebo byť stiahnutý.
@@ -169,16 +172,16 @@ export default function RequestDetailScreen() {
                       const openable = o.property_status === 'ACTIVE' || o.property_status === 'CLOSED';
                       const facts = [
                         o.property_city,
-                        formatRooms(o.property_rooms),
+                        formatRooms(t, language, o.property_rooms),
                         formatArea(o.property_area),
                       ].filter(Boolean) as string[];
                       // Cena je v Offerre nepovinná — keď chýba, hovorí
                       // najvyššia živá ponuka. Keď nie je ani tá, povie sa to.
                       const price =
-                        formatPrice(o.property_price, item.transaction_type === 'RENT' ? 'RENT' : 'SALE') ??
+                        formatPrice(t, o.property_price, item.transaction_type === 'RENT' ? 'RENT' : 'SALE') ??
                         (o.property_top_offer != null
-                          ? `Najvyššia ponuka ${formatPrice(o.property_top_offer, item.transaction_type === 'RENT' ? 'RENT' : 'SALE')}`
-                          : 'Cena neuvedená');
+                          ? t('dopytDetail.topOfferPrice', { price: formatPrice(t, o.property_top_offer, item.transaction_type === 'RENT' ? 'RENT' : 'SALE') ?? '' })
+                          : t('dopytDetail.priceNotGiven'));
                       return (
                         <Pressable
                           key={o.id}
@@ -196,7 +199,7 @@ export default function RequestDetailScreen() {
                             },
                           ]}>
                           <Text style={[styles.optionTitle, { color: palette.textPrimary }]}>
-                            {o.property_title || 'Bez názvu'}
+                            {o.property_title || t('dopytDetail.noTitle')}
                           </Text>
                           <Text style={[styles.price, { color: palette.primary }]}>{price}</Text>
                           {facts.length > 0 ? (
@@ -208,8 +211,8 @@ export default function RequestDetailScreen() {
                             <Text style={[styles.desc, { color: palette.textPrimary }]}>{o.message}</Text>
                           ) : null}
                           <Text style={[styles.author, { color: palette.textMuted }]}>
-                            {o.from_nickname ?? 'Neznámy'} · {formatDate(o.created_at)}
-                            {openable ? '' : ' · inzerát už nie je dostupný'}
+                            {t('dopytDetail.authorMeta', { nickname: o.from_nickname ?? t('dopytDetail.unknownNickname'), date: formatDate(language, o.created_at) })}
+                            {openable ? '' : t('dopytDetail.propertyGone')}
                           </Text>
                         </Pressable>
                       );
@@ -220,12 +223,12 @@ export default function RequestDetailScreen() {
             ) : myId ? (
               <>
                 <Button
-                  title="Osloviť so svojím inzerátom"
+                  title={t('dopytDetail.outreachButton')}
                   onPress={() => {
                     if (activeProperties.length === 0) {
                       Alert.alert(
-                        'Nemáš čo ponúknuť',
-                        'Osloviť sa dá len zverejneným inzerátom. Najprv nejaký zverejni v tabe „Pridať".'
+                        t('dopytDetail.nothingToOfferTitle'),
+                        t('dopytDetail.nothingToOfferBody')
                       );
                       return;
                     }
@@ -234,7 +237,7 @@ export default function RequestDetailScreen() {
                 />
                 {outreach.length > 0 ? (
                   <Text style={[styles.author, { color: palette.textMuted }]}>
-                    Už si tento dopyt oslovil ({outreach.length}×).
+                    {t('dopytDetail.alreadyOutreached', { count: outreach.length })}
                   </Text>
                 ) : null}
               </>
@@ -243,7 +246,7 @@ export default function RequestDetailScreen() {
         ) : null}
       </ScrollView>
 
-      <ModalScreen visible={pickerOpen} onClose={() => setPickerOpen(false)} title="Ktorým inzerátom?">
+      <ModalScreen visible={pickerOpen} onClose={() => setPickerOpen(false)} title={t('dopytDetail.pickerTitle')}>
           <ScrollView
             contentContainerStyle={styles.modalScroll}
             keyboardShouldPersistTaps="handled"
@@ -267,21 +270,21 @@ export default function RequestDetailScreen() {
                       opacity: used ? 0.5 : 1,
                     },
                   ]}>
-                  <Text style={[styles.optionTitle, { color: palette.textPrimary }]}>{p.title || 'Bez názvu'}</Text>
+                  <Text style={[styles.optionTitle, { color: palette.textPrimary }]}>{p.title || t('dopytDetail.noTitle')}</Text>
                   {/* CENA A IZBY (Rastio, 9.8.2026): predtým tu bol len názov,
                       mesto a m². Podľa toho sa nedalo rozhodnúť, KTORÝ inzerát
                       poslať — a pri viacerých inzerátoch v tom istom meste boli
                       riadky prakticky nerozoznateľné. */}
                   <Text style={[styles.price, { color: palette.primary }]}>
-                    {formatPrice(p.asking_price_hint, p.transaction_type) ??
+                    {formatPrice(t, p.asking_price_hint, p.transaction_type) ??
                       (p.top_offer != null
-                        ? `Najvyššia ponuka ${formatPrice(p.top_offer, p.transaction_type)}`
-                        : 'Cena neuvedená')}
+                        ? t('dopytDetail.topOfferPrice', { price: formatPrice(t, p.top_offer, p.transaction_type) ?? '' })
+                        : t('dopytDetail.priceNotGiven'))}
                   </Text>
                   <Text style={[styles.author, { color: palette.textMuted }]}>
                     {used
-                      ? 'týmto si už oslovil'
-                      : [p.city, formatRooms(p.rooms), formatArea(p.area_m2)]
+                      ? t('dopytDetail.alreadySentWith')
+                      : [p.city, formatRooms(t, language, p.rooms), formatArea(p.area_m2)]
                           .filter(Boolean)
                           .join(' · ')}
                   </Text>
@@ -290,15 +293,15 @@ export default function RequestDetailScreen() {
             })}
 
             <Field
-              label="Správa (nepovinné)"
+              label={t('dopytDetail.messageLabel')}
               value={message}
               onChangeText={setMessage}
               multiline
-              placeholder="Napíš, prečo by ho mohol tvoj inzerát zaujímať."
+              placeholder={t('dopytDetail.messagePlaceholder')}
             />
 
             <Button
-              title={busy ? 'Odosielam…' : 'Odoslať oslovenie'}
+              title={busy ? t('dopytDetail.sendingButton') : t('dopytDetail.sendButton')}
               onPress={send}
               disabled={busy || !chosen}
             />

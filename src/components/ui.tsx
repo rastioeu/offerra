@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 export function Label({ children, hint }: { children: string; hint?: string }) {
@@ -49,6 +50,7 @@ export const KEYBOARD_DONE_ID = 'offerra-keyboard-done';
  */
 export function KeyboardDoneBar() {
   const palette = useTheme();
+  const { t } = useTranslation();
   // `InputAccessoryView` existuje len na iOS; na Androide by spadol render.
   if (Platform.OS !== 'ios') return null;
   return (
@@ -57,10 +59,10 @@ export function KeyboardDoneBar() {
         <Pressable
           onPress={() => Keyboard.dismiss()}
           accessibilityRole="button"
-          accessibilityLabel="Zavrieť klávesnicu"
+          accessibilityLabel={t('ui.closeKeyboard')}
           hitSlop={12}
           style={({ pressed }) => [styles.doneHit, { opacity: pressed ? 0.6 : 1 }]}>
-          <Text style={[styles.doneText, { color: palette.link }]}>Hotovo</Text>
+          <Text style={[styles.doneText, { color: palette.link }]}>{t('ui.done')}</Text>
         </Pressable>
       </View>
     </InputAccessoryView>

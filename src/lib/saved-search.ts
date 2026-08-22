@@ -9,6 +9,8 @@
  * Uložené hľadanie je SÚKROMNÉ. To, čo človek hľadá, prezrádza o ňom viac
  * než jeho inzeráty — koľko má peňazí, kam sa sťahuje, či čaká rodinu.
  */
+import type { TFunc } from '@/i18n';
+
 import { db } from './property';
 import type { CatalogFilter } from './search';
 import type { CatalogSort } from './property';
@@ -27,21 +29,25 @@ export type SavedSearch = {
  * Návrh mena z filtra — aby človek nemusel vymýšľať názov pre niečo, čo
  * už raz opísal filtrom. Prepísať ho môže.
  */
-export function suggestName(filter: CatalogFilter): string {
+export function suggestName(t: TFunc, filter: CatalogFilter): string {
   const parts: string[] = [];
-  if (filter.transaction) parts.push(filter.transaction === 'RENT' ? 'Prenájom' : 'Predaj');
+  if (filter.transaction) parts.push(filter.transaction === 'RENT' ? t('savedSearch.rent') : t('savedSearch.sale'));
   if (filter.propertyType) {
     parts.push(
-      { APARTMENT: 'byt', HOUSE: 'dom', LAND: 'pozemok', COMMERCIAL: 'priestor', OTHER: 'iné' }[
-        filter.propertyType
-      ]
+      {
+        APARTMENT: t('savedSearch.apartment'),
+        HOUSE: t('savedSearch.house'),
+        LAND: t('savedSearch.land'),
+        COMMERCIAL: t('savedSearch.commercial'),
+        OTHER: t('savedSearch.other'),
+      }[filter.propertyType]
     );
   }
   if (filter.city) parts.push(filter.city);
-  if (filter.roomsMin != null) parts.push(`${filter.roomsMin}+ izby`);
-  if (filter.priceMax != null) parts.push(`do ${filter.priceMax} €`);
-  if (filter.text) parts.push(`„${filter.text}"`);
-  return parts.length > 0 ? parts.join(' · ').slice(0, 60) : 'Celý katalóg';
+  if (filter.roomsMin != null) parts.push(t('savedSearch.roomsMinPlus', { count: filter.roomsMin }));
+  if (filter.priceMax != null) parts.push(t('savedSearch.upToPrice', { price: filter.priceMax }));
+  if (filter.text) parts.push(t('savedSearch.quotedText', { text: filter.text }));
+  return parts.length > 0 ? parts.join(' · ').slice(0, 60) : t('savedSearch.wholeCatalog');
 }
 
 export async function listSavedSearches(): Promise<SavedSearch[]> {

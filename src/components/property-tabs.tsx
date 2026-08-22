@@ -37,11 +37,12 @@ import { ViewingCard } from '@/components/viewing-card';
 import { Button, Card, ErrorNote, Eyebrow, ParamCell } from '@/components/ui';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation, type TFunc } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import {
   fetchOfferContact,
   formatAmount,
-  OFFER_STATUS_LABEL,
+  getOfferStatusLabel,
   type Offer,
   type OfferContact,
 } from '@/lib/offers';
@@ -58,13 +59,13 @@ export type DetailTab = 'OFFERS' | 'MESSAGES' | 'VIEWING' | 'MORTGAGE' | 'RATING
  * ponúka, potom sa ide pozrieť, a hodnotí sa až na konci. Hypotéka je
  * medzi ponukou a obhliadkou — je to podklad k rozhodnutiu, nie krok.
  */
-function tabsFor(sale: boolean): [DetailTab, string][] {
+function tabsFor(t: TFunc, sale: boolean): [DetailTab, string][] {
   return [
-    ['OFFERS', 'Ponuky'],
-    ['MESSAGES', 'Správy'],
-    ['VIEWING', 'Obhliadka'],
-    ...(sale ? ([['MORTGAGE', 'Hypotéka']] as [DetailTab, string][]) : []),
-    ['RATINGS', 'Hodnotenia'],
+    ['OFFERS', t('propertyTabs.offers')],
+    ['MESSAGES', t('propertyTabs.messages')],
+    ['VIEWING', t('viewing.eyebrow')],
+    ...(sale ? ([['MORTGAGE', t('propertyTabs.mortgage')]] as [DetailTab, string][]) : []),
+    ['RATINGS', t('propertyTabs.ratings')],
   ];
 }
 
@@ -114,9 +115,10 @@ export function PropertyTabs({
   winnerBidderId: string | undefined;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [tab, setTab] = useState<DetailTab>('OFFERS');
   const sale = item.transaction_type === 'SALE';
-  const tabs = tabsFor(sale);
+  const tabs = tabsFor(t, sale);
 
   // ── ODZNAKY NOVEJ AKTIVITY (Rastio, 13.8.2026) ──────────────────────
   const [badges, setBadges] = useState<TabBadges>({ offers: false, messages: false, viewing: false, ratings: false });
@@ -240,7 +242,7 @@ export function PropertyTabs({
                 onPress={() => setTab(value)}
                 accessibilityRole="tab"
                 accessibilityState={{ selected: active }}
-                accessibilityLabel={hasBadge ? `${label}, nová aktivita` : label}
+                accessibilityLabel={hasBadge ? t('propertyTabs.newActivity', { label }) : label}
                 style={({ pressed }) => [
                   styles.tab,
                   {
@@ -368,6 +370,7 @@ function OffersTab({
   const palette = useTheme();
   const router = useRouter();
   const toast = useToast();
+  const { t, language } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -399,7 +402,7 @@ function OffersTab({
         .eq('id', mine.id);
       if (e) throw e;
       await reloadOffers();
-      toast('Ponuka stiahnutá', 'info');
+      toast(t('propertyTabs.offerWithdrawnToast'), 'info');
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PONUKA] Stiahnutie zlyhalo: ${m}`);
@@ -417,9 +420,9 @@ function OffersTab({
       {/* MAJITEĽ — rozhoduje priamo tu, nemusí nikam odchádzať. */}
       {isOwner ? (
         <Card>
-          <Eyebrow>{`Ponuky (${list.length})`}</Eyebrow>
+          <Eyebrow>{t('propertyTabs.offersCount', { count: list.length })}</Eyebrow>
           {offers === undefined ? (
-            <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam…</Text>
+            <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.loading')}</Text>
           ) : (
             <OwnerOffers
               item={item}
@@ -434,41 +437,37 @@ function OffersTab({
       {/* ZÁUJEMCA — stav svojej ponuky a čo sa s ňou dá spraviť. */}
       {!isOwner && myId ? (
         <Card>
-          <Eyebrow>Moja ponuka</Eyebrow>
+          <Eyebrow>{t('propertyTabs.myOffer')}</Eyebrow>
           {mine ? (
             <>
               <View style={styles.grid}>
                 <ParamCell
-                  value={formatAmount(mine.amount, item.transaction_type)}
-                  label="Moja suma"
+                  value={formatAmount(t, mine.amount, item.transaction_type)}
+                  label={t('propertyTabs.myAmount')}
                 />
-                <ParamCell value={OFFER_STATUS_LABEL[mine.status]} label="Stav" />
+                <ParamCell value={getOfferStatusLabel(t)[mine.status]} label={t('propertyTabs.statusLabel')} />
               </View>
               {mine.status === 'ACCEPTED' ? (
-                <Text style={[styles.note, { color: palette.success }]}>
-                  Ponuka je prijatá. Kontakt na predávajúceho nájdeš v tabe „Obhliadka".
-                </Text>
+                <Text style={[styles.note, { color: palette.success }]}>{t('propertyTabs.offerAcceptedNote')}</Text>
               ) : null}
               {mine.status === 'REJECTED' ? (
-                <Text style={[styles.note, { color: palette.textMuted }]}>
-                  Predávajúci ponuku odmietol. Podať novú môžeš, kým je inzerát otvorený.
-                </Text>
+                <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.offerRejectedNote')}</Text>
               ) : null}
               {mine.status === 'PENDING' ? (
                 <>
                   <Button
-                    title="Upraviť moju ponuku"
+                    title={t('propertyTabs.editMyOffer')}
                     variant="outline"
                     onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
                   />
                   <Button
-                    title={busy ? 'Sťahujem…' : 'Stiahnuť ponuku'}
+                    title={busy ? t('propertyTabs.withdrawing') : t('propertyTabs.withdrawOffer')}
                     variant="danger"
                     disabled={busy}
                     onPress={() =>
-                      Alert.alert('Stiahnuť ponuku?', 'Zo zoznamu zmizne ako aktívna.', [
-                        { text: 'Späť', style: 'cancel' },
-                        { text: 'Stiahnuť', style: 'destructive', onPress: () => void withdraw() },
+                      Alert.alert(t('propertyTabs.withdrawConfirmTitle'), t('propertyTabs.withdrawConfirmBody'), [
+                        { text: t('common.back'), style: 'cancel' },
+                        { text: t('propertyTabs.withdrawConfirmYes'), style: 'destructive', onPress: () => void withdraw() },
                       ])
                     }
                   />
@@ -476,17 +475,12 @@ function OffersTab({
               ) : null}
             </>
           ) : closed || item.status === 'CLOSED' ? (
-            <Text style={[styles.note, { color: palette.warning }]}>
-              Príjem ponúk sa uzavrel — nové ponuky už podať nemožno.
-            </Text>
+            <Text style={[styles.note, { color: palette.warning }]}>{t('propertyTabs.offersClosedNote')}</Text>
           ) : (
             <>
-              <Text style={[styles.note, { color: palette.textMuted }]}>
-                Cena je len orientačná. Ponúknuť môžeš viac aj menej — rozhodne
-                predávajúci.
-              </Text>
+              <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.priceIndicativeNote')}</Text>
               <Button
-                title="Podať ponuku"
+                title={t('propertyTabs.submitOffer')}
                 onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
               />
             </>
@@ -496,12 +490,9 @@ function OffersTab({
 
       {!myId ? (
         <Card>
-          <Eyebrow>Chcem ponúknuť</Eyebrow>
-          <Text style={[styles.note, { color: palette.textMuted }]}>
-            Ponuky sú verejné, ale podať ju môže len prihlásený človek — inak by
-            nebolo komu odkryť kontakt, keď ju predávajúci prijme.
-          </Text>
-          <Button title="Prihlás sa a ponúkni" onPress={() => router.push('/login')} />
+          <Eyebrow>{t('propertyTabs.wantToOffer')}</Eyebrow>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.mustSignInNote')}</Text>
+          <Button title={t('propertyTabs.signInAndOffer')} onPress={() => router.push('/login')} />
         </Card>
       ) : null}
 
@@ -509,12 +500,8 @@ function OffersTab({
           Majiteľovi sa neopakuje, ten má hore ten istý zoznam s akciami. */}
       {!isOwner ? (
         <Card>
-          <Eyebrow>{`Všetky ponuky (${list.length})`}</Eyebrow>
-          <Text style={[styles.note, { color: palette.textMuted }]}>
-            Sumy aj prezývky sú verejné. Kto za nimi stojí, sa dozvie až ten,
-            koho ponuku predávajúci prijme. Správa priložená k ponuke verejná
-            nie je — číta ju len predávajúci a ten, kto ju napísal.
-          </Text>
+          <Eyebrow>{t('propertyTabs.allOffersCount', { count: list.length })}</Eyebrow>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.publicOffersNote')}</Text>
           <OfferList
             offers={list}
             transaction={item.transaction_type}
@@ -551,17 +538,14 @@ function ViewingTab({
   closed: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
 
   if (!myId) {
     return (
       <View style={styles.body}>
         <Card>
-          <Eyebrow>Obhliadka</Eyebrow>
-          <Text style={[styles.note, { color: palette.textMuted }]}>
-            Obhliadku si vypýta len prihlásený človek. Vlastník žiadosť potvrdí a až
-            potom si vy dvaja navzájom odkryjete meno, telefón a e-mail — inak niet
-            ako sa dohodnúť na termíne.
-          </Text>
+          <Eyebrow>{t('viewing.eyebrow')}</Eyebrow>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.viewingSignInNote')}</Text>
         </Card>
       </View>
     );
@@ -604,6 +588,7 @@ function AcceptedOfferContacts({
   isOwner: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [contacts, setContacts] = useState<Record<string, OfferContact>>({});
 
   const accepted = (offers ?? []).filter(
@@ -635,25 +620,25 @@ function AcceptedOfferContacts({
 
   return (
     <Card>
-      <Eyebrow>Kontakt z prijatej ponuky</Eyebrow>
+      <Eyebrow>{t('propertyTabs.acceptedOfferContact')}</Eyebrow>
       {accepted.map((o) => {
         const c = contacts[o.id];
         return (
           <View key={o.id} style={styles.item}>
             <Text style={[styles.status, { color: palette.textPrimary }]}>
               {isOwner
-                ? `${o.bidder?.nickname ?? 'záujemca'} · ${formatAmount(o.amount, item.transaction_type)}`
-                : `Predávajúci · moja ponuka ${formatAmount(o.amount, item.transaction_type)}`}
+                ? `${o.bidder?.nickname ?? t('propertyTabs.bidderFallback')} · ${formatAmount(t, o.amount, item.transaction_type)}`
+                : t('propertyTabs.sellerMyOffer', { amount: formatAmount(t, o.amount, item.transaction_type) })}
             </Text>
             {c ? (
               <View style={styles.grid}>
-                <ParamCell value={c.nickname} label="Prezývka" />
-                <ParamCell value={c.full_name ?? 'nevyplnené'} label="Meno" />
-                <ParamCell value={c.phone ?? 'nevyplnený'} label="Telefón" />
-                <ParamCell value={c.email ?? 'nedostupný'} label="E-mail" />
+                <ParamCell value={c.nickname} label={t('viewing.paramNickname')} />
+                <ParamCell value={c.full_name ?? t('viewing.paramNameEmpty')} label={t('viewing.paramName')} />
+                <ParamCell value={c.phone ?? t('viewing.paramPhoneEmpty')} label={t('viewing.paramPhone')} />
+                <ParamCell value={c.email ?? t('viewing.paramEmailEmpty')} label={t('viewing.paramEmail')} />
               </View>
             ) : (
-              <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam kontakt…</Text>
+              <Text style={[styles.note, { color: palette.textMuted }]}>{t('viewing.loadingContact')}</Text>
             )}
           </View>
         );
@@ -689,7 +674,8 @@ function RatingsTab({
   winnerBidderId: string | undefined;
 }) {
   const palette = useTheme();
-  const nickname = item.owner?.nickname ?? 'predávajúci';
+  const { t } = useTranslation();
+  const nickname = item.owner?.nickname ?? t('propertyTabs.sellerFallback');
 
   return (
     <View style={styles.body}>
@@ -699,7 +685,7 @@ function RatingsTab({
         <RatingCard
           propertyId={item.id}
           rateeId={isOwner ? (winnerBidderId ?? null) : item.owner_id}
-          rateeNickname={isOwner ? 'záujemcom' : nickname}
+          rateeNickname={isOwner ? t('propertyTabs.theBidder') : nickname}
           myId={myId}
         />
       ) : null}
@@ -707,15 +693,10 @@ function RatingsTab({
       <Reviews userId={item.owner_id} nickname={nickname} summary={ownerSummary} />
 
       <Text style={[styles.note, { color: palette.textMuted }]}>
-        {isOwner
-          ? 'Toto je tvoja povesť naprieč všetkými obchodmi, nie len týmto inzerátom — presne tak ju vidia aj záujemcovia.'
-          : `Sú to hodnotenia ${nickname} zo VŠETKÝCH jeho obchodov, nie len z tohto inzerátu. Inzerát sa predá raz, povesť sa buduje dlhšie.`}
+        {isOwner ? t('propertyTabs.ratingsOwnerNote') : t('propertyTabs.ratingsBidderNote', { nickname })}
       </Text>
       {item.status !== 'CLOSED' ? (
-        <Text style={[styles.note, { color: palette.textMuted }]}>
-          Hodnotiť sa dá až po uzavretí obchodu, a len tí dvaja, ktorí ho spolu
-          uzavreli.
-        </Text>
+        <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.ratingsNotYetNote')}</Text>
       ) : null}
     </View>
   );

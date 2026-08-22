@@ -10,12 +10,14 @@ import { Icon } from '@/components/icon';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 
 export function NotificationBell() {
   const palette = useTheme();
   const router = useRouter();
   const { session } = useSession();
   const { unread } = useNotifications();
+  const { t } = useTranslation();
 
   if (!session) return null;
 
@@ -24,7 +26,7 @@ export function NotificationBell() {
       onPress={() => router.push('/oznamenia')}
       hitSlop={12}
       accessibilityRole="button"
-      accessibilityLabel={unread > 0 ? `Oznámenia, ${unread} neprečítaných` : 'Oznámenia'}>
+      accessibilityLabel={unread > 0 ? t('oznamenia.unreadLabel', { count: unread }) : t('oznamenia.title')}>
       <View>
         <Icon name={unread > 0 ? 'bell.badge' : 'bell'} size={24} color={palette.textSecondary} />
         {/* Odznak je spoločný komponent — ten istý nosí tab „Správa". */}

@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { db, type CatalogSort } from '@/lib/property';
 import { CATALOG_SORTS, DEMAND_SORTS, filterRows } from '@/lib/filter-rows';
 import {
@@ -31,12 +32,6 @@ import {
 } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
-
-/** Príklad vety musí sedieť na to, čo sa práve prehľadáva. */
-const PLACEHOLDER: Record<FilterSide, string> = {
-  PROPERTY: 'napr. 3-izbový byt v Petržalke do 250 tisíc',
-  DEMAND: 'napr. kúpim dom v Nitre do 200 tisíc',
-};
 
 export function SearchBar({
   filter,
@@ -69,9 +64,15 @@ export function SearchBar({
   canFavorite?: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
+  const PLACEHOLDER: Record<FilterSide, string> = {
+    PROPERTY: t('searchBar.placeholderProperty'),
+    DEMAND: t('searchBar.placeholderDemand'),
+  };
   // Riadky filtrov sú DÁTA — tá istá funkcia pre katalóg aj Dopyty, aby sa
   // poradie nemohlo rozísť medzi tabmi (`src/lib/filter-rows.ts`).
   const rows = filterRows({
+    t,
     side,
     sorts:
       sort && onSortChange ? (sorts ?? (side === 'DEMAND' ? DEMAND_SORTS : CATALOG_SORTS)) : [],
@@ -145,7 +146,7 @@ export function SearchBar({
     onChange({ ...EMPTY_FILTER });
   }
 
-  const chips = describeFilter(filter, side);
+  const chips = describeFilter(t, filter, side);
 
   return (
     <View style={styles.wrap}>
@@ -163,10 +164,10 @@ export function SearchBar({
       />
 
       {thinking ? (
-        <Text style={[styles.hint, { color: palette.textMuted }]}>Rozumiem vete…</Text>
+        <Text style={[styles.hint, { color: palette.textMuted }]}>{t('searchBar.thinking')}</Text>
       ) : understood.length > 0 ? (
         <Text style={[styles.hint, { color: palette.link }]}>
-          Rozumiem: {understood.join(' · ')}
+          {t('searchBar.understood', { words: understood.join(' · ') })}
         </Text>
       ) : null}
 
@@ -243,7 +244,7 @@ export function SearchBar({
             {chips.join(' · ')}
           </Text>
           <Pressable onPress={clearAll} accessibilityRole="button" hitSlop={10}>
-            <Text style={[styles.clear, { color: palette.link }]}>Zrušiť</Text>
+            <Text style={[styles.clear, { color: palette.link }]}>{t('common.cancel')}</Text>
           </Pressable>
         </View>
       ) : null}

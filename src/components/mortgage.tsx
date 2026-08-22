@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { computeMortgage, eur } from '@/lib/mortgage';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -42,6 +43,7 @@ export function MortgageCalculator({
   topOffer?: number | null;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   // Cena z inzerátu má prednosť: je to číslo, ktoré uviedol predávajúci.
   // Keď chýba (a v Offerre chýbať smie), nastúpi najvyššia ponuka — inak
   // by kalkulačka pri inzeráte bez ceny nemala z čoho začať.
@@ -61,14 +63,14 @@ export function MortgageCalculator({
 
   return (
     <Card>
-      <SectionLabel>ODHAD MESAČNEJ SPLÁTKY</SectionLabel>
+      <SectionLabel>{t('mortgage.sectionTitle')}</SectionLabel>
 
       <Field
-        label="Cena (€)"
+        label={t('mortgage.priceLabel')}
         value={amount}
         onChangeText={setAmount}
         keyboardType="decimal-pad"
-        placeholder="napr. 248000"
+        placeholder={t('mortgage.pricePlaceholder')}
       />
 
       {/* Ponuku ponúkame dosadiť, nie ju dosadzujeme za chrbtom — sú to dve
@@ -76,13 +78,13 @@ export function MortgageCalculator({
       {topOffer != null && topOffer !== entered ? (
         <Pressable onPress={() => setAmount(String(topOffer))} accessibilityRole="button" hitSlop={6}>
           <Text style={[styles.suggest, { color: palette.link }]}>
-            {`Najvyššia ponuka je ${eur(topOffer)} — dosadiť`}
+            {t('mortgage.useTopOffer', { amount: eur(topOffer) })}
           </Text>
         </Pressable>
       ) : null}
 
       <ChoiceRow<'10' | '20' | '30'>
-        label="Vlastné zdroje"
+        label={t('mortgage.downPaymentLabel')}
         options={[
           { value: '10', label: '10 %' },
           { value: '20', label: '20 %' },
@@ -92,46 +94,43 @@ export function MortgageCalculator({
         onChange={setDown}
       />
       <ChoiceRow<'20' | '25' | '30'>
-        label="Doba splácania"
+        label={t('mortgage.termLabel')}
         options={[
-          { value: '20', label: '20 rokov' },
-          { value: '25', label: '25 rokov' },
-          { value: '30', label: '30 rokov' },
+          { value: '20', label: t('mortgage.yearsCount', { count: 20 }) },
+          { value: '25', label: t('mortgage.yearsCount', { count: 25 }) },
+          { value: '30', label: t('mortgage.yearsCount', { count: 30 }) },
         ]}
         value={years}
         onChange={setYears}
       />
       <Field
-        label="Úroková sadzba (% ročne) — orientačná"
-        hint="Predvolené číslo je odhad, nie ponuka banky. Skutočnú sadzbu ti povie banka; tu si ju prepíš."
+        label={t('mortgage.rateLabel')}
+        hint={t('mortgage.rateHint')}
         value={rate}
         onChangeText={setRate}
         keyboardType="decimal-pad"
-        placeholder="napr. 4.2"
+        placeholder={t('mortgage.ratePlaceholder')}
       />
 
       {entered <= 0 ? (
         <Text style={[styles.empty, { color: palette.textMuted }]}>
-          Zadaj cenu a appka dopočíta odhad splátky. Predávajúci cenu uviesť nemusel —
-          v Offerre je nepovinná.
+          {t('mortgage.emptyState')}
         </Text>
       ) : (
         <>
           <View style={[styles.result, { borderTopColor: palette.border }]}>
-            <Text style={[styles.monthlyLabel, { color: palette.textSecondary }]}>Mesačne približne</Text>
+            <Text style={[styles.monthlyLabel, { color: palette.textSecondary }]}>{t('mortgage.monthlyApprox')}</Text>
             <Text style={[styles.monthly, { color: palette.primary }]}>{eur(r.monthly)}</Text>
           </View>
 
-          <Row label="Vlastné zdroje" value={eur(r.downPayment)} />
-          <Row label="Výška úveru" value={eur(r.loan)} />
-          <Row label="Preplatíte na úrokoch" value={eur(r.totalInterest)} />
+          <Row label={t('mortgage.downPaymentRow')} value={eur(r.downPayment)} />
+          <Row label={t('mortgage.loanAmountRow')} value={eur(r.loan)} />
+          <Row label={t('mortgage.totalInterestRow')} value={eur(r.totalInterest)} />
         </>
       )}
 
       <Text style={[styles.disclaimer, { color: palette.textMuted }]}>
-        Orientačný odhad, nie ponuka banky. Neráta poplatky, poistenie ani daň z nehnuteľnosti
-        a nehovorí nič o tom, či ti banka úver schváli. Offerra nie je finančný poradca —
-        skutočné číslo ti dá len banka.
+        {t('mortgage.disclaimer')}
       </Text>
     </Card>
   );

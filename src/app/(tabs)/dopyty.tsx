@@ -25,13 +25,15 @@ import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { AppHeader } from '@/components/app-header';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatBudget } from '@/lib/offers';
-import { DEMAND_LABEL, formatArea, formatDate, PROPERTY_LABEL, type CatalogSort, type PropertyType } from '@/lib/property';
+import { getDemandLabel, formatArea, formatDate, getPropertyLabel, type CatalogSort, type PropertyType } from '@/lib/property';
 import { EMPTY_FILTER, isFilterEmpty, type CatalogFilter } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function DopytyScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const { session } = useSession();
   const myId = session?.user.id;
   const router = useRouter();
@@ -57,15 +59,15 @@ export default function DopytyScreen() {
         contentContainerStyle={styles.scroll}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={palette.primary} />}>
         <View style={styles.head}>
-          <Text style={[styles.title, { color: palette.textPrimary }]}>Dopyty</Text>
-          <Text style={[styles.lead, { color: palette.textMuted }]}>
-            Ľudia, ktorí niečo hľadajú. Ak máš, čo hľadajú, môžeš ich osloviť.
-          </Text>
+          <Text style={[styles.title, { color: palette.textPrimary }]}>{t('dopyty.title')}</Text>
+          <Text style={[styles.lead, { color: palette.textMuted }]}>{t('dopyty.lead')}</Text>
           {items ? (
             <Text style={[styles.lead, { color: palette.textMuted }]}>
               {items.length === 0
-                ? 'Zatiaľ tu nič nie je'
-                : `${items.length} ${items.length === 1 ? 'dopyt' : items.length < 5 ? 'dopyty' : 'dopytov'}`}
+                ? t('dopyty.empty')
+                : language === 'sk'
+                  ? t(items.length === 1 ? 'dopyty.countOne' : items.length < 5 ? 'dopyty.countFew' : 'dopyty.countMany', { count: items.length })
+                  : t(items.length === 1 ? 'dopyty.countOne' : 'dopyty.countMany', { count: items.length })}
             </Text>
           ) : null}
         </View>
@@ -80,17 +82,17 @@ export default function DopytyScreen() {
           isFilterEmpty(filter) ? (
             <EmptyState
               icon="envelope"
-              title="Zatiaľ žiadne dopyty"
-              body="Dopyt je opačný smer: napíšeš, čo hľadáš, a majitelia ťa môžu osloviť sami."
-              actionTitle="Pridať dopyt"
+              title={t('dopyty.emptyStateTitle')}
+              body={t('dopyty.emptyStateBody')}
+              actionTitle={t('dopyty.addDemand')}
               onAction={() => router.push('/dopyt/novy')}
             />
           ) : (
             <EmptyState
               icon="magnifyingglass"
-              title="Žiadny dopyt tomu nezodpovedá"
-              body="Skús ubrať niektorý filter — napríklad typ nehnuteľnosti."
-              actionTitle="Zrušiť filtre"
+              title={t('dopyty.noMatchTitle')}
+              body={t('dopyty.noMatchBody')}
+              actionTitle={t('dopyty.clearFilters')}
               onAction={() => setFilter({ ...EMPTY_FILTER })}
             />
           )
@@ -111,24 +113,24 @@ export default function DopytyScreen() {
                 },
               ]}>
               <View style={styles.badges}>
-                <Badge text={DEMAND_LABEL[r.transaction_type].toUpperCase()} tone="accent" />
-                {r.property_type ? <Badge text={PROPERTY_LABEL[r.property_type as PropertyType]} /> : null}
-                {r.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
+                <Badge text={getDemandLabel(t)[r.transaction_type].toUpperCase()} tone="accent" />
+                {r.property_type ? <Badge text={getPropertyLabel(t)[r.property_type as PropertyType]} /> : null}
+                {r.is_seed ? <Badge text={t('dopyty.sample')} tone="warning" /> : null}
                 {/* „Tvoj dopyt" vidí LEN ten, kto ho pridal — porovnáva sa
                     na klientovi s vlastným id. Nič to neodkrýva: `user_id`
                     je vo verejnom výpise aj tak (overené). */}
-                {myId && r.user_id === myId ? <Badge text="TVOJ DOPYT" tone="navy" /> : null}
+                {myId && r.user_id === myId ? <Badge text={t('dopyty.yourDemand')} tone="navy" /> : null}
               </View>
 
               <Text style={[styles.budget, { color: palette.primary }]}>
-                {formatBudget(r.budget_min, r.budget_max)}
+                {formatBudget(t, r.budget_min, r.budget_max)}
               </Text>
 
               <Text style={[styles.meta, { color: palette.textMuted }]}>
                 {[
                   r.city,
-                  r.rooms_min != null ? `od ${r.rooms_min} izieb` : null,
-                  r.area_min != null ? `od ${formatArea(r.area_min)}` : null,
+                  r.rooms_min != null ? t('search.roomsMinChip', { count: r.rooms_min }) : null,
+                  r.area_min != null ? t('dopyty.fromArea', { area: formatArea(r.area_min) ?? '' }) : null,
                 ]
                   .filter(Boolean)
                   .join(' · ')}
@@ -141,7 +143,7 @@ export default function DopytyScreen() {
               ) : null}
 
               <Text style={[styles.foot, { color: palette.textMuted }]}>
-                {r.author?.nickname ?? 'neznámy'} · {formatDate(r.created_at)}
+                {r.author?.nickname ?? t('offerList.unknown')} · {formatDate(language, r.created_at)}
               </Text>
             </Pressable>
           </Link>

@@ -26,14 +26,16 @@ import { AppHeader } from '@/components/app-header';
 import { MyListingRow } from '@/components/my-listing-row';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
-import { formatAmount, OFFER_STATUS_LABEL, REQUEST_STATUS_LABEL, formatBudget } from '@/lib/offers';
+import { useTranslation } from '@/i18n';
+import { formatAmount, getOfferStatusLabel, getRequestStatusLabel, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
-import { formatArea, formatDate, STATUS_LABEL, TRANSACTION_LABEL } from '@/lib/property';
+import { formatArea, formatDate, getStatusLabel, getTransactionLabel } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function ProfilScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const toast = useToast();
   const router = useRouter();
   const { session } = useSession();
@@ -58,7 +60,7 @@ export default function ProfilScreen() {
     if (!userId || busy) return;
     setBusy(true);
     try {
-      const photo = await pickPhoto([1, 1]);
+      const photo = await pickPhoto(t, [1, 1]);
       if (!photo) return; // zrušené používateľom
 
       // Vždy tá istá cesta + `upsert` — profilovka má byť jedna, nie
@@ -67,16 +69,16 @@ export default function ProfilScreen() {
 
       // Cache-bust: `upsert` prepíše ten istý súbor a `expo-image` cachuje
       // podľa URI, takže bez tohto by ostala visieť stará fotka.
-      const problem = await saveProfile(userId, { avatar_url: `${url}?t=${Date.now()}` }, false);
+      const problem = await saveProfile(t, userId, { avatar_url: `${url}?t=${Date.now()}` }, false);
       if (problem) throw new Error(problem);
 
       console.log('[FOTKA] 7 HOTOVO (profilovka)');
       await reload();
-      toast('Profilovka zmenená');
+      toast(t('profil.avatarChangedToast'));
     } catch (e: unknown) {
-      const m = photoErrorMessage(e);
+      const m = photoErrorMessage(t, e);
       console.log(`[PROFIL] Zmena fotky zlyhala: ${m}`);
-      Alert.alert('Fotku sa nepodarilo zmeniť', m);
+      Alert.alert(t('profil.avatarChangeFailedTitle'), m);
     } finally {
       setBusy(false);
     }
@@ -92,16 +94,16 @@ export default function ProfilScreen() {
       id: p.id,
       at: p.created_at,
       kind: 'INZERAT' as const,
-      title: p.title || 'Bez názvu',
-      detail: [p.city, STATUS_LABEL[p.status]].filter(Boolean).join(' · '),
+      title: p.title || t('pridat.noTitle'),
+      detail: [p.city, getStatusLabel(t)[p.status]].filter(Boolean).join(' · '),
       onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: p.id } }),
     })),
     ...(offers ?? []).map((o) => ({
       id: o.id,
       at: o.created_at,
       kind: 'PONUKA_ODOSLANA' as const,
-      title: o.property?.title || 'Inzerát',
-      detail: `${formatAmount(o.amount, o.property?.transaction_type ?? 'SALE')} · ${OFFER_STATUS_LABEL[o.status]}`,
+      title: o.property?.title || t('profil.listingFallback'),
+      detail: `${formatAmount(t, o.amount, o.property?.transaction_type ?? 'SALE')} · ${getOfferStatusLabel(t)[o.status]}`,
       onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
     })),
     // Oslovenia MOJICH dopytov. Vedú na PONÚKNUTÝ inzerát, nie na môj
@@ -110,7 +112,7 @@ export default function ProfilScreen() {
       id: o.id,
       at: o.created_at,
       kind: 'OSLOVENIE_DOPYTU' as const,
-      title: o.property_title || 'Inzerát',
+      title: o.property_title || t('profil.listingFallback'),
       detail: [o.from_nickname, o.property_city].filter(Boolean).join(' · '),
       onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
     })),
@@ -118,8 +120,8 @@ export default function ProfilScreen() {
       id: r.id,
       at: r.created_at,
       kind: 'DOPYT' as const,
-      title: r.description?.slice(0, 60) || 'Dopyt',
-      detail: formatBudget(r.budget_min, r.budget_max),
+      title: r.description?.slice(0, 60) || t('profil.demandFallback'),
+      detail: formatBudget(t, r.budget_min, r.budget_max),
       onPress: () => router.push({ pathname: '/dopyt/[id]', params: { id: r.id } }),
     })),
   ].sort((a, b) => (a.at < b.at ? 1 : -1));
@@ -134,7 +136,7 @@ export default function ProfilScreen() {
         automaticallyAdjustKeyboardInsets={Platform.OS === 'ios'}>
         {/* Ozubené koliesko tu ZÁMERNE nie je — je v hornej lište, teda
             na všetkých obrazovkách. Dve by boli duplicita. */}
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Moje</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('profil.title')}</Text>
 
         <ErrorNote error={error} />
         {profile === undefined ? <ActivityIndicator color={palette.primary} /> : null}
@@ -150,12 +152,10 @@ export default function ProfilScreen() {
                 </Pressable>
                 <View style={styles.identityText}>
                   <Text style={[styles.nick, { color: palette.textPrimary }]}>{profile.nickname}</Text>
-                  <Text style={[styles.hint, { color: palette.textMuted }]}>
-                    Takto ťa vidia ostatní pri ponukách
-                  </Text>
+                  <Text style={[styles.hint, { color: palette.textMuted }]}>{t('profil.howOthersSeeYou')}</Text>
                   <Pressable onPress={changePhoto} accessibilityRole="button" disabled={busy}>
                     <Text style={[styles.link, { color: palette.link }]}>
-                      {busy ? 'Pracujem…' : profile.avatar_url ? 'Zmeniť fotku' : 'Pridať fotku'}
+                      {busy ? t('nastavenia.signOutBusy') : profile.avatar_url ? t('profil.changePhoto') : t('profil.addPhoto')}
                     </Text>
                   </Pressable>
                 </View>
@@ -164,10 +164,10 @@ export default function ProfilScreen() {
 
             <Card>
               <Text style={[styles.section, { color: palette.textMuted }]}>
-                {`MOJE INZERÁTY (${properties?.length ?? 0})`}
+                {t('profil.myListingsCount', { count: properties?.length ?? 0 })}
               </Text>
               {(properties ?? []).length === 0 ? (
-                <Text style={[styles.hint, { color: palette.textMuted }]}>Zatiaľ žiadne.</Text>
+                <Text style={[styles.hint, { color: palette.textMuted }]}>{t('profil.noneYet')}</Text>
               ) : null}
               {(properties ?? []).map((p) => (
                 <MyListingRow
@@ -191,59 +191,56 @@ export default function ProfilScreen() {
                 />
               ))}
               {(properties ?? []).some((p) => p.status === 'ACTIVE' || p.status === 'CLOSED') ? (
-                <Text style={[styles.hint, { color: palette.textMuted }]}>
-                  Ťuknutím otvoríš inzerát presne tak, ako ho vidia ostatní — ponuky,
-                  správy aj obhliadku spravuješ tam, na podtaboch.
-                </Text>
+                <Text style={[styles.hint, { color: palette.textMuted }]}>{t('profil.tapToOpenNote')}</Text>
               ) : null}
             </Card>
 
             <Card>
-              <SectionLabel>ČASOVÁ OS</SectionLabel>
+              <SectionLabel>{t('profil.timeline')}</SectionLabel>
               <ActivityTimeline events={timeline.slice(0, 25)} />
             </Card>
 
             <SectionList
-              label={`OBĽÚBENÉ (${favorites?.length ?? 0})`}
-              empty="Zatiaľ nič. Ťukni na srdiečko pri inzeráte."
+              label={t('profil.favoritesCount', { count: favorites?.length ?? 0 })}
+              empty={t('profil.favoritesEmpty')}
               rows={(favorites ?? []).map((p) => ({
                 key: p.id,
-                title: p.title || 'Bez názvu',
+                title: p.title || t('pridat.noTitle'),
                 meta: [p.city, formatArea(p.area_m2)].filter(Boolean).join(' · ') || '—',
-                badge: TRANSACTION_LABEL[p.transaction_type],
+                badge: getTransactionLabel(t)[p.transaction_type],
                 onPress: () => router.push({ pathname: '/nehnutelnost/[id]', params: { id: p.id } }),
               }))}
             />
 
             <SectionList
-              label={`MOJE PONUKY (${offers?.length ?? 0})`}
-              empty="Zatiaľ si nikomu neponúkol."
+              label={t('profil.myOffersCount', { count: offers?.length ?? 0 })}
+              empty={t('profil.myOffersEmpty')}
               rows={(offers ?? []).map((o) => ({
                 key: o.id,
-                title: o.property?.title || 'Inzerát',
+                title: o.property?.title || t('profil.listingFallback'),
                 // „videná" je pri čakajúcej ponuke to jediné, čo sa medzi
                 // podaním a rozhodnutím zmení — patrí do prehľadu.
                 meta: [
-                  formatAmount(o.amount, o.property?.transaction_type ?? 'SALE'),
-                  formatDate(o.created_at),
-                  o.status === 'PENDING' && o.viewed_by_owner_at ? 'videná' : null,
+                  formatAmount(t, o.amount, o.property?.transaction_type ?? 'SALE'),
+                  formatDate(language, o.created_at),
+                  o.status === 'PENDING' && o.viewed_by_owner_at ? t('profil.seenByOwner') : null,
                 ]
                   .filter(Boolean)
                   .join(' · '),
-                badge: OFFER_STATUS_LABEL[o.status],
+                badge: getOfferStatusLabel(t)[o.status],
                 onPress: () =>
                   router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
               }))}
             />
 
             <SectionList
-              label={`MOJE DOPYTY (${requests?.length ?? 0})`}
-              empty={'Zatiaľ žiadne. Pridaj ich cez tab „Pridať".'}
+              label={t('profil.myDemandsCount', { count: requests?.length ?? 0 })}
+              empty={t('profil.myDemandsEmpty')}
               rows={(requests ?? []).map((r) => ({
                 key: r.id,
-                title: r.description?.slice(0, 60) || 'Dopyt',
-                meta: `${formatBudget(r.budget_min, r.budget_max)}${r.city ? ` · ${r.city}` : ''}`,
-                badge: REQUEST_STATUS_LABEL[r.status],
+                title: r.description?.slice(0, 60) || t('profil.demandFallback'),
+                meta: `${formatBudget(t, r.budget_min, r.budget_max)}${r.city ? ` · ${r.city}` : ''}`,
+                badge: getRequestStatusLabel(t)[r.status],
                 onPress: () => router.push({ pathname: '/dopyt/[id]', params: { id: r.id } }),
               }))}
             />

@@ -19,6 +19,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Card, ErrorNote, SectionLabel } from '@/components/ui';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { notificationRoute } from '@/lib/notification-route';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -26,6 +27,7 @@ import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 export default function OznameniaScreen() {
   const palette = useTheme();
   const router = useRouter();
+  const { t, language } = useTranslation();
   const { items, unread, error, markAllRead } = useNotifications();
 
   // Otvorením sa považujú za prečítané — presne to otvorenie znamená.
@@ -39,7 +41,7 @@ export default function OznameniaScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Oznámenia',
+          title: t('oznamenia.title'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -48,17 +50,10 @@ export default function OznameniaScreen() {
       <ScrollView contentContainerStyle={styles.scroll}>
         <ErrorNote error={error} />
 
-        <Text style={[styles.lead, { color: palette.textMuted }]}>
-          Offerra zatiaľ neposiela upozornenia na zamknutú obrazovku — nájdeš ich
-          tu. Čo sa tu má objaviť, si nastavuješ v Nastaveniach.
-        </Text>
+        <Text style={[styles.lead, { color: palette.textMuted }]}>{t('oznamenia.lead')}</Text>
 
         {items.length === 0 ? (
-          <EmptyState
-            icon="bell"
-            title="Zatiaľ ticho"
-            body="Keď niekto ponúkne za tvoj inzerát alebo ti prijme ponuku, objaví sa to tu."
-          />
+          <EmptyState icon="bell" title={t('oznamenia.emptyTitle')} body={t('oznamenia.emptyBody')} />
         ) : null}
 
         {items.map((n) => {
@@ -84,7 +79,7 @@ export default function OznameniaScreen() {
               {!n.read_at ? <View style={[styles.dot, { backgroundColor: palette.secondary }]} /> : null}
             </View>
             {n.body ? <Text style={[styles.body, { color: palette.textSecondary }]}>{n.body}</Text> : null}
-            <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(n.created_at)}</Text>
+            <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(language, n.created_at)}</Text>
           </Pressable>
           );
         })}

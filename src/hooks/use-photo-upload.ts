@@ -9,6 +9,7 @@
 import { useState } from 'react';
 import { Alert } from 'react-native';
 
+import { useTranslation } from '@/i18n';
 import { BUCKET, photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
@@ -18,6 +19,7 @@ export function usePhotoUpload(
   propertyId: string | undefined,
   onChanged: () => Promise<void> | void
 ) {
+  const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
 
   async function addPhoto(nextIndex: number) {
@@ -25,7 +27,7 @@ export function usePhotoUpload(
     setUploading(true);
     try {
       // Fotky nehnuteľností sú na šírku — 4:3 sedí kartám aj galérii.
-      const photo = await pickPhoto([4, 3]);
+      const photo = await pickPhoto(t, [4, 3]);
       if (!photo) return; // zrušené používateľom
 
       const path = `${ownerId}/${propertyId}/${Date.now()}.${photo.ext}`;
@@ -39,9 +41,9 @@ export function usePhotoUpload(
       console.log('[FOTKA] 7 HOTOVO');
       await onChanged();
     } catch (e: unknown) {
-      const m = photoErrorMessage(e);
+      const m = photoErrorMessage(t, e);
       console.log(`[FOTKA] ZLYHALO: ${m}`);
-      Alert.alert('Fotku sa nepodarilo pridať', m);
+      Alert.alert(t('photo.addFailedTitle'), m);
     } finally {
       setUploading(false);
     }
@@ -64,9 +66,9 @@ export function usePhotoUpload(
       }
       await onChanged();
     } catch (e: unknown) {
-      const m = photoErrorMessage(e);
+      const m = photoErrorMessage(t, e);
       console.log(`[FOTKA] Zmazanie zlyhalo: ${m}`);
-      Alert.alert('Fotku sa nepodarilo zmazať', m);
+      Alert.alert(t('photo.removeFailedTitle'), m);
     }
   }
 

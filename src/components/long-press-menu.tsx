@@ -22,6 +22,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import { Animated, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Icon, type IconName } from './icon';
@@ -58,6 +59,7 @@ export function LongPressMenu({
   actions: LongPressAction[];
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const anim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -81,7 +83,7 @@ export function LongPressMenu({
   return (
     <Modal visible={open} transparent animationType="fade" onRequestClose={onClose}>
       {/* Ťuknutie kamkoľvek mimo menu ho zavrie — vrátane rozmazanej plochy. */}
-      <Pressable style={styles.fill} onPress={onClose} accessibilityLabel="Zavrieť náhľad">
+      <Pressable style={styles.fill} onPress={onClose} accessibilityLabel={t('ui.closePreview')}>
         {Blur ? (
           <Blur intensity={28} tint="dark" style={StyleSheet.absoluteFill} />
         ) : null}

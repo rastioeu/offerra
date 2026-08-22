@@ -20,7 +20,9 @@
  * Prvé dva riadky ZUŽUJÚ, čo sa hľadá; tretí len mení pohľad na výsledok
  * (Rastio, 12.8.2026). Preto je tretí posledný a v UI oddelený linkou.
  */
-import { DEMAND_LABEL, PROPERTY_LABEL, TRANSACTION_LABEL } from './labels';
+import type { TFunc } from '@/i18n';
+
+import { getDemandLabel, getPropertyLabel, getTransactionLabel } from './labels';
 import type { CatalogSort, PropertyType, TransactionType } from './property';
 import type { FilterSide } from './search';
 
@@ -33,10 +35,9 @@ export const PROPERTY_TYPE_ORDER: PropertyType[] = [
   'OTHER',
 ];
 
-export const SORT_LABEL: Record<CatalogSort, string> = {
-  NEWEST: 'Najnovšie',
-  ENDING_SOON: 'Čoskoro končí',
-};
+export function getSortLabel(t: TFunc): Record<CatalogSort, string> {
+  return { NEWEST: t('filterRows.sortNewest'), ENDING_SOON: t('filterRows.sortEndingSoon') };
+}
 
 /** Triedenie v katalógu — poradie čipov v treťom riadku. */
 export const CATALOG_SORTS: CatalogSort[] = ['NEWEST', 'ENDING_SOON'];
@@ -76,10 +77,12 @@ export type FilterRow = {
  * triedenie, ani obľúbené).
  */
 export function filterRows({
+  t,
   side,
   sorts,
   canFavorite,
 }: {
+  t: TFunc;
   side: FilterSide;
   /**
    * Ktoré triedenia obrazovka ponúka — `CATALOG_SORTS` alebo `DEMAND_SORTS`.
@@ -89,12 +92,14 @@ export function filterRows({
   /** Prihlásený? Neprihlásenému sa srdiečko neponúka, nemá ho kam uložiť. */
   canFavorite: boolean;
 }): FilterRow[] {
-  const transaction = side === 'DEMAND' ? DEMAND_LABEL : TRANSACTION_LABEL;
+  const transaction = side === 'DEMAND' ? getDemandLabel(t) : getTransactionLabel(t);
+  const sortLabel = getSortLabel(t);
+  const propertyLabel = getPropertyLabel(t);
 
   const rows: FilterRow[] = [
     {
       kind: 'TRANSACTION',
-      title: 'Typ obchodu',
+      title: t('filterRows.transactionTitle'),
       chips: (['SALE', 'RENT'] as TransactionType[]).map((value) => ({
         kind: 'TRANSACTION' as const,
         value,
@@ -103,23 +108,23 @@ export function filterRows({
     },
     {
       kind: 'PROPERTY_TYPE',
-      title: 'Typ nehnuteľnosti',
+      title: t('filterRows.propertyTypeTitle'),
       chips: PROPERTY_TYPE_ORDER.map((value) => ({
         kind: 'PROPERTY_TYPE' as const,
         value,
-        label: PROPERTY_LABEL[value],
+        label: propertyLabel[value],
       })),
     },
     {
       kind: 'VIEW',
-      title: 'Triedenie a obľúbené',
+      title: t('filterRows.viewTitle'),
       chips: [
-        ...sorts.map((value) => ({ kind: 'SORT' as const, value, label: SORT_LABEL[value] })),
+        ...sorts.map((value) => ({ kind: 'SORT' as const, value, label: sortLabel[value] })),
         // Obľúbené sú FILTER, nie samostatná obrazovka — inak by sa nedali
         // skombinovať s „Prenájom" ani s hľadaním, čo je presne to, na čo
         // ich človek chce. Samotné srdiečko, bez slova (Rastio, 12.8.2026).
         ...(side === 'PROPERTY' && canFavorite
-          ? [{ kind: 'FAVORITES' as const, label: '♥', accessibilityLabel: 'Iba obľúbené' }]
+          ? [{ kind: 'FAVORITES' as const, label: '♥', accessibilityLabel: t('filterRows.favoritesOnly') }]
           : []),
       ],
     },

@@ -8,12 +8,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Card } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { CHANGELOG } from '@/lib/changelog';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export default function NovinkyScreen() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const build = readBuildInfo();
 
   return (
@@ -21,7 +23,7 @@ export default function NovinkyScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Čo je nové',
+          title: t('novinky.screenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -29,9 +31,7 @@ export default function NovinkyScreen() {
 
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={[styles.lead, { color: palette.textSecondary }]}>
-          Zoznam zmien, najnovšie hore. Ak niečo z posledného záznamu v appke
-          nevidíš, ešte ti nedorazila aktualizácia — porovnaj riadok nižšie
-          s tým, čo máš v Profile.
+          {t('novinky.lead')}
         </Text>
         <Text style={[styles.build, { color: palette.textMuted }]}>{buildInfoLine(build)}</Text>
 
@@ -40,7 +40,7 @@ export default function NovinkyScreen() {
             <View style={styles.head}>
               <Text style={[styles.title, { color: palette.textPrimary }]}>{entry.title}</Text>
               {i === 0 ? (
-                <Text style={[styles.newest, { color: palette.link }]}>najnovšie</Text>
+                <Text style={[styles.newest, { color: palette.link }]}>{t('novinky.newest')}</Text>
               ) : null}
             </View>
             <Text style={[styles.meta, { color: palette.textMuted }]}>

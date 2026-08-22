@@ -22,6 +22,7 @@ import { Modal, Platform, Pressable, StyleSheet, Text, View } from 'react-native
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Icon } from './icon';
@@ -31,7 +32,7 @@ export function ModalScreen({
   onClose,
   title,
   children,
-  closeLabel = 'Zavrieť',
+  closeLabel,
 }: {
   visible: boolean;
   onClose: () => void;
@@ -40,7 +41,9 @@ export function ModalScreen({
   closeLabel?: string;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+  const close = closeLabel ?? t('ui.close');
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} presentationStyle="fullScreen">
@@ -63,7 +66,7 @@ export function ModalScreen({
             onPress={onClose}
             hitSlop={16}
             accessibilityRole="button"
-            accessibilityLabel="Späť"
+            accessibilityLabel={t('ui.back')}
             style={({ pressed }) => [styles.back, { opacity: pressed ? 0.6 : 1 }]}>
             <Icon name="chevron.left" size={22} color={palette.primary} />
           </Pressable>
@@ -77,7 +80,7 @@ export function ModalScreen({
             hitSlop={16}
             accessibilityRole="button"
             style={({ pressed }) => [styles.closeWrap, { opacity: pressed ? 0.6 : 1 }]}>
-            <Text style={[styles.close, { color: palette.link }]}>{closeLabel}</Text>
+            <Text style={[styles.close, { color: palette.link }]}>{close}</Text>
           </Pressable>
         </View>
 

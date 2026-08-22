@@ -17,15 +17,18 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useColorScheme as useSystemScheme } from 'react-native';
 
+import type { TFunc } from '@/i18n';
 import { Colors, type Palette } from '@/theme/tokens';
 
 export type ThemeMode = 'system' | 'light' | 'dark';
 
-export const THEME_MODE_LABEL: Record<ThemeMode, string> = {
-  system: 'Podľa telefónu',
-  light: 'Svetlý',
-  dark: 'Tmavý',
-};
+export function getThemeModeLabel(t: TFunc): Record<ThemeMode, string> {
+  return {
+    system: t('theme.system'),
+    light: t('theme.light'),
+    dark: t('theme.dark'),
+  };
+}
 
 const KEY = 'offerra.themeMode';
 const DEFAULT_MODE: ThemeMode = 'light';

@@ -16,6 +16,7 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, 
 
 import { Button, Card, ErrorNote, Eyebrow } from '@/components/ui';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import {
   contactBlockedText,
@@ -46,15 +47,15 @@ export function MessagesTab({
   isOwner: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
 
   if (!myId) {
     return (
       <View style={styles.body}>
         <Card>
-          <Eyebrow>Správy</Eyebrow>
+          <Eyebrow>{t('messages.messagesTitle')}</Eyebrow>
           <Text style={[styles.note, { color: palette.textMuted }]}>
-            Na písanie správ sa treba prihlásiť. Konverzácia je vždy len medzi tebou
-            a druhou stranou — nikto iný ju nevidí.
+            {t('messages.loginRequired')}
           </Text>
         </Card>
       </View>
@@ -69,7 +70,7 @@ export function MessagesTab({
           subject={{ propertyId: item.id }}
           myId={myId}
           otherId={item.owner_id}
-          otherName="predávajúcim"
+          otherName={t('messages.withSellerName')}
         />
       </View>
     );
@@ -81,8 +82,8 @@ export function MessagesTab({
     .filter((o) => o.status !== 'WITHDRAWN' && o.bidder_id !== myId)
     .map((o) => ({
       id: o.bidder_id,
-      nickname: o.bidder?.nickname ?? 'Záujemca',
-      note: 'Podal ponuku, nepísali ste si. Ozvi sa prvý.',
+      nickname: o.bidder?.nickname ?? t('messages.bidderFallback'),
+      note: t('messages.silentOfferNote'),
     }));
 
   return <OwnerThreads subject={{ propertyId: item.id }} myId={myId} silentEntries={silentEntries} />;
@@ -112,6 +113,7 @@ export function OwnerThreads({
   silentEntries: { id: string; nickname: string; note: string }[];
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [threads, setThreads] = useState<Thread[] | undefined>(undefined);
   const [names, setNames] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(null);
@@ -120,9 +122,9 @@ export function OwnerThreads({
   const load = useCallback(async () => {
     try {
       setError(null);
-      const t = await fetchThreads(subject, myId);
-      setThreads(t);
-      const ids = t.map((x) => x.otherId);
+      const th = await fetchThreads(subject, myId);
+      setThreads(th);
+      const ids = th.map((x) => x.otherId);
       if (ids.length > 0) setNames(await fetchNicknames(ids));
     } catch (e: unknown) {
       const m = errorText(e);
@@ -139,20 +141,20 @@ export function OwnerThreads({
 
   // Ľudia, ktorí sa ozvali inou cestou, ale v chate ešte nenapísali —
   // vylúčení tí, čo už vlákno majú, nech sa neduplikujú v zozname.
-  const withThread = new Set((threads ?? []).map((t) => t.otherId));
+  const withThread = new Set((threads ?? []).map((th) => th.otherId));
   const silent = silentEntries.filter((s) => !withThread.has(s.id));
 
   if (open) {
     return (
       <View style={styles.body}>
         <Pressable onPress={() => { setOpen(null); void load(); }} accessibilityRole="button" hitSlop={8}>
-          <Text style={[styles.back, { color: palette.link }]}>‹ Späť na zoznam</Text>
+          <Text style={[styles.back, { color: palette.link }]}>{t('messages.backToList')}</Text>
         </Pressable>
         <Conversation
           subject={subject}
           myId={myId}
           otherId={open}
-          otherName={names[open] ?? silentEntries.find((s) => s.id === open)?.nickname ?? 'druhou stranou'}
+          otherName={names[open] ?? silentEntries.find((s) => s.id === open)?.nickname ?? t('messages.withOtherPartyName')}
         />
       </View>
     );
@@ -162,21 +164,20 @@ export function OwnerThreads({
     <View style={styles.body}>
       <ErrorNote error={error} />
       <Card>
-        <Eyebrow>Správy</Eyebrow>
+        <Eyebrow>{t('messages.messagesTitle')}</Eyebrow>
 
         {threads === undefined ? (
-          <Text style={[styles.note, { color: palette.textMuted }]}>Načítavam…</Text>
+          <Text style={[styles.note, { color: palette.textMuted }]}>{t('messages.loading')}</Text>
         ) : threads.length === 0 && silent.length === 0 ? (
           <Text style={[styles.note, { color: palette.textMuted }]}>
-            Zatiaľ ti nikto nenapísal. S každým záujemcom máš samostatnú konverzáciu —
-            o ostatných navzájom nevedia.
+            {t('messages.noOneWroteYet')}
           </Text>
         ) : null}
 
-        {(threads ?? []).map((t) => (
+        {(threads ?? []).map((th) => (
           <Pressable
-            key={t.otherId}
-            onPress={() => setOpen(t.otherId)}
+            key={th.otherId}
+            onPress={() => setOpen(th.otherId)}
             accessibilityRole="button"
             style={({ pressed }) => [
               styles.threadRow,
@@ -184,16 +185,16 @@ export function OwnerThreads({
             ]}>
             <View style={styles.threadText}>
               <Text style={[styles.threadName, { color: palette.textPrimary }]}>
-                {names[t.otherId] ?? 'Záujemca'}
+                {names[th.otherId] ?? t('messages.bidderFallback')}
               </Text>
               <Text style={[styles.threadLast, { color: palette.textMuted }]} numberOfLines={1}>
-                {t.last.sender_id === myId ? 'Ty: ' : ''}
-                {t.last.content}
+                {th.last.sender_id === myId ? t('messages.youPrefix') : ''}
+                {th.last.content}
               </Text>
             </View>
-            {t.unread > 0 ? (
+            {th.unread > 0 ? (
               <View style={[styles.badge, { backgroundColor: palette.accentDeep }]}>
-                <Text style={[styles.badgeText, { color: palette.onPrimary }]}>{t.unread}</Text>
+                <Text style={[styles.badgeText, { color: palette.onPrimary }]}>{th.unread}</Text>
               </View>
             ) : null}
           </Pressable>
@@ -237,6 +238,7 @@ export function Conversation({
   otherName: string;
 }) {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const [list, setList] = useState<Message[] | undefined>(undefined);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -292,11 +294,10 @@ export function Conversation({
 
   return (
     <Card>
-      <Eyebrow>{`Správy s ${otherName}`}</Eyebrow>
+      <Eyebrow>{t('messages.conversationWith', { name: otherName })}</Eyebrow>
 
       <Text style={[styles.note, { color: palette.textMuted }]}>
-        Konverzáciu vidíte len vy dvaja. Meno a telefón sa v nej neodkrývajú —
-        stane sa to až prijatím ponuky alebo dohodnutím obhliadky.
+        {t('messages.conversationHint')}
       </Text>
 
       <ErrorNote error={error} />
@@ -310,7 +311,7 @@ export function Conversation({
           <ActivityIndicator />
         ) : list.length === 0 ? (
           <Text style={[styles.note, { color: palette.textMuted }]}>
-            Zatiaľ nič. Napíš prvú správu — napríklad na čo sa chceš spýtať pred ponukou.
+            {t('messages.nothingYet')}
           </Text>
         ) : (
           list.map((m) => {
@@ -333,8 +334,8 @@ export function Conversation({
                     styles.bubbleTime,
                     { color: mine ? palette.onPrimary : palette.textMuted, opacity: mine ? 0.75 : 1 },
                   ]}>
-                  {timeOf(m.created_at)}
-                  {mine && m.read_at ? ' · prečítané' : ''}
+                  {timeOf(language, m.created_at)}
+                  {mine && m.read_at ? t('messages.readSuffix') : ''}
                 </Text>
               </View>
             );
@@ -345,7 +346,7 @@ export function Conversation({
       <TextInput
         value={text}
         onChangeText={setText}
-        placeholder="napr. Je v cene aj kuchynská linka?"
+        placeholder={t('messages.inputPlaceholder')}
         placeholderTextColor={palette.textPlaceholder}
         multiline
         maxLength={MESSAGE_MAX}
@@ -356,11 +357,11 @@ export function Conversation({
       />
 
       {blocked ? (
-        <Text style={[styles.blocked, { color: palette.danger }]}>{contactBlockedText(blocked)}</Text>
+        <Text style={[styles.blocked, { color: palette.danger }]}>{contactBlockedText(t, blocked)}</Text>
       ) : null}
 
       <Button
-        title="Odoslať"
+        title={t('messages.sendButton')}
         onPress={send}
         loading={busy}
         disabled={busy || text.trim().length === 0}
@@ -369,9 +370,10 @@ export function Conversation({
   );
 }
 
-function timeOf(iso: string): string {
+function timeOf(language: string, iso: string): string {
   const d = new Date(iso);
-  return d.toLocaleString('sk-SK', { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
+  const tag = language === 'de' ? 'de-DE' : language === 'en' ? 'en-GB' : 'sk-SK';
+  return d.toLocaleString(tag, { day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit' });
 }
 
 const styles = StyleSheet.create({

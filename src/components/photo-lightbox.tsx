@@ -69,6 +69,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Icon } from './icon';
 import { PhotoBadge } from './ui';
+import { useTranslation } from '@/i18n';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import {
   AXIS_LOCK,
@@ -146,6 +147,7 @@ export function PhotoLightbox({
   initialIndex: number;
   onClose: () => void;
 }) {
+  const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const count = photos.length;
@@ -380,7 +382,7 @@ export function PhotoLightbox({
             hitSlop={16}
             style={[styles.close, { top: insets.top + Spacing.sm }]}
             accessibilityRole="button"
-            accessibilityLabel="Zavrieť fotku">
+            accessibilityLabel={t('photoLightbox.closePhoto')}>
             <Icon name="xmark" size={20} color="#FFFFFF" weight="semibold" />
           </Pressable>
 
@@ -394,8 +396,7 @@ export function PhotoLightbox({
               17.8.2026 — appka predtým sľubovala gestá, ktoré nerobili nič). */}
           {!zoomed ? (
             <Text style={[styles.hint, { bottom: insets.bottom + Spacing.sm }]}>
-              {count > 1 ? 'Potiahni do strán · ' : ''}Dvojťap alebo štipni priblíži · Potiahni dole
-              zavrie
+              {count > 1 ? t('photoLightbox.hintSwipe') : ''}{t('photoLightbox.hintRest')}
             </Text>
           ) : null}
         </View>

@@ -8,6 +8,7 @@ import { Alert, Animated, Pressable, StyleSheet } from 'react-native';
 
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 
 import { Icon } from './icon';
 
@@ -21,6 +22,7 @@ export function FavoriteHeart({
   size?: number;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const scale = useRef(new Animated.Value(1)).current;
 
   const toast = useToast();
@@ -36,10 +38,10 @@ export function FavoriteHeart({
     // a doteraz nedávalo po úspechu žiadnu odozvu okrem animácie.
     const result = await onToggle();
     if (result === null) {
-      Alert.alert('Nepodarilo sa uložiť', 'Skús to prosím znova.');
+      Alert.alert(t('favoriteHeart.saveFailedTitle'), t('favoriteHeart.tryAgain'));
       return;
     }
-    toast(result ? 'Pridané do obľúbených' : 'Odstránené z obľúbených', result ? 'success' : 'info');
+    toast(result ? t('favoriteHeart.addedToast') : t('favoriteHeart.removedToast'), result ? 'success' : 'info');
   }
 
   return (
@@ -47,7 +49,7 @@ export function FavoriteHeart({
       onPress={press}
       hitSlop={10}
       accessibilityRole="button"
-      accessibilityLabel={active ? 'Odobrať z obľúbených' : 'Pridať do obľúbených'}
+      accessibilityLabel={active ? t('favoriteHeart.removeAccessibility') : t('favoriteHeart.addAccessibility')}
       accessibilityState={{ selected: active }}>
       {/* Kruh pod ikonou má INÚ farbu podľa stavu, a to zámerne.
           Prvý pokus mal jeden tmavý kruh pre oba stavy — zmeral som to

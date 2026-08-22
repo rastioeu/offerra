@@ -10,6 +10,8 @@
  * posledného znaku by pole vynulovalo na 0 a používateľ by prišiel
  * o rozpísanú hodnotu. Prevod robí `num()` až pri ukladaní.
  */
+import type { TFunc } from '@/i18n';
+
 import type {
   Furnishing,
   Property,
@@ -163,12 +165,12 @@ export function formToCandidate(base: Property, f: ListingForm): Property {
  * navrhnuté: kraj sa dopĺňa sám z obce, presnú adresu zámerne nepýtame
  * a cenu má právo nepovedať ten, kto chce počuť ponuky.
  */
-export function missingForPublish(p: Property, photoCount: number): string[] {
+export function missingForPublish(t: TFunc, p: Property, photoCount: number): string[] {
   const missing: string[] = [];
-  if (!p.title.trim()) missing.push('názov inzerátu');
-  if (!p.city) missing.push('mesto');
-  if (p.property_type !== 'LAND' && p.rooms == null) missing.push('počet izieb');
-  if (p.area_m2 == null) missing.push('výmera');
-  if (photoCount < 1) missing.push('aspoň jedna fotka');
+  if (!p.title.trim()) missing.push(t('listingForm.missingTitle'));
+  if (!p.city) missing.push(t('listingForm.missingCity'));
+  if (p.property_type !== 'LAND' && p.rooms == null) missing.push(t('listingForm.missingRooms'));
+  if (p.area_m2 == null) missing.push(t('listingForm.missingArea'));
+  if (photoCount < 1) missing.push(t('listingForm.missingPhoto'));
   return missing;
 }

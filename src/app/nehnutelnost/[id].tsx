@@ -52,6 +52,7 @@ import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { formatAmount } from '@/lib/offers';
 import { fetchVerified, ratingLabel, type Verified } from '@/lib/rating';
 import { fetchPriceHistory, priceSummary, type PriceChange } from '@/lib/price-history';
@@ -65,12 +66,12 @@ import {
   formatDate,
   formatPrice,
   isDeadlinePassed,
-  PROPERTY_LABEL,
+  getPropertyLabel,
   buildingRows,
   closedLabel,
   deadlineOutcome,
   rentalRows,
-  TRANSACTION_LABEL,
+  getTransactionLabel,
 } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -78,6 +79,7 @@ const SCREEN_W = Dimensions.get('window').width;
 
 export default function PropertyDetailScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -137,7 +139,7 @@ export default function PropertyDetailScreen() {
       cancelled = true;
     };
   }, [id]);
-  const priceNote = item ? priceSummary(priceHistory, item.transaction_type) : null;
+  const priceNote = item ? priceSummary(t, priceHistory, item.transaction_type) : null;
 
   const [verified, setVerified] = useState<Verified | null>(null);
   useEffect(() => {
@@ -158,8 +160,8 @@ export default function PropertyDetailScreen() {
   // nie je „ponuka na inzeráte".
   const live = (offers ?? []).filter((o) => o.status === 'PENDING' || o.status === 'ACCEPTED');
   const topOffer = live.length > 0 ? Math.max(...live.map((o) => o.amount)) : null;
-  const pd = item ? priceDisplay(item.asking_price_hint, topOffer, live.length) : null;
-  const deadline = item ? deadlineLabel(item.offer_deadline) : null;
+  const pd = item ? priceDisplay(t, item.asking_price_hint, topOffer, live.length) : null;
+  const deadline = item ? deadlineLabel(t, language, item.offer_deadline) : null;
   const isOffer = Boolean(pd && pd.headline === 'TOP_OFFER' && pd.topOffer != null);
 
   function onGalleryScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
@@ -185,6 +187,8 @@ export default function PropertyDetailScreen() {
   // otázku „a teraz čo" — dovtedy odpočet dobehol a nestalo sa nič
   // (Rastio, 17.8.2026). Texty aj akcie rozhoduje `deadlineOutcome`.
   const outcome = deadlineOutcome({
+    t,
+    language,
     deadline: item?.offer_deadline ?? null,
     active: item?.status === 'ACTIVE',
     offerCount: offers?.length ?? 0,
@@ -205,7 +209,7 @@ export default function PropertyDetailScreen() {
       // „Spravovať ponuky" by viedlo na to isté. Úprava inzerátu naopak
       // z detailu neviedla nikam — teraz je to hlavná akcia majiteľa.
       return {
-        title: 'Upraviť inzerát',
+        title: t('propertyDetail.editListingAction'),
         onPress: () => router.push({ pathname: '/inzerat/[id]', params: { id: item.id } }),
       };
     }
@@ -213,10 +217,10 @@ export default function PropertyDetailScreen() {
     // tlačidlo, ktoré by aj tak neprešlo, radšej nie je.
     if (closed || item.status === 'CLOSED') return null;
     if (!myId) {
-      return { title: 'Prihlás sa a ponúkni', onPress: () => router.push('/login') };
+      return { title: t('propertyDetail.loginToOfferAction'), onPress: () => router.push('/login') };
     }
     return {
-      title: myOffer ? 'Upraviť moju ponuku' : 'Podať ponuku',
+      title: myOffer ? t('propertyDetail.editMyOfferAction') : t('propertyDetail.makeOfferAction'),
       onPress: () => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } }),
     };
   }
@@ -224,10 +228,10 @@ export default function PropertyDetailScreen() {
 
   const params = item
     ? ([
-        formatArea(item.area_m2) ? { value: formatArea(item.area_m2) as string, label: 'Výmera' } : null,
-        item.rooms != null ? { value: String(item.rooms), label: 'Izby' } : null,
-        { value: PROPERTY_LABEL[item.property_type], label: 'Typ' },
-        { value: String(item.view_count), label: 'Zobrazení' },
+        formatArea(item.area_m2) ? { value: formatArea(item.area_m2) as string, label: t('propertyDetail.paramArea') } : null,
+        item.rooms != null ? { value: String(item.rooms), label: t('propertyDetail.paramRooms') } : null,
+        { value: getPropertyLabel(t)[item.property_type], label: t('propertyDetail.paramType') },
+        { value: String(item.view_count), label: t('propertyDetail.paramViews') },
       ].filter(Boolean) as { value: string; label: string }[])
     : [];
 
@@ -236,7 +240,7 @@ export default function PropertyDetailScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Detail',
+          title: t('propertyDetail.screenTitle'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -253,7 +257,7 @@ export default function PropertyDetailScreen() {
 
         {item === null && !error ? (
           <Text style={[styles.missing, { color: palette.textMuted }]}>
-            Tento inzerát neexistuje alebo už nie je zverejnený.
+            {t('propertyDetail.notFound')}
           </Text>
         ) : null}
 
@@ -278,7 +282,7 @@ export default function PropertyDetailScreen() {
                       // inak by `pagingEnabled` počítalo šírku z obsahu.
                       style={styles.heroPhoto}
                       accessibilityRole="button"
-                      accessibilityLabel={`Zobraziť fotku ${i + 1} na celú obrazovku`}>
+                      accessibilityLabel={t('propertyDetail.showPhotoFullscreen', { n: i + 1 })}>
                       <Image
                         source={{ uri: m.url }}
                         style={styles.heroPhoto}
@@ -290,18 +294,18 @@ export default function PropertyDetailScreen() {
                 </ScrollView>
               ) : (
                 <View style={[styles.heroPhoto, styles.noPhoto]}>
-                  <Text style={{ color: palette.textMuted }}>Bez fotky</Text>
+                  <Text style={{ color: palette.textMuted }}>{t('propertyDetail.noPhoto')}</Text>
                 </View>
               )}
 
               <View style={styles.heroBadges}>
-                <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
+                <Badge text={getTransactionLabel(t)[item.transaction_type].toUpperCase()} tone="navy" />
                 {/* Uzavretý obchod musí byť vidieť HNEĎ, nie až po scrollovaní —
                     inak človek podá ponuku na niečo, čo je dávno preč. */}
                 {item.status === 'CLOSED' ? (
-                  <Badge text={closedLabel(item.transaction_type).toUpperCase()} tone="warning" />
+                  <Badge text={closedLabel(t, item.transaction_type).toUpperCase()} tone="warning" />
                 ) : null}
-                {item.is_seed ? <Badge text="UKÁŽKA" tone="warning" /> : null}
+                {item.is_seed ? <Badge text={t('propertyDetail.sampleBadge')} tone="warning" /> : null}
               </View>
 
               <View style={styles.heroActions}>
@@ -312,7 +316,7 @@ export default function PropertyDetailScreen() {
                     onPress={() => openLightbox(photo)}
                     hitSlop={10}
                     accessibilityRole="button"
-                    accessibilityLabel="Zobraziť fotky na celú obrazovku">
+                    accessibilityLabel={t('propertyDetail.showPhotosFullscreen')}>
                     <Icon
                       name="arrow.up.left.and.arrow.down.right"
                       size={22}
@@ -325,7 +329,7 @@ export default function PropertyDetailScreen() {
                   onPress={() => void shareProperty(item)}
                   hitSlop={10}
                   accessibilityRole="button"
-                  accessibilityLabel="Zdieľať inzerát">
+                  accessibilityLabel={t('propertyDetail.shareListing')}>
                   <Icon name="square.and.arrow.up" size={24} color={palette.surface} weight="semibold" />
                 </Pressable>
                 {myId ? (
@@ -375,7 +379,9 @@ export default function PropertyDetailScreen() {
                 {/* Kto inzeruje. Doteraz to na detaile vidieť nebolo — prezývka
                     sa objavila až pri ponukách, čo je neskoro. */}
                 <Text style={[styles.place, { color: palette.textMuted }]}>
-                  Pridal: {isOwner ? 'ty' : (item.owner?.nickname ?? 'neznámy')}
+                  {t('propertyDetail.addedBy', {
+                    who: isOwner ? t('propertyDetail.addedByYou') : (item.owner?.nickname ?? t('propertyDetail.addedByUnknown')),
+                  })}
                   {ownerRating ? ` · ${ownerRating}` : ''}
                 </Text>
                 {/* Odznak nikdy nestojí sám — vedľa neho je VETA, čo bolo
@@ -383,7 +389,7 @@ export default function PropertyDetailScreen() {
                     vznikol, je pri nehnuteľnostiach nebezpečná ozdoba. */}
                 {verified?.verified_at ? (
                   <View style={styles.verifiedRow}>
-                    <Badge text="OVERENÝ" tone="accent" />
+                    <Badge text={t('propertyDetail.verifiedBadge')} tone="accent" />
                     <Text style={[styles.place, { color: palette.textMuted }]}>
                       {verified.verified_note}
                     </Text>
@@ -398,20 +404,20 @@ export default function PropertyDetailScreen() {
                   Shadow.card,
                   { backgroundColor: palette.surface, borderColor: palette.border },
                 ]}>
-                <Eyebrow>{isOffer ? 'Najvyššia ponuka' : 'Orientačná cena'}</Eyebrow>
+                <Eyebrow>{isOffer ? t('propertyDetail.topOfferEyebrow') : t('propertyDetail.askingPriceEyebrow')}</Eyebrow>
                 <Text style={[styles.money, { color: isOffer ? palette.accent : palette.primary }]}>
                   {isOffer
-                    ? formatAmount(pd.topOffer as number, item.transaction_type)
-                    : (formatPrice(pd.asking, item.transaction_type) ?? 'Neuvedená')}
+                    ? formatAmount(t, pd.topOffer as number, item.transaction_type)
+                    : (formatPrice(t, pd.asking, item.transaction_type) ?? t('propertyDetail.priceNotGiven'))}
                 </Text>
                 <Text style={[styles.priceSub, { color: palette.textMuted }]}>
                   {[
                     isOffer && pd.asking != null
-                      ? `orientačne ${formatPrice(pd.asking, item.transaction_type)}`
+                      ? t('propertyDetail.askingApprox', { price: formatPrice(t, pd.asking, item.transaction_type) ?? '' })
                       : isOffer
-                        ? 'cenu predávajúci neuviedol'
+                        ? t('propertyDetail.sellerNoPrice')
                         : null,
-                    offerCountLabel(pd.offerCount) ?? 'zatiaľ bez ponúk',
+                    offerCountLabel(t, language, pd.offerCount) ?? t('propertyDetail.noOffersYet'),
                   ]
                     .filter(Boolean)
                     .join(' · ')}
@@ -466,16 +472,16 @@ export default function PropertyDetailScreen() {
 
               {item.address_hidden ? (
                 <Text style={[styles.hidden, { color: palette.textMuted }]}>
-                  Presná adresa je skrytá — zobrazí sa až po dohode s predávajúcim.
+                  {t('propertyDetail.addressHidden')}
                 </Text>
               ) : null}
 
               {/* O byte a budove — pri predaji ROVNAKO ako pri prenájme. */}
-              {buildingRows(item).length > 0 ? (
+              {buildingRows(t, language, item).length > 0 ? (
                 <Card>
-                  <Eyebrow>O byte a budove</Eyebrow>
+                  <Eyebrow>{t('propertyDetail.buildingEyebrow')}</Eyebrow>
                   <View style={styles.grid}>
-                    {buildingRows(item).map((r) => (
+                    {buildingRows(t, language, item).map((r) => (
                       <ParamCell key={r.label} value={r.value} label={r.label} />
                     ))}
                   </View>
@@ -483,11 +489,11 @@ export default function PropertyDetailScreen() {
               ) : null}
 
               {/* Podmienky prenájmu — pri predaji ich niet z čoho postaviť. */}
-              {rentalRows(item).length > 0 ? (
+              {rentalRows(t, language, item).length > 0 ? (
                 <Card>
-                  <Eyebrow>Podmienky prenájmu</Eyebrow>
+                  <Eyebrow>{t('propertyDetail.rentalEyebrow')}</Eyebrow>
                   <View style={styles.grid}>
-                    {rentalRows(item).map((r) => (
+                    {rentalRows(t, language, item).map((r) => (
                       <ParamCell key={r.label} value={r.value} label={r.label} />
                     ))}
                   </View>
@@ -522,19 +528,19 @@ export default function PropertyDetailScreen() {
               />
 
               <Text style={[styles.added, { color: palette.textMuted }]}>
-                Pridané {formatDate(item.created_at)}
+                {t('propertyDetail.addedOn', { date: formatDate(language, item.created_at) })}
               </Text>
 
               {!isOwner ? (
                 <View style={styles.reportRow}>
-                  <ReportButton targetType="PROPERTY" targetId={item.id} label="Nahlásiť inzerát" compact />
-                  <ReportButton targetType="USER" targetId={item.owner_id} label="Nahlásiť používateľa" compact />
+                  <ReportButton targetType="PROPERTY" targetId={item.id} label={t('propertyDetail.reportListing')} compact />
+                  <ReportButton targetType="USER" targetId={item.owner_id} label={t('propertyDetail.reportUser')} compact />
                   {/* Realitka sa pozná podľa toho, KTO inzeruje, nie podľa
                       jedného inzerátu — preto mieri na používateľa. */}
                   <ReportButton
                     targetType="USER"
                     targetId={item.owner_id}
-                    label="Nahlásiť realitku"
+                    label={t('propertyDetail.reportAgency')}
                     presetReason="REALITKA"
                     compact
                   />
@@ -572,7 +578,7 @@ export default function PropertyDetailScreen() {
           <Pressable
             onPress={() => void shareProperty(item)}
             accessibilityRole="button"
-            accessibilityLabel="Zdieľať inzerát"
+            accessibilityLabel={t('propertyDetail.shareListing')}
             style={({ pressed }) => [
               styles.ghost,
               { borderColor: palette.borderStrong, opacity: pressed ? 0.7 : 1 },

@@ -22,6 +22,7 @@ import { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation, type TFunc } from '@/i18n';
 import { coverPhotoIndex } from '@/lib/cover-photo';
 import { formatAmount } from '@/lib/offers';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
@@ -32,8 +33,8 @@ import {
   formatRooms,
   formatDate,
   formatPrice,
-  PROPERTY_LABEL,
-  TRANSACTION_LABEL,
+  getPropertyLabel,
+  getTransactionLabel,
   type PropertyWithMedia,
 } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
@@ -82,6 +83,7 @@ export function PropertyCard({
 }) {
   const palette = useTheme();
   const router = useRouter();
+  const { t, language } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
   // Rotuje raz za spustenie appky, nie pri každom prekreslení — pozri
   // `cover-photo.ts`.
@@ -97,44 +99,44 @@ export function PropertyCard({
     setImgFailed(false);
   }, [cover]);
   const showPlaceholder = !cover || imgFailed;
-  const deadline = deadlineLabel(item.offer_deadline);
+  const deadline = deadlineLabel(t, language, item.offer_deadline);
   // Menej než 3 dni = štítok sa sfarbí varovne. Urgencia patrí do FARBY,
   // text ostáva ten istý.
   const urgency = deadlineUrgency(item.offer_deadline);
   // Text sa počíta zo ŽIVÉHO počtu ponúk, nie z toho, či je vyplnená cena.
-  const pd = priceDisplay(item.asking_price_hint, item.top_offer ?? null, item.offer_count ?? 0);
+  const pd = priceDisplay(t, item.asking_price_hint, item.top_offer ?? null, item.offer_count ?? 0);
 
   const facts = [
     item.city,
-    formatRooms(item.rooms),
+    formatRooms(t, language, item.rooms),
     formatArea(item.area_m2),
   ].filter(Boolean) as string[];
 
   // Ľavý stĺpec pätky = hlavné číslo. Pravý = to druhé, menšie a sivé.
   const isOffer = pd.headline === 'TOP_OFFER' && pd.topOffer != null;
-  const headlineLabel = isOffer ? 'Najvyššia ponuka' : 'Orientačná cena';
+  const headlineLabel = isOffer ? t('propertyCard.topOffer') : t('propertyCard.askingPrice');
   const headlineValue = isOffer
-    ? formatAmount(pd.topOffer as number, item.transaction_type)
-    : formatPrice(pd.asking, item.transaction_type);
+    ? formatAmount(t, pd.topOffer as number, item.transaction_type)
+    : formatPrice(t, pd.asking, item.transaction_type);
   const asideLines = isOffer
     ? pd.asking != null
-      ? ['orientačne', formatPrice(pd.asking, item.transaction_type) as string]
-      : ['cenu', 'neuviedol']
-    : [offerCountLabel(pd.offerCount) ?? 'zatiaľ bez', offerCountLabel(pd.offerCount) ? '' : 'ponúk'];
+      ? [t('priceDisplay.indicative'), formatPrice(t, pd.asking, item.transaction_type) as string]
+      : [t('propertyCard.priceNotGiven1'), t('propertyCard.priceNotGiven2')]
+    : [offerCountLabel(t, language, pd.offerCount) ?? t('propertyCard.noOffersYet1'), offerCountLabel(t, language, pd.offerCount) ? '' : t('propertyCard.noOffersYet2')];
 
   const actions: LongPressAction[] = [
     ...(onToggleFavorite
       ? [
           {
-            label: favorite ? 'Odobrať z obľúbených' : 'Pridať do obľúbených',
+            label: favorite ? t('propertyCard.removeFavorite') : t('propertyCard.addFavorite'),
             icon: favorite ? ('heart.fill' as const) : ('heart' as const),
             onPress: () => void onToggleFavorite(),
           },
         ]
       : []),
-    { label: 'Zdieľať', icon: 'square.and.arrow.up' as const, onPress: () => void shareProperty(item) },
+    { label: t('propertyCard.share'), icon: 'square.and.arrow.up' as const, onPress: () => void shareProperty(item) },
     ...(onReport
-      ? [{ label: 'Nahlásiť', icon: 'flag' as const, onPress: onReport, destructive: true }]
+      ? [{ label: t('propertyCard.report'), icon: 'flag' as const, onPress: onReport, destructive: true }]
       : []),
   ];
 
@@ -157,23 +159,23 @@ export function PropertyCard({
         ) : (
           <View style={styles.noPhotoWrap}>
             <Icon name="house" size={32} color={palette.textMuted} />
-            <Text style={[styles.noPhoto, { color: palette.textMuted }]}>Bez fotky</Text>
+            <Text style={[styles.noPhoto, { color: palette.textMuted }]}>{t('propertyCard.noPhoto')}</Text>
           </View>
         )}
         <View style={styles.badges}>
-          <Badge text={TRANSACTION_LABEL[item.transaction_type].toUpperCase()} tone="navy" />
-          <Badge text={PROPERTY_LABEL[item.property_type]} tone="onPhoto" />
+          <Badge text={getTransactionLabel(t)[item.transaction_type].toUpperCase()} tone="navy" />
+          <Badge text={getPropertyLabel(t)[item.property_type]} tone="onPhoto" />
           {/* „Tvoj inzerát" vidí LEN vlastník — porovnáva sa na klientovi
               s jeho vlastným id. Cudziemu sa nezobrazí nič navyše a nič
               sa tým neodkrýva: `owner_id` je vo verejnom výpise aj tak. */}
-          {mine ? <Badge text="TVOJ INZERÁT" tone="accent" /> : null}
+          {mine ? <Badge text={t('propertyCard.yourListing')} tone="accent" /> : null}
         </View>
         <View style={styles.actions}>
           <Pressable
             onPress={() => void shareProperty(item)}
             hitSlop={10}
             accessibilityRole="button"
-            accessibilityLabel="Zdieľať inzerát">
+            accessibilityLabel={t('propertyCard.shareListing')}>
             <Icon name="square.and.arrow.up" size={22} color={palette.surface} weight="semibold" />
           </Pressable>
           {onToggleFavorite ? (
@@ -230,14 +232,14 @@ export function PropertyCard({
               vyzerá mŕtvo a nepovie nič. Rovnaký prah ako pri konverzii
               v „Moje inzeráty" — jedno pravidlo, nie dve. */}
           {[
-            `Pridané ${formatDate(item.created_at)}`,
-            item.view_count >= VIEWS_SHOWN_FROM ? `${item.view_count} zobrazení` : null,
+            t('propertyCard.addedOn', { date: formatDate(language, item.created_at) }),
+            item.view_count >= VIEWS_SHOWN_FROM ? t('propertyCard.viewCount', { count: item.view_count }) : null,
             // Počet ponúk hovorí, či sa oplatí kliknúť — veľa ponúk =
             // žiadaný inzerát. Pri NULE sa vynecháva: `offerCountLabel`
             // vracia `null` a „0 ponúk" by pôsobilo sucho. Absenciu už
             // aj tak povie pätka vpravo („zatiaľ bez ponúk"), takže by
             // to bolo aj dvakrát to isté.
-            offerCountLabel(pd.offerCount),
+            offerCountLabel(t, language, pd.offerCount),
           ]
             .filter(Boolean)
             .join(' · ')}

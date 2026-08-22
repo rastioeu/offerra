@@ -20,6 +20,16 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '22. augusta 2026',
+    title: 'Appka hovorí po slovensky, anglicky aj nemecky',
+    items: [
+      'Celé rozhranie appky — obrazovky, tlačidlá, hlášky — je teraz preložené do troch jazykov. Predvolene sa appka nastaví podľa jazyka tvojho telefónu.',
+      'V Nastaveniach pribudla voľba „Jazyk rozhrania" — dá sa prepnúť kedykoľvek a appka si to zapamätá.',
+      'Inzeráty, dopyty a správy zostávajú v jazyku, v akom ich napísal ich autor — tie appka neprekladá.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '19. augusta 2026',
     title: 'Zrušená obhliadka už nie je koniec',
     items: [

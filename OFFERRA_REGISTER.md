@@ -5265,6 +5265,81 @@ na OOM, viď 27.8) — iOS update `01a018d2-…`, Android update `01a018d6-…`.
 
 ---
 
+## Fáza 30 — Lokalizácia UI do SK/EN/DE (22.8.2026)
+
+Zadanie (Rastio, oprava predošlého): kompletná lokalizácia rozhrania do
+troch jazykov, **žiadny AI preklad inzerátov** (tie zostávajú v jazyku
+autora, žiadne `title_sk`/`title_en` polia v DB). Predvolený jazyk podľa
+telefónu, manuálny prepínač v Nastaveniach s pamäťou voľby. Plný report:
+`reports/LOKALIZACIA_SK_EN_DE.md`.
+
+### 30.1 Vlastná i18n vrstva namiesto `i18next` — 🔴 ODCHÝLKA OD ZADANIA, S DÔVODOM
+
+`npm install` je v tomto prostredí zablokovaný (register 26.6), takže sa
+nedal reálne nainštalovať `i18next`/`react-i18next`. Postavená vlastná
+vrstva `src/i18n/index.tsx` (Context + `AsyncStorage`) v ROVNAKOM tvare
+dát ako `i18next` — JSON po doménach, kľúč `domain.key`, `{{premenná}}`
+interpolácia — aby sa dala neskôr 1:1 nahradiť skutočnou knižnicou.
+Jazyk telefónu cez `Intl.DateTimeFormat().resolvedOptions().locale`
+(Hermes, žiadny natívny modul) namiesto `expo-localization` (nový natívny
+modul → nový build, viď §9). **`package.json` sa v celej fáze nedotkol**
+(`git diff --stat package.json` prázdne) — fingerprint nemenený, ide OTA.
+
+### 30.2 Rozsah — ✅ OVERENÉ RUNTIME (typecheck + audit), 🟡 ČAKÁ VIZUÁLNE OVERENIE
+
+Preložené: všetky obrazovky (`src/app/**`), zdieľané komponenty
+(`src/components/**`), aj `lib`/`hooks` funkcie generujúce UI text
+(formátovanie cien/dátumov, štítky stavu, validácie, Alert/toast texty,
+accessibility labely) — 1037 rôznych `t('domain.key')` volaní. Slovenské
+3-tvarové skloňovanie (izba/izby/izieb, ponuka/ponuky/ponúk) zachované
+cez `language === 'sk'` vetvu, EN/DE majú 2 tvary.
+
+**Vedomé výnimky (zostávajú len po slovensky):** `src/lib/legal.ts`
+(právny text zdieľaný s vygenerovaným webom — preklad je Rastiovo
+rozhodnutie, nie technická úloha), obsah `src/lib/changelog.ts`
+(historický záznam podľa §7, obrazovka okolo neho lokalizovaná je),
+`src/lib/errors.ts` slovník `FRIENDLY` + dve chyby v `src/lib/push.ts`
+(technické hlášky pre okrajové prípady, volané z ~100 miest — mechanicky
+zvládnuteľné, ale mimo rozsahu tejto fázy), a texty z reálnych slovenských
+dát (Register adries MV SR, prezývky, popisy inzerátov — to by bol presne
+ten zakázaný AI preklad obsahu).
+
+### 30.3 Automatizovaná kontrola — `scripts/check-i18n.ts`, **14/14**
+
+Nový skript (vzor MUTARK `i18n-audit.mjs`): rovnaká množina kľúčov vo
+všetkých troch jazykoch (mimo zdokumentovaných SK-only skloňovacích
+kľúčov), žiadny neúmyselne prázdny preklad, `{{premenné}}` sedia sk↔en↔de
+pre každý kľúč, každé `t()` volanie v `src/` má zodpovedajúci kľúč.
+**NEDOKAZUJE** jazykovú správnosť ani vizuálny výsledok (§1).
+
+### 30.4 Ostatné overenia — ✅ OVERENÉ RUNTIME
+
+`npx tsc --noEmit -p .` → 0 chýb (celý projekt). `check-deadline.ts` aj
+`check-filters.ts` → VŠETKO OK (lokálne makety `t()` v skriptoch, aby sa
+vyhli AsyncStorage/React importu). Všetky tri `locales/*.json` → platný
+JSON.
+
+### 30.5 🟡 ČO MÁ RASTIO OVERIŤ NA TELEFÓNE
+
+Nedá sa overiť v tomto prostredí (žiadny simulátor, §3):
+
+1. Prepnutie jazyka telefónu (SK/DE/inde→EN) → appka sa pri otvorení sama
+   nastaví podľa pravidla vyššie.
+2. Manuálny prepínač v Nastaveniach — okamžitá zmena bez reštartu, voľba
+   prežije zatvorenie appky.
+3. Vizuálna kontrola EN aj DE na katalógu, detaile inzerátu, formulári
+   nového inzerátu, admin konzole, Nastaveniach — hlavne dlhšie nemecké
+   texty, ktoré sa môžu orezať.
+4. Slovenské skloňovanie stále funguje („1 izba"/„3 izby"/„5 izieb" a
+   podobne pre ponuky).
+
+### 30.6 IDE OTA
+
+Žiadny natívny modul nepribudol, `package.json` nedotknutý — `eas update`
+stačí.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

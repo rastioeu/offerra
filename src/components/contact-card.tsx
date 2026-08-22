@@ -16,12 +16,14 @@ import { useFormDraft } from '@/hooks/use-form-draft';
 import { useProfile, profileForm, saveProfile } from '@/hooks/use-profile';
 import { useSession } from '@/hooks/use-session';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 import { Button, Card, ErrorNote, Field, SectionLabel } from './ui';
 
 export function ContactCard() {
   const palette = useTheme();
+  const { t } = useTranslation();
   const toast = useToast();
   const { session } = useSession();
   const { profile, reload } = useProfile();
@@ -41,6 +43,7 @@ export function ContactCard() {
     setBusy(true);
     setError(null);
     const problem = await saveProfile(
+      t,
       userId,
       { full_name: form.fullName.trim() || null, phone: form.phone.trim() || null },
       false
@@ -54,7 +57,7 @@ export function ContactCard() {
     // Až teraz smie rozpísané zmiznúť — server sa mu práve vyrovnal.
     saved();
     await reload();
-    toast('Údaje uložené');
+    toast(t('contactCard.savedToast'));
   }
 
   if (!profile) return null;
@@ -62,43 +65,42 @@ export function ContactCard() {
 
   return (
     <Card>
-      <SectionLabel>SKRYTÉ ÚDAJE</SectionLabel>
+      <SectionLabel>{t('contactCard.hiddenSection')}</SectionLabel>
       <Text style={[styles.hint, { color: palette.textMuted }]}>
-        Vidí ich LEN protistrana prijatej ponuky, a to až po jej prijatí.
-        Nikto iný sa k nim nedostane — ani technicky.
+        {t('contactCard.hint')}
       </Text>
 
       <ErrorNote error={error} />
 
       {editing && form ? (
         <>
-          <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
+          <Row label={t('contactCard.emailLabel')} value={session?.user.email ?? t('contactCard.emailNotAvailable')} />
           <Text style={[styles.hint, { color: palette.textMuted }]}>
-            E-mail sa mení cez prihlásenie, nie tu.
+            {t('contactCard.emailChangeHint')}
           </Text>
           <Field
-            label="Meno a priezvisko"
+            label={t('contactCard.fullNameLabel')}
             value={form.fullName}
             onChangeText={(v) => set({ fullName: v })}
           />
-          <Field label="Telefón" value={form.phone} onChangeText={(v) => set({ phone: v })} />
-          <Button title={busy ? 'Ukladám…' : 'Uložiť'} onPress={save} disabled={busy} />
-          <Button title="Zrušiť" onPress={() => setEditing(false)} variant="outline" disabled={busy} />
+          <Field label={t('contactCard.phoneLabel')} value={form.phone} onChangeText={(v) => set({ phone: v })} />
+          <Button title={busy ? t('contactCard.savingButton') : t('contactCard.saveButton')} onPress={save} disabled={busy} />
+          <Button title={t('contactCard.cancelButton')} onPress={() => setEditing(false)} variant="outline" disabled={busy} />
         </>
       ) : (
         <>
           {/* E-mail sa NEDÁ upraviť. Zmena e-mailu má vlastný overovací tok
               cez Supabase Auth a pole, ktoré sa tvári upraviteľne a nič
               neuloží, je horšie než read-only. */}
-          <Row label="E-mail" value={session?.user.email ?? 'nedostupný'} />
-          <Row label="Meno" value={profile.full_name ?? 'nevyplnené'} />
-          <Row label="Telefón" value={profile.phone ?? 'nevyplnený'} />
+          <Row label={t('contactCard.emailLabel')} value={session?.user.email ?? t('contactCard.emailNotAvailable')} />
+          <Row label={t('contactCard.nameLabel')} value={profile.full_name ?? t('contactCard.nameNotGiven')} />
+          <Row label={t('contactCard.phoneLabel')} value={profile.phone ?? t('contactCard.phoneNotGiven')} />
           {missing ? (
             <Text style={[styles.warn, { color: palette.warning }]}>
-              Bez mena a telefónu sa ti druhá strana po prijatí ponuky nemá ako ozvať.
+              {t('contactCard.missingWarning')}
             </Text>
           ) : null}
-          <Button title="Upraviť údaje" onPress={() => setEditing(true)} variant="outline" />
+          <Button title={t('contactCard.editButton')} onPress={() => setEditing(true)} variant="outline" />
         </>
       )}
     </Card>

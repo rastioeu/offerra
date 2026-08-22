@@ -19,16 +19,18 @@ import { useNotificationPrefs } from '@/hooks/use-notification-prefs';
 import { useSession } from '@/hooks/use-session';
 import { ContactCard } from '@/components/contact-card';
 import { useToast } from '@/components/toast';
-import { useTheme, useThemeMode, THEME_MODE_LABEL, type ThemeMode } from '@/hooks/use-theme';
+import { useTheme, useThemeMode, getThemeModeLabel, type ThemeMode } from '@/hooks/use-theme';
 import { signOut } from '@/lib/auth';
 import { disablePushOnThisDevice, enablePush, getPushStatus, type PushStatus } from '@/lib/push';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
+import { useTranslation, SUPPORTED_LANGUAGES, type LanguageChoice } from '@/i18n';
 
 export default function NastaveniaScreen() {
   const palette = useTheme();
+  const { t, choice: languageChoice, setLanguage } = useTranslation();
   const { mode: themeMode, setMode: setThemeMode, effective: effectiveTheme } = useThemeMode();
   const toast = useToast();
   const router = useRouter();
@@ -50,22 +52,19 @@ export default function NastaveniaScreen() {
       if (on) {
         const result = await enablePush();
         setPushStatus(result);
-        if (result === 'granted') toast('Upozornenia zapnuté');
+        if (result === 'granted') toast(t('nastavenia.pushEnabled'));
         else if (result === 'denied') {
-          Alert.alert(
-            'Systém to nepovolil',
-            'Zapnúť sa to dá už len v nastaveniach telefónu: Nastavenia → Offerra → Oznámenia.'
-          );
+          Alert.alert(t('nastavenia.pushSystemDeniedTitle'), t('nastavenia.pushSystemDeniedBody'));
         }
       } else {
         await disablePushOnThisDevice();
         setPushStatus('undetermined');
-        toast('Upozornenia na tomto zariadení vypnuté', 'info');
+        toast(t('nastavenia.pushDisabledOnDevice'), 'info');
       }
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[PUSH] Prepnutie zlyhalo: ${m}`);
-      Alert.alert('Nepodarilo sa to', m);
+      Alert.alert(t('nastavenia.pushToggleFailedTitle'), m);
     } finally {
       setPushBusy(false);
     }
@@ -79,29 +78,24 @@ export default function NastaveniaScreen() {
       // Presmerovanie robí brána v `_layout.tsx`.
     } catch (e: unknown) {
       const m = errorText(e);
-      Alert.alert('Odhlásenie zlyhalo', m);
+      Alert.alert(t('nastavenia.signOutFailedTitle'), m);
       setBusy(false);
     }
   }
 
   function confirmDelete() {
-    Alert.alert(
-      'Zmazať účet?',
-      'Natrvalo sa zmaže tvoj profil, prezývka, všetky inzeráty aj s fotkami, ' +
-        'podané ponuky a dopyty. Nedá sa to vrátiť.',
-      [
-        { text: 'Zrušiť', style: 'cancel' },
-        {
-          text: 'Pokračovať',
-          style: 'destructive',
-          onPress: () =>
-            Alert.alert('Naozaj?', 'Toto je posledné potvrdenie. Účet sa zmaže okamžite.', [
-              { text: 'Zrušiť', style: 'cancel' },
-              { text: 'Zmazať účet', style: 'destructive', onPress: deleteAccount },
-            ]),
-        },
-      ]
-    );
+    Alert.alert(t('nastavenia.deleteAccountTitle'), t('nastavenia.deleteAccountBody'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.continue'),
+        style: 'destructive',
+        onPress: () =>
+          Alert.alert(t('nastavenia.confirmAgainTitle'), t('nastavenia.confirmAgainBody'), [
+            { text: t('common.cancel'), style: 'cancel' },
+            { text: t('nastavenia.deleteAccount'), style: 'destructive', onPress: deleteAccount },
+          ]),
+      },
+    ]);
   }
 
   async function deleteAccount() {
@@ -112,11 +106,11 @@ export default function NastaveniaScreen() {
       if (error) throw error;
       // Session už nemá za kým existovať — lokálne ju treba zahodiť tiež.
       await supabase.auth.signOut().catch(() => undefined);
-      Alert.alert('Účet zmazaný', 'Ďakujeme, že si to skúsil.');
+      Alert.alert(t('nastavenia.accountDeletedTitle'), t('nastavenia.accountDeletedBody'));
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[NASTAVENIA] Zmazanie účtu zlyhalo: ${m}`);
-      Alert.alert('Zmazanie účtu zlyhalo', m);
+      Alert.alert(t('nastavenia.deleteAccountFailedTitle'), m);
       setBusy(false);
     }
   }
@@ -137,11 +131,11 @@ export default function NastaveniaScreen() {
       const { data, error } = await db().rpc('export_my_data');
       if (error) throw error;
       const json = JSON.stringify(data, null, 2);
-      await Share.share({ message: json, title: 'Moje dáta z Offerra' });
+      await Share.share({ message: json, title: t('nastavenia.exportShareTitle') });
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[NASTAVENIA] Export dát zlyhal: ${m}`);
-      Alert.alert('Export sa nepodaril', m);
+      Alert.alert(t('nastavenia.exportFailedTitle'), m);
     } finally {
       setExporting(false);
     }
@@ -152,7 +146,7 @@ export default function NastaveniaScreen() {
       <Stack.Screen
         options={{
           headerShown: true,
-          title: 'Nastavenia',
+          title: t('nastavenia.title'),
           headerTintColor: palette.primary,
           headerStyle: { backgroundColor: palette.surface },
         }}
@@ -166,32 +160,27 @@ export default function NastaveniaScreen() {
         {/* Vzhľad je druhý. Kto sa sem prišiel dostať z tmavej appky späť na
             svetlú, nemá čo hľadať pod tromi kartami upozornení. */}
         <Card>
-          <SectionLabel>VZHĽAD</SectionLabel>
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Offerra je navrhnutá ako svetlá. „Podľa telefónu" znamená, že sa
-            prepne na tmavú vždy, keď je tmavý režim zapnutý v systéme.
-          </Text>
+          <SectionLabel>{t('nastavenia.appearanceSection')}</SectionLabel>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.appearanceHint')}</Text>
           <ChoiceRow<ThemeMode>
-            label="Režim"
+            label={t('nastavenia.modeLabel')}
             options={(['light', 'dark', 'system'] as ThemeMode[]).map((m) => ({
               value: m,
-              label: THEME_MODE_LABEL[m],
+              label: getThemeModeLabel(t)[m],
             }))}
             value={themeMode}
             onChange={(v) => setThemeMode(v ?? 'light')}
           />
           <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Teraz je zapnutý {effectiveTheme === 'dark' ? 'tmavý' : 'svetlý'} vzhľad.
-            Voľba sa pamätá aj po zatvorení appky.
+            {t('nastavenia.appearanceNowHint', {
+              mode: effectiveTheme === 'dark' ? t('nastavenia.appearanceNowDark') : t('nastavenia.appearanceNowLight'),
+            })}
           </Text>
         </Card>
 
         <Card>
-          <SectionLabel>UPOZORNENIA</SectionLabel>
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Prepínače nižšie platia pre oznámenia v appke aj pre push na telefón.
-            Vypnutý typ neposiela ani jedno.
-          </Text>
+          <SectionLabel>{t('nastavenia.notificationsSection')}</SectionLabel>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.notificationsHint')}</Text>
 
           {/* Povolenie sa pýta VÝHRADNE odtiaľto, z akcie používateľa.
               Kto ho raz odmietne, systém sa ho druhýkrát nespýta — takže
@@ -200,16 +189,16 @@ export default function NastaveniaScreen() {
             <View style={styles.switchRow}>
               <View style={styles.switchText}>
                 <Text style={[styles.label, { color: palette.textPrimary }]}>
-                  Upozornenia na telefóne
+                  {t('nastavenia.pushRowLabel')}
                 </Text>
                 <Text style={[styles.hint, { color: palette.textMuted }]}>
                   {pushStatus === 'granted'
-                    ? 'Zapnuté. Oznámenia chodia aj keď máš appku zavretú.'
+                    ? t('nastavenia.pushGrantedHint')
                     : pushStatus === 'denied'
-                      ? 'Zakázané v nastaveniach telefónu. Povoliť sa to dá už len tam: Nastavenia → Offerra → Oznámenia.'
+                      ? t('nastavenia.pushDeniedHint')
                       : pushStatus === 'unavailable'
-                        ? 'Táto verzia appky ich ešte nevie — pribudnú s najbližšou aktualizáciou z TestFlightu.'
-                        : 'Zapni, ak chceš vedieť o novej ponuke aj so zavretou appkou.'}
+                        ? t('nastavenia.pushUnavailableHint')
+                        : t('nastavenia.pushDefaultHint')}
                 </Text>
               </View>
               <Switch
@@ -222,48 +211,48 @@ export default function NastaveniaScreen() {
           </View>
           <ErrorNote error={prefError} />
 
-          <NotificationTypeList prefs={prefs} onChange={(t, patch) => void save(t, patch)} />
+          <NotificationTypeList prefs={prefs} onChange={(type, patch) => void save(type, patch)} />
         </Card>
 
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>JAZYK</Text>
-          <Text style={[styles.label, { color: palette.textPrimary }]}>Slovenčina</Text>
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Offerra je zatiaľ len po slovensky. Ďalšie jazyky pribudnú neskôr.
-          </Text>
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('nastavenia.languageSection')}</Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.languageHint')}</Text>
+          <ChoiceRow<LanguageChoice>
+            label={t('nastavenia.languageLabel')}
+            options={[
+              ...SUPPORTED_LANGUAGES.map((l) => ({ value: l.code as LanguageChoice, label: l.native })),
+              { value: 'system' as LanguageChoice, label: t('nastavenia.languageSystem') },
+            ]}
+            value={languageChoice}
+            onChange={(v) => setLanguage(v ?? 'system')}
+          />
         </Card>
 
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>O APPKE</Text>
-          <Button title="Ako funguje Offerra" onPress={() => router.push('/ako-funguje')} variant="outline" />
-          <Button title="Čo je nové" onPress={() => router.push('/novinky')} variant="outline" />
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('nastavenia.aboutSection')}</Text>
+          <Button title={t('nastavenia.howItWorks')} onPress={() => router.push('/ako-funguje')} variant="outline" />
+          <Button title={t('nastavenia.whatsNew')} onPress={() => router.push('/novinky')} variant="outline" />
           {/* Apple chce, aby sa používateľ k podmienkam dostal bez
               opustenia appky. Text je ten istý ako na verejnej stránke —
               generuje sa z jedného zdroja (`src/lib/legal.ts`). */}
           <Button
-            title="Ochrana osobných údajov"
+            title={t('nastavenia.privacyPolicy')}
             onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'privacy' } })}
             variant="outline"
           />
           <Button
-            title="Podmienky používania"
+            title={t('nastavenia.termsOfUse')}
             onPress={() => router.push({ pathname: '/legal/[doc]', params: { doc: 'terms' } })}
             variant="outline"
           />
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Zoznam zmien podľa verzií — podľa neho spoznáš, čo ti už dorazilo.
-          </Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.changelogHint')}</Text>
         </Card>
 
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>MOJE DÁTA</Text>
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Export všetkého, čo o tebe appka eviduje — profil, inzeráty, ponuky,
-            dopyty, obhliadky, hodnotenia, správy. Právo na prenositeľnosť údajov
-            podľa Zásad ochrany súkromia.
-          </Text>
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('nastavenia.dataSection')}</Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.dataHint')}</Text>
           <Button
-            title={exporting ? 'Pripravujem…' : 'Stiahnuť moje dáta'}
+            title={exporting ? t('nastavenia.exportPreparing') : t('nastavenia.exportButton')}
             onPress={exportData}
             variant="outline"
             disabled={exporting}
@@ -271,24 +260,19 @@ export default function NastaveniaScreen() {
         </Card>
 
         <Card>
-          <Text style={[styles.section, { color: palette.textMuted }]}>ÚČET</Text>
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Odhlásenie ti dáta nechá — vrátiš sa k nim po prihlásení. Zmazanie účtu
-            je nezvratné a zmaže aj inzeráty, ponuky a dopyty.
-          </Text>
+          <Text style={[styles.section, { color: palette.textMuted }]}>{t('nastavenia.accountSection')}</Text>
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.accountHint')}</Text>
           <Button
-            title={busy ? 'Pracujem…' : 'Odhlásiť sa'}
+            title={busy ? t('nastavenia.signOutBusy') : t('nastavenia.signOut')}
             onPress={handleSignOut}
             variant="outline"
             disabled={busy}
           />
-          <Button title="Zmazať účet" onPress={confirmDelete} variant="danger" disabled={busy} />
-          <Text style={[styles.hint, { color: palette.textMuted }]}>
-            Zmazanie účtu je nezvratné a pýta si dve potvrdenia.
-          </Text>
+          <Button title={t('nastavenia.deleteAccount')} onPress={confirmDelete} variant="danger" disabled={busy} />
+          <Text style={[styles.hint, { color: palette.textMuted }]}>{t('nastavenia.deleteAccountConfirmHint')}</Text>
         </Card>
 
-        <Button title="Späť" onPress={() => router.back()} variant="outline" />
+        <Button title={t('common.back')} onPress={() => router.back()} variant="outline" />
       </ScrollView>
     </SafeAreaView>
   );

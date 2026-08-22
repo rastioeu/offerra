@@ -17,6 +17,8 @@
  * Na rozdiel od ponuky obhliadka VEREJNÁ NIE JE. Ponuka je súťaž a jej
  * suma patrí na oči všetkým; obhliadka je súkromná dohoda dvoch ľudí.
  */
+import type { TFunc } from '@/i18n';
+
 import { db } from './property';
 
 export type ViewingStatus = 'REQUESTED' | 'CONFIRMED' | 'CONTACT_SHARED' | 'COMPLETED' | 'CANCELLED';
@@ -39,26 +41,28 @@ export type ViewingContact = {
   email: string | null;
 };
 
-export const VIEWING_STATUS_LABEL: Record<ViewingStatus, string> = {
-  REQUESTED: 'Čaká na potvrdenie',
-  CONFIRMED: 'Potvrdená — kontakt odkrytý',
-  CONTACT_SHARED: 'Kontakty odkryté',
-  COMPLETED: 'Po obhliadke',
-  CANCELLED: 'Zrušená',
-};
+export function getViewingStatusLabel(t: TFunc): Record<ViewingStatus, string> {
+  return {
+    REQUESTED: t('viewing.statusRequested'),
+    CONFIRMED: t('viewing.statusConfirmed'),
+    CONTACT_SHARED: t('viewing.statusContactShared'),
+    COMPLETED: t('viewing.statusCompleted'),
+    CANCELLED: t('viewing.statusCancelled'),
+  };
+}
 
 /**
  * Veta, ktorá musí byť pri tlačidle VIDNO PREDTÝM, než naň niekto klikne.
- * Je tu ako konštanta, nie zapísaná v obrazovke, aby sa nedala zmeniť na
+ * Je tu ako funkcia, nie zapísaná v obrazovke, aby sa nedala zmeniť na
  * jednom mieste a zabudnúť na druhom — je to podstata informovaného súhlasu.
  *
  * PREPÍSANÉ 13.8.2026 — predtým sľubovala OKAMŽITÉ odkrytie. Teraz je
  * pravda iná: žiadosť ide vlastníkovi a kontakt sa odkryje AŽ PO jeho
  * potvrdení. Veta, ktorá by tu klamala o mechanike, je horšia než žiadna.
  */
-export const VIEWING_CONSENT =
-  'Vlastník uvidí tvoju žiadosť pod prezývkou a po potvrdení sa vám navzájom zobrazí kontakt ' +
-  '— meno, telefón aj e-mail. Termín si potom dohodnete telefonicky mimo aplikácie.';
+export function getViewingConsent(t: TFunc): string {
+  return t('viewing.consent');
+}
 
 export async function requestViewing(propertyId: string, myId: string): Promise<Viewing> {
   const { data, error } = await db()

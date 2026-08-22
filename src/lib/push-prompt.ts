@@ -17,6 +17,8 @@
  */
 import { Alert } from 'react-native';
 
+import type { TFunc } from '@/i18n';
+
 import { errorText } from './errors';
 import { db } from './property';
 import { enablePush, getPushStatus } from './push';
@@ -24,14 +26,11 @@ import { enablePush, getPushStatus } from './push';
 /** Text sa líši podľa toho, čo človek práve spravil — inak by to bola fráza. */
 type Moment = 'OFFER' | 'LISTING';
 
-const BODY: Record<Moment, string> = {
-  OFFER:
-    'Keď predávajúci na tvoju ponuku odpovie, dáme ti vedieť — aj keď budeš mať appku zavretú.',
-  LISTING:
-    'Keď na tvoj inzerát niekto podá ponuku alebo požiada o obhliadku, dáme ti vedieť — aj so zavretou appkou.',
-};
+function bodyFor(t: TFunc, moment: Moment): string {
+  return moment === 'OFFER' ? t('pushPrompt.bodyOffer') : t('pushPrompt.bodyListing');
+}
 
-export async function maybeOfferPush(userId: string | undefined, moment: Moment): Promise<void> {
+export async function maybeOfferPush(t: TFunc, userId: string | undefined, moment: Moment): Promise<void> {
   if (!userId) return;
   try {
     const status = await getPushStatus();
@@ -47,14 +46,14 @@ export async function maybeOfferPush(userId: string | undefined, moment: Moment)
     if (error) throw error;
     if ((data ?? []).length > 0) return;
 
-    Alert.alert('Chceš o tom vedieť?', BODY[moment], [
+    Alert.alert(t('pushPrompt.title'), bodyFor(t, moment), [
       {
-        text: 'Teraz nie',
+        text: t('pushPrompt.notNow'),
         style: 'cancel',
         onPress: () => void remember(userId),
       },
       {
-        text: 'Zapnúť',
+        text: t('pushPrompt.enable'),
         onPress: () => {
           void remember(userId);
           void enablePush().catch((e: unknown) =>

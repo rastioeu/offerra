@@ -16,12 +16,13 @@ import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useSession } from '@/hooks/use-session';
 import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import type { AdminStats, AdminUser, ReportRow } from '@/lib/admin';
-import { db, formatDate, STATUS_LABEL, type PropertyStatus } from '@/lib/property';
+import { db, formatDate, getStatusLabel, type PropertyStatus } from '@/lib/property';
 import {
-  REPORT_REASONS,
-  REPORT_REASON_LABEL,
-  REPORT_STATUS_LABEL,
+  getReportReasons,
+  getReportReasonLabel,
+  getReportStatusLabel,
   type ReportReason,
   type ReportStatus,
 } from '@/lib/report';
@@ -164,6 +165,7 @@ type AdminProperty = {
 
 export default function AdminScreen() {
   const palette = useTheme();
+  const { t, language } = useTranslation();
   const toast = useToast();
   const confirmWithUndo = useUndoToast();
   const router = useRouter();
@@ -279,7 +281,7 @@ export default function AdminScreen() {
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] ${fn} zlyhalo: ${m}`);
-      Alert.alert('Akcia zlyhala', m);
+      Alert.alert(t('admin.actionFailedTitle'), m);
     }
   }
 
@@ -303,44 +305,43 @@ export default function AdminScreen() {
       const total = typeof data === 'number' ? data : 0;
       toast(
         hide
-          ? `Vybavené, inzerát je skrytý. Používateľ má ${total} potvrdených nahlásení.`
-          : `Vybavené. Používateľ má ${total} potvrdených nahlásení.`,
+          ? t('admin.resolvedHiddenToast', { total })
+          : t('admin.resolvedToast', { total }),
       );
       if (total >= 3) {
         Alert.alert(
-          'Opakované porušenia',
-          `Tento účet má ${total} potvrdených nahlásení. Zablokovať ho vieš v sekcii Používatelia — ` +
-            'appka to sama nespraví.',
+          t('admin.repeatViolationsTitle'),
+          t('admin.repeatViolationsBody', { total }),
         );
       }
     } catch (e: unknown) {
       const m = errorText(e);
       console.log(`[ADMIN] Vybavenie nahlásenia zlyhalo: ${m}`);
-      Alert.alert('Akcia zlyhala', m);
+      Alert.alert(t('admin.actionFailedTitle'), m);
     }
   }
 
   function reject(p: AdminProperty) {
-    Alert.alert('Skryť inzerát?', 'Zmizne z katalógu, ale ostane v databáze aj vlastníkovi.', [
-      { text: 'Zrušiť', style: 'cancel' },
+    Alert.alert(t('admin.hidePropertyTitle'), t('admin.hidePropertyBody'), [
+      { text: t('admin.cancel'), style: 'cancel' },
       {
-        text: 'Skryť',
+        text: t('admin.hidePropertyConfirm'),
         style: 'destructive',
         onPress: () =>
           call('admin_set_property_status',
-            { p_property_id: p.id, p_status: 'REJECTED', p_reason: 'Zamietnuté správcom' },
-            'Inzerát je skrytý z katalógu.'),
+            { p_property_id: p.id, p_status: 'REJECTED', p_reason: t('admin.rejectedByAdminReason') },
+            t('admin.propertyHiddenToast')),
       },
     ]);
   }
 
   function destroy(p: AdminProperty) {
-    Alert.alert('Zmazať natrvalo?', 'Zmaže sa aj s fotkami a ponukami. Nedá sa vrátiť.', [
-      { text: 'Zrušiť', style: 'cancel' },
+    Alert.alert(t('admin.deletePermanentlyTitle'), t('admin.deletePermanentlyBody'), [
+      { text: t('admin.cancel'), style: 'cancel' },
       {
-        text: 'Zmazať',
+        text: t('admin.delete'),
         style: 'destructive',
-        onPress: () => call('admin_delete_property', { p_property_id: p.id }, 'Inzerát je zmazaný.'),
+        onPress: () => call('admin_delete_property', { p_property_id: p.id }, t('admin.propertyDeletedToast')),
       },
     ]);
   }
@@ -352,33 +353,33 @@ export default function AdminScreen() {
    */
   function toggleVerified(u: AdminUser) {
     if (u.verified_at) {
-      Alert.alert('Odobrať overenie?', `${u.nickname} stratí odznak.`, [
-        { text: 'Zrušiť', style: 'cancel' },
+      Alert.alert(t('admin.removeVerificationTitle'), t('admin.removeVerificationBody', { nickname: u.nickname }), [
+        { text: t('admin.cancel'), style: 'cancel' },
         {
-          text: 'Odobrať',
+          text: t('admin.removeVerificationConfirm'),
           style: 'destructive',
-          onPress: () => call('admin_set_verified', { p_user_id: u.id, p_verified: false }, 'Overenie odobraté.'),
+          onPress: () => call('admin_set_verified', { p_user_id: u.id, p_verified: false }, t('admin.verificationRemovedToast')),
         },
       ]);
       return;
     }
     Alert.prompt?.(
-      'Overiť používateľa',
-      'Napíš, ČO si overil — táto veta sa zobrazí ľuďom pri jeho odznaku.',
+      t('admin.verifyUserTitle'),
+      t('admin.verifyUserBody'),
       [
-        { text: 'Zrušiť', style: 'cancel' },
+        { text: t('admin.cancel'), style: 'cancel' },
         {
-          text: 'Overiť',
+          text: t('admin.verifyConfirm'),
           onPress: (note?: string) =>
             call(
               'admin_set_verified',
               { p_user_id: u.id, p_verified: true, p_note: note ?? '' },
-              'Používateľ je overený.'
+              t('admin.verifiedToast')
             ),
         },
       ],
       'plain-text',
-      'Doklad totožnosti a list vlastníctva'
+      t('admin.verifyPlaceholder')
     );
   }
 
@@ -393,21 +394,20 @@ export default function AdminScreen() {
   function toggleAdmin(u: AdminUser) {
     const granting = u.role !== 'ADMIN';
     Alert.alert(
-      granting ? 'Urobiť správcom?' : 'Odobrať práva správcu?',
+      granting ? t('admin.grantAdminTitle') : t('admin.revokeAdminTitle'),
       granting
-        ? `Naozaj urobiť ${u.nickname} správcom? Získa plný prístup do tejto konzoly — ` +
-          'uvidí nahlásenia, môže skrývať inzeráty a blokovať účty.'
-        : `${u.nickname} stratí prístup do konzoly. Jeho účet a dáta ostanú nedotknuté.`,
+        ? t('admin.grantAdminBody', { nickname: u.nickname })
+        : t('admin.revokeAdminBody', { nickname: u.nickname }),
       [
-        { text: 'Zrušiť', style: 'cancel' },
+        { text: t('admin.cancel'), style: 'cancel' },
         {
-          text: granting ? 'Urobiť správcom' : 'Odobrať',
+          text: granting ? t('admin.grantAdminConfirm') : t('admin.revokeAdminConfirm'),
           style: granting ? 'default' : 'destructive',
           onPress: () =>
             call(
               'admin_set_role',
               { p_user_id: u.id, p_admin: granting },
-              granting ? `${u.nickname} je správca.` : `${u.nickname} už správcom nie je.`
+              granting ? t('admin.grantedAdminToast', { nickname: u.nickname }) : t('admin.revokedAdminToast', { nickname: u.nickname })
             ),
         },
       ]
@@ -417,27 +417,27 @@ export default function AdminScreen() {
   function toggleBlock(u: AdminUser) {
     const blocking = !u.is_blocked;
     Alert.alert(
-      blocking ? 'Zablokovať používateľa?' : 'Odblokovať?',
+      blocking ? t('admin.blockUserTitle') : t('admin.unblockUserTitle'),
       blocking
-        ? 'Nebude sa vedieť prihlásiť ani nič pridať. Jeho doterajšie dáta ostanú. Pár sekúnd pôjde ešte vrátiť späť.'
-        : 'Bude sa vedieť znovu prihlásiť a pridávať.',
+        ? t('admin.blockUserBody')
+        : t('admin.unblockUserBody'),
       [
-        { text: 'Zrušiť', style: 'cancel' },
+        { text: t('admin.cancel'), style: 'cancel' },
         {
-          text: blocking ? 'Zablokovať' : 'Odblokovať',
+          text: blocking ? t('admin.blockConfirm') : t('admin.unblockConfirm'),
           style: blocking ? 'destructive' : 'default',
           onPress: () => {
             if (!blocking) {
               // Odblokovanie nie je tá riziková akcia zo zadania — undo
               // okno je tu navyše len pre BLOKOVANIE (Rastio, 14.8.2026).
               void call('admin_set_blocked', { p_user_id: u.id, p_blocked: false, p_reason: null },
-                'Používateľ je odblokovaný.');
+                t('admin.unblockedToast'));
               return;
             }
-            confirmWithUndo(`${u.nickname} bude zablokovaný`, () =>
+            confirmWithUndo(t('admin.blockPending', { nickname: u.nickname }), () =>
               call('admin_set_blocked',
-                { p_user_id: u.id, p_blocked: true, p_reason: 'Zablokované správcom' },
-                'Používateľ je zablokovaný.')
+                { p_user_id: u.id, p_blocked: true, p_reason: t('admin.blockedReason') },
+                t('admin.blockedToast'))
             );
           },
         },
@@ -457,9 +457,9 @@ export default function AdminScreen() {
       return;
     }
     Alert.alert(
-      targetType === 'USER' ? 'Nahlásený používateľ' : 'Nahlásená ponuka',
-      [`ID: ${targetId}`, extra].filter(Boolean).join('\n\n') +
-        '\n\nVlastnú obrazovku zatiaľ nemá — konať sa dá cez zoznam Používatelia.'
+      targetType === 'USER' ? t('admin.reportedUserTitle') : t('admin.reportedOfferTitle'),
+      [t('admin.targetIdLine', { id: targetId }), extra].filter(Boolean).join('\n\n') +
+        '\n\n' + t('admin.noOwnScreenNote')
     );
   }
 
@@ -479,20 +479,20 @@ export default function AdminScreen() {
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right']}>
       <AppHeader />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={[styles.title, { color: palette.textPrimary }]}>Správa</Text>
+        <Text style={[styles.title, { color: palette.textPrimary }]}>{t('admin.screenTitle')}</Text>
 
         <ErrorNote error={error} />
         {loading ? <ActivityIndicator color={palette.primary} /> : null}
 
         {stats ? (
           <Card>
-            <Text style={[styles.section, { color: palette.textMuted }]}>ŠTATISTIKA</Text>
+            <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.statsSection')}</Text>
             <View style={styles.stats}>
               {/* Klikateľné sú LEN dlaždice, ktoré majú kam viesť. Ponuky
                   a Dopyty admin pohľad zatiaľ nemajú — tvárili by sa
                   klikateľne a nič by nespravili, čo §2 zakazuje. */}
               <Stat
-                label="Zverejnené"
+                label={t('admin.statPublished')}
                 value={stats.inzeraty_aktivne}
                 onPress={() => {
                   setSection('PROPERTIES');
@@ -500,17 +500,17 @@ export default function AdminScreen() {
                 }}
               />
               <Stat
-                label="Inzeráty spolu"
+                label={t('admin.statPropertiesTotal')}
                 value={stats.inzeraty_spolu}
                 onPress={() => {
                   setSection('PROPERTIES');
                   setPropertyFilter(null);
                 }}
               />
-              <Stat label="Ponuky" value={stats.ponuky} />
-              <Stat label="Dopyty" value={stats.dopyty} />
+              <Stat label={t('admin.statOffers')} value={stats.ponuky} />
+              <Stat label={t('admin.statDemands')} value={stats.dopyty} />
               <Stat
-                label="Používatelia"
+                label={t('admin.statUsers')}
                 value={stats.pouzivatelia}
                 onPress={() => {
                   setSection('USERS');
@@ -518,7 +518,7 @@ export default function AdminScreen() {
                 }}
               />
               <Stat
-                label="Zablokovaní"
+                label={t('admin.statBlocked')}
                 value={stats.zablokovani}
                 onPress={() => {
                   setSection('USERS');
@@ -526,7 +526,7 @@ export default function AdminScreen() {
                 }}
               />
               <Stat
-                label="Otvorené nahlásenia"
+                label={t('admin.statOpenReports')}
                 value={stats.nahlasenia_otvorene}
                 highlight
                 onPress={() => {
@@ -542,10 +542,10 @@ export default function AdminScreen() {
         {alerts.length > 0 ? (
           <Card>
             <Text style={[styles.section, { color: palette.danger }]}>
-              VYŽADUJE POZORNOSŤ ({alerts.length})
+              {t('admin.needsAttention', { count: alerts.length })}
             </Text>
             <Text style={[styles.meta, { color: palette.textMuted }]}>
-              Traja rôzni ľudia nahlásili to isté — alebo niekto nahlásil podvod.
+              {t('admin.needsAttentionHint')}
             </Text>
             {alerts.map((a) => (
               <Pressable
@@ -561,10 +561,10 @@ export default function AdminScreen() {
                 ]}>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
-                    {a.target_type === 'PROPERTY' ? 'Inzerát' : a.target_type === 'USER' ? 'Používateľ' : 'Ponuka'}{' '}
+                    {a.target_type === 'PROPERTY' ? t('admin.targetProperty') : a.target_type === 'USER' ? t('admin.targetUser') : t('admin.targetOffer')}{' '}
                     {a.target_id.slice(0, 8)}
                   </Text>
-                  {a.naliehave ? <Badge text="PODVOD" tone="warning" /> : null}
+                  {a.naliehave ? <Badge text={t('admin.fraudBadge')} tone="warning" /> : null}
                 </View>
                 <Text style={[styles.meta, { color: palette.textSecondary }]}>
                   {a.nahlaseni}× · {a.dovody}
@@ -581,11 +581,10 @@ export default function AdminScreen() {
         {offenders.length > 0 ? (
           <Card>
             <Text style={[styles.section, { color: palette.warning }]}>
-              OPAKOVANÉ PORUŠENIA ({offenders.length})
+              {t('admin.repeatOffenders', { count: offenders.length })}
             </Text>
             <Text style={[styles.meta, { color: palette.textMuted }]}>
-              Tri a viac POTVRDENÝCH nahlásení na tú istú osobu — cez všetky jej inzeráty
-              a ponuky. Appka nikoho neblokuje sama; zablokovať sa dá v sekcii Používatelia.
+              {t('admin.repeatOffendersHint')}
             </Text>
             {offenders.map((o) => (
               <Pressable
@@ -601,7 +600,7 @@ export default function AdminScreen() {
                 ]}>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{o.nickname}</Text>
-                  {o.blokovany ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                  {o.blokovany ? <Badge text={t('admin.blockedBadge')} tone="neutral" /> : null}
                 </View>
                 <Text style={[styles.meta, { color: palette.textSecondary }]}>
                   {o.potvrdene}× potvrdené · {o.dovody}
@@ -614,10 +613,10 @@ export default function AdminScreen() {
         <View style={styles.tabs}>
           {(
             [
-              ['REPORTS', `Nahlásenia (${openReports.length})`],
-              ['PROPERTIES', 'Inzeráty'],
-              ['USERS', 'Používatelia'],
-              ['SETTINGS', 'Nastavenia'],
+              ['REPORTS', t('admin.tabReports', { count: openReports.length })],
+              ['PROPERTIES', t('admin.tabProperties')],
+              ['USERS', t('admin.tabUsers')],
+              ['SETTINGS', t('admin.tabSettings')],
             ] as [Section, string][]
           ).map(([key, label]) => (
             <Pressable
@@ -643,20 +642,16 @@ export default function AdminScreen() {
             od zvyšku jedným ťuknutím — inak sa v zozname stratia. */}
         {section === 'REPORTS' ? (
           <Text style={[styles.meta, { color: palette.textMuted }]}>
-            „Označiť ako riešené" znamená, že si zasiahol — nahlásený sa o tom
-            dozvie upozornením a pri inzeráte sa rovno rozhodne, či sa má skryť.
-            „Zamietnuť" znamená, že nahlásenie bolo neopodstatnené; vtedy sa
-            nahlásenému neposiela nič. Ani jedno NIČ NEMAŽE — skrytý inzerát
-            vlastník ďalej vidí aj s dôvodom.
+            {t('admin.reportsHint')}
           </Text>
         ) : null}
 
         {section === 'REPORTS' && reports.length > 0 ? (
           <View style={styles.filterRow}>
-            {([null, ...REPORT_REASONS.map((x) => x.value)] as (ReportReason | null)[]).map((v) => {
+            {([null, ...getReportReasons(t).map((x) => x.value)] as (ReportReason | null)[]).map((v) => {
               const on = reasonFilter === v;
               const count = v == null ? reports.length : (reasonCounts[v] ?? 0);
-              const label = v == null ? 'Všetky' : v === 'REALITKA' ? 'Realitka' : REPORT_REASON_LABEL[v].split(' —')[0];
+              const label = v == null ? t('admin.filterAll') : v === 'REALITKA' ? t('admin.filterAgency') : getReportReasonLabel(t)[v].split(' —')[0];
               return (
                 <Pressable
                   key={v ?? 'ALL'}
@@ -682,7 +677,7 @@ export default function AdminScreen() {
         {section === 'REPORTS' ? (
           shownReports.length === 0 ? (
             <Text style={[styles.empty, { color: palette.textMuted }]}>
-              {reasonFilter ? 'Žiadne nahlásenie s týmto dôvodom.' : 'Žiadne nahlásenia.'}
+              {reasonFilter ? t('admin.noReportsWithReason') : t('admin.noReports')}
             </Text>
           ) : (
             shownReports.map((r) => (
@@ -694,19 +689,19 @@ export default function AdminScreen() {
               <Card>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
-                    {r.target_type === 'PROPERTY' ? 'Inzerát' : r.target_type === 'USER' ? 'Používateľ' : 'Ponuka'}
+                    {r.target_type === 'PROPERTY' ? t('admin.targetProperty') : r.target_type === 'USER' ? t('admin.targetUser') : t('admin.targetOffer')}
                   </Text>
                   <Badge
-                    text={REPORT_STATUS_LABEL[r.status as ReportStatus] ?? r.status}
+                    text={getReportStatusLabel(t)[r.status as ReportStatus] ?? r.status}
                     tone={r.status === 'PENDING' ? 'warning' : 'neutral'}
                   />
                 </View>
                 <Text style={[styles.meta, { color: palette.textSecondary }]}>
-                  {REPORT_REASON_LABEL[r.reason as ReportReason] ?? r.reason}
+                  {getReportReasonLabel(t)[r.reason as ReportReason] ?? r.reason}
                 </Text>
-                {r.note ? <Text style={[styles.note, { color: palette.textPrimary }]}>„{r.note}"</Text> : null}
+                {r.note ? <Text style={[styles.note, { color: palette.textPrimary }]}>{t('admin.noteQuoted', { note: r.note })}</Text> : null}
                 <Text style={[styles.meta, { color: palette.textMuted }]}>
-                  {formatDate(r.created_at)} · cieľ {r.target_id.slice(0, 8)}
+                  {t('admin.reportMeta', { date: formatDate(language, r.created_at), id: r.target_id.slice(0, 8) })}
                 </Text>
                 {r.status === 'PENDING' ? (
                   <>
@@ -722,17 +717,17 @@ export default function AdminScreen() {
                             [r.id]: !(prev[r.id] ?? hideByDefault(r.reason)),
                           }))
                         }
-                        label="Skryť inzerát z katalógu"
+                        label={t('admin.hidePropertyLabel')}
                         hint={
                           hideByDefault(r.reason)
-                            ? 'Pri tomto dôvode predvolene áno. Odškrtni, ak má inzerát ostať zverejnený.'
-                            : 'Pri tomto dôvode rozhodni sám — dá sa to vyriešiť aj úpravou textu.'
+                            ? t('admin.hidePropertyHintDefault')
+                            : t('admin.hidePropertyHintManual')
                         }
                       />
                     ) : null}
                     <View style={styles.actions}>
                       <Button
-                        title="Označiť ako riešené"
+                        title={t('admin.markResolvedButton')}
                         onPress={() =>
                           resolveReport(
                             r,
@@ -744,8 +739,8 @@ export default function AdminScreen() {
                         variant="outline"
                       />
                       <Button
-                        title="Zamietnuť nahlásenie"
-                        onPress={() => call('admin_set_report_status', { p_report_id: r.id, p_status: 'DISMISSED' }, 'Zamietnuté.')}
+                        title={t('admin.dismissReportButton')}
+                        onPress={() => call('admin_set_report_status', { p_report_id: r.id, p_status: 'DISMISSED' }, t('admin.reportDismissed'))}
                         variant="outline"
                       />
                     </View>
@@ -759,9 +754,7 @@ export default function AdminScreen() {
 
         {section === 'PROPERTIES' ? (
           <Text style={[styles.meta, { color: palette.textMuted }]}>
-            „Skryť z katalógu" inzerát nezmaže — vlastník ho ďalej vidí aj s dôvodom
-            a dá sa vrátiť späť. „Zmazať natrvalo" zmaže aj fotky a ponuky a vrátiť
-            sa nedá.
+            {t('admin.propertiesHint')}
           </Text>
         ) : null}
 
@@ -775,15 +768,15 @@ export default function AdminScreen() {
               <Card>
                 <View style={styles.rowHead}>
                   <Text numberOfLines={1} style={[styles.rowTitle, { color: palette.textPrimary }]}>
-                    {p.title || 'Bez názvu'}
+                    {p.title || t('admin.untitledListing')}
                   </Text>
                   <Badge
-                    text={p.status === 'REJECTED' ? 'Skryté' : STATUS_LABEL[p.status]}
+                    text={p.status === 'REJECTED' ? t('admin.hiddenBadge') : getStatusLabel(t)[p.status]}
                     tone={p.status === 'ACTIVE' ? 'accent' : 'warning'}
                   />
                 </View>
                 <Text style={[styles.meta, { color: palette.textMuted }]}>
-                  {[p.city, formatDate(p.created_at)].filter(Boolean).join(' · ')}
+                  {[p.city, formatDate(language, p.created_at)].filter(Boolean).join(' · ')}
                 </Text>
                 {p.rejection_reason ? (
                   <Text style={[styles.note, { color: palette.warning }]}>{p.rejection_reason}</Text>
@@ -791,15 +784,15 @@ export default function AdminScreen() {
                 <View style={styles.actions}>
                   {p.status !== 'ACTIVE' ? (
                     <Button
-                      title="Schváliť"
+                      title={t('admin.approveButton')}
                       onPress={() =>
-                        call('admin_set_property_status', { p_property_id: p.id, p_status: 'ACTIVE' }, 'Zverejnené.')
+                        call('admin_set_property_status', { p_property_id: p.id, p_status: 'ACTIVE' }, t('admin.publishedToast'))
                       }
                     />
                   ) : (
-                    <Button title="Skryť z katalógu" onPress={() => reject(p)} variant="outline" />
+                    <Button title={t('admin.hideFromCatalogButton')} onPress={() => reject(p)} variant="outline" />
                   )}
-                  <Button title="Zmazať natrvalo" onPress={() => destroy(p)} variant="danger" />
+                  <Button title={t('admin.deletePermanentlyButton')} onPress={() => destroy(p)} variant="danger" />
                 </View>
               </Card>
               </Pressable>
@@ -808,13 +801,7 @@ export default function AdminScreen() {
 
         {section === 'USERS' ? (
           <Text style={[styles.meta, { color: palette.textMuted }]}>
-            Zablokovaný používateľ sa nevie prihlásiť ani nič pridať a jeho účet
-            neprijíma oznámenia. Doterajšie inzeráty a ponuky mu ostanú a
-            odblokovaním sa vráti všetko naspäť — nie je to zmazanie.
-            {'\n\n'}
-            Správcu môže urobiť len iný správca. Vlastnú rolu si zmeniť nevieš
-            a posledného správcu appka odobrať nedovolí — inak by ostala bez
-            neho. Každá zmena roly sa zapisuje.
+            {t('admin.usersHint')}
           </Text>
         ) : null}
 
@@ -826,12 +813,12 @@ export default function AdminScreen() {
                   Alert.alert(
                     u.nickname,
                     [
-                      `ID: ${u.id}`,
-                      `E-mail: ${u.email}`,
-                      `Rola: ${u.role}`,
-                      `Inzerátov: ${u.inzeraty}`,
-                      `Registrovaný: ${formatDate(u.created_at)}`,
-                      u.is_blocked ? 'Stav: ZABLOKOVANÝ' : 'Stav: aktívny',
+                      t('admin.userIdLine', { id: u.id }),
+                      t('admin.userEmailLine', { email: u.email }),
+                      t('admin.userRoleLine', { role: u.role }),
+                      t('admin.userListingsLine', { count: u.inzeraty }),
+                      t('admin.userRegisteredLine', { date: formatDate(language, u.created_at) }),
+                      u.is_blocked ? t('admin.userStatusBlocked') : t('admin.userStatusActive'),
                     ].join('\n')
                   )
                 }
@@ -840,21 +827,21 @@ export default function AdminScreen() {
               <Card>
                 <View style={styles.rowHead}>
                   <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{u.nickname}</Text>
-                  {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="accent" /> : null}
-                  {u.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="warning" /> : null}
-                {u.verified_at ? <Badge text="OVERENÝ" tone="accent" /> : null}
-                {u.role === 'ADMIN' ? <Badge text="SPRÁVCA" tone="navy" /> : null}
+                  {u.role === 'ADMIN' ? <Badge text={t('admin.adminBadge')} tone="accent" /> : null}
+                  {u.is_blocked ? <Badge text={t('admin.blockedBadge')} tone="warning" /> : null}
+                {u.verified_at ? <Badge text={t('admin.verifiedBadge')} tone="accent" /> : null}
+                {u.role === 'ADMIN' ? <Badge text={t('admin.adminBadge')} tone="navy" /> : null}
                 </View>
                 <Text style={[styles.meta, { color: palette.textMuted }]}>
-                  {u.email} · {u.inzeraty} inzerátov · od {formatDate(u.created_at)}
+                  {t('admin.userMeta', { email: u.email, count: u.inzeraty, date: formatDate(language, u.created_at) })}
                 </Text>
                 {u.verified_note ? (
                   <Text style={[styles.meta, { color: palette.textMuted }]}>
-                    Overené: {u.verified_note}
+                    {t('admin.verifiedNote', { note: u.verified_note })}
                   </Text>
                 ) : null}
                 <Button
-                  title={u.verified_at ? 'Odobrať overenie' : 'Overiť používateľa'}
+                  title={u.verified_at ? t('admin.removeVerificationButton') : t('admin.verifyUserButton')}
                   onPress={() => toggleVerified(u)}
                   variant="outline"
                 />
@@ -863,19 +850,19 @@ export default function AdminScreen() {
                     by aj tak neprešlo, je horšie než jeho absencia. */}
                 {u.id !== session?.user.id ? (
                   <Button
-                    title={u.role === 'ADMIN' ? 'Odobrať práva správcu' : 'Urobiť správcom'}
+                    title={u.role === 'ADMIN' ? t('admin.revokeAdminButton') : t('admin.grantAdminButton')}
                     onPress={() => toggleAdmin(u)}
                     variant="outline"
                   />
                 ) : null}
                 {u.id !== session?.user.id ? (
                   <Button
-                    title={u.is_blocked ? 'Odblokovať' : 'Zablokovať'}
+                    title={u.is_blocked ? t('admin.unblockButton') : t('admin.blockButton')}
                     onPress={() => toggleBlock(u)}
                     variant={u.is_blocked ? 'outline' : 'danger'}
                   />
                 ) : (
-                  <Text style={[styles.meta, { color: palette.textMuted }]}>To si ty.</Text>
+                  <Text style={[styles.meta, { color: palette.textMuted }]}>{t('admin.thatsYou')}</Text>
                 )}
               </Card>
               </Pressable>
@@ -885,7 +872,7 @@ export default function AdminScreen() {
         {section === 'SETTINGS' ? (
           <>
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>LIMIT INZERÁTOV</Text>
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.listingLimitSection')}</Text>
               {config
                 .filter((c) => c.key === 'max_active_listings')
                 .map((c) => (
@@ -906,19 +893,19 @@ export default function AdminScreen() {
                         ]}
                       />
                       <Button
-                        title="Uložiť"
+                        title={t('admin.saveButton')}
                         disabled={limitDraft.trim() === c.value}
                         onPress={() =>
                           call(
                             'admin_set_config',
                             { p_key: 'max_active_listings', p_value: limitDraft.trim() },
-                            `Limit je teraz ${limitDraft.trim()}. Platí okamžite, nový build netreba.`
+                            t('admin.limitUpdatedToast', { value: limitDraft.trim() })
                           )
                         }
                       />
                     </View>
                     <Text style={[styles.meta, { color: palette.textMuted }]}>
-                      Teraz platí: {c.value}. Zmena sa prejaví hneď pri ďalšom pokuse o zverejnenie.
+                      {t('admin.currentlyLimit', { value: c.value })}
                     </Text>
                   </View>
                 ))}
@@ -927,27 +914,26 @@ export default function AdminScreen() {
             {/* Heuristiky sú SIGNÁLY na ručnú kontrolu, nie dôvod na ban.
                 Dve osoby v jednej domácnosti majú tiež jeden telefón. */}
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>NAJVIAC INZERÁTOV</Text>
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.topListersSection')}</Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Podnet na pozretie, nie obvinenie. „Bez deklarácie" znamená účet z čias
-                pred zavedením potvrdenia, nie priznanie.
+                {t('admin.topListersHint')}
               </Text>
               {topListers.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.textMuted }]}>Zatiaľ nikto nemá inzerát.</Text>
+                <Text style={[styles.empty, { color: palette.textMuted }]}>{t('admin.noListingsYet')}</Text>
               ) : (
-                topListers.slice(0, 15).map((t) => (
-                  <View key={t.user_id} style={styles.cfg}>
+                topListers.slice(0, 15).map((tl) => (
+                  <View key={tl.user_id} style={styles.cfg}>
                     <View style={styles.rowHead}>
-                      <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{t.nickname}</Text>
-                      {t.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="warning" /> : null}
+                      <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{tl.nickname}</Text>
+                      {tl.is_blocked ? <Badge text={t('admin.blockedBadge')} tone="warning" /> : null}
                     </View>
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>
-                      {t.active_count} aktívnych · {t.total_count} spolu · {t.email}
+                      {t('admin.listerMeta', { active: tl.active_count, total: tl.total_count, email: tl.email })}
                     </Text>
-                    <Text style={[styles.meta, { color: t.agent_declared_at ? palette.textMuted : palette.warning }]}>
-                      {t.agent_declared_at
-                        ? `Deklaroval fyzickú osobu ${formatDate(t.agent_declared_at)}`
-                        : 'Bez deklarácie fyzickej osoby'}
+                    <Text style={[styles.meta, { color: tl.agent_declared_at ? palette.textMuted : palette.warning }]}>
+                      {tl.agent_declared_at
+                        ? t('admin.agentDeclared', { date: formatDate(language, tl.agent_declared_at) })
+                        : t('admin.agentNotDeclared')}
                     </Text>
                   </View>
                 ))
@@ -955,14 +941,14 @@ export default function AdminScreen() {
             </Card>
 
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>ROVNAKÝ KONTAKT NA VIACERÝCH ÚČTOCH</Text>
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.duplicateContactsSection')}</Text>
               {dupes.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+                <Text style={[styles.empty, { color: palette.textMuted }]}>{t('admin.nothingFound')}</Text>
               ) : (
                 dupes.map((d) => (
                   <View key={`${d.kind}-${d.value}`} style={styles.cfg}>
                     <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>
-                      {d.kind === 'TELEFON' ? 'Telefón' : 'E-mail'} · {d.accounts} účty
+                      {t('admin.duplicateAccountsCount', { kind: d.kind === 'TELEFON' ? t('admin.duplicatePhone') : t('admin.duplicateEmail'), count: d.accounts })}
                     </Text>
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>{d.value}</Text>
                     <Text style={[styles.meta, { color: palette.textMuted }]}>{d.nicknames}</Text>
@@ -974,9 +960,9 @@ export default function AdminScreen() {
             {/* PODOZRIVÍ POUŽÍVATELIA — tri vzorce, len signál na ručnú
                 kontrolu (pozri komentár pri type SuspiciousFlood vyššie). */}
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>PODOZRIVÍ POUŽÍVATELIA — PRAHY</Text>
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.susThresholdsSection')}</Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Od koľkých inzerátov/percent sa účet nižšie objaví. Platí hneď, nový build netreba.
+                {t('admin.susThresholdsHint')}
               </Text>
               {SUSPICIOUS_CONFIG_KEYS.map((key) => {
                 const c = config.find((x) => x.key === key);
@@ -998,15 +984,15 @@ export default function AdminScreen() {
                         ]}
                       />
                       <Button
-                        title="Uložiť"
+                        title={t('admin.saveButton')}
                         disabled={draft.trim() === c.value}
                         onPress={() =>
                           call('admin_set_config', { p_key: key, p_value: draft.trim() },
-                            `${c.label}: teraz ${draft.trim()}.`)
+                            t('admin.thresholdUpdatedToast', { label: c.label, value: draft.trim() }))
                         }
                       />
                     </View>
-                    <Text style={[styles.meta, { color: palette.textMuted }]}>Teraz platí: {c.value}.</Text>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>{t('admin.currentlyValue', { value: c.value })}</Text>
                   </View>
                 );
               })}
@@ -1016,9 +1002,9 @@ export default function AdminScreen() {
                 priamo (mig_41), toto sú len ich prahy. Prevencia, nie
                 detekcia — dopĺňa PODOZRIVÝCH POUŽÍVATEĽOV vyššie. */}
             <Card>
-              <Text style={[styles.section, { color: palette.textMuted }]}>RATE LIMITING — PRAHY</Text>
+              <Text style={[styles.section, { color: palette.textMuted }]}>{t('admin.rateLimitSection')}</Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Server odmietne akciu, keď ju ten istý účet za dané okno prekročí. Platí hneď, nový build netreba.
+                {t('admin.rateLimitHint')}
               </Text>
               {RATE_LIMIT_CONFIG_KEYS.map((key) => {
                 const c = config.find((x) => x.key === key);
@@ -1040,33 +1026,33 @@ export default function AdminScreen() {
                         ]}
                       />
                       <Button
-                        title="Uložiť"
+                        title={t('admin.saveButton')}
                         disabled={draft.trim() === c.value}
                         onPress={() =>
                           call('admin_set_config', { p_key: key, p_value: draft.trim() },
-                            `${c.label}: teraz ${draft.trim()}.`)
+                            t('admin.thresholdUpdatedToast', { label: c.label, value: draft.trim() }))
                         }
                       />
                     </View>
-                    <Text style={[styles.meta, { color: palette.textMuted }]}>Teraz platí: {c.value}.</Text>
+                    <Text style={[styles.meta, { color: palette.textMuted }]}>{t('admin.currentlyValue', { value: c.value })}</Text>
                   </View>
                 );
               })}
             </Card>
 
             <Card>
-              <Text style={[styles.section, { color: palette.warning }]}>ZÁPLAVA PONÚK ({floods.length})</Text>
+              <Text style={[styles.section, { color: palette.warning }]}>{t('admin.floodSection', { count: floods.length })}</Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Ponuka na neobvykle veľa RÔZNYCH inzerátov v krátkom čase — podnet na pozretie, nie obvinenie.
+                {t('admin.floodHint')}
               </Text>
               {floods.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+                <Text style={[styles.empty, { color: palette.textMuted }]}>{t('admin.nothingFound')}</Text>
               ) : (
                 floods.map((f) => (
                   <Pressable
                     key={f.user_id}
                     onPress={() =>
-                      openTarget('USER', f.user_id, `${f.pocet_inzeratov} rôznych inzerátov · ${f.pocet_ponuk} ponúk`)
+                      openTarget('USER', f.user_id, t('admin.floodTargetNote', { properties: f.pocet_inzeratov, offers: f.pocet_ponuk }))
                     }
                     accessibilityRole="button"
                     style={({ pressed }) => [
@@ -1075,10 +1061,10 @@ export default function AdminScreen() {
                     ]}>
                     <View style={styles.rowHead}>
                       <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{f.nickname}</Text>
-                      {f.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                      {f.is_blocked ? <Badge text={t('admin.blockedBadge')} tone="neutral" /> : null}
                     </View>
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>
-                      {f.pocet_inzeratov} rôznych inzerátov · {f.pocet_ponuk} ponúk
+                      {t('admin.floodMeta', { properties: f.pocet_inzeratov, offers: f.pocet_ponuk })}
                     </Text>
                   </Pressable>
                 ))
@@ -1086,19 +1072,19 @@ export default function AdminScreen() {
             </Card>
 
             <Card>
-              <Text style={[styles.section, { color: palette.warning }]}>OPAKOVANE NÍZKE PONUKY ({lowballs.length})</Text>
+              <Text style={[styles.section, { color: palette.warning }]}>{t('admin.lowballSection', { count: lowballs.length })}</Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Výrazne pod orientačnou cenou naprieč VIACERÝMI inzerátmi — raz je vyjednávanie, opakovane je vzorec.
+                {t('admin.lowballHint')}
               </Text>
               {lowballs.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+                <Text style={[styles.empty, { color: palette.textMuted }]}>{t('admin.nothingFound')}</Text>
               ) : (
                 lowballs.map((l) => (
                   <Pressable
                     key={l.user_id}
                     onPress={() =>
                       openTarget('USER', l.user_id,
-                        `${l.pocet_nizkych} nízkych ponúk · priemerne ${Math.round(l.priemerny_pomer * 100)} % ceny`)
+                        t('admin.lowballTargetNote', { count: l.pocet_nizkych, pct: Math.round(l.priemerny_pomer * 100) }))
                     }
                     accessibilityRole="button"
                     style={({ pressed }) => [
@@ -1107,10 +1093,10 @@ export default function AdminScreen() {
                     ]}>
                     <View style={styles.rowHead}>
                       <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{l.nickname}</Text>
-                      {l.is_blocked ? <Badge text="ZABLOKOVANÝ" tone="neutral" /> : null}
+                      {l.is_blocked ? <Badge text={t('admin.blockedBadge')} tone="neutral" /> : null}
                     </View>
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>
-                      {l.pocet_nizkych} nízkych ponúk · priemerne {Math.round(l.priemerny_pomer * 100)} % ceny
+                      {t('admin.lowballMeta', { count: l.pocet_nizkych, pct: Math.round(l.priemerny_pomer * 100) })}
                     </Text>
                   </Pressable>
                 ))
@@ -1119,21 +1105,20 @@ export default function AdminScreen() {
 
             <Card>
               <Text style={[styles.section, { color: palette.warning }]}>
-                OPAKOVANE PONÚKA TOMU ISTÉMU VLASTNÍKOVI ({shills.length})
+                {t('admin.shillSection', { count: shills.length })}
               </Text>
               <Text style={[styles.meta, { color: palette.textMuted }]}>
-                Jeden záujemca opakovane ponúka na inzeráty toho istého predávajúceho — pri otvorených
-                ponukách môže ísť o umelé nadsadzovanie ceny druhým účtom.
+                {t('admin.shillHint')}
               </Text>
               {shills.length === 0 ? (
-                <Text style={[styles.empty, { color: palette.textMuted }]}>Nič také sa nenašlo.</Text>
+                <Text style={[styles.empty, { color: palette.textMuted }]}>{t('admin.nothingFound')}</Text>
               ) : (
                 shills.map((sh) => (
                   <Pressable
                     key={`${sh.bidder_id}-${sh.owner_id}`}
                     onPress={() =>
                       openTarget('USER', sh.bidder_id,
-                        `Ponúka vlastníkovi ${sh.owner_nickname} na ${sh.pocet_inzeratov} rôznych inzerátoch`)
+                        t('admin.shillTargetNote', { owner: sh.owner_nickname, count: sh.pocet_inzeratov }))
                     }
                     accessibilityRole="button"
                     style={({ pressed }) => [
@@ -1142,7 +1127,7 @@ export default function AdminScreen() {
                     ]}>
                     <Text style={[styles.rowTitle, { color: palette.textPrimary }]}>{sh.bidder_nickname}</Text>
                     <Text style={[styles.meta, { color: palette.textSecondary }]}>
-                      → vlastníkovi {sh.owner_nickname} na {sh.pocet_inzeratov} rôznych inzerátoch
+                      {t('admin.shillMeta', { owner: sh.owner_nickname, count: sh.pocet_inzeratov })}
                     </Text>
                   </Pressable>
                 ))
@@ -1172,13 +1157,14 @@ function Stat({
   onPress?: () => void;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const tone = highlight && value > 0 ? palette.warning : palette.primary;
   const Wrap = onPress ? Pressable : View;
   return (
     <Wrap
       onPress={onPress}
       accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={onPress ? `${label}: ${value}, otvoriť zoznam` : undefined}
+      accessibilityLabel={onPress ? t('admin.statOpenList', { label, value }) : undefined}
       style={({ pressed }: { pressed?: boolean } = {}) => [
         styles.stat,
         {

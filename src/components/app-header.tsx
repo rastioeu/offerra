@@ -20,12 +20,14 @@ import { Logo } from '@/components/logo';
 import { Icon } from '@/components/icon';
 import { NotificationBell } from '@/components/notification-bell';
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 
 export function AppHeader({ title }: { title?: string }) {
   const palette = useTheme();
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const { t } = useTranslation();
   return (
     <View
       style={[
@@ -54,7 +56,7 @@ export function AppHeader({ title }: { title?: string }) {
         <Pressable
           onPress={() => router.push('/ako-funguje')}
           accessibilityRole="button"
-          accessibilityLabel="Ako funguje Offerra"
+          accessibilityLabel={t('nastavenia.howItWorks')}
           hitSlop={12}>
           <Icon name="questionmark.circle" size={24} color={palette.textSecondary} />
         </Pressable>
@@ -64,7 +66,7 @@ export function AppHeader({ title }: { title?: string }) {
         <Pressable
           onPress={() => router.push('/nastavenia')}
           accessibilityRole="button"
-          accessibilityLabel="Nastavenia"
+          accessibilityLabel={t('nastavenia.title')}
           hitSlop={12}>
           <Icon name="gearshape" size={24} color={palette.textSecondary} />
         </Pressable>

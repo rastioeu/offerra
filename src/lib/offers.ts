@@ -8,6 +8,8 @@
  * akceptácii. Preto sa tu nikde nečíta `profile.full_name` priamo —
  * nešlo by to a ani by to nebolo správne.
  */
+import type { TFunc } from '@/i18n';
+
 import { db } from './property';
 import { supabase } from './supabase';
 
@@ -46,21 +48,21 @@ export type Offer = {
 /** Stav ponuky ako CESTA, nie ako jedno slovo (bod 13B). */
 export type OfferStep = { label: string; at: string | null; done: boolean };
 
-export function offerSteps(o: Offer): OfferStep[] {
+export function offerSteps(t: TFunc, o: Offer): OfferStep[] {
   const decided = o.status === 'ACCEPTED' || o.status === 'REJECTED';
   return [
-    { label: 'Podaná', at: o.created_at, done: true },
+    { label: t('offers.stepSubmitted'), at: o.created_at, done: true },
     {
-      label: o.viewed_by_owner_at ? 'Predávajúci ju videl' : 'Čaká na predávajúceho',
+      label: o.viewed_by_owner_at ? t('offers.stepSeenByOwner') : t('offers.stepAwaitingOwner'),
       at: o.viewed_by_owner_at,
       done: Boolean(o.viewed_by_owner_at) || decided,
     },
     {
       label:
-        o.status === 'ACCEPTED' ? 'Prijatá'
-          : o.status === 'REJECTED' ? 'Odmietnutá'
-          : o.status === 'WITHDRAWN' ? 'Stiahnutá'
-          : 'Rozhodnutie',
+        o.status === 'ACCEPTED' ? t('offers.statusAccepted')
+          : o.status === 'REJECTED' ? t('offers.statusRejected')
+          : o.status === 'WITHDRAWN' ? t('offers.statusWithdrawn')
+          : t('offers.stepDecision'),
       // `updated_at` je pri rozhodnutej ponuke čas rozhodnutia; pri
       // čakajúcej by to bol čas poslednej úpravy sumy, čo by klamalo.
       at: decided || o.status === 'WITHDRAWN' ? o.updated_at : null,
@@ -149,45 +151,51 @@ export type OfferContact = {
   email: string | null;
 };
 
-export const OFFER_STATUS_LABEL: Record<OfferStatus, string> = {
-  PENDING: 'Čaká na odpoveď',
-  ACCEPTED: 'Prijatá',
-  REJECTED: 'Odmietnutá',
-  WITHDRAWN: 'Stiahnutá',
-};
+export function getOfferStatusLabel(t: TFunc): Record<OfferStatus, string> {
+  return {
+    PENDING: t('offers.statusPending'),
+    ACCEPTED: t('offers.statusAccepted'),
+    REJECTED: t('offers.statusRejected'),
+    WITHDRAWN: t('offers.statusWithdrawn'),
+  };
+}
 
-export const REQUEST_STATUS_LABEL: Record<RequestStatus, string> = {
-  ACTIVE: 'Aktívny',
-  FULFILLED: 'Vybavený',
-  EXPIRED: 'Vypršal',
-  CLOSED: 'Zatvorený',
-};
+export function getRequestStatusLabel(t: TFunc): Record<RequestStatus, string> {
+  return {
+    ACTIVE: t('offers.requestStatusActive'),
+    FULFILLED: t('offers.requestStatusFulfilled'),
+    EXPIRED: t('offers.requestStatusExpired'),
+    CLOSED: t('offers.requestStatusClosed'),
+  };
+}
 
-export const EMPLOYMENT_OPTIONS = [
-  'Trvalý pracovný pomer',
-  'Živnosť',
-  'Dohoda / brigáda',
-  'Študent',
-  'Dôchodok',
-  'Iné',
-];
+export function getEmploymentOptions(t: TFunc): string[] {
+  return [
+    t('offers.employmentFullTime'),
+    t('offers.employmentSelfEmployed'),
+    t('offers.employmentContract'),
+    t('offers.employmentStudent'),
+    t('offers.employmentRetired'),
+    t('offers.employmentOther'),
+  ];
+}
 
-export function formatAmount(value: number, transaction: 'SALE' | 'RENT'): string {
+export function formatAmount(t: TFunc, value: number, transaction: 'SALE' | 'RENT'): string {
   const amount = new Intl.NumberFormat('sk-SK', {
     style: 'currency',
     currency: 'EUR',
     maximumFractionDigits: 0,
   }).format(value);
-  return transaction === 'RENT' ? `${amount} / mesiac` : amount;
+  return transaction === 'RENT' ? t('property.priceMonthly', { amount }) : amount;
 }
 
-export function formatBudget(min: number | null, max: number | null): string {
+export function formatBudget(t: TFunc, min: number | null, max: number | null): string {
   const f = (v: number) =>
     new Intl.NumberFormat('sk-SK', { style: 'currency', currency: 'EUR', maximumFractionDigits: 0 }).format(v);
   if (min != null && max != null) return `${f(min)} – ${f(max)}`;
-  if (max != null) return `do ${f(max)}`;
-  if (min != null) return `od ${f(min)}`;
-  return 'Rozpočet neuvedený';
+  if (max != null) return t('offers.budgetUpTo', { amount: f(max) });
+  if (min != null) return t('offers.budgetFrom', { amount: f(min) });
+  return t('offers.budgetNotGiven');
 }
 
 /**

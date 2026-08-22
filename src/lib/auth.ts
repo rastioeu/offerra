@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import type * as AppleAuthenticationType from 'expo-apple-authentication';
 
 import { supabase } from './supabase';
+import type { TFunc } from '@/i18n';
 import { errorText } from '@/lib/errors';
 import { forgetAllDrafts } from '@/lib/form-draft';
 import { appleFullName, forgetSignInName, metadataFullName, rememberSignInName } from '@/lib/signin-name';
@@ -35,14 +36,14 @@ export type AuthResult =
   | { ok: 'canceled' };
 
 /** Dokončí OAuth prihlásenie z redirect URL (PKCE aj implicit tokeny). */
-async function createSessionFromUrl(url: string): Promise<AuthResult> {
+async function createSessionFromUrl(t: TFunc, url: string): Promise<AuthResult> {
   const { params, errorCode } = QueryParams.getQueryParams(url);
   if (errorCode) return { ok: false, message: errorCode };
 
   if (params.code) {
     const { data, error } = await supabase.auth.exchangeCodeForSession(params.code);
     if (error) return { ok: false, message: error.message };
-    if (!data.session) return { ok: false, message: 'Server nevrátil session.' };
+    if (!data.session) return { ok: false, message: t('auth.noSession') };
     // Google posiela meno v id tokene, takže ho Supabase má v `user_metadata`.
     rememberSignInName(metadataFullName(data.session.user));
     return { ok: true, userId: data.session.user.id, email: data.session.user.email };
@@ -52,12 +53,12 @@ async function createSessionFromUrl(url: string): Promise<AuthResult> {
   if (access_token && refresh_token) {
     const { data, error } = await supabase.auth.setSession({ access_token, refresh_token });
     if (error) return { ok: false, message: error.message };
-    if (!data.session) return { ok: false, message: 'Server nevrátil session.' };
+    if (!data.session) return { ok: false, message: t('auth.noSession') };
     rememberSignInName(metadataFullName(data.session.user));
     return { ok: true, userId: data.session.user.id, email: data.session.user.email };
   }
 
-  return { ok: false, message: 'Prihlásenie sa nedokončilo — chýba token v odpovedi.' };
+  return { ok: false, message: t('auth.missingToken') };
 }
 
 /**
@@ -65,7 +66,7 @@ async function createSessionFromUrl(url: string): Promise<AuthResult> {
  * používa MUTARK. Nepotrebuje vlastný Google client id; potrebuje len, aby
  * `offerra://` bolo v Supabase Auth medzi povolenými redirect URL.
  */
-export async function signInWithGoogle(): Promise<AuthResult> {
+export async function signInWithGoogle(t: TFunc): Promise<AuthResult> {
   try {
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -82,7 +83,7 @@ export async function signInWithGoogle(): Promise<AuthResult> {
       return { ok: 'canceled' };
     }
 
-    const session = await createSessionFromUrl(result.url);
+    const session = await createSessionFromUrl(t, result.url);
     if (session.ok === true) {
       console.log(`[AUTH] Google — prihlásený: user.id=${session.userId}`);
     } else if (session.ok === false) {
@@ -102,9 +103,9 @@ export async function signInWithGoogle(): Promise<AuthResult> {
  * modulu by statický import zhodil celú obrazovku pri jej OTVORENÍ.
  * Rovnaká poistka ako MUTARK pri `expo-image-picker`.
  */
-export async function signInWithApple(): Promise<AuthResult> {
+export async function signInWithApple(t: TFunc): Promise<AuthResult> {
   if (Platform.OS !== 'ios') {
-    return { ok: false, message: 'Prihlásenie cez Apple je dostupné len na iPhone.' };
+    return { ok: false, message: t('auth.appleIosOnly') };
   }
 
   let AppleAuthentication: typeof AppleAuthenticationType;
@@ -112,7 +113,7 @@ export async function signInWithApple(): Promise<AuthResult> {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     AppleAuthentication = require('expo-apple-authentication');
   } catch {
-    return { ok: false, message: 'Prihlásenie cez Apple nie je v tomto builde dostupné.' };
+    return { ok: false, message: t('auth.appleNotAvailable') };
   }
 
   try {
@@ -131,7 +132,7 @@ export async function signInWithApple(): Promise<AuthResult> {
 
     if (!credential.identityToken) {
       console.log('[AUTH] Apple — chýba identityToken.');
-      return { ok: false, message: 'Apple nevrátil overovací token.' };
+      return { ok: false, message: t('auth.appleNoToken') };
     }
 
     const { data, error } = await supabase.auth.signInWithIdToken({
@@ -144,7 +145,7 @@ export async function signInWithApple(): Promise<AuthResult> {
       return { ok: false, message: error.message };
     }
     if (!data.session) {
-      return { ok: false, message: 'Server nevrátil session.' };
+      return { ok: false, message: t('auth.noSession') };
     }
 
     console.log(`[AUTH] Apple — prihlásený: user.id=${data.session.user.id}`);
@@ -168,10 +169,10 @@ export async function signInWithApple(): Promise<AuthResult> {
  * prihlasovacej obrazovke. Slúži na test zdieľaného účtu a pre App Store
  * recenzentov; v bežnom používaní sa nezobrazuje.
  */
-export async function signInWithEmail(email: string, password: string): Promise<AuthResult> {
+export async function signInWithEmail(t: TFunc, email: string, password: string): Promise<AuthResult> {
   const trimmed = email.trim();
   if (!trimmed || !password) {
-    return { ok: false, message: 'Vyplň e-mail aj heslo.' };
+    return { ok: false, message: t('auth.emailPasswordRequired') };
   }
 
   try {
@@ -185,7 +186,7 @@ export async function signInWithEmail(email: string, password: string): Promise<
       return { ok: false, message: error.message };
     }
     if (!data.session || !data.user) {
-      return { ok: false, message: 'Server nevrátil session. Skús to znova.' };
+      return { ok: false, message: t('auth.noSessionRetry') };
     }
 
     console.log(`[AUTH] E-mail — prihlásený: user.id=${data.user.id}`);
@@ -241,15 +242,13 @@ export function demoEmail(): string {
   return DEMO_EMAIL;
 }
 
-export async function signInWithDemo(): Promise<AuthResult> {
+export async function signInWithDemo(t: TFunc): Promise<AuthResult> {
   const password = process.env.EXPO_PUBLIC_DEMO_PASSWORD;
   if (!password) {
     return {
       ok: false,
-      message:
-        'Demo prihlásenie nie je v tejto verzii nastavené (chýba EXPO_PUBLIC_DEMO_PASSWORD). ' +
-        'Použi e-mail a heslo z App Store Connect review notes.',
+      message: t('auth.demoNotConfigured'),
     };
   }
-  return signInWithEmail(DEMO_EMAIL, password);
+  return signInWithEmail(t, DEMO_EMAIL, password);
 }

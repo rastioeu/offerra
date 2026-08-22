@@ -10,6 +10,8 @@
  * takže sa nedá podvrhnúť ani prepísať — inak by to nebola história,
  * ale len ďalšie pole, ktoré si vlastník upraví.
  */
+import type { TFunc } from '@/i18n';
+
 import type { Offer } from './offers';
 import { db, formatPrice, type TransactionType } from './property';
 
@@ -36,6 +38,7 @@ export async function fetchPriceHistory(propertyId: string): Promise<PriceChange
  * Celý zoznam zmien je pre väčšinu inzerátov zbytočný detail.
  */
 export function priceSummary(
+  t: TFunc,
   history: PriceChange[],
   transaction: TransactionType
 ): { text: string; direction: 'DOWN' | 'UP' } | null {
@@ -48,10 +51,14 @@ export function priceSummary(
 
   const down = to < from;
   const pct = Math.round((Math.abs(to - from) / from) * 100);
-  const times = history.length === 1 ? '' : ` · ${history.length}× menená`;
+  const times = history.length === 1 ? '' : t('priceHistory.changedNTimes', { count: history.length });
   return {
     direction: down ? 'DOWN' : 'UP',
-    text: `${down ? 'Znížená' : 'Zvýšená'} z ${formatPrice(from, transaction)} o ${pct} %${times}`,
+    text: t(down ? 'priceHistory.lowered' : 'priceHistory.raised', {
+      price: formatPrice(t, from, transaction) as string,
+      pct,
+      times,
+    }),
   };
 }
 

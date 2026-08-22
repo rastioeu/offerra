@@ -19,6 +19,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useTranslation } from '@/i18n';
 import { db, type City } from '@/lib/property';
 import { stemSk } from '@/lib/search';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
@@ -53,6 +54,7 @@ export function CityPicker({
   required?: boolean;
 }) {
   const palette = useTheme();
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<City[]>([]);
@@ -104,10 +106,10 @@ export function CityPicker({
       <Label
         hint={
           region
-            ? `Hľadá sa v kraji ${region.replace(' kraj', '')}. Podľa obce sa doplní poloha na mape; presnú adresu nepýtame.`
-            : 'Podľa obce sa doplní kraj aj poloha na mape. Presnú adresu nepýtame.'
+            ? t('cityPicker.hintWithRegion', { region: region.replace(' kraj', '') })
+            : t('cityPicker.hintWithoutRegion')
         }>
-        {required ? 'Mesto / obec (povinné)' : 'Mesto / obec'}
+        {required ? t('cityPicker.labelRequired') : t('cityPicker.labelOptional')}
       </Label>
 
       <Pressable
@@ -118,20 +120,20 @@ export function CityPicker({
           { backgroundColor: palette.surface, borderColor: palette.borderStrong, opacity: pressed ? 0.85 : 1 },
         ]}>
         <Text style={[styles.selectText, { color: city ? palette.textPrimary : palette.textMuted }]}>
-          {city ? `${city}${district ? ` · ${district}` : ''}` : 'Vyber obec…'}
+          {city ? `${city}${district ? ` · ${district}` : ''}` : t('cityPicker.chooseTown')}
         </Text>
       </Pressable>
 
       <ModalScreen
         visible={open}
         onClose={() => setOpen(false)}
-        title={region ? `Vyber obec — ${region.replace(' kraj', '')}` : 'Vyber obec'}>
+        title={region ? t('cityPicker.modalTitleWithRegion', { region: region.replace(' kraj', '') }) : t('cityPicker.modalTitle')}>
         <View style={styles.modalBody}>
           <TextInput
             value={query}
             onChangeText={setQuery}
             autoFocus
-            placeholder={region ? `napr. Nitra — hľadá sa v kraji ${region.replace(' kraj', '')}` : 'napr. Nitra'}
+            placeholder={region ? t('cityPicker.searchPlaceholderWithRegion', { region: region.replace(' kraj', '') }) : t('cityPicker.searchPlaceholder')}
             placeholderTextColor={palette.textPlaceholder}
             style={[
               styles.search,
@@ -146,8 +148,8 @@ export function CityPicker({
           {!busy && results.length === 0 ? (
             <Text style={[styles.empty, { color: palette.textMuted }]}>
               {region
-                ? `V kraji ${region.replace(' kraj', '')} sa nič nenašlo. Skús inú časť názvu, alebo zmeň kraj vyššie.`
-                : 'Nič sa nenašlo. Skús inú časť názvu.'}
+                ? t('cityPicker.emptyWithRegion', { region: region.replace(' kraj', '') })
+                : t('cityPicker.emptyGeneric')}
             </Text>
           ) : null}
 

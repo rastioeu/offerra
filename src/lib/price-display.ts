@@ -13,6 +13,8 @@
  * Preto je to teraz čistá funkcia nad OBOMA vstupmi, testovateľná bez
  * appky. Počet ponúk sa do nej vždy podáva živý, nie uložený.
  */
+import type { TFunc } from '@/i18n';
+
 export type PriceDisplay = {
   /** Orientačná cena predávajúceho, ak ju uviedol. */
   asking: number | null;
@@ -27,6 +29,7 @@ export type PriceDisplay = {
 };
 
 export function priceDisplay(
+  t: TFunc,
   asking: number | null,
   topOffer: number | null,
   offerCount: number
@@ -35,28 +38,36 @@ export function priceDisplay(
 
   // 1. bez ceny, bez ponúk — jediný prípad, kde sa smie čakať
   if (asking == null && !hasOffers) {
-    return { asking, topOffer, offerCount, headline: 'NONE', note: 'Cena neuvedená — čaká na prvú ponuku' };
+    return { asking, topOffer, offerCount, headline: 'NONE', note: t('priceDisplay.noPriceNoOffers') };
   }
 
   // 2. bez ceny, ponuky UŽ sú — hlavné číslo je najvyššia ponuka
   if (asking == null && hasOffers) {
-    return { asking, topOffer, offerCount, headline: 'TOP_OFFER', note: 'Cenu predávajúci neuviedol' };
+    return { asking, topOffer, offerCount, headline: 'TOP_OFFER', note: t('priceDisplay.noPriceGiven') };
   }
 
   // 3. cena je, ponuky ešte nie — žiadna zmienka o čakaní
   if (asking != null && !hasOffers) {
-    return { asking, topOffer, offerCount, headline: 'ASKING', note: 'orientačne' };
+    return { asking, topOffer, offerCount, headline: 'ASKING', note: t('priceDisplay.indicative') };
   }
 
   // 4. cena aj ponuky — hlavné číslo je PONUKA, orientačná cena vedľa.
   //    Rozhodnutie z mockupu „Dôveryhodne teplá" (schválené 8.8.2026):
   //    skutočná ponuka je dôležitejšia než želanie predávajúceho. Predtým
   //    tu bolo `ASKING` a ponuka sa krčila v druhom riadku pod ňou.
-  return { asking, topOffer, offerCount, headline: 'TOP_OFFER', note: 'orientačne' };
+  return { asking, topOffer, offerCount, headline: 'TOP_OFFER', note: t('priceDisplay.indicative') };
 }
 
-/** „2 ponuky" so správnym tvarom. `null` keď niet čo písať. */
-export function offerCountLabel(n: number): string | null {
+/**
+ * „2 ponuky" so správnym tvarom. `null` keď niet čo písať.
+ * Slovenské tri tvary (ponuka/ponuky/ponúk) — pozri `formatRooms` pre ten
+ * istý vzor pri izbách.
+ */
+export function offerCountLabel(t: TFunc, language: string, n: number): string | null {
   if (n <= 0) return null;
-  return `${n} ${n === 1 ? 'ponuka' : n < 5 ? 'ponuky' : 'ponúk'}`;
+  if (language === 'sk') {
+    const key = n === 1 ? 'offerCountOne' : n < 5 ? 'offerCountFew' : 'offerCountMany';
+    return t(`priceDisplay.${key}`, { count: n });
+  }
+  return t(n === 1 ? 'priceDisplay.offerCountOne' : 'priceDisplay.offerCountMany', { count: n });
 }

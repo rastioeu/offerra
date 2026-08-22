@@ -12,12 +12,19 @@
  * manuálne všimne Rastio — a to je presne to, čo `scripts/check-deadline.mjs`
  * odteraz robí za neho, ešte pred nasadením.
  *
- * TENTO SÚBOR NEMÁ ŽIADEN IMPORT — ani z `property.ts`, ani odnikiaľ
- * inak. To je podmienka, nie štýl: akýkoľvek import naspäť do appky by
- * vrátil presne ten istý problém. `property.ts` tieto funkcie ĎALEJ
- * RE-EXPORTUJE, takže žiadny z miest, čo ich importujú z `@/lib/property`,
- * sa meniť nemusí.
+ * TENTO SÚBOR NEMÁ ŽIADEN RUNTIME IMPORT — ani z `property.ts`, ani
+ * odnikiaľ inak. To je podmienka, nie štýl: akýkoľvek import naspäť do
+ * appky by vrátil presne ten istý problém. `property.ts` tieto funkcie
+ * ĎALEJ RE-EXPORTUJE, takže žiadny z miest, čo ich importujú z
+ * `@/lib/property`, sa meniť nemusí.
+ *
+ * OD LOKALIZÁCIE (19.8.2026): `import type` na `TFunc` je VÝNIMKA —
+ * TypeScript typové importy sa pri kompilácii úplne vymažú (nulový runtime
+ * dopad), takže test v Node (`check-deadline.mjs`) beží bez appky presne
+ * tak ako predtým.
  */
+import type { TFunc } from '@/i18n';
+
 export type DeadlineUrgency = 'NONE' | 'OPEN' | 'SOON' | 'PASSED';
 
 /** Hranica, od ktorej je uzávierka „naliehavá" (Rastio, 8.8.2026). */
@@ -44,12 +51,13 @@ export function deadlineUrgency(iso: string | null): DeadlineUrgency {
 }
 
 /**
- * Dátum v slovenskom tvare, LEN pre tento súbor — `formatDate` v
+ * Dátum vo formáte podľa jazyka, LEN pre tento súbor — `formatDate` v
  * `property.ts` robí to isté, ale importovať si ho odtiaľ by znovu
  * pripojilo `./supabase` a zrušilo by to celý zmysel tohto súboru.
  */
-function localDate(iso: string): string {
-  return new Intl.DateTimeFormat('sk-SK', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
+function localDate(language: string, iso: string): string {
+  const tag = language === 'sk' ? 'sk-SK' : language === 'de' ? 'de-DE' : 'en-GB';
+  return new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
 }
 
 /**
@@ -83,12 +91,14 @@ export type DeadlineOutcome =
 /**
  * „1 ponuku / 3 ponuky / 7 ponúk" — v AKUZATÍVE, pretože veta znie
  * „Máš …". Prvá verzia vracala nominatív a vyšlo z toho „Máš 1 ponuka";
- * našiel to test, nie Rastio.
+ * našiel to test, nie Rastio. EN/DE nemajú pád, len jednotné/množné.
  */
-function offersWord(n: number): string {
-  if (n === 1) return '1 ponuku';
-  if (n >= 2 && n <= 4) return `${n} ponuky`;
-  return `${n} ponúk`;
+function offersWord(t: TFunc, language: string, n: number): string {
+  if (language === 'sk') {
+    const key = n === 1 ? 'deadlineOfferAccOne' : n >= 2 && n <= 4 ? 'deadlineOfferAccFew' : 'deadlineOfferAccMany';
+    return t(`deadline.${key}`, { count: n });
+  }
+  return t(n === 1 ? 'deadline.deadlineOfferAccOne' : 'deadline.deadlineOfferAccMany', { count: n });
 }
 
 function daysSince(from: number, now: number): number {
@@ -105,11 +115,15 @@ function daysSince(from: number, now: number): number {
  * úniu stavov by znamenalo držať ju na dvoch miestach.
  */
 export function deadlineOutcome({
+  t,
+  language,
   deadline,
   active,
   offerCount,
   now = Date.now(),
 }: {
+  t: TFunc;
+  language: string;
   deadline: string | null;
   active: boolean;
   offerCount: number;
@@ -118,22 +132,22 @@ export function deadlineOutcome({
   if (!active) return { kind: 'SETTLED' };
   if (!deadline) return { kind: 'NONE' };
 
-  const t = new Date(deadline).getTime();
-  if (t > now) return { kind: 'RUNNING', label: deadlineLabel(deadline, now) ?? '' };
+  const deadlineMs = new Date(deadline).getTime();
+  if (deadlineMs > now) return { kind: 'RUNNING', label: deadlineLabel(t, language, deadline, now) ?? '' };
 
-  const sinceDays = daysSince(t, now);
-  const when = `Ponuky sa uzavreli ${localDate(deadline)}`;
+  const sinceDays = daysSince(deadlineMs, now);
+  const when = t('deadline.offersClosedOn', { date: localDate(language, deadline) });
   const ago =
-    sinceDays === 0 ? ' (dnes)' : sinceDays === 1 ? ' (pred dňom)' : ` (pred ${sinceDays} dňami)`;
+    sinceDays === 0 ? t('deadline.agoToday') : sinceDays === 1 ? t('deadline.agoOneDay') : t('deadline.agoDays', { count: sinceDays });
 
   return {
     kind: 'AWAITING_OWNER',
-    label: 'Príjem ponúk ukončený',
-    title: 'Uzávierka prešla',
+    label: t('deadline.offersEnded'),
+    title: t('deadline.deadlinePassedTitle'),
     body:
       offerCount > 0
-        ? `${when}${ago}. Máš ${offersWord(offerCount)} — vyber jednu, alebo uzávierku predĺž.`
-        : `${when}${ago}. Nikto ponuku nepodal. Predĺž uzávierku, alebo inzerát archivuj.`,
+        ? t('deadline.bodyWithOffers', { when, ago, offers: offersWord(t, language, offerCount) })
+        : t('deadline.bodyNoOffers', { when, ago }),
     // Bez ponúk nemá „vybrať z ponúk" čo robiť — tlačidlo, ktoré by
     // viedlo na prázdny zoznam, radšej nie je.
     actions: offerCount > 0 ? ['PICK_OFFER', 'EXTEND', 'ARCHIVE'] : ['EXTEND', 'ARCHIVE'],
@@ -154,12 +168,12 @@ export function extendedDeadline(days: number, now: number = Date.now()): string
 export const EXTEND_DAYS = 7;
 
 /** Ostávajúci čas do uzávierky ponúk. `null` = bez časovača alebo už po ňom. */
-export function deadlineLabel(iso: string | null, now: number = Date.now()): string | null {
+export function deadlineLabel(t: TFunc, language: string, iso: string | null, now: number = Date.now()): string | null {
   if (!iso) return null;
   const ms = new Date(iso).getTime() - now;
-  if (ms <= 0) return 'Príjem ponúk ukončený';
+  if (ms <= 0) return t('deadline.offersEnded');
   const days = Math.floor(ms / 86_400_000);
-  if (days >= 1) return `Ponuky do ${localDate(iso)} · ostáva ${days} dní`;
+  if (days >= 1) return t('deadline.offersUntil', { date: localDate(language, iso), days });
   const hours = Math.max(1, Math.floor(ms / 3_600_000));
-  return `Ponuky sa uzatvárajú o ${hours} h`;
+  return t('deadline.offersClosingInHours', { hours });
 }
