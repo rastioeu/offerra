@@ -5294,15 +5294,15 @@ accessibility labely) — 1037 rôznych `t('domain.key')` volaní. Slovenské
 3-tvarové skloňovanie (izba/izby/izieb, ponuka/ponuky/ponúk) zachované
 cez `language === 'sk'` vetvu, EN/DE majú 2 tvary.
 
-**Vedomé výnimky (zostávajú len po slovensky):** `src/lib/legal.ts`
-(právny text zdieľaný s vygenerovaným webom — preklad je Rastiovo
-rozhodnutie, nie technická úloha), obsah `src/lib/changelog.ts`
+**Vedomé výnimky (zostávajú len po slovensky):** obsah `src/lib/changelog.ts`
 (historický záznam podľa §7, obrazovka okolo neho lokalizovaná je),
 `src/lib/errors.ts` slovník `FRIENDLY` + dve chyby v `src/lib/push.ts`
 (technické hlášky pre okrajové prípady, volané z ~100 miest — mechanicky
 zvládnuteľné, ale mimo rozsahu tejto fázy), a texty z reálnych slovenských
 dát (Register adries MV SR, prezývky, popisy inzerátov — to by bol presne
-ten zakázaný AI preklad obsahu).
+ten zakázaný AI preklad obsahu). `src/lib/legal.ts` (Ochrana osobných
+údajov, Podmienky používania) bolo pôvodne rovnaká výnimka, preložené
+dodatočne 23.8.2026 na Rastiovu žiadosť — pozri 30.8.
 
 ### 30.3 Automatizovaná kontrola — `scripts/check-i18n.ts`, **14/14**
 
@@ -5358,6 +5358,40 @@ iOS update `01a02b75-3270-76f6-8b84-3feb38c59e89` (skupina
 publikovaná OTA bola z Fázy 29 (3 dni staré, `eafd9b6e…`/`272132a1…`) —
 appka bola stále len po slovensky, presne ako to Rastio 22.8.2026 nahlásil
 („mam tam stale iba slovencinu"). Táto OTA to opravuje.
+
+### 30.8 Dodatok — preklad Ochrany osobných údajov a Podmienok používania (23.8.2026)
+
+Rastio 23.8.2026: „este treba orelozit aj privacy polici a term us" —
+`src/lib/legal.ts` bol v 30.2 vedomá výnimka („preklad právneho textu je
+Rastiovo rozhodnutie"); rozhodnutie padlo, doplnené v tom istom rozsahu
+ako zvyšok appky.
+
+- `PRIVACY`/`TERMS` v `src/lib/legal.ts` sú teraz `Record<LanguageCode,
+  LegalDoc>` (`sk`/`en`/`de`) namiesto jedného objektu — preklad, nie AI
+  parafráza, sekcie a ich poradie sedia 1:1 medzi jazykmi. Nová funkcia
+  `getLegalDoc(slug, language)`.
+- `src/app/legal/[doc].tsx` vyberá dokument podľa `language` z
+  `useTranslation()` — rovnaký vzor ako zvyšok appky.
+- **Verejný web (`docs/privacy.html`, `docs/terms.html`, App Store Connect
+  URL) ostáva len po slovensky** — jedna URL na jazyk by vyžadovala zmenu
+  generátora aj záznamu v App Store Connect, čo je mimo tejto zmeny.
+  `scripts/build-legal-html.mjs` upravený, aby generoval `.sk` verziu zo
+  zmenenej štruktúry (predtým čítal `LEGAL_DOCS[slug]` priamo ako
+  dokument) — **✅ OVERENÉ RUNTIME**, vygenerovaný výstup pre `privacy`
+  a `terms` je bajtovo zhodný s predošlým okrem jednej odchýlky vysvetlenej
+  nižšie.
+- **Vedľajší nález, opravený v tom istom kroku:** `docs/privacy.html` bol
+  zastaraný — z 9.8.2026, spred zmeny na povinné telefónne číslo. Nikto ho
+  po tej zmene znovu nevygeneroval. Opravené spustením generátora
+  (`node scripts/build-legal-html.mjs`); `docs/terms.html` sa nezmenil.
+- `npx tsc --noEmit -p .` → 0 chýb. `npx --yes tsx scripts/check-i18n.ts`
+  → 14/14 (legal.ts nie je v jeho rozsahu — nepoužíva `t()`). `git diff
+  --stat package.json` → prázdne.
+- 🟡 **ČAKÁ VIZUÁLNE OVERENIE** — anglický aj nemecký text Ochrany osobných
+  údajov a Podmienok používania v appke (Nastavenia → odkaz na dokument,
+  alebo pri prihlásení „Nutzungsbedingungen"/„Datenschutz"), hlavne či sa
+  dlhšie odseky (GDPR referencie, DVOCH prípadov odkrytia kontaktu)
+  zmestia čitateľne.
 
 ---
 

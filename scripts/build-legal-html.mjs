@@ -32,14 +32,27 @@ function loadLegal() {
   const kept = [];
   let depth = 0;
   let inType = false;
+  let inFn = false;
   for (const line of lines) {
-    if (!inType && /^export type /.test(line)) {
+    if (!inType && !inFn && /^export type /.test(line)) {
       inType = true;
       depth = 0;
     }
     if (inType) {
       depth += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
       if (depth <= 0 && /;\s*$/.test(line)) inType = false;
+      continue;
+    }
+    // Funkcie ako `getLegalDoc` majú TS anotácie v parametroch/návratovom
+    // type, ktoré `new Function` nevie parsovať — skript ich nepotrebuje
+    // (číta `LEGAL_DOCS` priamo), tak sa celý blok preskočí.
+    if (!inFn && /^export function /.test(line)) {
+      inFn = true;
+      depth = 0;
+    }
+    if (inFn) {
+      depth += (line.match(/{/g) || []).length - (line.match(/}/g) || []).length;
+      if (depth <= 0 && /^}\s*$/.test(line)) inFn = false;
       continue;
     }
     kept.push(line);
@@ -115,8 +128,12 @@ ${doc.sections
 
 const { LEGAL_DOCS, LEGAL_UPDATED, LEGAL_CONTACT_EMAIL, LEGAL_OPERATOR } = loadLegal();
 
+// `LEGAL_DOCS[slug]` je od 23.8.2026 `{ sk, en, de }` (appka má 3 jazyky) —
+// verejný web má zatiaľ jednu URL na dokument, preto sa generuje len
+// slovenská verzia (`.sk`), rovnako ako doteraz.
 mkdirSync(OUT, { recursive: true });
-for (const doc of Object.values(LEGAL_DOCS)) {
+for (const bySlug of Object.values(LEGAL_DOCS)) {
+  const doc = bySlug.sk;
   writeFileSync(join(OUT, `${doc.slug}.html`), docPage(doc, LEGAL_UPDATED));
 }
 

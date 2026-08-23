@@ -20,6 +20,14 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '23. augusta 2026',
+    title: 'Preložená aj Ochrana osobných údajov a Podmienky používania',
+    items: [
+      'Oba právne dokumenty v appke sú teraz dostupné v slovenčine, angličtine aj nemčine, podľa zvoleného jazyka appky.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '22. augusta 2026',
     title: 'Appka hovorí po slovensky, anglicky aj nemecky',
     items: [

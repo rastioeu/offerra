@@ -15,7 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/i18n';
-import { LEGAL_DOCS, LEGAL_UPDATED, type LegalDoc } from '@/lib/legal';
+import { getLegalDoc, LEGAL_UPDATED, type LegalDoc } from '@/lib/legal';
 import { Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
 /** Verejná verzia toho istého dokumentu — tú vidí aj Apple. */
@@ -23,11 +23,11 @@ const WEB_BASE = 'https://rastioeu.github.io/offerra_web';
 
 export default function LegalScreen() {
   const palette = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { doc } = useLocalSearchParams<{ doc: string }>();
   const key = (doc === 'terms' ? 'terms' : 'privacy') as LegalDoc['slug'];
-  const content = LEGAL_DOCS[key];
-  const other = key === 'privacy' ? LEGAL_DOCS.terms : LEGAL_DOCS.privacy;
+  const content = getLegalDoc(key, language);
+  const other = getLegalDoc(key === 'privacy' ? 'terms' : 'privacy', language);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: palette.background }]} edges={['left', 'right', 'bottom']}>
