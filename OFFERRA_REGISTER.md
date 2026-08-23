@@ -5393,6 +5393,13 @@ ako zvyšok appky.
   dlhšie odseky (GDPR referencie, DVOCH prípadov odkrytia kontaktu)
   zmestia čitateľne.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `32354d9`. Runtime
+nezmenené (`24919867e…` iOS / `eaadbb7ec…` Android, zhodné s buildom #5).
+iOS update `01a02c3f-a7e8-71ae-9b73-051db12e96bb` (skupina
+`ca8d4712-fd49-40dc-a9f1-1aca58fd55cd`), Android update
+`01a02c3f-a7e8-7e1b-8357-7db005d502e6` (skupina
+`b3988901-e01e-41a6-8c88-da3c7a9ebe42`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
