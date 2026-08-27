@@ -13,7 +13,7 @@ import type { TFunc } from '@/i18n';
 import { db } from './property';
 import { supabase } from './supabase';
 
-export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN';
+export type OfferStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'WITHDRAWN' | 'EXPIRED';
 export type RequestStatus = 'ACTIVE' | 'FULFILLED' | 'EXPIRED' | 'CLOSED';
 
 export type PublicBidder = { nickname: string; avatar_url: string | null };
@@ -32,6 +32,14 @@ export type Offer = {
    */
   message: string | null;
   status: OfferStatus;
+  /**
+   * Dokedy ponuka platí. `null` = bez obmedzenia. Rovnaký vzor ako
+   * `property.offer_deadline` — appka počíta uplynutie ŽIVO
+   * (`isOfferExpired`, `src/lib/offer-validity.ts`), nespolieha sa len na
+   * `status === 'EXPIRED'` (ten nastaví cron `offerra.expire_offers()` až
+   * s oneskorením do 5 minút).
+   */
+  valid_until: string | null;
   created_at: string;
   updated_at: string;
   /**
@@ -50,23 +58,27 @@ export type OfferStep = { label: string; at: string | null; done: boolean };
 
 export function offerSteps(t: TFunc, o: Offer): OfferStep[] {
   const decided = o.status === 'ACCEPTED' || o.status === 'REJECTED';
+  // EXPIRED patrí sem rovnako ako WITHDRAWN — je to KONIEC cesty ponuky,
+  // len ho nespôsobil majiteľ ani záujemca, ale uplynutá platnosť.
+  const terminal = decided || o.status === 'WITHDRAWN' || o.status === 'EXPIRED';
   return [
     { label: t('offers.stepSubmitted'), at: o.created_at, done: true },
     {
       label: o.viewed_by_owner_at ? t('offers.stepSeenByOwner') : t('offers.stepAwaitingOwner'),
       at: o.viewed_by_owner_at,
-      done: Boolean(o.viewed_by_owner_at) || decided,
+      done: Boolean(o.viewed_by_owner_at) || terminal,
     },
     {
       label:
         o.status === 'ACCEPTED' ? t('offers.statusAccepted')
           : o.status === 'REJECTED' ? t('offers.statusRejected')
           : o.status === 'WITHDRAWN' ? t('offers.statusWithdrawn')
+          : o.status === 'EXPIRED' ? t('offers.statusExpired')
           : t('offers.stepDecision'),
-      // `updated_at` je pri rozhodnutej ponuke čas rozhodnutia; pri
+      // `updated_at` je pri rozhodnutej/uzavretej ponuke čas rozhodnutia; pri
       // čakajúcej by to bol čas poslednej úpravy sumy, čo by klamalo.
-      at: decided || o.status === 'WITHDRAWN' ? o.updated_at : null,
-      done: decided || o.status === 'WITHDRAWN',
+      at: terminal ? o.updated_at : null,
+      done: terminal,
     },
   ];
 }
@@ -157,6 +169,7 @@ export function getOfferStatusLabel(t: TFunc): Record<OfferStatus, string> {
     ACCEPTED: t('offers.statusAccepted'),
     REJECTED: t('offers.statusRejected'),
     WITHDRAWN: t('offers.statusWithdrawn'),
+    EXPIRED: t('offers.statusExpired'),
   };
 }
 
@@ -207,7 +220,7 @@ export function formatBudget(t: TFunc, min: number | null, max: number | null): 
  * citlivý stĺpec, `*` by ho ticho zverejnilo, tento zoznam nie.
  */
 export const OFFER_PUBLIC_COLS =
-  'id, property_id, bidder_id, amount, status, created_at, updated_at, viewed_by_owner_at';
+  'id, property_id, bidder_id, amount, status, valid_until, created_at, updated_at, viewed_by_owner_at';
 
 /**
  * Správy k ponukám na jeden inzerát — len tie, ktoré volajúci smie vidieť.

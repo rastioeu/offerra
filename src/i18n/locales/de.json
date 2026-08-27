@@ -123,26 +123,23 @@
     "step3Body": "Der Tab „Nachrichten\" im Inserat — immer nur ihr zwei, unter Spitznamen. Telefonnummer und E-Mail lassen sich in Nachrichten nicht verschicken; dafür gibt es das angenommene Angebot oder die Besichtigung.",
     "step4Title": "Nur zwischen Menschen",
     "step4Body": "Offerra ist für Privatpersonen, nicht für Makler. Inserat, Angebot und Nutzer lassen sich melden, und ein Mensch schaut sich das an.",
-
     "section0Title": "Umgekehrter Markt — der Preis ist optional",
     "section0Para0": "Auf einem gewöhnlichen Portal legt der Verkäufer den Preis fest, und der Käufer nimmt ihn an oder geht. Bei Offerra läuft es umgekehrt: Du MUSST keinen Preis angeben. Du schreibst, was du anbietest, und die Leute sagen dir, wie viel sie bereit sind zu zahlen.",
     "section0Para1": "Gibst du trotzdem einen Richtpreis an, ist er nur eine Orientierung — Angebote können höher oder niedriger sein. Änderst du ihn nach der Veröffentlichung, zeigt das Inserat, um wie viel. Der Preis lässt sich nicht still ändern.",
     "section0Para2": "Bei Miete sind alle Beträge MONATLICH, beim Verkauf ist es der Gesamtbetrag.",
     "section0Para3": "Ein Inserat lässt sich erst mit Titel, Ort, Zimmeranzahl, Fläche und mindestens einem Foto veröffentlichen — ohne das kann niemand entscheiden, ob es ihn interessiert. Preis, Region und Straße sind freiwillig. Ein Grundstück braucht naturgemäß keine Zimmeranzahl.",
     "section0Para4": "Die Region lässt sich auch vor dem Ort wählen — dann wird der Ort nur innerhalb dieser Region gesucht. Wählst du den Ort, wird die Region danach gesetzt; der Ort entscheidet immer.",
-
     "section1Title": "Angebote sind öffentlich, Personen nicht",
     "section1Para0": "Betrag, Spitzname, Datum und Status jedes Angebots sieht jeder — auch nicht angemeldet. So weißt du, ob du in einem Bietwettbewerb bist oder der einzige Interessent.",
     "section1Para1": "Wer hinter einem Spitznamen steckt, erfährt niemand. Name und Telefonnummer sind direkt in der Datenbank geschützt — sie werden nicht einmal technisch herausgegeben, solange es keinen Grund dafür gibt.",
     "section1Para2": "Die Nachricht, die du einem Angebot beifügst, ist NICHT öffentlich. Nur der Verkäufer und du könnt sie lesen.",
     "section1Para3": "Pro Inserat hast du ein aktives Angebot. Eine Erhöhung bearbeitet dasselbe Angebot, ist kein neues — sonst ließe sich die Liste überfluten.",
     "section1Para4": "Bei Miete wird dem Angebot ein kurzer Fragebogen beigefügt (Personenzahl, Haustiere, Mietdauer, Beschäftigung). Nur der Inseratseigentümer sieht ihn. Die Personenzahl ist Pflicht.",
-
+    "section1Para5": "Du kannst für jedes Angebot auch eine eigene Gültigkeitsdauer festlegen — zum Beispiel 7 oder 14 Tage — unabhängig von der Angebotsfrist des gesamten Inserats. Läuft diese Gültigkeit ab, wird das Angebot in der Liste als ungültig markiert, der Verkäufer kann es nicht mehr annehmen, und es zählt nicht mehr zum höchsten Angebot auf der Karte. Du bekommst eine Benachrichtigung, wenn es abläuft.",
     "section2Title": "Wann die echte Identität offengelegt wird",
     "section2Para0": "Wenn der Verkäufer ein Angebot ANNIMMT, werden Name, Telefonnummer und E-Mail beiden Seiten gleichzeitig offengelegt. Davor hat sie keine der beiden Seiten.",
     "section2Para1": "Offengelegt wird nur das betroffene Paar. Andere Interessenten erfahren nichts.",
     "section2Para2": "Deshalb lohnt es sich, Name und Telefonnummer in den Einstellungen einzutragen — ohne sie kann sich die andere Seite nach der Annahme des Angebots nicht bei dir melden.",
-
     "section3Title": "Nachrichten — fragen kannst du sofort",
     "section3Para0": "In der Inseratdetailansicht gibt es den Tab „Nachrichten\". Schreiben geht jederzeit, auch bevor du ein Angebot abgibst — genau dafür ist er da: um zu fragen, was das Inserat nicht verrät.",
     "section3Para1": "Denselben Chat gibt es auch direkt in der ANFRAGEDETAILANSICHT — du musst nicht erst mit einem Inserat angesprochen werden. Praktisch, wenn du vor dem Ansprechen prüfen willst, ob das, was du anbietest, wirklich zu dem passt, was jemand sucht.",
@@ -150,7 +147,6 @@
     "section3Para3": "Geschrieben wird UNTER SPITZNAMEN. Nachrichten allein legen keine Identität offen; Name und Telefonnummer werden wie gehabt offengelegt — durch ein angenommenes Angebot oder eine Besichtigung.",
     "section3Para4": "Deshalb lassen sich in Nachrichten KEINE Telefonnummern oder E-Mails verschicken. Die App lehnt das ab und sagt warum. Ohne das ließe sich die gesamte Kontaktoffenlegung mit einer einzigen Nachricht umgehen.",
     "section3Para5": "Schreibt dir jemand, bekommst du eine Benachrichtigung. Der Nachrichteninhalt steht nicht darin — der bleibt privat.",
-
     "section4Title": "Besichtigung — der Eigentümer bestätigt sie",
     "section4Para0": "Du musst nicht auf die Annahme eines Angebots warten. Mit dem Button „Besichtigung anfragen\" schickst du eine Anfrage — der Eigentümer sieht sie unter deinem Spitznamen, der Kontakt ist noch NICHT offengelegt.",
     "section4Para1": "Der Eigentümer BESTÄTIGT oder LEHNT die Anfrage im Tab Besichtigung ab. Erst die Bestätigung legt Name, Telefonnummer und E-Mail beiden Seiten gleichzeitig offen — derselbe Mechanismus wie bei der Annahme eines Angebots.",
@@ -158,33 +154,28 @@
     "section4Para3": "Die App SCHLÄGT keine Termine vor und bestätigt auch keine. Wann und wo ihr euch trefft, vereinbart ihr nach der Kontaktoffenlegung telefonisch.",
     "section4Para4": "Was die Bestätigung bewirkt, steht ÜBER dem Button, nicht erst danach. Und rückgängig machen lässt es sich nicht — ein Kontakt, den die andere Seite schon gesehen hat, wird nicht gelöscht.",
     "section4Para5": "Markiere die Besichtigung nach dem Treffen als „War bei der Besichtigung\".",
-
     "section5Title": "Angebotsfrist — und was danach passiert",
     "section5Para0": "Eine Frist ist optional. Setzt du eine für ein Inserat, läuft auf der Karte und in der Detailansicht ein Countdown („Angebote bis… · noch X Tage\"), und nach dem Termin kann niemand mehr ein Angebot abgeben — das erzwingt auch die Datenbank, nicht nur ein Button in der App.",
     "section5Para1": "Nach der Frist wird das Inserat NICHT gelöscht und verschwindet nicht. Du bekommst dazu eine Frage, was damit geschehen soll: aus den eingegangenen Angeboten wählen, die Frist um 7 Tage verlängern oder das Inserat archivieren. Bis du dich entscheidest, bleibt es mit dem Hinweis „Angebote werden nicht mehr angenommen\" im Katalog — damit die Leute sehen, dass niemand mehr bieten kann.",
     "section5Para2": "Ein archiviertes Inserat verschwindet aus dem Katalog, und niemand kann mehr darauf bieten. Bereits eingegangene Angebote bleiben in deiner Übersicht erhalten.",
     "section5Para3": "Über eine abgelaufene Frist schickt dir die App KEINE Benachrichtigung — die Frage siehst du, sobald du das Inserat öffnest. Lieber zeigen wir es direkt, als dass du auf eine Benachrichtigung wartest, die nie kommt.",
-
     "section6Title": "Geschäftsabschluss",
     "section6Para0": "Die Annahme eines Angebots und der Geschäftsabschluss sind ZWEI verschiedene Dinge. Annahme heißt „einigen wir uns\", Abschluss heißt „erledigt\" — dazwischen liegt meist Papierkram, der gelegentlich scheitert.",
     "section6Para1": "Nach der Annahme eines Angebots wird das Inserat GESPERRT: Preis, Fläche und Bedingungen lassen sich nicht mehr ändern. Was ihr vereinbart habt, muss so bleiben, wie es in diesem Moment war. Weitere Fotos kannst du hinzufügen, bestehende nicht löschen — sie sind der Nachweis über den Zustand der Sache.",
     "section6Para2": "Schließt du das Geschäft ab, verschwindet das Inserat aus dem Katalog, und alle anderen offenen Angebote werden geschlossen. Deren Urheber bekommen eine Benachrichtigung, dass das Inserat bereits einen Käufer hat — ohne Name und ohne Betrag des Gewinners.",
     "section6Para3": "Ein Geschäft lässt sich auch abschließen, wenn ihr euch außerhalb der App geeinigt habt.",
-
     "section7Title": "Bewertungen sind öffentlich",
     "section7Para0": "Nach dem Geschäftsabschluss können sich beide Seiten gegenseitig mit ein bis fünf Sternen und ein paar Sätzen bewerten.",
     "section7Para1": "Eine Bewertung ist VOLLSTÄNDIG ÖFFENTLICH — Sterne und Text. Sie ist beim Spitznamen und beim Inserat sichtbar.",
     "section7Para2": "Das ist Absicht: Wer ein Geschäft mit einer bestimmten Person erwägt, braucht Kontext, nicht nur eine Zahl. „4,6 Sterne\" sagt nicht, ob die andere Seite pünktlich war.",
     "section7Para3": "Bewerten können NUR die beiden Beteiligten, und nur einmal. Ein erfolgloser Interessent kann nicht bewerten — sonst ließe sich eine Ablehnung mit einer Racheaktion beantworten.",
     "section7Para4": "Deine Bewertung kannst du jederzeit ändern.",
-
     "section8Title": "Anfragen — Suche umgekehrt",
     "section8Para0": "Im Tab Anfragen schreibst du, was du suchst. Eigentümer können dich danach mit ihrem Inserat ansprechen.",
     "section8Para1": "Eine Anfrage spricht die Sprache des SUCHENDEN: „Kaufe\" und „Suche Miete\" statt „Verkauf\" und „Vermietung\", die auf Inseraten stehen. Es ist dasselbe Paar, nur von der anderen Seite.",
     "section8Para2": "Spricht dich jemand an, bekommst du eine Benachrichtigung und findest die Ansprache in der Detailansicht deiner Anfrage. Ein Tipp öffnet das dir angebotene Inserat — mit Fotos, Preis und Zimmeranzahl, genau wie im Katalog. Von dort kannst du eine Besichtigung genauso anfragen wie bei einem selbst gefundenen Inserat.",
     "section8Para3": "Eine Ansprache ist keine Nachricht. Es ist ein Eintrag bei deiner Anfrage, und ansprechen kann dich nur, wer selbst ein veröffentlichtes Inserat hat. Schreiben könnt ihr euch auch VORHER — in der Anfragedetailansicht gibt es denselben Chat wie beim Inserat, unter Spitznamen.",
     "section8Para4": "Das Budget ist eine Orientierung, keine Verpflichtung. Dein Name und deine Telefonnummer erscheinen bei der Anfrage nicht — genau wie bei Angeboten.",
-
     "section9Title": "Melden, Moderation und Sperren",
     "section9Para0": "Melden lassen sich ein Inserat, ein Angebot und ein Nutzer. Gründe sind: gefälschtes Inserat (Immobilie existiert nicht), Betrug (verlangt eine Anzahlung, will keine Besichtigung), Spam oder Werbung, unangemessener Inhalt, Verdacht auf Makler und Sonstiges.",
     "section9Para1": "NICHTS wird automatisch gelöscht. Jede Meldung sieht sich ein Mensch an und entscheidet. Ein Automat würde auch löschen, was nicht gelöscht werden sollte.",
@@ -193,31 +184,26 @@
     "section9Para4": "Ein Nutzer kann gesperrt werden. Ein gesperrtes Konto kann sich nicht anmelden und nichts hinzufügen; bisherige Daten bleiben erhalten, und eine Entsperrung stellt alles wieder her. Es ist keine Löschung.",
     "section9Para5": "Offerra ist ein Markt ZWISCHEN MENSCHEN und NUR für Privatpersonen bestimmt, die in eigenem Namen handeln — Eigentümer, Miteigentümer, Mieter oder Interessent. Immobilienbüros, Vermittler und Makler dürfen sie NICHT nutzen, auch nicht über ein auf eine Privatperson laufendes Konto. Das bestätigt jeder bei der Registrierung ausdrücklich, und der Bestätigungszeitpunkt wird gespeichert.",
     "section9Para6": "Eine falsche Bestätigung verstößt gegen die Nutzungsbedingungen und ist Grund für eine sofortige Kontosperre und Löschung der Inserate. Bei Verdacht gibt es dafür einen eigenen Button „Makler melden\" direkt beim Spitznamen.",
-
     "section10Title": "Inseratslimit pro Konto",
     "section10Para0": "Ein Konto kann höchstens fünf Inserate gleichzeitig veröffentlicht haben.",
     "section10Para1": "Das ist ein Schutz vor Überflutung des Katalogs. Wer Dutzende Immobilien inseriert, ist nicht der Nachbar, der eine Wohnung verkauft — und genau für diesen Nachbarn ist Offerra gebaut.",
     "section10Para2": "Unfertige Inserate zählen nicht zum Limit, und Archivieren oder ein Geschäftsabschluss schaffen wieder Platz. Stößt du an das Limit, sagt dir die App warum und wie viele du hast.",
-
     "section11Title": "Gespeicherte Suchen und Treffer-Benachrichtigungen",
     "section11Para0": "Deine aktuellen Filter speicherst du mit einem Tipp und rufst sie später aus der Leiste über dem Katalog wieder auf.",
     "section11Para1": "Bei jeder gespeicherten Suche siehst du eine Zahl — wie viele Inserate passen und wie viele seit deinem letzten Öffnen dazugekommen sind. Öffnest du sie, wird die Zahl zurückgesetzt.",
     "section11Para2": "Kommt ein neues Inserat hinzu, das zur Suche passt, bekommst du eine Benachrichtigung.",
     "section11Para3": "Eine gespeicherte Suche ist PRIVAT. Was du suchst, sieht niemand außer dir. Löschen kannst du sie mit langem Drücken.",
     "section11Para4": "Die Suche versteht Slowakisch auch ohne Diakritika und mit Deklinationsformen — „Banskej\" findet Banská Bystrica, „Košiciach\" findet Košice.",
-
     "section12Title": "Du bestimmst deine Benachrichtigungen",
     "section12Para0": "Gleich bei der Registrierung — nach der Eingabe des Spitznamens — fragt dich Offerra, ob du Benachrichtigungen aufs Telefon willst, und zeigt dir gleich die volle Liste der Typen. Du stellst es von Anfang an ein, statt dass es dich eines Tages plötzlich zu piepsen anfängt und du suchen musst, wo man das abschaltet.",
     "section12Para1": "Bei jedem Typ wählst du, ob du ihn willst: neues Angebot auf dein Inserat, Annahme oder Ablehnung deines Angebots, neue Anfrage passend zu deinem Inserat, Treffer bei einer gespeicherten Suche, Interesse an einer Besichtigung.",
     "section12Para2": "Ein deaktivierter Typ sendet nichts — weder in der App noch aufs Telefon.",
     "section12Para3": "System- und Sicherheitsbenachrichtigungen (z. B. eine Kontosperre) lassen sich nicht abschalten. Sie müssen immer ankommen.",
     "section12Para4": "Dieselbe Liste findest du jederzeit in den Einstellungen und kannst sie ändern. Hast du die Erlaubnis anfangs nicht erteilt, nervt dich die App nicht erneut damit — sie erinnert dich einmal, nach deinem ersten Angebot oder ersten Inserat, wenn du bereits weißt, wofür es gut ist.",
-
     "section13Title": "Verifizierter Nutzer",
     "section13Para0": "Bei manchen Personen steht das Abzeichen VERIFIZIERT, daneben ein Satz, WAS der Administrator genau geprüft hat — zum Beispiel ein Ausweisdokument und ein Grundbuchauszug.",
     "section13Para1": "Das Abzeichen lässt sich NICHT automatisch erwerben oder selbst setzen. Vergeben wird es ausschließlich von einem Administrator, und ohne angegebenen Grund akzeptiert das System es nicht. Ein Abzeichen, das nicht sagen kann, worauf es beruht, wäre nur Dekoration.",
     "section13Para2": "Das Abzeichen legt sonst nichts offen — Name und Telefonnummer bleiben wie bei allen anderen verborgen.",
-
     "section14Title": "Adresse, Karte und Privatsphäre",
     "section14Para0": "Inserate lassen sich auch auf einer Karte durchsuchen. Der Pin steht dabei auf dem ORT, nicht auf dem Gebäude.",
     "section14Para1": "Eine Straße kann der Verkäufer angeben, und die App schlägt sie aus dem Adressregister des slowakischen Innenministeriums vor, aber ohne Hausnummer. Die genaue Adresse wird erst persönlich vereinbart.",
@@ -250,7 +236,9 @@
     "NOVA_SPRAVA_label": "Neue Nachricht",
     "NOVA_SPRAVA_hint": "Wenn dir jemand zu einem Inserat schreibt. Der Nachrichteninhalt steht nicht in der Benachrichtigung — der bleibt privat.",
     "SYSTEMOVE_label": "System und Sicherheit",
-    "SYSTEMOVE_hint": "Zum Beispiel eine Kontosperre. Das lässt sich nicht abschalten — muss immer ankommen."
+    "SYSTEMOVE_hint": "Zum Beispiel eine Kontosperre. Das lässt sich nicht abschalten — muss immer ankommen.",
+    "PONUKA_EXPIROVANA_label": "Mein Angebot ist abgelaufen",
+    "PONUKA_EXPIROVANA_hint": "Das Angebot ist automatisch ungültig geworden, der Verkäufer kann es nicht mehr annehmen."
   },
   "viewing": {
     "statusRequested": "Wartet auf Bestätigung",
@@ -329,7 +317,8 @@
     "employmentOther": "Sonstiges",
     "budgetUpTo": "bis {{amount}}",
     "budgetFrom": "ab {{amount}}",
-    "budgetNotGiven": "Budget nicht angegeben"
+    "budgetNotGiven": "Budget nicht angegeben",
+    "statusExpired": "Abgelaufen"
   },
   "priceDisplay": {
     "noPriceNoOffers": "Kein Preis angegeben — wartet auf das erste Angebot",
@@ -397,6 +386,16 @@
     "reportAgency": "Makler melden",
     "pillAccepted": "ANGENOMMEN",
     "pillHighest": "HÖCHSTES"
+  },
+  "offerValidity": {
+    "expired": "Abgelaufen",
+    "validUntil": "Gültig bis {{date}} · noch {{days}} Tage",
+    "validUntilHours": "Noch {{hours}} Std. gültig",
+    "pickerNone": "Ohne Begrenzung",
+    "pickerDays": "{{count}} Tage",
+    "pickerHint": "Wie lange dein Angebot gültig bleibt. Danach kann der Verkäufer es nicht mehr annehmen. Optional.",
+    "pickerLabel": "Gültigkeit des Angebots",
+    "pickerValidUntil": "Angebot gültig bis {{date}}"
   },
   "priceTimeline": {
     "title": "Preisverlauf",
@@ -510,7 +509,8 @@
     "theBidder": "den Interessenten",
     "ratingsOwnerNote": "Das ist dein Ruf über alle Geschäfte hinweg, nicht nur bei diesem Inserat — genau so sehen ihn auch Interessenten.",
     "ratingsBidderNote": "Das sind die Bewertungen von {{nickname}} aus ALLEN seinen Geschäften, nicht nur aus diesem Inserat. Ein Inserat wird einmal verkauft, ein Ruf baut sich über längere Zeit auf.",
-    "ratingsNotYetNote": "Bewerten geht erst nach Abschluss des Geschäfts, und nur durch die beiden, die es gemeinsam abgeschlossen haben."
+    "ratingsNotYetNote": "Bewerten geht erst nach Abschluss des Geschäfts, und nur durch die beiden, die es gemeinsam abgeschlossen haben.",
+    "offerExpiredNote": "Die Gültigkeit deines Angebots ist abgelaufen. Wenn du noch interessiert bist, gib ein neues ab."
   },
   "dopyty": {
     "title": "Anfragen",

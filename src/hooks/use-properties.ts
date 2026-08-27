@@ -11,6 +11,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { stemQuery, type CatalogFilter } from '@/lib/search';
 import { db, sortProperties, type CatalogSort, type Media, type Property, type PropertyWithMedia } from '@/lib/property';
+import { isOfferExpired } from '@/lib/offer-validity';
 import { errorText } from '@/lib/errors';
 import type { PgBinding } from '@/lib/realtime';
 import { useRealtimeChannel } from '@/hooks/use-realtime-channel';
@@ -49,16 +50,22 @@ async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWith
   if (rows.length === 0) return rows;
   const { data, error } = await db()
     .from('property_offer')
-    .select('property_id, amount, status')
+    .select('property_id, amount, status, valid_until')
     .in('property_id', rows.map((r) => r.id));
   if (error) throw error;
 
   // ŽIVÁ ponuka = tá, ktorá ešte stojí. Stiahnutá ani odmietnutá sa
   // nepočíta — inak by karta hlásila „2 ponuky" pri inzeráte, kde obe
   // dávno padli. Rovnaká definícia ako v detaile (`price-display`).
+  //
+  // Platnosť sa počíta ŽIVO (`isOfferExpired`), nie len z `status`: cron
+  // `offerra.expire_offers()` beží každých 5 minút, takže PENDING ponuka
+  // s prešlou platnosťou by bez toho ešte chvíľu vyhrávala v katalógu ako
+  // najvyššia, hoci ju už nikto nemôže prijať.
   const best = new Map<string, { top: number | null; count: number; pending: number }>();
-  for (const o of (data ?? []) as { property_id: string; amount: number; status: string }[]) {
+  for (const o of (data ?? []) as { property_id: string; amount: number; status: string; valid_until: string | null }[]) {
     if (o.status !== 'PENDING' && o.status !== 'ACCEPTED') continue;
+    if (o.status === 'PENDING' && isOfferExpired(o.status, o.valid_until)) continue;
     const cur = best.get(o.property_id) ?? { top: null, count: 0, pending: 0 };
     cur.count += 1;
     // ČAKAJÚCE sa počítajú zvlášť: v „Moje inzeráty" sa podľa nich riadok

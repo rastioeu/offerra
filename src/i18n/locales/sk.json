@@ -124,26 +124,23 @@
     "step3Body": "Tab „Správy\" v inzeráte — vždy len vy dvaja, pod prezývkou. Telefón ani e-mail sa v správach poslať nedajú; na to je prijatá ponuka alebo obhliadka.",
     "step4Title": "Len medzi ľuďmi",
     "step4Body": "Offerra je pre fyzické osoby, nie pre realitky. Inzerát, ponuku aj používateľa sa dá nahlásiť a pozrie sa na to človek.",
-
     "section0Title": "Obrátený trh — cena je nepovinná",
     "section0Para0": "Na bežnom portáli predávajúci určí cenu a kupujúci ju buď prijme, alebo odíde. V Offerre to ide naopak: cenu uvádzať NEMUSÍŠ. Napíšeš, čo ponúkaš, a ľudia ti povedia, koľko sú ochotní dať.",
     "section0Para1": "Ak orientačnú cenu uvedieš, je to len vodidlo — ponuky môžu byť vyššie aj nižšie. Keď ju po zverejnení zmeníš, na inzeráte je vidieť o koľko. Cena sa nedá upraviť ticho.",
     "section0Para2": "Pri prenájme sú všetky sumy MESAČNÉ, pri predaji celkové.",
     "section0Para3": "Zverejniť inzerát sa dá až s názvom, obcou, počtom izieb, výmerou a aspoň jednou fotkou — bez toho sa nikto nevie rozhodnúť, či ho to zaujíma. Cena, kraj a ulica sú dobrovoľné. Pozemok počet izieb pochopiteľne nepotrebuje.",
     "section0Para4": "Kraj sa dá vybrať aj skôr než obec — vtedy sa obec hľadá len v ňom. Keď obec vyberieš, kraj sa nastaví podľa nej; obec je vždy tá, ktorá rozhoduje.",
-
     "section1Title": "Ponuky sú verejné, ľudia nie",
     "section1Para0": "Sumu, prezývku, dátum a stav každej ponuky vidí ktokoľvek — aj neprihlásený. Vďaka tomu vieš, či ideš do dražby, alebo si jediný záujemca.",
     "section1Para1": "Kto za prezývkou stojí, sa nedozvie nikto. Meno a telefón sú chránené priamo v databáze — nevydá ich ani technicky, kým nenastane dôvod.",
     "section1Para2": "Správa, ktorú k ponuke priložíš, verejná NIE JE. Prečíta ju len predávajúci a ty.",
     "section1Para3": "Na jeden inzerát máš jednu živú ponuku. Zvýšenie je úprava tej istej, nie nová — inak by sa zoznam dal zaplaviť.",
     "section1Para4": "Pri prenájme sa k ponuke pridáva krátky dotazník (počet osôb, zvieratá, dĺžka nájmu, zamestnanie). Vidí ho LEN majiteľ inzerátu. Počet osôb je povinný.",
-
+    "section1Para5": "Ku každej ponuke si vieš nastaviť aj vlastnú platnosť — napríklad 7 alebo 14 dní — nezávisle od uzávierky, ktorú má inzerát ako celok. Keď platnosť uplynie, ponuka sa v zozname označí ako neplatná, predávajúci ju už nemôže prijať a do najvyššej ponuky na karte sa nepočíta. O uplynutí dostaneš upozornenie.",
     "section2Title": "Kedy sa odkryje skutočná identita",
     "section2Para0": "Keď predávajúci ponuku PRIJME, meno, telefón a e-mail sa odkryjú OBOM stranám naraz. Predtým ich nemá ani jeden z nich.",
     "section2Para1": "Odkryje sa len dvojica, ktorej sa to týka. Ostatní záujemcovia sa nedozvedia nič.",
     "section2Para2": "Preto sa oplatí meno a telefón vyplniť v Nastaveniach — bez nich sa ti druhá strana po prijatí ponuky nemá ako ozvať.",
-
     "section3Title": "Správy — pýtať sa môžeš hneď",
     "section3Para0": "V detaile inzerátu je tab „Správy\". Napísať sa dá kedykoľvek, aj predtým než podáš ponuku — presne na to je: opýtať sa, čo z inzerátu nevyčítaš.",
     "section3Para1": "Rovnaký chat je aj priamo v DETAILE DOPYTU — netreba naň najprv niekoho osloviť svojím inzerátom. Zíde sa, keď si pred oslovením chceš overiť, či presne to, čo ponúkaš, sedí na to, čo niekto hľadá.",
@@ -151,7 +148,6 @@
     "section3Para3": "Píše sa POD PREZÝVKOU. Správy samy identitu neodkrývajú; meno a telefón sa odkryjú tak ako doteraz — prijatou ponukou alebo obhliadkou.",
     "section3Para4": "Preto sa v správach NEDAJÚ posielať telefónne čísla ani e-maily. Appka to odmietne a povie prečo. Bez toho by sa dalo celé odkrývanie kontaktu obísť jednou správou.",
     "section3Para5": "Keď ti niekto napíše, príde ti upozornenie. Obsah správy v ňom nie je — ten je súkromný.",
-
     "section4Title": "Obhliadka — vlastník ju potvrdí",
     "section4Para0": "Nemusíš čakať na prijatie ponuky. Tlačidlom „Chcem obhliadku\" pošleš žiadosť — vlastník ju vidí pod tvojou prezývkou, kontakt ešte NIE JE odkrytý.",
     "section4Para1": "Vlastník žiadosť v tabe Obhliadka POTVRDÍ alebo ODMIETNE. Až potvrdením sa meno, telefón a e-mail odkryjú OBOM stranám naraz — rovnaký mechanizmus ako pri prijatí ponuky.",
@@ -159,33 +155,28 @@
     "section4Para3": "Appka termíny NENAVRHUJE ani nepotvrdzuje. Kedy a kde sa stretnete, si po odkrytí kontaktu dohodnete telefonicky.",
     "section4Para4": "Čo sa stane potvrdením, je napísané NAD tlačidlom, nie až po ňom. A späť sa to vziať nedá — kontakt, ktorý druhá strana videla, sa nezmaže.",
     "section4Para5": "Po stretnutí to označ ako „Bol som na obhliadke\".",
-
     "section5Title": "Uzávierka ponúk — a čo po nej",
     "section5Para0": "Uzávierka je nepovinná. Keď ju k inzerátu zadáš, na karte aj v detaile beží odpočet („Ponuky do… · ostáva X dní\") a po termíne už nikto ponuku nepodá — drží to aj databáza, nie len tlačidlo v appke.",
     "section5Para1": "Po uzávierke sa inzerát NEZMAŽE a nezmizne. Dostaneš na ňom otázku, čo s ním: vybrať z ponúk, ktoré prišli, predĺžiť uzávierku o 7 dní, alebo inzerát archivovať. Kým sa nerozhodneš, ostáva v katalógu so štítkom „Príjem ponúk ukončený\" — aby ľudia videli, že sa naň už neponúka.",
     "section5Para2": "Archivovaný inzerát zmizne z katalógu a nikto naň už neponúkne. Ponuky, ktoré prišli, ostávajú v tvojom prehľade.",
     "section5Para3": "Upozornenie na prešlú uzávierku ti appka NEPOŠLE — otázku uvidíš, keď si inzerát otvoríš. Radšej to napíšeme priamo, než by si čakal na oznámenie, ktoré nepríde.",
-
     "section6Title": "Uzavretie obchodu",
     "section6Para0": "Prijatie ponuky a uzavretie obchodu sú DVE rôzne veci. Prijatie znamená „dohodnime sa\", uzavretie znamená „hotovo\" — medzi nimi býva papierovačka, ktorá občas padne.",
     "section6Para1": "Po prijatí ponuky sa inzerát UZAMKNE: cena, výmera ani podmienky sa už nedajú zmeniť. To, na čom ste sa dohodli, musí ostať také, aké bolo v tej chvíli. Ďalšie fotky pridať môžeš, existujúce zmazať nie — sú dôkazom o stave veci.",
     "section6Para2": "Keď obchod uzavrieš, inzerát zmizne z katalógu a všetky ostatné čakajúce ponuky sa uzavrú. Ich autori dostanú oznámenie, že inzerát už má kupca — bez mena a bez sumy víťaza.",
     "section6Para3": "Obchod sa dá uzavrieť aj vtedy, keď ste sa dohodli mimo appky.",
-
     "section7Title": "Hodnotenia sú verejné",
     "section7Para0": "Po uzavretí obchodu sa obe strany môžu navzájom ohodnotiť jednou až piatimi hviezdičkami a pár vetami.",
     "section7Para1": "Hodnotenie je CELÉ VEREJNÉ — hviezdičky aj text. Vidno ho pri prezývke a pri inzeráte.",
     "section7Para2": "Je to tak zámerne: kto zvažuje obchod s konkrétnym človekom, potrebuje kontext, nie len číslo. „4,6 hviezdičky\" nepovie, či druhá strana chodila načas.",
     "section7Para3": "Hodnotiť môžu LEN tí dvaja, ktorých sa obchod týkal, a len raz. Neúspešný záujemca hodnotiť nemôže — inak by sa dalo pomstiť za odmietnutie.",
     "section7Para4": "Zmeniť svoje hodnotenie sa dá kedykoľvek.",
-
     "section8Title": "Dopyty — hľadanie naopak",
     "section8Para0": "V tabe Dopyty napíšeš, čo hľadáš. Majitelia ťa potom môžu osloviť svojím inzerátom.",
     "section8Para1": "Dopyt hovorí rečou HĽADAJÚCEHO: „Kúpim\" a „Hľadám prenájom\" namiesto „Predaj\" a „Prenájom\", ktoré sú na inzerátoch. Je to tá istá dvojica, len z druhej strany.",
     "section8Para2": "Keď ťa niekto osloví, dostaneš upozornenie a oslovenie nájdeš v detaile svojho dopytu. Ťuknutím sa otvorí inzerát, ktorý ti ponúka — s fotkami, cenou aj počtom izieb, presne ako v katalógu. Odtiaľ si môžeš vypýtať obhliadku úplne rovnako ako pri inzeráte, ktorý si našiel sám.",
     "section8Para3": "Oslovenie nie je správa. Je to záznam pri tvojom dopyte a osloviť ťa vie len ten, kto má vlastný zverejnený inzerát. Písať si viete aj SKÔR — priamo v detaile dopytu je ten istý chat ako pri inzeráte, pod prezývkou.",
     "section8Para4": "Rozpočet je orientačný, nie záväzok. Tvoje meno ani telefón sa v dopyte nezobrazia — rovnako ako pri ponukách.",
-
     "section9Title": "Nahlasovanie, moderovanie a blokovanie",
     "section9Para0": "Nahlásiť sa dá inzerát, ponuka aj používateľ. Dôvody sú: falošný inzerát (nehnuteľnosť neexistuje), podvod (pýta zálohu, nechce obhliadku), spam alebo reklama, nevhodný obsah, podozrenie na realitku, a Iné.",
     "section9Para1": "NIČ sa nemaže automaticky. Každé nahlásenie si pozrie človek a rozhodne. Automat by zmazal aj to, čo zmazať nemal.",
@@ -194,31 +185,26 @@
     "section9Para4": "Používateľa možno zablokovať. Zablokovaný účet sa nevie prihlásiť ani nič pridať; doterajšie dáta mu ostanú a odblokovaním sa všetko vráti. Nie je to zmazanie.",
     "section9Para5": "Offerra je trh MEDZI ĽUĎMI a je určená LEN pre fyzické osoby konajúce vo vlastnom mene — vlastníka, spoluvlastníka, nájomcu alebo záujemcu. Realitné kancelárie, sprostredkovatelia a makléri ju používať NESMÚ, a to ani cez účet vedený na fyzickú osobu. Pri registrácii to každý výslovne potvrdzuje a čas potvrdenia sa uchováva.",
     "section9Para6": "Nepravdivé potvrdenie je porušením podmienok a dôvodom na okamžité zablokovanie účtu a zmazanie inzerátov. Ak máš podozrenie, je na to vlastné tlačidlo „Nahlásiť realitku\" priamo pri prezývke.",
-
     "section10Title": "Limit inzerátov na jeden účet",
     "section10Para0": "Jeden účet môže mať naraz zverejnených najviac päť inzerátov.",
     "section10Para1": "Je to obrana pred zaplavením katalógu. Kto inzeruje desiatky nehnuteľností, nie je sused, ktorý predáva byt — a presne pre suseda je Offerra postavená.",
     "section10Para2": "Rozpracované inzeráty sa do limitu nepočítajú a archivovaním alebo uzavretím obchodu sa miesto uvoľní. Ak limit narazíš, appka ti povie prečo a koľko ich máš.",
-
     "section11Title": "Uložené vyhľadávanie a upozornenia na zhodu",
     "section11Para0": "Nastavené filtre si uložíš jedným ťuknutím a nabudúce ich vyvoláš z lišty nad katalógom.",
     "section11Para1": "Pri každom uloženom hľadaní vidíš číslo — koľko inzerátov mu vyhovuje a pribudlo odvtedy, čo si ho naposledy otvoril. Keď ho otvoríš, číslo sa vynuluje.",
     "section11Para2": "Keď pribudne inzerát, ktorý hľadaniu zodpovedá, dostaneš oznámenie.",
     "section11Para3": "Uložené hľadanie je SÚKROMNÉ. To, čo hľadáš, nevidí nikto okrem teba. Zmažeš ho podržaním prsta.",
     "section11Para4": "Vyhľadávanie rozumie slovenčine bez diakritiky aj skloňovaniu — „Banskej\" nájde Banskú Bystricu, „Košiciach\" Košice.",
-
     "section12Title": "Upozornenia si nastavuješ ty",
     "section12Para0": "Hneď pri registrácii — po zadaní prezývky — sa ťa Offerra spýta, či chceš upozornenia na telefón, a rovno ti ukáže zoznam typov. Nastavíš si to na začiatku, nie tak, že sa ti to jedného dňa začne ozývať a ty budeš hľadať, kde sa to vypína.",
     "section12Para1": "Pri každom type si zvolíš, či ho chceš: nová ponuka na tvoj inzerát, prijatie či odmietnutie tvojej ponuky, nový dopyt, ktorý sedí na tvoj inzerát, zhoda s uloženým hľadaním, záujem o obhliadku.",
     "section12Para2": "Vypnutý typ neposiela nič — ani v appke, ani na telefón.",
     "section12Para3": "Systémové a bezpečnostné oznámenia (napríklad zablokovanie účtu) sa vypnúť nedajú. Musia doraziť vždy.",
     "section12Para4": "Ten istý zoznam nájdeš kedykoľvek v Nastaveniach a môžeš ho zmeniť. Ak si povolenie na začiatku nedal, appka ťa ním znovu neotravuje — pripomenie sa raz, po tvojej prvej ponuke alebo prvom inzeráte, keď už vieš, načo ti je.",
-
     "section13Title": "Overený používateľ",
     "section13Para0": "Pri niektorých ľuďoch je odznak OVERENÝ a vedľa neho veta, ČO presne správca overil — napríklad doklad totožnosti a list vlastníctva.",
     "section13Para1": "Odznak sa NEDÁ získať automaticky ani si ho nastaviť sám. Udeľuje ho výhradne správca a bez uvedenia dôvodu ho systém neprijme. Odznak, ktorý nevie povedať, na základe čoho vznikol, by bol len ozdoba.",
     "section13Para2": "Odznak nič neodkrýva — meno a telefón ostávajú skryté rovnako ako u ostatných.",
-
     "section14Title": "Adresa, mapa a súkromie",
     "section14Para0": "Inzeráty sa dajú prezerať aj na mape. Pin však stojí na OBCI, nie na dome.",
     "section14Para1": "Ulicu môže predávajúci uviesť a appka mu ju našepká z Registra adries Ministerstva vnútra, ale bez čísla domu. Presná adresa sa dohaduje až osobne.",
@@ -251,7 +237,9 @@
     "NOVA_SPRAVA_label": "Nová správa",
     "NOVA_SPRAVA_hint": "Keď ti niekto napíše k inzerátu. Obsah správy v oznámení nie je — ten je súkromný.",
     "SYSTEMOVE_label": "Systémové a bezpečnostné",
-    "SYSTEMOVE_hint": "Napríklad zablokovanie účtu. Toto sa vypnúť nedá — musí doraziť vždy."
+    "SYSTEMOVE_hint": "Napríklad zablokovanie účtu. Toto sa vypnúť nedá — musí doraziť vždy.",
+    "PONUKA_EXPIROVANA_label": "Platnosť mojej ponuky uplynula",
+    "PONUKA_EXPIROVANA_hint": "Ponuka automaticky prestala platiť a predávajúci ju už nemôže prijať."
   },
   "viewing": {
     "statusRequested": "Čaká na potvrdenie",
@@ -331,7 +319,8 @@
     "employmentOther": "Iné",
     "budgetUpTo": "do {{amount}}",
     "budgetFrom": "od {{amount}}",
-    "budgetNotGiven": "Rozpočet neuvedený"
+    "budgetNotGiven": "Rozpočet neuvedený",
+    "statusExpired": "Platnosť uplynula"
   },
   "priceDisplay": {
     "noPriceNoOffers": "Cena neuvedená — čaká na prvú ponuku",
@@ -400,6 +389,16 @@
     "reportAgency": "Nahlásiť realitku",
     "pillAccepted": "PRIJATÁ",
     "pillHighest": "NAJVYŠŠIA"
+  },
+  "offerValidity": {
+    "expired": "Platnosť uplynula",
+    "validUntil": "Platí do {{date}} · ostáva {{days}} dní",
+    "validUntilHours": "Platí ešte {{hours}} h",
+    "pickerNone": "Bez obmedzenia",
+    "pickerDays": "{{count}} dní",
+    "pickerHint": "Dokedy tvoja ponuka platí. Po uplynutí ju už predávajúci nemôže prijať. Nepovinné.",
+    "pickerLabel": "Platnosť ponuky",
+    "pickerValidUntil": "Ponuka platí do {{date}}"
   },
   "priceTimeline": {
     "title": "Vývoj ceny",
@@ -514,7 +513,8 @@
     "theBidder": "záujemcom",
     "ratingsOwnerNote": "Toto je tvoja povesť naprieč všetkými obchodmi, nie len týmto inzerátom — presne tak ju vidia aj záujemcovia.",
     "ratingsBidderNote": "Sú to hodnotenia {{nickname}} zo VŠETKÝCH jeho obchodov, nie len z tohto inzerátu. Inzerát sa predá raz, povesť sa buduje dlhšie.",
-    "ratingsNotYetNote": "Hodnotiť sa dá až po uzavretí obchodu, a len tí dvaja, ktorí ho spolu uzavreli."
+    "ratingsNotYetNote": "Hodnotiť sa dá až po uzavretí obchodu, a len tí dvaja, ktorí ho spolu uzavreli.",
+    "offerExpiredNote": "Platnosť tvojej ponuky uplynula. Ak máš stále záujem, podaj novú."
   },
   "dopyty": {
     "title": "Dopyty",

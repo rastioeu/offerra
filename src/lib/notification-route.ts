@@ -74,6 +74,7 @@ export function notificationRoute(
     // nedostal — tá je len pre majiteľa.
     case 'PONUKA_AKCEPTOVANA':
     case 'PONUKA_ZAMIETNUTA':
+    case 'PONUKA_EXPIROVANA':
     case 'ZIADOST_O_OBHLIADKU':
     case 'OBHLIADKA_POTVRDENA':
     case 'OBHLIADKA_ZAMIETNUTA':

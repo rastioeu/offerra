@@ -24,6 +24,7 @@ export type NotificationType =
   | 'NOVA_PONUKA'
   | 'PONUKA_AKCEPTOVANA'
   | 'PONUKA_ZAMIETNUTA'
+  | 'PONUKA_EXPIROVANA'
   | 'NOVY_DOPYT_ZODPOVEDA_INZERATU'
   | 'OSLOVENIE_DOPYTU'
   | 'NOVA_ZHODA'
@@ -50,6 +51,7 @@ export function getNotificationTypes(
     { type: 'NOVA_PONUKA', label: t('notificationTypes.NOVA_PONUKA_label'), hint: t('notificationTypes.NOVA_PONUKA_hint') },
     { type: 'PONUKA_AKCEPTOVANA', label: t('notificationTypes.PONUKA_AKCEPTOVANA_label'), hint: t('notificationTypes.PONUKA_AKCEPTOVANA_hint') },
     { type: 'PONUKA_ZAMIETNUTA', label: t('notificationTypes.PONUKA_ZAMIETNUTA_label'), hint: '' },
+    { type: 'PONUKA_EXPIROVANA', label: t('notificationTypes.PONUKA_EXPIROVANA_label'), hint: t('notificationTypes.PONUKA_EXPIROVANA_hint') },
     {
       type: 'NOVY_DOPYT_ZODPOVEDA_INZERATU',
       label: t('notificationTypes.NOVY_DOPYT_ZODPOVEDA_INZERATU_label'),

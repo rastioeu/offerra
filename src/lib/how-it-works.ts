@@ -57,7 +57,7 @@ const SECTION_ICONS = [
   'checkmark.seal',
   'house',
 ];
-const SECTION_PARA_COUNTS = [5, 5, 3, 6, 6, 4, 4, 5, 5, 7, 3, 5, 5, 3, 3];
+const SECTION_PARA_COUNTS = [5, 6, 3, 6, 6, 4, 4, 5, 5, 7, 3, 5, 5, 3, 3];
 
 /**
  * Plná verzia. Poradie sleduje cestu človeka appkou: čo to je, ako sa

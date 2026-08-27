@@ -123,26 +123,23 @@
     "step3Body": "The \"Messages\" tab on a listing — always just the two of you, under your nickname. Phone numbers and emails can't be sent in messages; that's what an accepted offer or a viewing is for.",
     "step4Title": "Between people only",
     "step4Body": "Offerra is for individuals, not real-estate agencies. A listing, an offer and a user can all be reported, and a person reviews it.",
-
     "section0Title": "A reverse market — the price is optional",
     "section0Para0": "On a regular portal, the seller sets a price and the buyer either accepts it or walks away. Offerra works the other way round: you don't HAVE to give a price. You write what you're offering, and people tell you how much they're willing to pay.",
     "section0Para1": "If you do give an indicative price, it's only a guide — offers can be higher or lower. If you change it after publishing, the listing shows by how much. The price can't be edited silently.",
     "section0Para2": "For rentals every amount is MONTHLY; for sales it's the total.",
     "section0Para3": "A listing can only be published once it has a title, town, number of rooms, floor area and at least one photo — without that, nobody can decide if they're interested. Price, region and street are optional. A plot naturally doesn't need a room count.",
     "section0Para4": "You can pick the region before the town — then the town search is limited to it. Once you pick a town, the region is set from it; the town always decides.",
-
     "section1Title": "Offers are public, people aren't",
     "section1Para0": "The amount, nickname, date and status of every offer are visible to anyone — even signed out. That way you know whether you're in a bidding war or the only interested party.",
     "section1Para1": "Nobody finds out who's behind a nickname. Name and phone number are protected right in the database — they aren't released even technically, until there's a reason to.",
     "section1Para2": "The message you attach to an offer is NOT public. Only the seller and you can read it.",
     "section1Para3": "You have one live offer per listing. Raising it edits the same offer, it isn't a new one — otherwise the list could be flooded.",
     "section1Para4": "For rentals, a short questionnaire is attached to the offer (number of people, pets, rental length, employment). Only the listing owner sees it. Number of people is required.",
-
+    "section1Para5": "You can also set your own validity period for each offer — for example 7 or 14 days — independently of the listing's own offer deadline. Once that validity expires, the offer is marked invalid in the list, the seller can no longer accept it, and it no longer counts toward the highest offer shown on the card. You'll get a notification when it expires.",
     "section2Title": "When your real identity is revealed",
     "section2Para0": "When the seller ACCEPTS an offer, the name, phone number and email are revealed to both sides at once. Before that, neither side has them.",
     "section2Para1": "Only the pair it concerns is revealed. No other interested party learns anything.",
     "section2Para2": "That's why it's worth filling in your name and phone number in Settings — without them the other side has no way to reach you after accepting an offer.",
-
     "section3Title": "Messages — you can ask right away",
     "section3Para0": "A listing's detail page has a \"Messages\" tab. You can write any time, even before you make an offer — that's exactly what it's for: asking what the listing doesn't tell you.",
     "section3Para1": "The same chat is also right on the INQUIRY DETAIL page — you don't need to be approached with a listing first. Handy when you want to check, before reaching out, whether what you're offering really fits what someone is looking for.",
@@ -150,7 +147,6 @@
     "section3Para3": "Messages are sent UNDER YOUR NICKNAME. Messages by themselves don't reveal identity; name and phone number are revealed the same way as before — through an accepted offer or a viewing.",
     "section3Para4": "That's why phone numbers and emails CAN'T be sent in messages. The app rejects it and says why. Without that, the whole contact-reveal mechanism could be bypassed with a single message.",
     "section3Para5": "When someone messages you, you get a notification. The message content isn't in it — that stays private.",
-
     "section4Title": "Viewing — the owner confirms it",
     "section4Para0": "You don't have to wait for an offer to be accepted. The \"Request a viewing\" button sends a request — the owner sees it under your nickname, contact is NOT revealed yet.",
     "section4Para1": "The owner CONFIRMS or DECLINES the request in the Viewing tab. Only confirming reveals the name, phone number and email to both sides at once — the same mechanism as accepting an offer.",
@@ -158,33 +154,28 @@
     "section4Para3": "The app does NOT suggest or confirm a date. When and where you meet is something you agree by phone once contact is revealed.",
     "section4Para4": "What confirming does is written ABOVE the button, not only after. And it can't be undone — contact the other side has already seen isn't erased.",
     "section4Para5": "After the meeting, mark it as \"I attended the viewing\".",
-
     "section5Title": "Offer deadline — and what happens after it",
     "section5Para0": "A deadline is optional. Once you set one on a listing, a countdown runs on the card and in the detail (\"Offers until… · X days left\"), and after the date nobody can submit an offer any more — the database enforces this, not just a button in the app.",
     "section5Para1": "After the deadline, the listing is NOT deleted and doesn't disappear. You get a prompt on it: choose from the offers received, extend the deadline by 7 days, or archive the listing. Until you decide, it stays in the catalog with a \"No longer accepting offers\" label — so people can see nobody can offer on it any more.",
     "section5Para2": "An archived listing disappears from the catalog and nobody can offer on it any more. Offers already received stay in your overview.",
     "section5Para3": "The app does NOT send you a notification about a passed deadline — you'll see the prompt when you open the listing. We'd rather show it directly than have you wait for a notification that never comes.",
-
     "section6Title": "Closing the deal",
     "section6Para0": "Accepting an offer and closing the deal are TWO different things. Accepting means \"let's agree\", closing means \"done\" — paperwork usually happens in between, and it sometimes falls through.",
     "section6Para1": "Once an offer is accepted, the listing LOCKS: the price, floor area and terms can no longer be changed. What you agreed on has to stay exactly as it was at that moment. You can still add photos, but you can't delete existing ones — they're evidence of the property's condition.",
     "section6Para2": "When you close the deal, the listing disappears from the catalog and all other pending offers are closed. Their authors get a notification that the listing already has a buyer — without the winner's name or amount.",
     "section6Para3": "A deal can also be closed even if you agreed outside the app.",
-
     "section7Title": "Ratings are public",
     "section7Para0": "After a deal closes, both sides can rate each other with one to five stars and a few sentences.",
     "section7Para1": "A rating is FULLY PUBLIC — stars and text alike. It's visible next to the nickname and the listing.",
     "section7Para2": "That's deliberate: someone weighing a deal with a specific person needs context, not just a number. \"4.6 stars\" doesn't say whether the other side showed up on time.",
     "section7Para3": "Only the two people the deal concerned can rate each other, and only once. An unsuccessful bidder can't leave a rating — otherwise it could be used to retaliate for a rejection.",
     "section7Para4": "You can change your rating at any time.",
-
     "section8Title": "Inquiries — searching the other way round",
     "section8Para0": "In the Inquiries tab, you write what you're looking for. Owners can then reach out to you with their listing.",
     "section8Para1": "An inquiry speaks the SEEKER's language: \"Buying\" and \"Looking to rent\" instead of \"For sale\" and \"For rent\", which are used on listings. It's the same pair, just from the other side.",
     "section8Para2": "When someone reaches out to you, you get a notification and you'll find it in your inquiry's detail page. Tapping it opens the listing being offered to you — with photos, price and number of rooms, just like in the catalog. From there you can request a viewing exactly like on a listing you found yourself.",
     "section8Para3": "Being approached isn't a message. It's a record attached to your inquiry, and only someone with their own published listing can approach you. You can also message each other EARLIER — the inquiry's detail page has the same chat as a listing, under your nickname.",
     "section8Para4": "The budget is indicative, not a commitment. Your name and phone number don't appear on the inquiry — same as with offers.",
-
     "section9Title": "Reporting, moderation and blocking",
     "section9Para0": "A listing, an offer or a user can all be reported. Reasons include: fake listing (the property doesn't exist), scam (asks for a deposit, refuses a viewing), spam or advertising, inappropriate content, suspected agency, and Other.",
     "section9Para1": "NOTHING is deleted automatically. Every report is reviewed and decided by a person. An automatic system would also delete things it shouldn't.",
@@ -193,31 +184,26 @@
     "section9Para4": "A user can be blocked. A blocked account can't sign in or add anything; existing data stays and unblocking restores everything. It isn't a deletion.",
     "section9Para5": "Offerra is a market BETWEEN PEOPLE and is meant ONLY for individuals acting in their own name — an owner, co-owner, tenant or interested party. Real-estate agencies, brokers and agents are NOT allowed to use it, even through an account held by an individual. Everyone confirms this explicitly at registration, and the time of confirmation is kept on record.",
     "section9Para6": "A false confirmation breaks the terms and is grounds for immediate account blocking and deletion of listings. If you suspect an agency, there's a dedicated \"Report an agency\" button right next to the nickname.",
-
     "section10Title": "Listing limit per account",
     "section10Para0": "One account can have at most five listings published at the same time.",
     "section10Para1": "It's a defense against flooding the catalog. Someone listing dozens of properties isn't the neighbor selling one flat — and Offerra is built exactly for that neighbor.",
     "section10Para2": "Draft listings don't count toward the limit, and archiving or closing a deal frees up a slot. If you hit the limit, the app tells you why and how many you have.",
-
     "section11Title": "Saved searches and match notifications",
     "section11Para0": "Save your current filters with a single tap and pull them up again later from the bar above the catalog.",
     "section11Para1": "Each saved search shows a number — how many listings match it and how many are new since you last opened it. Opening it resets the number to zero.",
     "section11Para2": "When a new listing matches a saved search, you get a notification.",
     "section11Para3": "A saved search is PRIVATE. Nobody but you can see what you're searching for. Delete it with a long press.",
     "section11Para4": "The search understands Slovak without diacritics and with inflected word forms — \"Banskej\" finds Banská Bystrica, \"Košiciach\" finds Košice.",
-
     "section12Title": "You control your notifications",
     "section12Para0": "Right at registration — after you set your nickname — Offerra asks whether you want notifications on your phone and shows you the full list of types right away. You set it up up front, instead of it suddenly starting to buzz one day while you go looking for where to turn it off.",
     "section12Para1": "For each type you choose whether you want it: a new offer on your listing, your offer being accepted or declined, a new inquiry matching your listing, a match with a saved search, interest in a viewing.",
     "section12Para2": "A disabled type sends nothing — neither in the app nor to your phone.",
     "section12Para3": "System and security notifications (for example, an account being blocked) can't be turned off. They always have to get through.",
     "section12Para4": "You'll find the same list any time in Settings and can change it. If you didn't grant permission at the start, the app won't nag you about it again — it will ask once more, after your first offer or first listing, once you already know what it's for.",
-
     "section13Title": "Verified user",
     "section13Para0": "Some people have a VERIFIED badge, next to a sentence saying exactly WHAT the admin verified — for example an ID document and a title deed.",
     "section13Para1": "The badge CANNOT be earned automatically or set by the user. It's granted exclusively by an admin, and the system won't accept it without a stated reason. A badge that can't say what it's based on would be just decoration.",
     "section13Para2": "The badge doesn't reveal anything else — name and phone number stay hidden just like for everyone else.",
-
     "section14Title": "Address, map and privacy",
     "section14Para0": "Listings can also be browsed on a map. The pin sits on the TOWN, though, not the building.",
     "section14Para1": "A seller can give a street, and the app suggests it from the Slovak Ministry of Interior's address register, but without a house number. The exact address gets worked out in person.",
@@ -250,7 +236,9 @@
     "NOVA_SPRAVA_label": "New message",
     "NOVA_SPRAVA_hint": "When someone messages you about a listing. The message content isn't in the notification — that stays private.",
     "SYSTEMOVE_label": "System and security",
-    "SYSTEMOVE_hint": "For example, an account being blocked. This can't be turned off — it always has to get through."
+    "SYSTEMOVE_hint": "For example, an account being blocked. This can't be turned off — it always has to get through.",
+    "PONUKA_EXPIROVANA_label": "My offer expired",
+    "PONUKA_EXPIROVANA_hint": "The offer automatically stopped being valid, and the seller can no longer accept it."
   },
   "viewing": {
     "statusRequested": "Awaiting confirmation",
@@ -329,7 +317,8 @@
     "employmentOther": "Other",
     "budgetUpTo": "up to {{amount}}",
     "budgetFrom": "from {{amount}}",
-    "budgetNotGiven": "Budget not given"
+    "budgetNotGiven": "Budget not given",
+    "statusExpired": "Expired"
   },
   "priceDisplay": {
     "noPriceNoOffers": "No price given — awaiting the first offer",
@@ -397,6 +386,16 @@
     "reportAgency": "Report agency",
     "pillAccepted": "ACCEPTED",
     "pillHighest": "HIGHEST"
+  },
+  "offerValidity": {
+    "expired": "Expired",
+    "validUntil": "Valid until {{date}} · {{days}} days left",
+    "validUntilHours": "Valid for {{hours}} more h",
+    "pickerNone": "No limit",
+    "pickerDays": "{{count}} days",
+    "pickerHint": "How long your offer stays valid. Once it passes, the seller can no longer accept it. Optional.",
+    "pickerLabel": "Offer validity",
+    "pickerValidUntil": "Offer valid until {{date}}"
   },
   "priceTimeline": {
     "title": "Price history",
@@ -510,7 +509,8 @@
     "theBidder": "the bidder",
     "ratingsOwnerNote": "This is your reputation across all deals, not just this listing — it's exactly what bidders see too.",
     "ratingsBidderNote": "These are {{nickname}}'s ratings from ALL of their deals, not just this listing. A listing sells once; a reputation is built over longer.",
-    "ratingsNotYetNote": "Rating is only possible after a deal closes, and only by the two people who closed it together."
+    "ratingsNotYetNote": "Rating is only possible after a deal closes, and only by the two people who closed it together.",
+    "offerExpiredNote": "Your offer's validity has expired. If you're still interested, submit a new one."
   },
   "dopyty": {
     "title": "Inquiries",

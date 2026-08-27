@@ -38,6 +38,7 @@ import {
   type OfferContact,
   type TenantProfile,
 } from '@/lib/offers';
+import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
 import { closedLabel, db, formatDate, type PropertyWithMedia } from '@/lib/property';
 import { closeDeal } from '@/lib/rating';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
@@ -178,6 +179,10 @@ export function OwnerOffers({
   const isRent = item.transaction_type === 'RENT';
   const tenant: TenantProfile | undefined = selected ? tenants[selected.id] : undefined;
   const contact = selected ? contacts[selected.id] : undefined;
+  // Živý čas, nie LEN `status === 'EXPIRED'` — cron ho preklopí až s
+  // oneskorením do 5 minút a majiteľ nesmie „Prijať" vidieť aktívne
+  // ešte v tomto okne (§ offer-validity.ts, aj DB guard to isté vynúti).
+  const expired = selected ? isOfferExpired(selected.status, selected.valid_until) : false;
 
   return (
     <>
@@ -224,6 +229,11 @@ export function OwnerOffers({
                     <Text style={[styles.meta, { color: palette.textMuted }]}>
                       {formatDate(language, selected.created_at)} · {getOfferStatusLabel(t)[selected.status].toLowerCase()}
                     </Text>
+                    {selected.valid_until && selected.status === 'PENDING' ? (
+                      <Text style={[styles.meta, { color: expired ? palette.warning : palette.textMuted }]}>
+                        {offerValidityLabel(t, language, selected.status, selected.valid_until)}
+                      </Text>
+                    ) : null}
                   </View>
                   <Text style={[styles.amount, { color: palette.accent }]}>
                     {formatAmount(t, selected.amount, item.transaction_type)}
@@ -297,12 +307,17 @@ export function OwnerOffers({
 
                 {selected.status === 'PENDING' ? (
                   <View style={styles.actions}>
-                    <Button
-                      title={t('ownerOffers.acceptOffer')}
-                      onPress={() => decide(selected.id, 'ACCEPTED')}
-                      loading={busy === selected.id}
-                      disabled={busy !== null}
-                    />
+                    {/* Databáza prijatie expirovanej ponuky odmietne aj tak
+                        (guard_offer_update) — tlačidlo tu ale nesmie
+                        SĽUBOVAŤ akciu, ktorá padne (CLAUDE.md §12a). */}
+                    {!expired ? (
+                      <Button
+                        title={t('ownerOffers.acceptOffer')}
+                        onPress={() => decide(selected.id, 'ACCEPTED')}
+                        loading={busy === selected.id}
+                        disabled={busy !== null}
+                      />
+                    ) : null}
                     <Button
                       title={t('viewing.declineButton')}
                       onPress={() => decide(selected.id, 'REJECTED')}

@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { FormScreen } from '@/components/form-screen';
 import { OfferTimeline } from '@/components/offer-timeline';
+import { OfferValidityPicker } from '@/components/offer-validity-picker';
 import { Button, Card, ChoiceRow, ErrorNote, Eyebrow, Field, ParamCell } from '@/components/ui';
 import { useOffers, useTenantProfiles } from '@/hooks/use-offers';
 import { useProperty } from '@/hooks/use-properties';
@@ -24,6 +25,7 @@ import { maybeOfferPush } from '@/lib/push-prompt';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/i18n';
 import { getEmploymentOptions, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
+import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -37,7 +39,7 @@ function num(text: string): number | null {
 
 export default function OfferFormScreen() {
   const palette = useTheme();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -60,6 +62,7 @@ export default function OfferFormScreen() {
 
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
+  const [validUntil, setValidUntil] = useState<string | null>(null);
   const [people, setPeople] = useState('');
   const [pets, setPets] = useState<'NO' | 'YES'>('NO');
   const [petDetails, setPetDetails] = useState('');
@@ -81,6 +84,7 @@ export default function OfferFormScreen() {
     filledOffer.current = mine.id;
     setAmount(String(mine.amount));
     setMessage(mine.message ?? '');
+    setValidUntil(mine.valid_until);
   }, [mine]);
 
   const filledTenant = useRef<string | null>(null);
@@ -116,7 +120,10 @@ export default function OfferFormScreen() {
   }, [accepted, mine]);
 
   const isRent = item?.transaction_type === 'RENT';
-  const highest = offers?.find((o) => o.status === 'PENDING');
+  // Expirovaná ponuka (aj keď v DB ešte čaká na cron) sa do „najvyššej
+  // doteraz" nesmie počítať — inak by nový záujemca súťažil so sumou,
+  // ktorú už nikto nemôže prijať.
+  const highest = offers?.find((o) => o.status === 'PENDING' && !isOfferExpired(o.status, o.valid_until));
   // Uzávierku drží aj databáza; tu je preto, aby používateľ videl DÔVOD,
   // nie chybovú hlášku zo servera.
   const closed = isDeadlinePassed(item?.offer_deadline ?? null);
@@ -143,7 +150,7 @@ export default function OfferFormScreen() {
       if (offerId) {
         const { error: e } = await db()
           .from('property_offer')
-          .update({ amount: value, message: message.trim() || null })
+          .update({ amount: value, message: message.trim() || null, valid_until: validUntil })
           .eq('id', offerId);
         if (e) throw e;
       } else {
@@ -154,6 +161,7 @@ export default function OfferFormScreen() {
             bidder_id: myId,
             amount: value,
             message: message.trim() || null,
+            valid_until: validUntil,
             status: 'PENDING',
           })
           .select('id')
@@ -256,6 +264,15 @@ export default function OfferFormScreen() {
               <Card>
                 <Eyebrow>{t('ponukaForm.myOfferProgress')}</Eyebrow>
                 <OfferTimeline offer={mine} />
+                {mine.valid_until ? (
+                  <Text
+                    style={[
+                      styles.note,
+                      { color: isOfferExpired(mine.status, mine.valid_until) ? palette.warning : palette.textMuted },
+                    ]}>
+                    {offerValidityLabel(t, language, mine.status, mine.valid_until)}
+                  </Text>
+                ) : null}
               </Card>
             ) : null}
 
@@ -309,6 +326,8 @@ export default function OfferFormScreen() {
               }
               multiline
             />
+
+            <OfferValidityPicker value={validUntil} onChange={setValidUntil} />
 
             {isRent ? (
               <Card>

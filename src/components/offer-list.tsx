@@ -20,6 +20,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/i18n';
 import { formatAmount, getOfferStatusLabel, type Offer } from '@/lib/offers';
+import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
 import { formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -58,7 +59,10 @@ export function OfferList({
     <View style={styles.list}>
       {offers.map((o, i) => {
         const mine = highlightBidderId && o.bidder_id === highlightBidderId;
-        const best = i === 0 && o.status === 'PENDING';
+        // Ponuka, ktorej platnosť uplynula, nie je „najvyššia" ani keď má
+        // najvyššiu sumu — nikto ju už nemôže prijať (§ offer-validity.ts).
+        const expired = isOfferExpired(o.status, o.valid_until);
+        const best = i === 0 && o.status === 'PENDING' && !expired;
         const Wrap = onPressOffer ? Pressable : View;
 
         return (
@@ -94,6 +98,14 @@ export function OfferList({
                 </Text>
               ) : null}
               <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(language, o.created_at)}</Text>
+              {/* Platnosť ponuky — len kým ešte beží. Po uplynutí to už
+                  hovorí odznak vpravo, tu by to bola tá istá informácia
+                  druhýkrát inými slovami. */}
+              {o.valid_until && !expired ? (
+                <Text style={[styles.date, { color: palette.textMuted }]}>
+                  {offerValidityLabel(t, language, o.status, o.valid_until)}
+                </Text>
+              ) : null}
               {/* Správa je tu, LEN ak na ňu volajúci má nárok — `message` je
                   `null` pre všetkých ostatných a rozhodla o tom databáza,
                   nie táto podmienka. Do 8.8.2026 ju videl ktokoľvek. */}
@@ -129,6 +141,11 @@ export function OfferList({
               </Text>
               {o.status === 'ACCEPTED' ? (
                 <Pill text={t('offerList.pillAccepted')} tone="success" />
+              ) : expired ? (
+                // Živo uplynutá platnosť, kým cron `offerra.expire_offers()`
+                // status ešte neprekvapil (beží každých 5 minút) — appka to
+                // musí ukázať HNEĎ, nie až keď to dobehne DB (§ offer-validity.ts).
+                <Pill text={t('offers.statusExpired').toUpperCase()} tone="neutral" />
               ) : o.status !== 'PENDING' ? (
                 <Pill text={getOfferStatusLabel(t)[o.status].toUpperCase()} tone="neutral" />
               ) : best ? (

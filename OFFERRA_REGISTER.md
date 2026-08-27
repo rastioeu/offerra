@@ -5402,6 +5402,176 @@ iOS update `01a02c3f-a7e8-71ae-9b73-051db12e96bb` (skupina
 
 ---
 
+## Fáza 31 — Platnosť ponuky (27.8.2026, návrh testera)
+
+Zadanie: bidder si pri podaní ponuky vie nastaviť, ako dlho platí (Bez
+obmedzenia / 7 / 14 / 30 dní). Po uplynutí je ponuka neplatná — nedá sa
+prijať, nepočíta sa do „najvyššej ponuky", a bidder o tom dostane
+upozornenie.
+
+**Poznámka k práci na tejto fáze:** rozrobili ju súbežne DVE session na
+tomto stroji (`offerra-70`/`offerra-4e` a `offerra-49`) nad tým istým repom
+— zbadané pri kolízii na `src/lib/offer-validity.ts`. Po dohode `offerra-49`
+pokračovala sama; keď jej session skončila bez commitu/pushu (working tree
+malo rozrobené zmeny + nespustenú DB migráciu), túto session prevzala späť
+a doťahuje ju do konca — vrátane jedného reálneho nálezu z rozrobenej práce
+(chýbajúci grant, bod 31.2) a jedného doplnku mimo pôvodného rozsahu
+(bod 31.5).
+
+### 31.0 Rozhodnutie k defaultu (Rastio sa pýtal na názor)
+
+**„Bez obmedzenia" ako predvolená hodnota je správne** — rovnaká voľba a z
+rovnakého dôvodu ako pri Uzávierke ponúk na inzeráte (`DeadlinePicker`):
+appka nesmie nikoho ticho obmedziť niečím, o čom pred touto fázou vôbec
+nevedel. Kto chce platnosť obmedziť, urobí to vedome.
+
+### 31.1 Architektúra — prečo NIE „stĺpec + cron" samo osebe
+
+DB nemá cron s presnosťou na sekundu (najbližšia perióda je `*/5 * * * *` —
+rovnaká ako `seed-auto-forward`, zdieľaná DB s MUTARKom, `pg_cron` je tam
+už zapnutý). Preto je vynútenie na DVOCH nezávislých miestach — rovnaký
+vzor, aký appka už má pri uzávierke ponúk (`offer_deadline`):
+
+1. `offerra.guard_offer_update()` — pri UPDATE porovná `old.valid_until`
+   priamo s `now()`, NIE so stĺpcom `status`. Toto je jediný skutočný
+   zámok proti race condition — majiteľ nesmie „Prijať" stihnúť skôr,
+   než to appka aj DB rozpoznajú.
+2. `offerra.expire_offers()` + `cron.job` `offerra-expire-offers`
+   (`*/5 * * * *`) — len KOZMETIKA (zapíše `status = 'EXPIRED'`, nech sa
+   appka nemusí spoliehať len na živý výpočet po zavretí appky) a
+   NOTIFIKÁCIA bidderovi.
+3. Appka na klientovi (`src/lib/offer-validity.ts`, `isOfferExpired`)
+   počíta expiráciu VŽDY živo z `valid_until` — nikdy nečaká na to, že
+   cron stihol status prekrpiť.
+
+### 31.2 DB zmeny — ✅ OVERENÉ RUNTIME
+
+`scripts/apply-offer-validity.mjs` (Management API, CLAUDE.md §4),
+spustené a overené priamo v DB:
+
+- nový stĺpec `property_offer.valid_until` (nullable = bez obmedzenia)
+- `property_offer_status_check` → pridané `EXPIRED`
+- RLS `offer_insert_own` → `valid_until` musí byť `null` alebo v budúcnosti
+- `guard_offer_update()` → majiteľ nesmie meniť `valid_until` ani prijať
+  ponuku s prešlou platnosťou (živý čas); záujemca smie meniť `valid_until`
+  na PENDING ponuke, len na budúci dátum
+- `on_offer_decided()` → nová vetva pre `EXPIRED` → notifikácia
+  `PONUKA_EXPIROVANA`
+- nová funkcia `offerra.expire_offers()` + `cron.job` `offerra-expire-offers`
+- `offerra.my_request_outreach()` (Oslovenia dopytu) → `top_offer` teraz
+  tiež vylučuje expirované ponuky — ten istý koncept ako katalóg, len na
+  inej obrazovke, ktorú pôvodné zadanie nemenovalo, doplnené pre zhodu
+- `notification_type_check` / `notification_preference_type_check` →
+  pridané `PONUKA_EXPIROVANA`
+
+🔴→✅ **Nález pri prvom behu:** nový stĺpec nededí stĺpcové granty
+tabuľky (tá má granty per-stĺpec, nie `all`) — `valid_until` nemal SELECT
+pre `anon`/`authenticated` vôbec. Bez opravy by verejný zoznam ponúk
+(`OFFER_PUBLIC_COLS`, číta `valid_until` verejne rovnako ako `amount`)
+padal na 42501 pre KAŽDÉHO používateľa appky. Odhalené priamym dotazom na
+`information_schema.column_privileges` HNEĎ po prvom behu migrácie, nie
+odhadom — opravené (`grant select (valid_until) …`) a dopísané do skriptu
+ako krok 2/10, nech ho ďalší beh migrácie od nuly už nevynechá.
+
+**Live overenie — `scripts/check-offer-validity-db.mjs`, 6/6 OK:**
+skript vloží REÁLNU syntetickú ponuku na seed inzerát + seed biddera
+(triggery `offer_notify_insert`/`trg_offer_rate_limit` dočasne vypnuté,
+nech to nepošle push skutočnému seed vlastníkovi), otestuje cez
+`set local role authenticated` + `request.jwt.claim.sub`, a na konci ju aj
+jej notifikáciu ZMAŽE (žiadny „pôvodný stav" pre syntetický riadok
+neexistuje, na rozdiel od `check-viewing-reopen.mjs`):
+
+1. majiteľ NESMIE prijať ponuku s prešlým `valid_until`, kým je ešte
+   `status = 'PENDING'` (skutočný race-condition test) — zamietnuté s
+   `P0001: Platnost tejto ponuky uz uplynula, prijat sa neda.`
+2. `anon` SMIE čítať `valid_until` (grant funguje)
+3. `offerra.expire_offers()` preklopí PENDING + prešlé `valid_until` na
+   `EXPIRED`
+4. bidder dostal notifikáciu `PONUKA_EXPIROVANA`
+5. majiteľ NESMIE prijať ani už `EXPIRED` ponuku
+6. bidder NESMIE vložiť ponuku s `valid_until` v minulosti (RLS)
+
+### 31.3 Appka — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+- `src/lib/offer-validity.ts` — čisté funkcie `isOfferExpired(status,
+  validUntil)`, `offerValidityLabel(...)`, ZÁMERNE bez runtime importu,
+  rovnaký dôvod ako `deadline.ts` (CLAUDE.md §10 — text vie zmiznúť ticho).
+  Regresný test **`scripts/check-offer-validity.ts`, 13/13 OK**.
+- `src/components/offer-validity-picker.tsx` — voľby Bez obmedzenia / 7 /
+  14 / 30 dní, rovnaký vzor ako `DeadlinePicker` (žiadny natívny date
+  picker — to je nový natívny modul → nový EAS build, appka pri tejto
+  fáze ostáva čisto OTA).
+- `src/app/ponuka/[id].tsx` — picker vo formulári, „najvyššia doteraz"
+  vylučuje živo expirované, countdown pri vlastnej ponuke.
+- `src/components/offer-list.tsx` — countdown pri ponuke s platnosťou,
+  odznak „PLATNOSŤ UPLYNULA" (živo, nečaká na cron), „najvyššia" vylučuje
+  expirované.
+- `src/components/owner-offers.tsx` — tlačidlo „Prijať" sa NEZOBRAZÍ pri
+  živo expirovanej ponuke (CLAUDE.md §12a — nesľubovať akciu, ktorú DB aj
+  tak odmietne).
+- `src/components/property-tabs.tsx` — bidderova vlastná ponuka so stavom
+  `EXPIRED` dostala vysvetľujúcu poznámku (rovnaký vzor ako pri
+  `REJECTED`).
+- `src/hooks/use-properties.ts` (`attachOfferStats`) — `top_offer`/
+  `pending_count`/`offer_count` v katalógu vylučujú živo expirované
+  ponuky, nie len `status !== 'EXPIRED'`.
+- `src/lib/offers.ts` — `OfferStatus` + `EXPIRED`, `Offer.valid_until`,
+  `OFFER_PUBLIC_COLS` (+`valid_until`), `offerSteps` (EXPIRED = koniec
+  cesty ponuky, rovnako ako WITHDRAWN).
+- `src/lib/notifications.ts` + `notification-route.ts` — nový typ
+  `PONUKA_EXPIROVANA` v zozname preferencií aj v smerovaní pushu (vedie na
+  detail inzerátu, rovnako ako `PONUKA_ZAMIETNUTA`).
+
+🟡 **ČO MÁ RASTIO OVERIŤ NA TELEFÓNE** (nedá sa overiť v tomto prostredí —
+žiadny simulátor, §3):
+
+1. Pri podaní ponuky sa dá vybrať platnosť (Bez obmedzenia / 7 / 14 /
+   30 dní) a v tabe „Ponuky" pri nej beží odpočet.
+2. Ponuka s prešlou platnosťou je v zozname vidieť ako „PLATNOSŤ
+   UPLYNULA", tlačidlo „Prijať" pri nej v spodnom paneli majiteľa chýba.
+3. Push „Platnosť tvojej ponuky uplynula" príde bidderovi (na to treba
+   počkať aspoň 5 minút po uplynutí platnosti testovacej ponuky — perióda
+   crona — alebo skrátiť platnosť na pár minút a počkať).
+4. Karta v katalógu inzerátu s len expirovanými ponukami neukazuje
+   „najvyššiu ponuku" z nich.
+5. „Ako funguje Offerra" — nový odsek o platnosti ponuky v sekcii
+   „Ponuky sú verejné, ľudia nie" (SK/EN/DE).
+
+### 31.4 Lokalizácia — `scripts/check-i18n.ts`, **14/14 OK**
+
+Nové kľúče vo VŠETKÝCH troch jazykoch (žiadny SK-only): `offers.
+statusExpired`, doména `offerValidity` (`expired`, `validUntil`,
+`validUntilHours`, `pickerNone`, `pickerDays`, `pickerHint`,
+`pickerLabel`, `pickerValidUntil`), `propertyTabs.offerExpiredNote`,
+`notificationTypes.PONUKA_EXPIROVANA_label`/`_hint`,
+`howItWorks.section1Para5` (+ `SECTION_PARA_COUNTS[1]` 5→6 v
+`how-it-works.ts`). **NEDOKAZUJE** jazykovú správnosť ani vizuál (§1) —
+bod 31.3/5 vyššie.
+
+### 31.5 Vedľajší nález — `my_request_outreach()` (mimo pôvodného rozsahu)
+
+Zadanie menovalo len „najvyššiu ponuku na karte v katalógu"
+(`attachOfferStats`). Rovnaký koncept ale počíta aj
+`offerra.my_request_outreach()` pre kartu inzerátu v Osloveniach dopytu
+(`property_top_offer`) — bez opravy by expirovaná PENDING ponuka (kým ju
+cron nepreklopí) vyhrávala aj tam. Opravené v tom istom kroku (bod 31.2),
+nech appka nehovorí dvomi rôznymi číslami o tej istej veci na dvoch
+obrazovkách.
+
+### 31.6 Ostatné overenia — ✅ OVERENÉ RUNTIME
+
+`npx tsc --noEmit -p .` → 0 chýb. `git diff --stat package.json` →
+prázdne (fingerprint nedotknutý, §9). `grep -rn "\.channel("` mimo
+`realtime.ts`/`use-realtime-channel.ts` → žiadny výsledok (§11,
+nedotknuté touto fázou). `check-deadline.ts` → bez zmeny (regresia).
+
+### 31.7 IDE OTA
+
+Žiadny natívny modul nepribudol, `package.json` nedotknutý — `eas update`
+stačí, nový build netreba.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

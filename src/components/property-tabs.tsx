@@ -453,6 +453,9 @@ function OffersTab({
               {mine.status === 'REJECTED' ? (
                 <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.offerRejectedNote')}</Text>
               ) : null}
+              {mine.status === 'EXPIRED' ? (
+                <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.offerExpiredNote')}</Text>
+              ) : null}
               {mine.status === 'PENDING' ? (
                 <>
                   <Button
