@@ -65,6 +65,7 @@ const SK_ONLY_KEYS = new Set([
   'deadline.deadlineOfferAccFew',
   'myListingRow.offersFew',
   'dopyty.countFew',
+  'offerValidity.pickerDaysFew',
 ]);
 
 /**

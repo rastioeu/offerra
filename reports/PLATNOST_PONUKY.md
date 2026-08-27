@@ -68,7 +68,7 @@ authenticated;`) a dopísané do migračného skriptu ako trvalý krok.
 ## 3. Čo je teraz
 
 - Pri podaní ponuky je nový picker **„Platnosť ponuky"**: Bez obmedzenia /
-  7 / 14 / 30 dní — rovnaký vzor ako `DeadlinePicker`, zámerne bez
+  1 / 3 / 7 / 14 / 30 dní — rovnaký vzor ako `DeadlinePicker`, zámerne bez
   vlastného dátumu (natívny date picker = nový natívny modul = nový EAS
   build, appka pri tejto fáze ostáva čisto OTA).
 - V zozname ponúk (tab „Ponuky") beží pri každej ponuke s platnosťou
@@ -91,7 +91,7 @@ authenticated;`) a dopísané do migračného skriptu ako trvalý krok.
 
 | Čo | Ako | Výsledok |
 |---|---|---|
-| logika platnosti (čistá funkcia) | `npx --yes tsx scripts/check-offer-validity.ts` | **13/13 OK** |
+| logika platnosti (čistá funkcia) | `npx --yes tsx scripts/check-offer-validity.ts` | **17/17 OK** |
 | DB naživo — 6 scenárov vrátane race condition | `npx --yes tsx scripts/check-offer-validity-db.mjs` (real SQL, real seed dáta, syntetická ponuka zmazaná po teste) | **6/6 OK**, s reálnym textom `P0001` chyby ako dôkazom |
 | lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **14/14 OK** |
 | regresia uzávierky (nedotknutá touto fázou) | `check-deadline.ts` | 24/24 OK, bez zmeny |
@@ -147,13 +147,14 @@ Runtime sa zhoduje s posledným dokončeným buildom → OTA sa dostane k tebe d
 
 ## 7. Čo mi máš potvrdiť (slovami)
 
-1. Pri podaní ponuky vidíš picker „Platnosť ponuky" so štyrmi voľbami a
+1. Pri podaní ponuky vidíš picker „Platnosť ponuky" so šiestimi voľbami a
    default je „Bez obmedzenia".
 2. Pri ponuke s nastavenou platnosťou v tabe „Ponuky" beží text „Platí
    do… · ostáva X dní".
-3. Nastav si testovaciu ponuku na krátku platnosť (najkratšia voľba je
-   7 dní — ak chceš otestovať skôr, povedz a pripravím spôsob, ako
-   nastaviť platnosť na pár minút priamo v DB pre tvoj test).
+3. Nastav si testovaciu ponuku na krátku platnosť — najkratšia voľba je
+   teraz 1 deň (na tvoju žiadosť pribudli aj 1 a 3 dni popri 7/14/30). Ak
+   chceš otestovať ešte skôr, povedz a pripravím spôsob, ako nastaviť
+   platnosť na pár minút priamo v DB pre tvoj test.
 4. Po uplynutí: odznak „PLATNOSŤ UPLYNULA", tlačidlo „Prijať" chýba.
 5. Do 5 minút po uplynutí príde push „Platnosť tvojej ponuky uplynula".
 6. Karta v katalógu neukazuje ako „najvyššiu" sumu z expirovanej ponuky.

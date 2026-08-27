@@ -7,7 +7,7 @@
  *
  * SPUSTENIE: `npx --yes tsx scripts/check-offer-validity.ts` (žiadna appka, žiadna databáza).
  */
-import { isOfferExpired, offerValidityLabel } from '../src/lib/offer-validity';
+import { isOfferExpired, offerValidityLabel, offerValidityDaysLabel } from '../src/lib/offer-validity';
 import skJson from '../src/i18n/locales/sk.json';
 
 type Locale = Record<string, Record<string, string>>;
@@ -73,6 +73,14 @@ console.log('\n── karta MUSÍ dostať text, keď má ponuka platnosť, a NIE
   const byTime = offerValidityLabel(t, language, 'PENDING', iso);
   const byStatus = offerValidityLabel(t, language, 'EXPIRED', iso);
   check('rovnaký text bez ohľadu na to, či expiráciu vidno zo status alebo z valid_until', byTime === byStatus, `PENDING: „${byTime}" vs EXPIRED: „${byStatus}"`);
+}
+
+console.log('\n── offerValidityDaysLabel: „1 dní" je gramaticky ZLE, picker ide od 1 dňa (Rastio, 27.8.2026) ──');
+{
+  for (const [days, want] of [[1, '1 deň'], [3, '3 dni'], [7, '7 dní'], [14, '14 dní'], [30, '30 dní']] as [number, string][]) {
+    const got = offerValidityDaysLabel(t, language, days);
+    check(`${days} → „${want}"`, got === want, `vyšlo „${got}"`);
+  }
 }
 
 console.log('\n' + '='.repeat(60));

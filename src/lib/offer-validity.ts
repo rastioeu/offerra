@@ -29,6 +29,24 @@
  */
 import type { TFunc } from '@/i18n';
 
+/**
+ * „{{count}} deň / dni / dní" — voľby v `OfferValidityPicker` teraz idú
+ * od 1 dňa, takže na rozdiel od `deadlinePicker.days` (kde bola najmenšia
+ * voľba 7, teda vždy „dní") už NEJDE vystačiť si s jedným tvarom.
+ * Rovnaké skloňovanie ako `offersWord` v `deadline.ts` — a rovnaký dôvod,
+ * prečo je to tu, nie natvrdo v komponente: „1 dní" je gramaticky zle
+ * a bez testu (`check-offer-validity.ts`) by sa to našlo až na telefóne,
+ * presne ako sa to stalo pri „Máš 1 ponuka" (13.8.2026). EN/DE majú len
+ * jednotné/množné číslo, žiadny tretí tvar.
+ */
+export function offerValidityDaysLabel(t: TFunc, language: string, days: number): string {
+  if (language === 'sk') {
+    const key = days === 1 ? 'pickerDaysOne' : days >= 2 && days <= 4 ? 'pickerDaysFew' : 'pickerDaysMany';
+    return t(`offerValidity.${key}`, { count: days });
+  }
+  return t(days === 1 ? 'offerValidity.pickerDaysOne' : 'offerValidity.pickerDaysMany', { count: days });
+}
+
 /** Uplynula platnosť ponuky? Bez termínu nikdy. Vynucuje to aj DB (guard_offer_update). */
 export function isOfferExpired(status: string, validUntil: string | null): boolean {
   return status === 'EXPIRED' || (validUntil != null && new Date(validUntil).getTime() <= Date.now());

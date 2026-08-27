@@ -14,6 +14,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/i18n';
+import { offerValidityDaysLabel } from '@/lib/offer-validity';
 import { formatDate } from '@/lib/property';
 import { Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -43,9 +44,7 @@ export function OfferValidityPicker({
   const { t, language } = useTranslation();
   const CHOICES: { days: number | null; label: string }[] = [
     { days: null, label: t('offerValidity.pickerNone') },
-    { days: 7, label: t('offerValidity.pickerDays', { count: 7 }) },
-    { days: 14, label: t('offerValidity.pickerDays', { count: 14 }) },
-    { days: 30, label: t('offerValidity.pickerDays', { count: 30 }) },
+    ...[1, 3, 7, 14, 30].map((days) => ({ days, label: offerValidityDaysLabel(t, language, days) })),
   ];
 
   return (

@@ -23,7 +23,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     date: '27. augusta 2026',
     title: 'Platnosť ponuky',
     items: [
-      'Pri podaní ponuky si vieš nastaviť, ako dlho platí — bez obmedzenia, 7, 14 alebo 30 dní.',
+      'Pri podaní ponuky si vieš nastaviť, ako dlho platí — bez obmedzenia, 1, 3, 7, 14 alebo 30 dní.',
       'Pri ponukách s nastavenou platnosťou beží v zozname odpočet, presne v duchu uzávierky ponúk na inzeráte.',
       'Keď platnosť uplynie, ponuka sa v zozname označí ako neplatná — predávajúci ju už nemôže prijať a do najvyššej ponuky sa nepočíta.',
       'O uplynutí platnosti svojej ponuky dostaneš upozornenie — nastaviteľné rovnako ako ostatné, v Nastaveniach.',

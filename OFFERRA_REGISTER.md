@@ -5405,7 +5405,7 @@ iOS update `01a02c3f-a7e8-71ae-9b73-051db12e96bb` (skupina
 ## Fáza 31 — Platnosť ponuky (27.8.2026, návrh testera)
 
 Zadanie: bidder si pri podaní ponuky vie nastaviť, ako dlho platí (Bez
-obmedzenia / 7 / 14 / 30 dní). Po uplynutí je ponuka neplatná — nedá sa
+obmedzenia / 1 / 3 / 7 / 14 / 30 dní). Po uplynutí je ponuka neplatná — nedá sa
 prijať, nepočíta sa do „najvyššej ponuky", a bidder o tom dostane
 upozornenie.
 
@@ -5525,7 +5525,7 @@ neexistuje, na rozdiel od `check-viewing-reopen.mjs`):
 🟡 **ČO MÁ RASTIO OVERIŤ NA TELEFÓNE** (nedá sa overiť v tomto prostredí —
 žiadny simulátor, §3):
 
-1. Pri podaní ponuky sa dá vybrať platnosť (Bez obmedzenia / 7 / 14 /
+1. Pri podaní ponuky sa dá vybrať platnosť (Bez obmedzenia / 1 / 3 / 7 / 14 /
    30 dní) a v tabe „Ponuky" pri nej beží odpočet.
 2. Ponuka s prešlou platnosťou je v zozname vidieť ako „PLATNOSŤ
    UPLYNULA", tlačidlo „Prijať" pri nej v spodnom paneli majiteľa chýba.
@@ -5589,6 +5589,30 @@ spustil DRUHÝ pokus súbežne. O pár sekúnd nato prišlo potvrdenie, že PRV�
 pokus v skutočnosti doiehal a publikoval sa v poriadku — druhý (ešte len
 bundloval, nič nepublikoval) bol zastavený, nech nevznikne zbytočná
 duplicitná OTA skupina.
+
+### 31.8 Dodatok — voľby 1 a 3 dni (Rastio, 27.8.2026, po prvej OTA)
+
+Pôvodné voľby v pickeri boli len 7/14/30 dní (rovnaké ako pri uzávierke
+ponúk). Rastio si vyžiadal aj 1 deň a 3 dni.
+
+- `OfferValidityPicker` — voľby teraz `1, 3, 7, 14, 30` (+ „Bez
+  obmedzenia" = 6 voliteľných čipov).
+- **Gramatická poistka:** `deadlinePicker.days` malo najmenšiu voľbu 7,
+  takže „{{count}} dní" sedelo na VŠETKY vtedajšie voľby (7/14/30/60 sú
+  všetko 5+, teda vždy genitív množného čísla). Pri 1 dni a 3 dňoch by
+  ten istý text dal „1 dní" a „3 dní" — obe gramaticky ZLE (správne „1
+  deň", „3 dni"). Nová funkcia `offerValidityDaysLabel(t, language,
+  days)` v `offer-validity.ts` skloňuje rovnako ako `offersWord` v
+  `deadline.ts` (SK trojtvarovo cez `pickerDaysOne`/`Few`/`Many`, EN/DE
+  len jednotné/množné). `pickerDaysFew` je nový SK-only kľúč
+  (`SK_ONLY_KEYS` v `check-i18n.ts`).
+- Test `scripts/check-offer-validity.ts` rozšírený o mapovanie
+  `1→„1 deň", 3→„3 dni", 7/14/30→„… dní"` — **17/17 OK** (bolo 13/13).
+- `npx --yes tsx scripts/check-i18n.ts` → **15/15 OK**. `npx tsc --noEmit
+  -p .` → 0 chýb. Žiadna DB zmena netreba (voľby sú len UI, RLS/guard
+  overuje len „v budúcnosti", nie konkrétny počet dní).
+- Zapísané aj do reportu (`reports/PLATNOST_PONUKY.md`, body 3 a 7) a do
+  changelogu.
 
 ---
 

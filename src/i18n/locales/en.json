@@ -392,7 +392,8 @@
     "validUntil": "Valid until {{date}} · {{days}} days left",
     "validUntilHours": "Valid for {{hours}} more h",
     "pickerNone": "No limit",
-    "pickerDays": "{{count}} days",
+    "pickerDaysOne": "{{count}} day",
+    "pickerDaysMany": "{{count}} days",
     "pickerHint": "How long your offer stays valid. Once it passes, the seller can no longer accept it. Optional.",
     "pickerLabel": "Offer validity",
     "pickerValidUntil": "Offer valid until {{date}}"

@@ -395,7 +395,9 @@
     "validUntil": "Platí do {{date}} · ostáva {{days}} dní",
     "validUntilHours": "Platí ešte {{hours}} h",
     "pickerNone": "Bez obmedzenia",
-    "pickerDays": "{{count}} dní",
+    "pickerDaysOne": "{{count}} deň",
+    "pickerDaysFew": "{{count}} dni",
+    "pickerDaysMany": "{{count}} dní",
     "pickerHint": "Dokedy tvoja ponuka platí. Po uplynutí ju už predávajúci nemôže prijať. Nepovinné.",
     "pickerLabel": "Platnosť ponuky",
     "pickerValidUntil": "Ponuka platí do {{date}}"
