@@ -5614,6 +5614,13 @@ ponúk). Rastio si vyžiadal aj 1 deň a 3 dni.
 - Zapísané aj do reportu (`reports/PLATNOST_PONUKY.md`, body 3 a 7) a do
   changelogu.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `46b3e89`. Runtime opäť
+zhodné s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a042bb-747b-7f49-8dee-47833d745ff8` (skupina
+`44e28a3a-4978-4b72-a5bc-41c368b3d5da`), Android update
+`01a042bb-747b-76fc-a741-b7ba124ed8fb` (skupina
+`5ef65e2b-4098-4167-a993-469ea7231c6a`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
