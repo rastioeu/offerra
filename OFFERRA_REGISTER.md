@@ -5565,10 +5565,30 @@ prázdne (fingerprint nedotknutý, §9). `grep -rn "\.channel("` mimo
 `realtime.ts`/`use-realtime-channel.ts` → žiadny výsledok (§11,
 nedotknuté touto fázou). `check-deadline.ts` → bez zmeny (regresia).
 
-### 31.7 IDE OTA
+### 31.7 Publikované OTA — ✅ OVERENÉ RUNTIME
 
 Žiadny natívny modul nepribudol, `package.json` nedotknutý — `eas update`
-stačí, nový build netreba.
+stačí, nový build netreba. Commit `76ab468`. Runtime **nezmenené** oproti
+buildu #5 (overené priamo z odpovede `eas update`, nie odhadom):
+
+| | Runtime |
+|---|---|
+| posledný `finished` iOS build (#5) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (iOS) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
+| publikovaná OTA (Android) | `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7` |
+
+iOS update `01a042a5-1b9e-7514-a19a-de7081d9fa16` (skupina
+`a64e52f2-4c9c-46e8-b40f-07b37c892cd1`), Android update
+`01a042a5-1b9e-793f-82bf-68e8c2415820` (skupina
+`11c32646-c752-4f78-8396-b9472b6bd98d`).
+
+**Poznámka k publikovaniu:** prvý pokus o `eas update` (medzi krokmi 31.2 a
+31.6) v tomto prostredí bežal na pozadí dlhšie, než sa stihlo počkať —
+sledovanie ukázalo prázdny výstup a `update:list` ešte starú OTA, takže sa
+spustil DRUHÝ pokus súbežne. O pár sekúnd nato prišlo potvrdenie, že PRVÝ
+pokus v skutočnosti doiehal a publikoval sa v poriadku — druhý (ešte len
+bundloval, nič nepublikoval) bol zastavený, nech nevznikne zbytočná
+duplicitná OTA skupina.
 
 ---
 

@@ -138,8 +138,10 @@ o tej istej veci na dvoch obrazovkách.
 | | Runtime |
 |---|---|
 | posledný `finished` iOS build | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` |
-| publikovaná OTA (iOS) | *(doplní sa po `eas update`)* |
-| publikovaná OTA (Android) | *(doplní sa po `eas update`)* |
+| publikovaná OTA (iOS) | `24919867e1bcc84715b1b4d6998cb6b27886e5d9` — **zhodné** |
+| publikovaná OTA (Android) | `eaadbb7eca8a7c3baf5dddaed807b6a8ac579fb7` |
+
+Runtime sa zhoduje s posledným dokončeným buildom → OTA sa dostane k tebe do appky (§9). iOS update `01a042a5-1b9e-7514-a19a-de7081d9fa16` (skupina `a64e52f2-4c9c-46e8-b40f-07b37c892cd1`), Android update `01a042a5-1b9e-793f-82bf-68e8c2415820` (skupina `11c32646-c752-4f78-8396-b9472b6bd98d`). Commit `76ab468`.
 
 ---
 
