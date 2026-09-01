@@ -5765,6 +5765,15 @@ obrazovky (Obhliadka, Správy, Hypotéka, Hodnotenia, `OwnerOffers`,
 `DeadlineDecision`, samostatné obrazovky bez sticky lišty) prezreté —
 bez nálezu.
 
+### 32.4 Publikované OTA — ✅ OVERENÉ RUNTIME
+
+Commit `b2e188c`. Runtime zhodné s buildom #5 (`24919867e…` iOS /
+`eaadbb7ec…` Android). iOS update
+`01a05e83-3567-7aaf-8479-234d4f40d718` (skupina
+`efaf4342-c314-4ef0-9c2f-8dd31c7254f8`), Android update
+`01a05e83-3567-701b-abc2-8c4425d16f6e` (skupina
+`73d27394-8912-4740-bdb1-243f4853c184`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
