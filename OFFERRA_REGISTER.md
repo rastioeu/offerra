@@ -5699,6 +5699,17 @@ vo všetkých troch jazykoch. `HH:MM`/`HH:MM:SS` sú číslicové formáty bez t
   na telefóne pozrieť a **slovami** potvrdiť — obrázok by som si tu ani ja
   nevedel overiť, že ukazuje appku, nie mockup.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `c998aca`. Prvý pokus
+(`bsbcqa6qc`) padol počas Metro bundlingu (studená cache + krátkodobý
+čiastočný výpadok EAS Update podľa status.expo.dev) skôr, než čokoľvek
+publikoval — nezanechal duplicitný balík, len osirotený proces, ktorý som
+ukončil pred druhým pokusom. Druhý pokus prešiel: runtime `24919867e…`
+(iOS) / `eaadbb7ec…` (Android) — **zhodné s buildom #5**. iOS update
+`01a05e01-3fa4-7287-af00-669e86e26cde` (skupina
+`5aeb8378-f450-4b28-a073-79f848fe028f`), Android update
+`01a05e01-3fa4-7faf-8f0a-641786995348` (skupina
+`41f6e17e-4d45-4560-97bf-dcfb5db6a0e4`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
