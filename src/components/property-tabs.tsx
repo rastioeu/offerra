@@ -22,7 +22,6 @@
  * rozišla s originálom. Tab vedie naň jedným ťuknutím a ukazuje stav
  * vlastnej ponuky, čo je to, čo z neho človek potrebuje vidieť.
  */
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 
@@ -368,7 +367,6 @@ function OffersTab({
   closed: boolean;
 }) {
   const palette = useTheme();
-  const router = useRouter();
   const toast = useToast();
   const { t, language } = useTranslation();
   const [busy, setBusy] = useState(false);
@@ -456,46 +454,42 @@ function OffersTab({
               {mine.status === 'EXPIRED' ? (
                 <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.offerExpiredNote')}</Text>
               ) : null}
+              {/* „Upraviť moju ponuku" TU ZÁMERNE NIE JE (Rastio, 2.9.2026) —
+                  to isté tlačidlo, ten istý cieľ ako v prilepenej spodnej
+                  lište (`nehnutelnost/[id].tsx`, `primaryAction()`), ktorá
+                  je vždy dostupná bez ohľadu na scroll aj na otvorený
+                  podtab. „Stiahnuť ponuku" tu ZOSTÁVA — to lišta neponúka. */}
               {mine.status === 'PENDING' ? (
-                <>
-                  <Button
-                    title={t('propertyTabs.editMyOffer')}
-                    variant="outline"
-                    onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
-                  />
-                  <Button
-                    title={busy ? t('propertyTabs.withdrawing') : t('propertyTabs.withdrawOffer')}
-                    variant="danger"
-                    disabled={busy}
-                    onPress={() =>
-                      Alert.alert(t('propertyTabs.withdrawConfirmTitle'), t('propertyTabs.withdrawConfirmBody'), [
-                        { text: t('common.back'), style: 'cancel' },
-                        { text: t('propertyTabs.withdrawConfirmYes'), style: 'destructive', onPress: () => void withdraw() },
-                      ])
-                    }
-                  />
-                </>
+                <Button
+                  title={busy ? t('propertyTabs.withdrawing') : t('propertyTabs.withdrawOffer')}
+                  variant="danger"
+                  disabled={busy}
+                  onPress={() =>
+                    Alert.alert(t('propertyTabs.withdrawConfirmTitle'), t('propertyTabs.withdrawConfirmBody'), [
+                      { text: t('common.back'), style: 'cancel' },
+                      { text: t('propertyTabs.withdrawConfirmYes'), style: 'destructive', onPress: () => void withdraw() },
+                    ])
+                  }
+                />
               ) : null}
             </>
           ) : closed || item.status === 'CLOSED' ? (
             <Text style={[styles.note, { color: palette.warning }]}>{t('propertyTabs.offersClosedNote')}</Text>
           ) : (
-            <>
-              <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.priceIndicativeNote')}</Text>
-              <Button
-                title={t('propertyTabs.submitOffer')}
-                onPress={() => router.push({ pathname: '/ponuka/[id]', params: { id: item.id } })}
-              />
-            </>
+            // „Podať ponuku" TU ZÁMERNE NIE JE — duplikát tlačidla v spodnej
+            // lište, rovnaký dôvod ako vyššie. Karta ostáva len informačná.
+            <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.priceIndicativeNote')}</Text>
           )}
         </Card>
       ) : null}
 
       {!myId ? (
+        // „Prihlás sa a ponúkni" TU ZÁMERNE NIE JE — presne ten istý text aj
+        // cieľ (`/login`) má aj spodná lišta (`loginToOfferAction`), ktorá je
+        // navyše vždy dostupná bez ohľadu na scroll (rovnaký dôvod ako vyššie).
         <Card>
           <Eyebrow>{t('propertyTabs.wantToOffer')}</Eyebrow>
           <Text style={[styles.note, { color: palette.textMuted }]}>{t('propertyTabs.mustSignInNote')}</Text>
-          <Button title={t('propertyTabs.signInAndOffer')} onPress={() => router.push('/login')} />
         </Card>
       ) : null}
 

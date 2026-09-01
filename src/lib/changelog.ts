@@ -20,6 +20,15 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '2. septembra 2026',
+    title: 'Menej tlačidiel na detaile inzerátu',
+    items: [
+      'Karta „Moja ponuka" v tabe Ponuky už neduplikuje tlačidlo „Podať ponuku" / „Upraviť moju ponuku" — to je odteraz len dole v prilepenej lište.',
+      '„Stiahnuť ponuku" v karte ostáva, tú akciu spodná lišta neponúka.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '1. septembra 2026',
     title: 'Odpočet platnosti ponuky teraz naozaj tiká',
     items: [

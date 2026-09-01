@@ -5712,6 +5712,61 @@ ukončil pred druhým pokusom. Druhý pokus prešiel: runtime `24919867e…`
 
 ---
 
+## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
+
+Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.
+
+### 32.0 Nález
+
+Rastio zo screenshotov: karta „Moja ponuka" (podtab „Ponuky") aj prilepená
+spodná lišta ukazovali TO ISTÉ tlačidlo („Podať ponuku" / „Upraviť moju
+ponuku"), naraz, na tej istej obrazovke — zvyšok karty od zavedenia sticky
+lišty (8.8.2026) nikto nezoštíhlil.
+
+### 32.1 Oprava — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+`src/components/property-tabs.tsx` (`OffersTab`) — z karty „Moja ponuka"
+(aj z karty pre neprihláseného „Chcem ponúknuť") odstránené VŠETKY tri
+duplicitné tlačidlá („Podať ponuku", „Upraviť moju ponuku", „Prihlás sa a
+ponúkni" — posledné malo doslovne rovnaký i18n text ako lišta). Karta si
+drží informačnú hodnotu (suma, stav) a **„Stiahnuť ponuku" ZOSTÁVA** —
+sticky lišta túto akciu neponúka. Sticky lišta (`primaryAction()` v
+`nehnutelnost/[id].tsx`) sa NEMENILA, len overená čítaním kódu — text sa
+tam menil správne aj predtým.
+
+Vedľajšie upratanie: `useRouter` v `OffersTab` bol po odstránení tlačidiel
+nepoužitý, odstránený. 3 osirotené i18n kľúče
+(`propertyTabs.submitOffer`/`.editMyOffer`/`.signInAndOffer`) odstránené zo
+všetkých troch jazykov.
+
+### 32.2 Dôkazy
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **15/15 OK** (1044 t()-volaní, o 3 menej — presne zodpovedá odstráneným kľúčom) |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne — **IDE OTA** |
+
+Nedokázateľné bez telefónu (§1): že po zmene v karte naozaj ostalo len
+jedno tlačidlo NA POHĽAD a že sticky lišta pred očami mení text. Rastio
+potvrdí slovami, nie screenshotom (`reports/DUPLICITNE_TLACIDLA.md` §6).
+
+### 32.3 Ďalšie obrazovky — len JEDEN ďalší nález, NEOPRAVENÝ (na Rastiovo rozhodnutie)
+
+Prilepenú lištu má v appke len JEDNA obrazovka, takže presne tento vzor sa
+nemohol zopakovať inde. Rovnaký PRINCÍP (jedna akcia, dve miesta) sa ale
+našiel ešte raz na tej istej obrazovke: ikona „Zdieľať" je AJ nad hero
+fotkou (`nehnutelnost/[id].tsx` ~r.328), AJ v sticky lište (~r.579) —
+rovnaká funkcia `shareProperty(item)`. Vznikla rovnakým spôsobom ako
+duplicita ponuky: sticky ikona pribudla 7.8.2026 ako náhrada za orezanú
+pôvodnú, ktorú ale nikto neodstránil. **Zámerne NEOPRAVENÉ** — Rastio si
+vyžiadal len zoznam, nie automatickú opravu ďalších nálezov. Ostatné
+obrazovky (Obhliadka, Správy, Hypotéka, Hodnotenia, `OwnerOffers`,
+`DeadlineDecision`, samostatné obrazovky bez sticky lišty) prezreté —
+bez nálezu.
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —
