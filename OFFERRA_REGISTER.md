@@ -5774,6 +5774,17 @@ Commit `b2e188c`. Runtime zhodné s buildom #5 (`24919867e…` iOS /
 `01a05e83-3567-701b-abc2-8c4425d16f6e` (skupina
 `73d27394-8912-4740-bdb1-243f4853c184`).
 
+### 32.5 Dodatok — aj ikona „Zdieľať" (Rastio, 2.9.2026, po 32.3) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Rastio sa rozhodol pre nález z 32.3: odstrániť ikonu „Zdieľať" nad hero
+fotkou, nechať len sticky. `nehnutelnost/[id].tsx` — `Pressable` s
+`shareProperty(item)` nad fotkou (bývalý r. ~328) odstránený. Ikona v
+prilepenej lište (r. ~576) sa nemenila. `shareProperty` import aj
+`propertyDetail.shareListing` i18n kľúč zostávajú — používa ich sticky
+lišta. `npx tsc --noEmit -p .` čisté, `package.json` nedotknutý → **IDE
+OTA**. Nedokázateľné bez telefónu: že ikona nad fotkou naozaj zmizla
+a rozostup ikon (celoobrazovka + srdiečko) nevyzerá čudne.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

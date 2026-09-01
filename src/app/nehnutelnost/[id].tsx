@@ -325,13 +325,10 @@ export default function PropertyDetailScreen() {
                     />
                   </Pressable>
                 ) : null}
-                <Pressable
-                  onPress={() => void shareProperty(item)}
-                  hitSlop={10}
-                  accessibilityRole="button"
-                  accessibilityLabel={t('propertyDetail.shareListing')}>
-                  <Icon name="square.and.arrow.up" size={24} color={palette.surface} weight="semibold" />
-                </Pressable>
+                {/* „Zdieľať" TU ZÁMERNE NIE JE (Rastio, 2.9.2026) — duplicitná
+                    ikona s tou istou akciou v prilepenej spodnej lište
+                    nižšie, ktorá je navyše vždy dostupná (nezmizne so
+                    scrollom fotky preč). Register Fáza 32.5. */}
                 {myId ? (
                   <FavoriteHeart active={favorites.has(item.id)} onToggle={() => toggle(item.id)} size={26} />
                 ) : null}

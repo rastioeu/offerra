@@ -113,10 +113,11 @@ plné tlačidlá vedľa seba, takže vizuálne to nebije do očí tak silno — 
 princíp (jedna akcia, dve miesta, jedno z nich vzniklo ako náhrada za
 druhé) je identický.
 
-**Nefixoval som to** — píšeš, že tento bod má byť zoznam, nie oprava.
-Ak chceš, poviem: navrhujem ODSTRÁNIŤ ikonu nad fotkou a nechať len
-sticky (rovnaké odôvodnenie ako pri ponuke — sticky je vždy dostupná,
-tá nad fotkou nie), ale je to na tvoje rozhodnutie.
+**Dodatok 2.9.2026 — OPRAVENÉ:** Rastio sa rozhodol ikonu nad fotkou
+odstrániť. `nehnutelnost/[id].tsx` — `Pressable` so `shareProperty(item)`
+nad hero fotkou zmizol, zostáva len ikona v prilepenej spodnej lište.
+`shareProperty` aj `propertyDetail.shareListing` naďalej používa sticky
+lišta, takže sa nemazali. Register Fáza 32.5.
 
 **Skontrolované a BEZ nálezu** (žiadna duplicita):
 - Obľúbené (srdiečko) — len jedno miesto.
@@ -145,5 +146,6 @@ tá nad fotkou nie), ale je to na tvoje rozhodnutie.
    v prilepenej lište a mení text správne — over aspoň dva stavy (napr.
    bez ponuky → „Podať ponuku"; po podaní → „Upraviť moju ponuku").
 3. „Stiahnuť ponuku" v karte stále funguje (skús na testovacej ponuke).
-4. Pozri si nález o ikone „Zdieľať" v §5 a povedz, či ju mám odstrániť
-   z hornej časti fotky, alebo nech tam obe ostanú.
+4. Nad fotkou už nie je ikona „Zdieľať" — vidíš tam už len ikonu na
+   celoobrazovkové zobrazenie a srdiečko obľúbených (ak si prihlásený).
+   Zdieľanie funguje len z prilepenej spodnej lišty.

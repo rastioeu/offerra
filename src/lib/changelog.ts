@@ -25,6 +25,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     items: [
       'Karta „Moja ponuka" v tabe Ponuky už neduplikuje tlačidlo „Podať ponuku" / „Upraviť moju ponuku" — to je odteraz len dole v prilepenej lište.',
       '„Stiahnuť ponuku" v karte ostáva, tú akciu spodná lišta neponúka.',
+      'Ikona „Zdieľať" nad fotkou zmizla z rovnakého dôvodu — zdieľanie funguje len z prilepenej lišty.',
     ],
   },
   {
