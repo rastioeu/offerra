@@ -160,3 +160,28 @@ Runtime sa zhoduje s posledným dokončeným buildom → OTA sa dostane k tebe d
 6. Karta v katalógu neukazuje ako „najvyššiu" sumu z expirovanej ponuky.
 7. Nastavenia → Ako funguje Offerra → nový odsek o platnosti ponuky (aj
    v EN/DE, ak prepneš jazyk appky).
+
+### 7b. Dodatok 1.9.2026 — živý stupňovitý odpočet
+
+Toto je NOVÁ vrstva nad bodom 2 vyššie — odpočet teraz naozaj tiká, nie len
+prepočíta pri otvorení obrazovky. Over pri ponuke s krátkou platnosťou
+(najkratšia voľba je 1 deň — ak chceš otestovať skôr, poviem ako nastaviť
+platnosť na pár minút priamo v DB):
+
+1. **Viac než 24 h do konca** — vidíš „Platí ešte X dní", text sa
+   nemusí meniť pred očami (prekresľuje sa raz za minútu, nie za sekundu).
+2. **Menej než 24 h** — text má tvar `HH:MM` (napr. „23:55") a sa **naozaj
+   mení** — počkaj minútu s obrazovkou otvorenou, malo by sa to znížiť o 1.
+3. **Menej než 1 h** — text má tvar `HH:MM:SS` (napr. „00:47:32"), tiká **po
+   sekundách pred očami** a je **farebne zvýraznený** (výraznejšia/červenšia
+   farba než zvyšok textu na karte).
+4. Po uplynutí sa text zmení na „Platnosť uplynula" (odznak/tlačidlo ako
+   v bode 4 vyššie).
+5. Otvor obrazovku s takouto ponukou a nechaj ju dlhšie otvorenú (aspoň pár
+   minút, ideálne cez hranicu poslednej hodiny) — appka by sa nemala
+   spomaľovať ani sekať. To je jediný spôsob, ako sa dá overiť, že appka
+   nezakladá viac časovačov, než má (kód to má ošetrené, ale toto vie
+   potvrdiť len beh na telefóne).
+
+**Screenshoty ani video sem nedávaj** (stojace pravidlo appky, 17.8.2026) —
+stačí slovami napísať, čo si videl podľa bodov 1–5 vyššie.

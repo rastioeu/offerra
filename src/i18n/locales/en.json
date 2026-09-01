@@ -389,8 +389,7 @@
   },
   "offerValidity": {
     "expired": "Expired",
-    "validUntil": "Valid until {{date}} · {{days}} days left",
-    "validUntilHours": "Valid for {{hours}} more h",
+    "countdownDays": "Valid for {{days}} more",
     "pickerNone": "No limit",
     "pickerDaysOne": "{{count}} day",
     "pickerDaysMany": "{{count}} days",

@@ -47,39 +47,76 @@ export function offerValidityDaysLabel(t: TFunc, language: string, days: number)
   return t(days === 1 ? 'offerValidity.pickerDaysOne' : 'offerValidity.pickerDaysMany', { count: days });
 }
 
-/** Uplynula platnosť ponuky? Bez termínu nikdy. Vynucuje to aj DB (guard_offer_update). */
-export function isOfferExpired(status: string, validUntil: string | null): boolean {
-  return status === 'EXPIRED' || (validUntil != null && new Date(validUntil).getTime() <= Date.now());
-}
-
 /**
- * Dátum vo formáte podľa jazyka, LEN pre tento súbor — z rovnakého dôvodu
- * ako v `deadline.ts`: importovať `formatDate` z `property.ts` by znovu
- * pripojilo `./supabase` a zrušilo by to zmysel tohto súboru.
+ * Uplynula platnosť ponuky? Bez termínu nikdy. Vynucuje to aj DB
+ * (guard_offer_update). `now` je voliteľný a defaultne `Date.now()` — live
+ * countdown (`offerCountdown` nižšie) ho posiela EXPLICITNE, nech oba
+ * výpočty (je expirovaná? / koľko ešte ostáva?) bežia na presne tom istom
+ * čase, nie na dvoch nezávislých volaniach `Date.now()` o zlomok
+ * milisekundy od seba.
  */
-function localDate(language: string, iso: string): string {
-  const tag = language === 'sk' ? 'sk-SK' : language === 'de' ? 'de-DE' : 'en-GB';
-  return new Intl.DateTimeFormat(tag, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso));
+export function isOfferExpired(status: string, validUntil: string | null, now: number = Date.now()): boolean {
+  return status === 'EXPIRED' || (validUntil != null && new Date(validUntil).getTime() <= now);
 }
 
 /**
- * Odpočet do konca platnosti ponuky, alebo fakt, že už uplynula.
+ * Odpočet platnosti ponuky, ŽIVO a STUPŇOVITO (Rastio, 1.9.2026):
+ *
+ *   - `days` — 24 hodín a viac: „Platí ešte 5 dní". Netreba tikať po
+ *     sekundách, stačí prekresliť raz za čas (o to sa stará
+ *     `useOfferCountdownTick` — sekundy tikajúce celý deň by zbytočne
+ *     zaťažovali batériu bez toho, aby to niekomu pomohlo).
+ *   - `hm` — menej než 24 hodín: `HH:MM`, reálne odpočítava (napr. „23:55"
+ *     → o minútu „23:54").
+ *   - `hms` — posledná hodina: `HH:MM:SS`, tiká po sekundách a `urgent` je
+ *     `true` — appka to má zvýrazniť farebne, nech je naliehavosť jasná.
+ *   - `expired` — platnosť uplynula, appka to musí ukázať OKAMŽITE (živo z
+ *     `valid_until`), nie až keď to o niekoľko minút neskôr prekvapí cron.
+ *
  * `null` len keď ponuka platnosť vôbec nemá (`valid_until` je `null`) —
- * vtedy appka o platnosti nehovorí vôbec, presne ako pri uzávierke bez
- * termínu.
+ * vtedy appka o platnosti mlčí, presne ako pri uzávierke bez termínu.
+ *
+ * Volajúci POSIELA `now` (z jedného spoločného tikajúceho hooku na celú
+ * obrazovku, `useOfferCountdownTick`) — táto funkcia sama žiadny interval
+ * nezakladá, je to čistá funkcia jedného okamihu.
  */
-export function offerValidityLabel(
+export type OfferCountdownTier = 'days' | 'hm' | 'hms' | 'expired';
+
+export interface OfferCountdown {
+  tier: OfferCountdownTier;
+  /** Hotový text na zobrazenie — appka ho nesmie skladať sama. */
+  text: string;
+  /** Posledná hodina — appka to má zvýrazniť (napr. `palette.danger`). */
+  urgent: boolean;
+}
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
+
+export function offerCountdown(
   t: TFunc,
   language: string,
   status: string,
   iso: string | null,
   now: number = Date.now()
-): string | null {
+): OfferCountdown | null {
   if (!iso) return null;
-  if (isOfferExpired(status, iso)) return t('offerValidity.expired');
-  const ms = new Date(iso).getTime() - now;
-  const days = Math.floor(ms / 86_400_000);
-  if (days >= 1) return t('offerValidity.validUntil', { date: localDate(language, iso), days });
-  const hours = Math.max(1, Math.floor(ms / 3_600_000));
-  return t('offerValidity.validUntilHours', { hours });
+  if (isOfferExpired(status, iso, now)) {
+    return { tier: 'expired', text: t('offerValidity.expired'), urgent: false };
+  }
+  const totalSeconds = Math.max(0, Math.floor((new Date(iso).getTime() - now) / 1000));
+  if (totalSeconds < 3_600) {
+    const h = Math.floor(totalSeconds / 3_600);
+    const m = Math.floor((totalSeconds % 3_600) / 60);
+    const s = totalSeconds % 60;
+    return { tier: 'hms', text: `${pad2(h)}:${pad2(m)}:${pad2(s)}`, urgent: true };
+  }
+  if (totalSeconds < 86_400) {
+    const h = Math.floor(totalSeconds / 3_600);
+    const m = Math.floor((totalSeconds % 3_600) / 60);
+    return { tier: 'hm', text: `${pad2(h)}:${pad2(m)}`, urgent: false };
+  }
+  const days = Math.floor(totalSeconds / 86_400);
+  return { tier: 'days', text: t('offerValidity.countdownDays', { days: offerValidityDaysLabel(t, language, days) }), urgent: false };
 }

@@ -23,9 +23,11 @@ import { useSession } from '@/hooks/use-session';
 import { useToast } from '@/components/toast';
 import { maybeOfferPush } from '@/lib/push-prompt';
 import { useTheme } from '@/hooks/use-theme';
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTranslation } from '@/i18n';
+import { OfferCountdownText } from '@/components/offer-countdown';
 import { getEmploymentOptions, fetchOfferContact, formatAmount, type OfferContact } from '@/lib/offers';
-import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
+import { isOfferExpired } from '@/lib/offer-validity';
 import { db, formatPrice, isDeadlinePassed } from '@/lib/property';
 import { Spacing, Type, Weight } from '@/theme/tokens';
 import { errorText } from '@/lib/errors';
@@ -39,7 +41,7 @@ function num(text: string): number | null {
 
 export default function OfferFormScreen() {
   const palette = useTheme();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { session } = useSession();
@@ -118,6 +120,10 @@ export default function OfferFormScreen() {
       cancelled = true;
     };
   }, [accepted, mine]);
+
+  // JEDEN tikajúci `now` pre túto obrazovku — len jedna ponuka (`mine`)
+  // tu má odpočet, ale rovnaký hook ako všade inde (Rastio, 1.9.2026).
+  const now = useOfferCountdownTick([mine?.valid_until]);
 
   const isRent = item?.transaction_type === 'RENT';
   // Expirovaná ponuka (aj keď v DB ešte čaká na cron) sa do „najvyššej
@@ -265,13 +271,7 @@ export default function OfferFormScreen() {
                 <Eyebrow>{t('ponukaForm.myOfferProgress')}</Eyebrow>
                 <OfferTimeline offer={mine} />
                 {mine.valid_until ? (
-                  <Text
-                    style={[
-                      styles.note,
-                      { color: isOfferExpired(mine.status, mine.valid_until) ? palette.warning : palette.textMuted },
-                    ]}>
-                    {offerValidityLabel(t, language, mine.status, mine.valid_until)}
-                  </Text>
+                  <OfferCountdownText status={mine.status} validUntil={mine.valid_until} now={now} style={styles.note} />
                 ) : null}
               </Card>
             ) : null}

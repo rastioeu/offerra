@@ -18,9 +18,10 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { useTheme } from '@/hooks/use-theme';
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTranslation } from '@/i18n';
 import { formatAmount, getOfferStatusLabel, type Offer } from '@/lib/offers';
-import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
+import { isOfferExpired } from '@/lib/offer-validity';
 import { formatDate } from '@/lib/property';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
 
@@ -28,6 +29,7 @@ import { ratingLabel } from '@/lib/rating';
 import { useRatings } from '@/hooks/use-ratings';
 
 import { Avatar } from './avatar';
+import { OfferCountdownText } from './offer-countdown';
 import { ReportButton } from './report-button';
 
 export function OfferList({
@@ -36,6 +38,7 @@ export function OfferList({
   highlightBidderId,
   allowReport,
   onPressOffer,
+  now,
 }: {
   offers: Offer[];
   transaction: 'SALE' | 'RENT';
@@ -44,10 +47,20 @@ export function OfferList({
   allowReport?: boolean;
   /** Keď je dané, celá karta je klikateľná (pohľad majiteľa). */
   onPressOffer?: (offer: Offer) => void;
+  /**
+   * Voliteľné: keď volajúci (napr. `OwnerOffers`, ktorý má vedľa zoznamu aj
+   * spodný panel s tou istou ponukou) už tiká sám, pošle sem svoje `now` —
+   * tento zoznam si vtedy VLASTNÝ interval nezakladá, aby na jednej
+   * obrazovke nebežali dva naraz. Bez neho (samostatné použitie, napr.
+   * verejný zoznam v podtabe) si tikanie rieši sám.
+   */
+  now?: number;
 }) {
   const palette = useTheme();
   const { t, language } = useTranslation();
   const ratings = useRatings(offers.map((o) => o.bidder_id));
+  const ownTick = useOfferCountdownTick(offers.map((o) => o.valid_until), now == null);
+  const liveNow = now ?? ownTick;
 
   if (offers.length === 0) {
     return (
@@ -61,7 +74,7 @@ export function OfferList({
         const mine = highlightBidderId && o.bidder_id === highlightBidderId;
         // Ponuka, ktorej platnosť uplynula, nie je „najvyššia" ani keď má
         // najvyššiu sumu — nikto ju už nemôže prijať (§ offer-validity.ts).
-        const expired = isOfferExpired(o.status, o.valid_until);
+        const expired = isOfferExpired(o.status, o.valid_until, liveNow);
         const best = i === 0 && o.status === 'PENDING' && !expired;
         const Wrap = onPressOffer ? Pressable : View;
 
@@ -100,11 +113,9 @@ export function OfferList({
               <Text style={[styles.date, { color: palette.textMuted }]}>{formatDate(language, o.created_at)}</Text>
               {/* Platnosť ponuky — len kým ešte beží. Po uplynutí to už
                   hovorí odznak vpravo, tu by to bola tá istá informácia
-                  druhýkrát inými slovami. */}
+                  druhýkrát inými slovami. Živé, tiká (§ offer-countdown.tsx). */}
               {o.valid_until && !expired ? (
-                <Text style={[styles.date, { color: palette.textMuted }]}>
-                  {offerValidityLabel(t, language, o.status, o.valid_until)}
-                </Text>
+                <OfferCountdownText status={o.status} validUntil={o.valid_until} now={liveNow} />
               ) : null}
               {/* Správa je tu, LEN ak na ňu volajúci má nárok — `message` je
                   `null` pre všetkých ostatných a rozhodla o tom databáza,

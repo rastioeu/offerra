@@ -392,8 +392,7 @@
   },
   "offerValidity": {
     "expired": "Platnosť uplynula",
-    "validUntil": "Platí do {{date}} · ostáva {{days}} dní",
-    "validUntilHours": "Platí ešte {{hours}} h",
+    "countdownDays": "Platí ešte {{days}}",
     "pickerNone": "Bez obmedzenia",
     "pickerDaysOne": "{{count}} deň",
     "pickerDaysFew": "{{count}} dni",

@@ -7,7 +7,7 @@
  *
  * SPUSTENIE: `npx --yes tsx scripts/check-offer-validity.ts` (žiadna appka, žiadna databáza).
  */
-import { isOfferExpired, offerValidityLabel, offerValidityDaysLabel } from '../src/lib/offer-validity';
+import { isOfferExpired, offerCountdown, offerValidityDaysLabel } from '../src/lib/offer-validity';
 import skJson from '../src/i18n/locales/sk.json';
 
 type Locale = Record<string, Record<string, string>>;
@@ -27,52 +27,83 @@ function check(label: string, ok: boolean, detail: string) {
   if (!ok) fails++;
 }
 
-function inDays(d: number): string {
-  return new Date(Date.now() + d * 86_400_000).toISOString();
-}
-function inHours(h: number): string {
-  return new Date(Date.now() + h * 3_600_000).toISOString();
+// Pevný okamih pre celý test — inak by dva volania `Date.now()) o zlomok
+// milisekundy od seba vedeli pri sekundovom odpočte (`HH:MM:SS`) zhodiť
+// výsledok o jednu sekundu a test by bol falošne krehký.
+const NOW = Date.now();
+function inMs(ms: number): string {
+  return new Date(NOW + ms).toISOString();
 }
 
 console.log('── isOfferExpired: živý čas MUSÍ rozhodovať, nie len status (race condition proti cronu) ──');
 {
-  check('PENDING + valid_until v budúcnosti → NIE JE expired', !isOfferExpired('PENDING', inDays(5)), '');
-  check('PENDING + valid_until v minulosti → JE expired (cron ešte nestihol prekrpiť status)', isOfferExpired('PENDING', inHours(-1)), '');
-  check('PENDING + valid_until = null (bez obmedzenia) → NIE JE expired', !isOfferExpired('PENDING', null), '');
-  check('status = EXPIRED → JE expired aj keby valid_until chýbal', isOfferExpired('EXPIRED', null), '');
-  check('ACCEPTED + valid_until v minulosti → JE expired (ponuka bola prijatá PRED tým, čo prešla)', isOfferExpired('ACCEPTED', inHours(-1)), 'zámerne: appka Accept tlačidlo skryje LEN pre PENDING, toto je len čistá funkcia');
+  check('PENDING + valid_until v budúcnosti → NIE JE expired', !isOfferExpired('PENDING', inMs(5 * 86_400_000), NOW), '');
+  check('PENDING + valid_until v minulosti → JE expired (cron ešte nestihol prekrpiť status)', isOfferExpired('PENDING', inMs(-3_600_000), NOW), '');
+  check('PENDING + valid_until = null (bez obmedzenia) → NIE JE expired', !isOfferExpired('PENDING', null, NOW), '');
+  check('status = EXPIRED → JE expired aj keby valid_until chýbal', isOfferExpired('EXPIRED', null, NOW), '');
+  check('ACCEPTED + valid_until v minulosti → JE expired (ponuka bola prijatá PRED tým, čo prešla)', isOfferExpired('ACCEPTED', inMs(-3_600_000), NOW), 'zámerne: appka Accept tlačidlo skryje LEN pre PENDING, toto je len čistá funkcia');
 }
 
-console.log('\n── karta MUSÍ dostať text, keď má ponuka platnosť, a NIE keď nemá ──');
+console.log('\n── offerCountdown: bez platnosti appka mlčí ──');
 {
-  const iso = inDays(10);
-  const label = offerValidityLabel(t, language, 'PENDING', iso);
-  check('budúca platnosť (10 dní) → label NIE JE null', label !== null, `offerValidityLabel = ${JSON.stringify(label)}`);
-  check('text obsahuje "ostáva" a počet dní', Boolean(label && /ostáva 9 dní|ostáva 10 dní/.test(label)), `„${label}"`);
+  const cd = offerCountdown(t, language, 'PENDING', null, NOW);
+  check('valid_until = null → offerCountdown JE null', cd === null, `${JSON.stringify(cd)}`);
+}
+
+console.log('\n── offerCountdown: STUPŇOVITÝ odpočet (Rastio, 1.9.2026) ──');
+{
+  // ≥ 24 hodín → tier "days", text zložený z pluralizovaného počtu dní.
+  const cd = offerCountdown(t, language, 'PENDING', inMs(10 * 86_400_000), NOW);
+  check('10 dní → tier "days"', cd?.tier === 'days', `${JSON.stringify(cd)}`);
+  check('10 dní → text obsahuje "Platí ešte 10 dní"', cd?.text === 'Platí ešte 10 dní', `„${cd?.text}"`);
+  check('10 dní → NIE JE urgent', cd?.urgent === false, `${JSON.stringify(cd)}`);
 }
 {
-  const label = offerValidityLabel(t, language, 'PENDING', null);
-  check('bez platnosti (valid_until = null) → label JE null (appka o platnosti mlčí)', label === null, `offerValidityLabel = ${label}`);
+  // presne na hranici 24 h (86 400 s) → ešte "days" (deň 1), pod hranicou už "hm".
+  const cd = offerCountdown(t, language, 'PENDING', inMs(86_400_000), NOW);
+  check('presne 24 h → tier "days" (1 deň)', cd?.tier === 'days', `${JSON.stringify(cd)}`);
+  check('presne 24 h → text "Platí ešte 1 deň"', cd?.text === 'Platí ešte 1 deň', `„${cd?.text}"`);
 }
 {
-  const iso = inHours(-5);
-  const label = offerValidityLabel(t, language, 'PENDING', iso);
-  check('uplynutá platnosť → label stále NIE JE null (ukáže fakt)', label !== null, `„${label}"`);
-  check('uplynutá platnosť → text "Platnosť uplynula"', label === t('offerValidity.expired'), `„${label}"`);
+  // < 24 h, ≥ 1 h → tier "hm", formát HH:MM, reálne odpočítava po minútach.
+  const cd = offerCountdown(t, language, 'PENDING', inMs(5 * 3_600_000 + 7 * 60_000), NOW);
+  check('5 h 7 min → tier "hm"', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
+  check('5 h 7 min → text "05:07"', cd?.text === '05:07', `„${cd?.text}"`);
+  check('5 h 7 min → NIE JE urgent', cd?.urgent === false, `${JSON.stringify(cd)}`);
 }
 {
-  const iso = inHours(3);
-  const label = offerValidityLabel(t, language, 'PENDING', iso);
-  check('menej než deň → hodinový tvar, nie „0 dní"', Boolean(label && /\d+ h/.test(label)), `„${label}"`);
+  // presne na hranici 1 h (3 600 s) → ešte "hm" (01:00:00 by bolo hms, ale presne 3600 s je posledná sekunda pred hms).
+  const cd = offerCountdown(t, language, 'PENDING', inMs(3_600_000), NOW);
+  check('presne 1 h → tier "hm" (01:00)', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
+  check('presne 1 h → text "01:00"', cd?.text === '01:00', `„${cd?.text}"`);
 }
 {
-  // Status EXPIRED musí dať rovnaký text ako živo-uplynutá platnosť —
-  // appka nesmie hovoriť dvoma rôznymi vetami o tej istej veci podľa
-  // toho, či to stihol cron, alebo nie.
-  const iso = inHours(-5);
-  const byTime = offerValidityLabel(t, language, 'PENDING', iso);
-  const byStatus = offerValidityLabel(t, language, 'EXPIRED', iso);
-  check('rovnaký text bez ohľadu na to, či expiráciu vidno zo status alebo z valid_until', byTime === byStatus, `PENDING: „${byTime}" vs EXPIRED: „${byStatus}"`);
+  // < 1 h → tier "hms", formát HH:MM:SS, tiká po sekundách, URGENT (zvýraznenie).
+  const cd = offerCountdown(t, language, 'PENDING', inMs(47 * 60_000 + 32_000), NOW);
+  check('47 min 32 s → tier "hms"', cd?.tier === 'hms', `${JSON.stringify(cd)}`);
+  check('47 min 32 s → text "00:47:32"', cd?.text === '00:47:32', `„${cd?.text}"`);
+  check('47 min 32 s → JE urgent (zvýraznenie)', cd?.urgent === true, `${JSON.stringify(cd)}`);
+}
+{
+  // pár sekúnd pred koncom → stále "hms", nie "expired" (ešte nie <= now).
+  const cd = offerCountdown(t, language, 'PENDING', inMs(3_000), NOW);
+  check('3 s pred koncom → tier "hms" (00:00:03)', cd?.tier === 'hms' && cd.text === '00:00:03', `${JSON.stringify(cd)}`);
+}
+{
+  // uplynutá platnosť (živo, status ešte PENDING) → tier "expired".
+  const cd = offerCountdown(t, language, 'PENDING', inMs(-5 * 3_600_000), NOW);
+  check('uplynutá platnosť → tier "expired"', cd?.tier === 'expired', `${JSON.stringify(cd)}`);
+  check('uplynutá platnosť → text "Platnosť uplynula"', cd?.text === t('offerValidity.expired'), `„${cd?.text}"`);
+  check('uplynutá platnosť → NIE JE urgent (už uplynulo, netreba tikať)', cd?.urgent === false, `${JSON.stringify(cd)}`);
+}
+{
+  // Status EXPIRED musí dať rovnaký výsledok ako živo-uplynutá platnosť —
+  // appka nesmie hovoriť dvoma rôznymi vetami o tej istej veci podľa toho,
+  // či to stihol cron, alebo nie.
+  const iso = inMs(-5 * 3_600_000);
+  const byTime = offerCountdown(t, language, 'PENDING', iso, NOW);
+  const byStatus = offerCountdown(t, language, 'EXPIRED', iso, NOW);
+  check('rovnaký výsledok bez ohľadu na to, či expiráciu vidno zo status alebo z valid_until', JSON.stringify(byTime) === JSON.stringify(byStatus), `PENDING: ${JSON.stringify(byTime)} vs EXPIRED: ${JSON.stringify(byStatus)}`);
 }
 
 console.log('\n── offerValidityDaysLabel: „1 dní" je gramaticky ZLE, picker ide od 1 dňa (Rastio, 27.8.2026) ──');

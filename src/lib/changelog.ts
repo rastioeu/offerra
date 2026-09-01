@@ -20,6 +20,16 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '1. septembra 2026',
+    title: 'Odpočet platnosti ponuky teraz naozaj tiká',
+    items: [
+      'Pri ponuke s nastavenou platnosťou vidíš odpočet naživo, nie len pri otvorení obrazovky.',
+      'Viac než deň do konca: koľko dní ešte ostáva. Menej než deň: hodiny a minúty, ktoré sa pred očami odpočítavajú.',
+      'Posledná hodina je zvýraznená a odpočítava aj sekundy — nech je jasné, že sa to už naozaj kráti.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '27. augusta 2026',
     title: 'Platnosť ponuky',
     items: [

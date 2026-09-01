@@ -29,7 +29,9 @@ import { Button, Card, Eyebrow, ParamCell } from '@/components/ui';
 import { useTenantProfiles } from '@/hooks/use-offers';
 import { useToast, useUndoToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTranslation } from '@/i18n';
+import { OfferCountdownText } from '@/components/offer-countdown';
 import {
   fetchOfferContact,
   formatAmount,
@@ -38,7 +40,7 @@ import {
   type OfferContact,
   type TenantProfile,
 } from '@/lib/offers';
-import { isOfferExpired, offerValidityLabel } from '@/lib/offer-validity';
+import { isOfferExpired } from '@/lib/offer-validity';
 import { closedLabel, db, formatDate, type PropertyWithMedia } from '@/lib/property';
 import { closeDeal } from '@/lib/rating';
 import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/theme/tokens';
@@ -65,6 +67,13 @@ export function OwnerOffers({
   const [contacts, setContacts] = useState<Record<string, OfferContact | null>>({});
   const [busy, setBusy] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
+
+  // JEDEN spoločný tikajúci `now` pre CELÚ obrazovku — pre kartový zoznam
+  // AJ pre spodný panel s detailom, ktoré tu zdieľajú tú istú ponuku
+  // (Rastio, 1.9.2026: nie samostatný timer pre každú kartu).
+  // `OfferList` nižšie dostane toto `now` ako prop, takže si vlastný
+  // interval nezaloží (`use-offer-countdown-tick.ts`).
+  const now = useOfferCountdownTick(offers.map((o) => o.valid_until));
 
   // Panel číta ZO ZOZNAMU, nie z vlastnej kópie — po prijatí ponuky sa tak
   // prekreslí sám a nezobrazuje zastaraný stav.
@@ -182,7 +191,7 @@ export function OwnerOffers({
   // Živý čas, nie LEN `status === 'EXPIRED'` — cron ho preklopí až s
   // oneskorením do 5 minút a majiteľ nesmie „Prijať" vidieť aktívne
   // ešte v tomto okne (§ offer-validity.ts, aj DB guard to isté vynúti).
-  const expired = selected ? isOfferExpired(selected.status, selected.valid_until) : false;
+  const expired = selected ? isOfferExpired(selected.status, selected.valid_until, now) : false;
 
   return (
     <>
@@ -194,6 +203,7 @@ export function OwnerOffers({
         offers={offers}
         transaction={item.transaction_type}
         onPressOffer={(o) => setOpenId(o.id)}
+        now={now}
       />
 
       {/* ── spodný panel ── */}
@@ -230,9 +240,12 @@ export function OwnerOffers({
                       {formatDate(language, selected.created_at)} · {getOfferStatusLabel(t)[selected.status].toLowerCase()}
                     </Text>
                     {selected.valid_until && selected.status === 'PENDING' ? (
-                      <Text style={[styles.meta, { color: expired ? palette.warning : palette.textMuted }]}>
-                        {offerValidityLabel(t, language, selected.status, selected.valid_until)}
-                      </Text>
+                      <OfferCountdownText
+                        status={selected.status}
+                        validUntil={selected.valid_until}
+                        now={now}
+                        style={styles.meta}
+                      />
                     ) : null}
                   </View>
                   <Text style={[styles.amount, { color: palette.accent }]}>

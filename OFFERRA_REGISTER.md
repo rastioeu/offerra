@@ -5621,6 +5621,84 @@ zhodné s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 `01a042bb-747b-76fc-a741-b7ba124ed8fb` (skupina
 `5ef65e2b-4098-4167-a993-469ea7231c6a`).
 
+### 31.9 Dodatok — živý stupňovitý odpočet (Rastio, 1.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Pôvodné zobrazenie („Platí do … · ostáva X dní" / „Platí ešte X h") sa
+prepočítalo len pri načítaní obrazovky — nie živo. Rastio si vyžiadal
+skutočný tikajúci odpočet, stupňovito podľa zostávajúceho času:
+
+- **≥ 24 h** — „Platí ešte X dní", prekresľuje sa raz za minútu (netreba
+  tikať po sekundách).
+- **< 24 h** — `HH:MM`, reálne odpočítava, prekreslenie raz za minútu.
+- **< 1 h** — `HH:MM:SS`, tiká po sekundách a je **zvýraznené**
+  (`palette.danger`, tučné písmo) — naliehavosť.
+- Po uplynutí: „Platnosť uplynula" (nezmenené, živo z `valid_until`, nie
+  z `status`).
+
+**Architektúra (čistá funkcia + jeden zdieľaný interval, rovnaký vzor ako
+zvyšok appky):**
+
+- `src/lib/offer-validity.ts` — `offerCountdown(t, language, status, iso,
+  now)` je ČISTÁ funkcia jedného okamihu (žiaden `setInterval` vnútri).
+  Vracia `{ tier: 'days'|'hm'|'hms'|'expired', text, urgent }`.
+  `isOfferExpired` dostal voliteľný `now` parameter, nech obe funkcie
+  počítajú z presne toho istého okamihu (predtým dve nezávislé volania
+  `Date.now()`).
+- `src/hooks/use-offer-countdown-tick.ts` (nový) — JEDEN `setInterval` na
+  CELÚ obrazovku, nie jeden na ponuku. Frekvencia sa mení podľa
+  najbližšej platnosti spomedzi VŠETKÝCH poslaných `valid_until`: sekundová
+  len kým je NIEKTORÁ ponuka v poslednej hodine, inak raz za minútu.
+  `enabled` prepínač (default `true`) — keď `false`, nezaloží žiaden
+  interval vôbec (pre vnorené použitie, viď nižšie). Cleanup (`clearInterval`
+  vo `useEffect` return) pri unmounte AJ pri každej zmene frekvencie.
+- `src/components/offer-countdown.tsx` (nový, `OfferCountdownText`) —
+  čistý render okolo `offerCountdown`, dostáva `now` ako hotovú hodnotu
+  zvonka, sám žiadny timer nezakladá.
+- **„Jeden spoločný interval na obrazovku" pri viacerých ponukách naraz**
+  (majiteľov zoznam + spodný panel v `OwnerOffers` zdieľajú tú istú
+  ponuku): `OfferList` prijíma voliteľný prop `now` — keď ho dostane
+  (z `OwnerOffers`, ktorý tiká sám za celú obrazovku), svoj vlastný hook
+  zavolá s `enabled=false` a žiaden druhý interval nevznikne. Keď `now`
+  nedostane (samostatné použitie, verejný zoznam v podtabe „Ponuky"), tiká
+  si sám. Overené `grep`om (`§ dôkazy` nižšie) — **nedokazuje to, že sa
+  timery na telefóne naozaj nehromadia**, to vie overiť len beh appky.
+
+**Zmenené súbory:** `offer-validity.ts` (nová `offerCountdown`, `isOfferExpired`
++`now`, odstránená stará `offerValidityLabel`), nový
+`use-offer-countdown-tick.ts`, nový `offer-countdown.tsx`, `offer-list.tsx`
+(prop `now`, `OfferCountdownText`), `owner-offers.tsx` (jeden `now` pre
+zoznam aj panel), `ponuka/[id].tsx` (`now` pre `mine`).
+
+**i18n:** `offerValidity.validUntil`/`validUntilHours` zrušené (nahrádza ich
+stupňovité skladanie z `offerCountdown`), nový kľúč `offerValidity.countdownDays`
+(„Platí ešte {{days}}" / „Valid for {{days}} more" / „Noch {{days}} gültig")
+vo všetkých troch jazykoch. `HH:MM`/`HH:MM:SS` sú číslicové formáty bez textu
+— jazykovo neutrálne, netreba pre ne nový kľúč.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| logika stupňovitého odpočtu (7 nových scenárov: hranice 24 h/1 h, `HH:MM`, `HH:MM:SS`, urgent, status vs. živý čas) | `npx --yes tsx scripts/check-offer-validity.ts` | **23/23 OK** (bolo 17/17) |
+| lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **15/15 OK** |
+| typy | `npx tsc --noEmit -p .` | čisté |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne — fingerprint nedotknutý |
+
+**Čo dôkaz NEDOKAZUJE (§1 — grep a čítanie kódu nedokazuje nič, preto 🟡, nie ✅):**
+
+- Že odpočet na telefóne NAOZAJ tiká (dni → `HH:MM` → `HH:MM:SS` v poslednej
+  hodine) — v tomto prostredí nie je simulátor.
+- Že sa timery pri viacerých ponukách naozaj NEHROMADIA a appka pri dlhšie
+  otvorenej obrazovke nespomaľuje — architektúra (jeden interval, cleanup vo
+  `useEffect`) je navrhnutá presne proti tomu, ale reálne správanie na
+  zariadení vie potvrdiť len beh appky.
+- **Rastiova požiadavka na dôkaz vo forme videa/screenshotov je v priamom
+  rozpore so stojacim pravidlom appky (CLAUDE.md §1, Rastio 17.8.2026:
+  „screenshoty nechcem, nemám ich ako zobraziť — platí aj do budúcna").**
+  Preto namiesto obrázkov nižšie (§7 v reporte) presne popisujem, čo si má
+  na telefóne pozrieť a **slovami** potvrdiť — obrázok by som si tu ani ja
+  nevedel overiť, že ukazuje appku, nie mockup.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
