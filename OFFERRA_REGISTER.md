@@ -5785,6 +5785,13 @@ lišta. `npx tsc --noEmit -p .` čisté, `package.json` nedotknutý → **IDE
 OTA**. Nedokázateľné bez telefónu: že ikona nad fotkou naozaj zmizla
 a rozostup ikon (celoobrazovka + srdiečko) nevyzerá čudne.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `5c39333`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a05e8c-8a47-7e68-8f6d-a291d7bcbf2e` (skupina
+`19241e6a-6a6b-4e1a-9f00-1f27892b2b2f`), Android update
+`01a05e8c-8a47-78fe-a794-f312372d9085` (skupina
+`0872e59d-ad68-4b5b-9dbe-6037a810aa2d`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
