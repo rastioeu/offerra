@@ -6080,6 +6080,48 @@ minútového tiku. Okno, pri ktorom sa tiká po sekundách, je teraz 24 hodín
 **Čo dôkaz NEDOKAZUJE:** že sekundy na telefóne skutočne VIDNO tikať
 v pill-e aj mimo poslednej hodiny — len logiku a formát textu.
 
+### 31.17 Šieste kolo — dvojciferný zápis + hodiny aj v stupni „dni" (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Ešte pred vizuálnym overením 31.16 prišlo upresnenie presného formátu:
+
+- pod deň: „Ponuka platí ešte 12h 35m 08s" — minúty aj sekundy VŽDY
+  dvojciferné (`pad2`), hodiny (vedúca jednotka) nie.
+- posledná hodina/minúta — nezmenené („47m 12s" / „38 s"), naďalej BEZ
+  dopĺňania nuly na vedúcej jednotke, presne ako predtým.
+- nad deň: „Ponuka platí ešte 3 dni 4h" — stupeň „dni" teraz nesie AJ
+  zvyšné hodiny (predtým len „3 dni"), zobrazené len keď nie sú nulové
+  (presne na hranici dňa teda ostáva holé „3 dni"). Sekundy pri
+  viacdňovom odpočte zámerne CHÝBAJÚ — Rastio: „nemajú zmysel a
+  zbytočne by tikali" — `useOfferCountdownTick` preto pre tento stupeň
+  naďalej tiká len raz za minútu, nemení sa.
+
+Číselná logika (`h`/`m`/`s` z `totalSeconds`, hranica `urgent` na 1
+hodine) sa nemení — mení sa len ZÁPIS (`pad2` na minútach/sekundách
+stupňa `hm`) a PRIDANIE `h` do stupňa `days`. Volajúci (`property-card.tsx`,
+`my-listing-row.tsx`, `OfferCountdownText`/`OfferCountdownPill`) nemenení
+— nič z toho nerozlišuje presný formát `value`, len `tier`/`urgent`
+(overené `grep`om, viď 31.15/31.16).
+
+**Výkonová poznámka (Rastio):** appka aj predtým používala JEDEN zdieľaný
+interval na obrazovku (`useOfferCountdownTick`, viď hlavička súboru), nie
+samostatný timer na kartu — to sa touto zmenou nemení, len sa potvrdzuje.
+Reálne správanie pri rýchlom scrollovaní dlhého zoznamu s viacerými
+odpočtami naraz vie overiť len pohľad na telefón, nie tento test.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| logika odpočtu (nový formát: `pad2`, dni+hodiny) | `npx --yes tsx scripts/check-offer-validity.ts` | 23/23 OK |
+| lokalizácia (nezmenená, žiadny nový i18n kľúč) | `npx --yes tsx scripts/check-i18n.ts` | 15/15 OK |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** |
+| komponenty nezávislé od presného formátu | `grep -rn "offerCountdown\|OfferCountdownText\|OfferCountdownPill" src/` | žiadne miesto nerozlišuje `hm` vs. `hms` inak než cez `urgent`/`tier === 'expired'` |
+
+**Čo dôkaz NEDOKAZUJE:** ako presne text vyzerá na karte (dĺžka „12h 35m
+08s" v pill-e, čitateľnosť) a ako appka reaguje pri rýchlom scrollovaní
+zoznamu s viacerými odpočtami naraz — to vie potvrdiť len Rastio.
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)

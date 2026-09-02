@@ -21,6 +21,14 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet ponuky ukazuje aj dni a hodiny spolu',
+    items: [
+      'Pri ponuke platnej ešte viac než deň teraz odpočet ukáže aj hodiny navyše, napríklad „3 dni 4h", nielen holé počet dní.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet ponuky tiká po sekundách aj mimo poslednej hodiny',
     items: [
       'Štítok s časom pri ponuke teraz odpočítava aj sekundy, nielen hodiny a minúty — vidno ho naozaj naživo tikať, nielen v poslednej hodine.',

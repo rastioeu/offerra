@@ -306,3 +306,23 @@ Piate kolo. Predtým štítok (pill) mimo poslednej hodiny ukazoval len
    plain červený text bez štítku.
 
 Žiadne screenshoty ani video — len slovami.
+
+### 7i. Dodatok 2.9.2026 — presný formát: dvojciferné sekundy/minúty + hodiny v stupni „dni"
+
+Šieste kolo, upresnenie 7h ešte pred jeho vizuálnym overením. Over:
+
+1. **Katalóg, pod sumou (pill), pod 24 hodín** — text znie napr. „Ponuka
+   platí ešte 12h 35m 08s" — sekundy aj minúty sú VŽDY DVOJCIFERNÉ (napr.
+   „08s", nie holé „8s"), hodiny na začiatku dvojciferné byť nemusia.
+2. **Ponuka s platnosťou nad 1 deň** — text v pill-e teraz znie napr.
+   „Ponuka platí ešte 3 dni 4h" (dni AJ hodiny), nie len „3 dni" ako
+   predtým. Ak ponuka vyprší presne o polnoci (0 hodín navyše), ostáva
+   holé „X dní" bez „0h" — over aj tento prípad, ak naň natrafíš.
+3. **Posledná hodina/minúta** — nezmenené, stále „47m 12s" / „38 s" bez
+   dopĺňania nuly na začiatku, plain červený text bez štítku.
+4. **Plynulosť pri scrollovaní** — v katalógu s viacerými kartami, ktoré
+   majú aktívny odpočet naraz (pod 24 hodín, teda tikajúce po sekundách),
+   skús rýchlo scrollovať zoznamom. Ak by to sekalo alebo appka pôsobila
+   pomaly, napíš to — vrátime sa k menej častému prekresľovaniu.
+
+Žiadne screenshoty ani video — len slovami.

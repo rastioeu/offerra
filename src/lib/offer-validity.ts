@@ -39,6 +39,10 @@ import type { TFunc } from '@/i18n';
  * presne ako sa to stalo pri „Máš 1 ponuka" (13.8.2026). EN/DE majú len
  * jednotné/množné číslo, žiadny tretí tvar.
  */
+function pad2(n: number): string {
+  return n < 10 ? `0${n}` : `${n}`;
+}
+
 export function offerValidityDaysLabel(t: TFunc, language: string, days: number): string {
   if (language === 'sk') {
     const key = days === 1 ? 'pickerDaysOne' : days >= 2 && days <= 4 ? 'pickerDaysFew' : 'pickerDaysMany';
@@ -61,22 +65,30 @@ export function isOfferExpired(status: string, validUntil: string | null, now: n
 
 /**
  * Odpočet platnosti ponuky, ŽIVO a STUPŇOVITO (Rastio, 1.9.2026, formát
- * OPRAVENÝ 2.9.2026 po nasadení — trikrát, tretíkrát pridaním sekúnd aj
- * mimo poslednej hodiny):
+ * OPRAVENÝ 2.9.2026 po nasadení — päťkrát, naposledy zjednotením zápisu
+ * na dvojciferné sekundy/minúty a pridaním hodín aj do stupňa „dni"):
  *
- *   - `days` — 24 hodín a viac: „Ponuka platí ešte 5 dní". Netreba tikať
- *     po sekundách ani minútach, stačí prekresliť raz za čas (o to sa
- *     stará `useOfferCountdownTick`).
- *   - `hm` — menej než 24 hodín, hodina a viac: „Ponuka platí ešte 4h
- *     32m 9s" — SEKUNDY SÚ SÚČASŤOU HODNOTY aj tu (Rastio, 2.9.2026,
- *     štvrté kolo: „pridaj tam ešte sekundy, nie len poslednú hodinu" —
- *     predtým tento stupeň tikal len po minútach). `urgent` je `false` —
- *     hodiny do konca NIE SÚ skutočná naliehavosť (viď nižšie), sekundy
- *     tu menia len ŽIVOSŤ zobrazenia, nie farbu.
+ *   - `days` — 24 hodín a viac: „Ponuka platí ešte 3 dni 4h" (hodiny sa
+ *     ukážu LEN keď nie sú nulové — presne na hranici dňa teda len
+ *     „Ponuka platí ešte 3 dni"). Sekundy tu zámerne CHÝBAJÚ (Rastio,
+ *     2.9.2026, piate kolo: „sekundy pri viacdňovom odpočte nemajú
+ *     zmysel a zbytočne by tikali") — stačí prekresliť raz za minútu
+ *     (o to sa stará `useOfferCountdownTick`), lebo hodina sa nemení
+ *     rýchlejšie.
+ *   - `hm` — menej než 24 hodín, hodina a viac: „Ponuka platí ešte 12h
+ *     35m 08s" — SEKUNDY SÚ SÚČASŤOU HODNOTY aj tu (Rastio, 2.9.2026,
+ *     štvrté a piate kolo: „sekundy nech idú VŽDY, nie len v poslednej
+ *     hodine" — predtým tento stupeň tikal len po minútach). Minúty aj
+ *     sekundy sú dvojciferné (`pad2`) — na rozdiel od hodín, ktoré sú
+ *     vždy VEDÚCA jednotka a dopĺňanie nuly by tam nemalo zmysel.
+ *     `urgent` je `false` — hodiny do konca NIE SÚ skutočná naliehavosť
+ *     (viď nižšie), sekundy tu menia len ŽIVOSŤ zobrazenia, nie farbu.
  *   - `hms` — posledná hodina: `urgent` JE `true` — „Ponuka platí ešte
  *     47m 12s", a pod poslednú minútu (`m === 0`) už len „Ponuka platí
- *     ešte 38 s" (jednotku minút netreba ukazovať, keď je nulová). Bez
- *     hodinovej časti, lebo pod hodinu je `h` vždy 0.
+ *     ešte 38 s" (BEZ dopĺňania nuly — je to teraz VEDÚCA jednotka,
+ *     rovnaká zásada ako pri hodinách vyššie; jednotku minút netreba
+ *     ukazovať, keď je nulová). Bez hodinovej časti, lebo pod hodinu je
+ *     `h` vždy 0.
  *   - `expired` — platnosť uplynula, appka to musí ukázať OKAMŽITE (živo z
  *     `valid_until`), nie až keď to o niekoľko minút neskôr prekvapí cron.
  *
@@ -112,8 +124,8 @@ export type OfferCountdownTier = 'days' | 'hm' | 'hms' | 'expired';
 export interface OfferCountdown {
   tier: OfferCountdownTier;
   /**
-   * Holé trvanie/stav BEZ podmetu — „12h 52m" / „47m 12s" / „38 s" /
-   * „3 dni". Pre `expired` rovnaké ako `text` (nie je čo skladať).
+   * Holé trvanie/stav BEZ podmetu — „12h 35m 08s" / „47m 12s" / „38 s" /
+   * „3 dni 4h". Pre `expired` rovnaké ako `text` (nie je čo skladať).
    * Na použitie s VLASTNÝM podmetom u volajúceho, ktorý ho už má
    * (napr. „Najbližšia ponuka" v `MyListingRow`).
    */
@@ -141,11 +153,13 @@ export function offerCountdown(
     const h = Math.floor(totalSeconds / 3_600);
     const m = Math.floor((totalSeconds % 3_600) / 60);
     const s = totalSeconds % 60;
-    const value = h > 0 ? `${h}h ${m}m ${s}s` : m > 0 ? `${m}m ${s}s` : `${s} s`;
+    const value = h > 0 ? `${h}h ${pad2(m)}m ${pad2(s)}s` : m > 0 ? `${m}m ${pad2(s)}s` : `${s} s`;
     const urgent = totalSeconds < 3_600;
     return { tier: urgent ? 'hms' : 'hm', value, text: t('offerValidity.countdown', { value }), urgent };
   }
   const days = Math.floor(totalSeconds / 86_400);
-  const value = offerValidityDaysLabel(t, language, days);
+  const h = Math.floor((totalSeconds % 86_400) / 3_600);
+  const daysLabel = offerValidityDaysLabel(t, language, days);
+  const value = h > 0 ? `${daysLabel} ${h}h` : daysLabel;
   return { tier: 'days', value, text: t('offerValidity.countdown', { value }), urgent: false };
 }

@@ -13,8 +13,11 @@
  *     sekundy, nie len poslednú hodinu", `offerCountdown` teraz ukazuje
  *     sekundy v OBOCH stupňoch pod deň, takže bez tejto zmeny by boli
  *     sekundy v `hm` stupni zamrznuté až minútu.
- *   - inak (stupeň „X dní") → tiká raz za MINÚTU, dni sa tak často
- *     nemenia, minúta stačí.
+ *   - inak (stupeň „X dní", od 2.9.2026 piateho kola aj s hodinami — „3
+ *     dni 4h") → tiká raz za MINÚTU. Sekundy tu appka zámerne neukazuje
+ *     (Rastio, 2.9.2026, piate kolo: „nemajú zmysel"), a aj hodinová
+ *     časť sa mení nanajvýš raz za hodinu, takže minútová odchýlka
+ *     v prekreslení nikdy nie je vidieť.
  *
  * Cleanup pri unmounte aj pri KAŽDEJ zmene frekvencie (inak by starý
  * interval bežal ďalej popri novom).
