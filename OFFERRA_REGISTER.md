@@ -5850,6 +5850,13 @@ stupňami rozísť.
 šiestich miestach, nie ako to tam vyzerá. Potvrdiť môže len pohľad na
 appku (report §7d).
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `68441f6`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a06126-e0ed-715a-8729-29787f85e3c2` (skupina
+`4c6d5e7d-d6c5-4277-a7a2-103302f73120`), Android update
+`01a06126-e0ed-7821-9e05-ccd367fb21c2` (skupina
+`b89ccb8d-1684-411a-90be-52722ca2f68e`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
