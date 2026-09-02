@@ -5791,6 +5791,13 @@ OBOJE naraz, a že dva nezávislé tiky na Profile appku nespomaľujú.
 To vie potvrdiť len beh appky — pozri report `reports/PLATNOST_PONUKY.md`
 §7c pre presný zoznam, čo si má Rastio na telefóne pozrieť.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `ead4f86`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a06117-73a1-7073-8bc3-2ea8f5367444` (skupina
+`f2e4f3d5-8d02-446e-9293-fd14e0f73ee2`), Android update
+`01a06117-73a1-7f06-8b20-7f0da65dbb6e` (skupina
+`91eead10-eeab-41ce-b8e8-b593286e1867`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
