@@ -6041,6 +6041,13 @@ riadkami, takže rovnaký problém (splynutie) tam nevznikol.
 kontrast `accentDeep`/`accentSoft`, ktorý tu nie je strojovo premeraný.
 To vie potvrdiť len pohľad na appku.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `0e71654`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a0617b-4d75-7316-b506-39d74ffd4b6d` (skupina
+`25378efa-87f2-412f-bdc7-ddf3101399c1`), Android update
+`01a0617b-4d75-7102-8ff0-3e3183b4b0b6` (skupina
+`f53fbd46-d53a-493e-bf22-220f71ff0735`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
