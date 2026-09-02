@@ -185,3 +185,27 @@ platnosť na pár minút priamo v DB):
 
 **Screenshoty ani video sem nedávaj** (stojace pravidlo appky, 17.8.2026) —
 stačí slovami napísať, čo si videl podľa bodov 1–5 vyššie.
+
+### 7c. Dodatok 2.9.2026 — odpočet aj v zoznamoch
+
+Predtým bol odpočet len na detaile inzerátu a v podtabe „Ponuky". Teraz je
+vidieť aj bez otvárania inzerátu:
+
+1. **Katalóg (hlavná stránka)** — pri inzeráte, kde je najvyššia ponuka
+   živá, je na fotke NOVÝ štítok „Najvyššia ponuka · Platí ešte X dní" (v
+   rovnakom štýle ako štítok uzávierky, len v inom riadku nad ním). Over aj
+   inzerát, ktorý má SÚČASNE aj uzávierku aj najvyššiu ponuku s platnosťou —
+   oba štítky sa majú zobraziť nad sebou, nie prekryté.
+2. **Profil → Moje inzeráty** — pri svojom inzeráte s čakajúcou ponukou,
+   ktorá má nastavenú platnosť, vidíš nový riadok „Najbližšia ponuka ·
+   [odpočet]" pod uzávierkou.
+3. **Profil → Moje ponuky** — pri svojej podanej ponuke s platnosťou pribudol
+   odpočet priamo do riadku (za dátumom). V poslednej hodine je celý riadok
+   červený a tučný.
+4. Vo všetkých troch nechaj obrazovku dlhšie otvorenú a over, že odpočet sa
+   naozaj mení (rovnaké overenie ako v 7b bod 5) — a že appka sa
+   nespomaľuje, keď máš OTVORENÝ AJ katalóg AJ Profil súčasne (prepínanie
+   medzi tabmi), lebo každá obrazovka tiká nezávisle.
+
+Rovnaké pravidlo: **žiadne screenshoty ani video** — len slovný popis podľa
+bodov vyššie.

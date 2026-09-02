@@ -21,10 +21,12 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation, type TFunc } from '@/i18n';
 import { coverPhotoIndex } from '@/lib/cover-photo';
 import { formatAmount } from '@/lib/offers';
+import { offerCountdown } from '@/lib/offer-validity';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
 import {
   deadlineLabel,
@@ -72,6 +74,7 @@ export function PropertyCard({
   onToggleFavorite,
   onReport,
   mine,
+  now,
 }: {
   item: PropertyWithMedia;
   favorite?: boolean;
@@ -80,10 +83,19 @@ export function PropertyCard({
   onReport?: () => void;
   /** Je to MÔJ inzerát? Rozhoduje volajúci porovnaním s vlastným id. */
   mine?: boolean;
+  /**
+   * Spoločný tikajúci čas z obrazovky (katalóg tiká raz pre celý zoznam,
+   * nie karta od karty — Rastio, 1.9.2026 pre `OfferList`, tá istá zásada
+   * platí aj tu). Bez neho si karta tikne SAMA — pre miesta, kde `now`
+   * (zatiaľ) neposiela nikto.
+   */
+  now?: number;
 }) {
   const palette = useTheme();
   const router = useRouter();
   const { t, language } = useTranslation();
+  const ownTick = useOfferCountdownTick([item.top_offer_valid_until], now == null);
+  const liveNow = now ?? ownTick;
   const [menuOpen, setMenuOpen] = useState(false);
   // Rotuje raz za spustenie appky, nie pri každom prekreslení — pozri
   // `cover-photo.ts`.
@@ -114,6 +126,15 @@ export function PropertyCard({
 
   // Ľavý stĺpec pätky = hlavné číslo. Pravý = to druhé, menšie a sivé.
   const isOffer = pd.headline === 'TOP_OFFER' && pd.topOffer != null;
+  // Odpočet platnosti NAJVYŠŠEJ ponuky, verejne na karte (Rastio, 2.9.2026)
+  // — vytvára prirodzenú naliehavosť pre ďalších záujemcov. `status`
+  // posielam napevno ako 'PENDING': `top_offer_valid_until` sem príde LEN
+  // z ponuky, ktorá už pri načítaní prešla filtrom „nie je expirovaná"
+  // (`attachOfferStats`), takže vetva `status === 'EXPIRED'` v
+  // `offerCountdown` sa tu nemá ako spustiť inak než živým odtikaním času.
+  const offerCd = isOffer && item.top_offer_valid_until
+    ? offerCountdown(t, language, 'PENDING', item.top_offer_valid_until, liveNow)
+    : null;
   const headlineLabel = isOffer ? t('propertyCard.topOffer') : t('propertyCard.askingPrice');
   const headlineValue = isOffer
     ? formatAmount(t, pd.topOffer as number, item.transaction_type)
@@ -186,20 +207,39 @@ export function PropertyCard({
             JEDEN riadok, nie dva absolútne prvky — takto sa nemôžu
             prekryť ani pri dlhom texte uzávierky (Rastio žiadal overiť
             kolízie). Vľavo hore sú pilulky, vpravo hore zdieľať a
-            srdiečko, takže spodok je jediné voľné miesto. */}
-        {deadline || item.media.length > 1 ? (
-          <View style={styles.photoFoot}>
-            {deadline ? (
-              <PhotoBadge
-                text={deadline}
-                tone={urgency === 'PASSED' ? 'muted' : urgency === 'SOON' ? 'urgent' : 'warm'}
-              />
-            ) : (
-              <View />
-            )}
-            {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. Číslo vpredu
-                ukazuje SKUTOČNÚ pozíciu rotujúcej titulky, nie vždy „1". */}
-            {item.media.length > 1 ? <PhotoBadge text={`${coverIdx + 1}/${item.media.length}`} /> : null}
+            srdiečko, takže spodok je jediné voľné miesto.
+
+            Odpočet platnosti najvyššej ponuky (ak je) má VLASTNÝ riadok
+            NAD touto lištou — rovnaký štítok (`PhotoBadge`) ako uzávierka,
+            len iný riadok, aby sa oba mohli zobraziť naraz bez kolízie
+            (uzávierka inzerátu a platnosť KONKRÉTNEJ ponuky bežia nezávisle
+            — `offer-validity.ts`). */}
+        {deadline || item.media.length > 1 || offerCd ? (
+          <View style={styles.photoFootWrap}>
+            {offerCd ? (
+              <View style={styles.photoFootRow}>
+                <PhotoBadge
+                  text={`${t('propertyCard.topOffer')} · ${offerCd.text}`}
+                  tone={offerCd.tier === 'expired' ? 'muted' : offerCd.urgent ? 'urgent' : 'warm'}
+                />
+              </View>
+            ) : null}
+            {deadline || item.media.length > 1 ? (
+              <View style={styles.photoFoot}>
+                {deadline ? (
+                  <PhotoBadge
+                    text={deadline}
+                    tone={urgency === 'PASSED' ? 'muted' : urgency === 'SOON' ? 'urgent' : 'warm'}
+                  />
+                ) : (
+                  <View />
+                )}
+                {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. Číslo
+                    vpredu ukazuje SKUTOČNÚ pozíciu rotujúcej titulky, nie
+                    vždy „1". */}
+                {item.media.length > 1 ? <PhotoBadge text={`${coverIdx + 1}/${item.media.length}`} /> : null}
+              </View>
+            ) : null}
           </View>
         ) : null}
       </View>
@@ -319,11 +359,15 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   badges: { position: 'absolute', top: Spacing.sm, left: Spacing.sm, flexDirection: 'row', gap: Spacing.xs },
-  photoFoot: {
+  photoFootWrap: {
     position: 'absolute',
     left: Spacing.sm,
     right: Spacing.sm,
     bottom: Spacing.sm,
+    gap: 4,
+  },
+  photoFootRow: { flexDirection: 'row' },
+  photoFoot: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',

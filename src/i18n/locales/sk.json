@@ -436,7 +436,8 @@
     "noPhoto": "bez\nfotky",
     "highestOfferSuffix": " · najvyššia ponuka",
     "noPrice": "Cena neuvedená",
-    "pendingSuffix": " · {{count}} čaká na teba"
+    "pendingSuffix": " · {{count}} čaká na teba",
+    "nearestOfferPrefix": "Najbližšia ponuka"
   },
   "ownerOffers": {
     "dealClosedToast": "Obchod uzavretý — teraz sa môžete ohodnotiť",

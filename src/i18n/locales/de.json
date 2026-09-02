@@ -431,7 +431,8 @@
     "noPhoto": "kein\nFoto",
     "highestOfferSuffix": " · höchstes Angebot",
     "noPrice": "Kein Preis angegeben",
-    "pendingSuffix": " · {{count}} wartet auf dich"
+    "pendingSuffix": " · {{count}} wartet auf dich",
+    "nearestOfferPrefix": "Nächstes Angebot"
   },
   "ownerOffers": {
     "dealClosedToast": "Geschäft abgeschlossen — ihr könnt euch jetzt bewerten",

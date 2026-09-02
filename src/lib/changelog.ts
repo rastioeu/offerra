@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet platnosti ponuky aj v zoznamoch',
+    items: [
+      'V katalógu vidíš pri najvyššej ponuke priamo na fotke, ako dlho ešte platí.',
+      'V „Moje inzeráty" vidíš pri svojom inzeráte odpočet najbližšie vypršiavajúcej ponuky, ktorú ti niekto podal.',
+      'V „Moje ponuky" vidíš pri každej svojej podanej ponuke, ako dlho ešte platí — bez toho, aby si musel otvárať inzerát.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Menej tlačidiel na detaile inzerátu',
     items: [
       'Karta „Moja ponuka" v tabe Ponuky už neduplikuje tlačidlo „Podať ponuku" / „Upraviť moju ponuku" — to je odteraz len dole v prilepenej lište.',

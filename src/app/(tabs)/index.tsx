@@ -21,6 +21,7 @@ import { EmptyState } from '@/components/empty-state';
 import { ErrorNote, PropertyCardSkeleton } from '@/components/ui';
 import { useFavoriteIds } from '@/hooks/use-favorites';
 import { useHints } from '@/hooks/use-hints';
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useSession } from '@/hooks/use-session';
 import { useProperties } from '@/hooks/use-properties';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
@@ -49,6 +50,10 @@ export default function NehnutelnostiScreen() {
   // len sa otvára odtiaľto — preto stačí držať id, nie druhý formulár.
   const [reporting, setReporting] = useState<string | null>(null);
   useRefreshOnFocus(reload);
+  // JEDEN spoločný tikajúci `now` pre celý zoznam kariet — nie jeden
+  // interval na kartu (rovnaká zásada ako pri `OfferList`, Rastio,
+  // 1.9.2026). Karty ho dostávajú ako prop.
+  const now = useOfferCountdownTick((items ?? []).map((i) => i.top_offer_valid_until));
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -170,6 +175,7 @@ export default function NehnutelnostiScreen() {
           <PropertyCard
             key={item.id}
             item={item}
+            now={now}
             favorite={favorites.has(item.id)}
             // Porovnanie s VLASTNÝM id na klientovi. Cudzí nikdy neuvidí
             // odznak pri cudzom inzeráte — vidí len svoje vlastné.

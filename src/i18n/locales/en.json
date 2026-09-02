@@ -431,7 +431,8 @@
     "noPhoto": "no\nphoto",
     "highestOfferSuffix": " · highest offer",
     "noPrice": "No price given",
-    "pendingSuffix": " · {{count}} awaiting you"
+    "pendingSuffix": " · {{count}} awaiting you",
+    "nearestOfferPrefix": "Nearest offer"
   },
   "ownerOffers": {
     "dealClosedToast": "Deal closed — you can now rate each other",

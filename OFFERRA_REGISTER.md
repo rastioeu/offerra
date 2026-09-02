@@ -5712,6 +5712,87 @@ ukončil pred druhým pokusom. Druhý pokus prešiel: runtime `24919867e…`
 
 ---
 
+### 31.10 Dodatok — odpočet aj na kartách v zoznamoch (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Doteraz bol živý odpočet (31.9) len na detaile inzerátu a v „Ponuky" podtabe.
+Rastio žiadal, aby bol vidieť aj v zoznamoch — bez otvárania každého
+inzerátu zvlášť:
+
+- **„Moje inzeráty" (Profil)** — pri inzeráte s prichádzajúcimi PENDING
+  ponukami sa ukazuje odpočet **najbližšie vypršiavajúcej** z nich
+  („Najbližšia ponuka · Platí ešte 5 dní" / „· 04:32" / „· 00:47:32",
+  posledná hodina zvýraznená). To zaujíma vlastníka najviac — nie ktorá
+  ponuka je najvyššia.
+- **„Moje ponuky" (Profil)** — pri KAŽDEJ mojej podanej ponuke odpočet jej
+  vlastnej platnosti, dopísaný do riadku a posledná hodina zvýraznená
+  červeno/tučne (predtým mal riadok len sumu, dátum a stav).
+- **Katalóg** — pri inzeráte s najvyššou ponukou pribudol **verejný**
+  odpočet platnosti TEJ ponuky priamo na fotke, rovnakým štítkom
+  (`PhotoBadge`) ako uzávierka inzerátu: „Najvyššia ponuka · Platí ešte
+  2 dni". Rastio sa pýtal na názor — súhlasím s jeho dôvodom (vytvára
+  prirodzenú naliehavosť pre ďalších záujemcov) a implementoval som to
+  podľa jeho návrhu bez zmeny.
+
+**Prečo dva rôzne odpočty na dvoch rôznych inzerátoch/ponukách:** platnosť
+NAJVYŠŠEJ ponuky (verejný katalóg, „čo vidí každý") a platnosť
+NAJBLIŽŠIE vypršiavajúcej ponuky (vlastníkov súkromný pohľad, „čo sa mi
+môže minúť") sú zámerne iné veličiny — pozri hlavičku `offer-validity.ts`
+prečo platnosť ponuky a uzávierka inzerátu bežia nezávisle.
+
+**Odkiaľ dáta:** `attachOfferStats()` (`src/hooks/use-properties.ts`,
+zdieľaná medzi katalógom aj „Moje inzeráty") už predtým počítala
+`top_offer`/`offer_count`/`pending_count` zo ŽIVÝCH ponúk — teraz naviac aj:
+
+- `top_offer_valid_until` — platnosť TEJ ponuky, čo je aktuálne najvyššia,
+- `nearest_offer_valid_until` — najskoršia platnosť spomedzi PENDING ponúk
+  (string porovnanie ISO 8601 dátumov, netreba `Date`).
+
+Oba stĺpce pribudli do `PropertyWithMedia` (`src/lib/property.ts`) ako
+voliteľné — `null`, keď relevantná ponuka platnosť nemá nastavenú.
+
+**Tikanie — rovnaká zásada „jeden spoločný interval, nie jeden na
+riadok" (31.9), aplikovaná na TRI nové miesta:**
+
+- `src/app/(tabs)/index.tsx` (katalóg) — jeden `useOfferCountdownTick` pre
+  celý zoznam kariet, `now` posiela do `PropertyCard` ako prop.
+- `src/app/(tabs)/profil.tsx` — DVA nezávislé tiky (sekcie sú si navzájom
+  cudzie, nie vnorené): `myListingsNow` pre „Moje inzeráty", `myOffersNow`
+  pre „Moje ponuky". Stále „jeden na zoznam", nie jeden na riadok.
+- `PropertyCard` aj `MyListingRow` dostali rovnaký `now?: number` prop +
+  fallback vzor ako `OfferList` (31.9): keď `now` nepríde, karta/riadok si
+  tikne sama (`enabled = now == null`) — takže sa dajú použiť aj mimo
+  obrazovky, ktorá tikanie zdieľa.
+
+**Zmenené súbory:** `src/hooks/use-properties.ts` (`attachOfferStats` +2
+polia), `src/lib/property.ts` (typ), `src/components/property-card.tsx`
+(nový štítok na fotke + `now` prop), `src/components/my-listing-row.tsx`
+(nový riadok + `now` prop), `src/app/(tabs)/index.tsx` (zdieľaný tik),
+`src/app/(tabs)/profil.tsx` (dva zdieľané tiky, „Moje ponuky" dostalo
+`metaUrgent` na zvýraznenie poslednej hodiny).
+
+**i18n:** nový kľúč `myListingRow.nearestOfferPrefix` („Najbližšia ponuka" /
+„Nearest offer" / „Nächstes Angebot") vo všetkých troch jazykoch. Katalógový
+štítok znovupoužíva existujúci `propertyCard.topOffer` — žiadny nový kľúč.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| logika odpočtu (nezmenená, len nové volania) | `npx --yes tsx scripts/check-offer-validity.ts` | 23/23 OK |
+| logika uzávierky (nezmenená) | `npx --yes tsx scripts/check-deadline.ts` | OK |
+| lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **15/15 OK** |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne — fingerprint nedotknutý → **IDE OTA** |
+
+**Čo dôkaz NEDOKAZUJE (§1):** že sa odpočty na kartách v katalógu, „Moje
+inzeráty" a „Moje ponuky" naozaj vidia a tikajú na telefóne, že sa
+štítok na fotke v katalógu nezráža s uzávierkou pri inzeráte, ktorý má
+OBOJE naraz, a že dva nezávislé tiky na Profile appku nespomaľujú.
+To vie potvrdiť len beh appky — pozri report `reports/PLATNOST_PONUKY.md`
+§7c pre presný zoznam, čo si má Rastio na telefóne pozrieť.
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.

@@ -138,6 +138,19 @@ export type PropertyWithMedia = Property & {
   offer_count?: number;
   /** Koľko ponúk ešte ČAKÁ na rozhodnutie. Podľa toho sa zvýrazní riadok. */
   pending_count?: number;
+  /**
+   * Platnosť NAJVYŠŠEJ ponuky — pre živý odpočet na karte v katalógu
+   * (Rastio, 2.9.2026: „Najvyššia ponuka · platí ešte 2 dni"). `null` aj
+   * keď `top_offer` existuje, ale tá ponuka platnosť nemá nastavenú.
+   */
+  top_offer_valid_until?: string | null;
+  /**
+   * Platnosť NAJBLIŽŠIE vypršiavajúcej ČAKAJÚCEJ ponuky — pre „Moje
+   * inzeráty" (Rastio, 2.9.2026): vlastníka zaujíma, ktorá ponuka mu
+   * čoskoro vyprší, nie ktorá je najvyššia. Prijaté ponuky sa nepočítajú,
+   * tie už na rozhodnutí nič nečaká.
+   */
+  nearest_offer_valid_until?: string | null;
 };
 
 export type City = {

@@ -19,6 +19,7 @@ import { Icon } from '@/components/icon';
 import { Badge, Button, Card, ErrorNote, KeyboardDoneBar, SectionLabel } from '@/components/ui';
 import { useFavoriteProperties } from '@/hooks/use-favorites';
 import { useMyOffers, useMyOutreach, useRequests } from '@/hooks/use-offers';
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useProfile, saveProfile } from '@/hooks/use-profile';
 import { useMyProperties } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
@@ -27,6 +28,7 @@ import { MyListingRow } from '@/components/my-listing-row';
 import { useToast } from '@/components/toast';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation } from '@/i18n';
+import { offerCountdown } from '@/lib/offer-validity';
 import { formatAmount, getOfferStatusLabel, getRequestStatusLabel, formatBudget } from '@/lib/offers';
 import { buildInfoLine, readBuildInfo } from '@/lib/build-info';
 import { photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
@@ -49,6 +51,14 @@ export default function ProfilScreen() {
   const { items: favorites } = useFavoriteProperties(userId);
 
   const [busy, setBusy] = useState(false);
+
+  // Dva NEZÁVISLÉ spoločné tikajúce časy — jeden pre „Moje inzeráty"
+  // (najbližšie vypršiavajúca PRICHÁDZAJÚCA ponuka na KAŽDOM inzeráte),
+  // jeden pre „Moje ponuky" (platnosť KAŽDEJ mojej podanej ponuky). Dve
+  // sekcie, dva intervaly — stále „jeden na zoznam", nie jeden na riadok
+  // (Rastio, 1.9.2026 pre `OfferList`, tá istá zásada tu na dve miesta).
+  const myListingsNow = useOfferCountdownTick((properties ?? []).map((p) => p.nearest_offer_valid_until));
+  const myOffersNow = useOfferCountdownTick((offers ?? []).map((o) => o.valid_until));
 
   // Formulár na meno, telefón a prezývku tu ZÁMERNE nie je. Kontaktné údaje
   // sa upravujú v Nastaveniach (`ContactCard`), prezývka na `/prezyvka`.
@@ -173,6 +183,7 @@ export default function ProfilScreen() {
                 <MyListingRow
                   key={p.id}
                   item={p}
+                  now={myListingsNow}
                   // ZJEDNOTENÉ S DETAILOM (Rastio, 13.8.2026) — mení predošlé
                   // rozhodnutie o inline rozbaľovaní. Predtým ťuknutie
                   // rozbalilo ponuky NA MIESTE s vlastným Prijať/Odmietnuť —
@@ -215,22 +226,32 @@ export default function ProfilScreen() {
             <SectionList
               label={t('profil.myOffersCount', { count: offers?.length ?? 0 })}
               empty={t('profil.myOffersEmpty')}
-              rows={(offers ?? []).map((o) => ({
-                key: o.id,
-                title: o.property?.title || t('profil.listingFallback'),
-                // „videná" je pri čakajúcej ponuke to jediné, čo sa medzi
-                // podaním a rozhodnutím zmení — patrí do prehľadu.
-                meta: [
-                  formatAmount(t, o.amount, o.property?.transaction_type ?? 'SALE'),
-                  formatDate(language, o.created_at),
-                  o.status === 'PENDING' && o.viewed_by_owner_at ? t('profil.seenByOwner') : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · '),
-                badge: getOfferStatusLabel(t)[o.status],
-                onPress: () =>
-                  router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
-              }))}
+              rows={(offers ?? []).map((o) => {
+                // Živý odpočet platnosti KAŽDEJ mojej ponuky (Rastio,
+                // 2.9.2026) — tu sa `status` posiela SKUTOČNÝ, nie napevno
+                // ako pri katalógu/„Moje inzeráty": táto ponuka nebola
+                // vopred filtrovaná na „neexpirovanú", takže `EXPIRED` sem
+                // naozaj môže prísť priamo z DB.
+                const cd = offerCountdown(t, language, o.status, o.valid_until, myOffersNow);
+                return {
+                  key: o.id,
+                  title: o.property?.title || t('profil.listingFallback'),
+                  // „videná" je pri čakajúcej ponuke to jediné, čo sa medzi
+                  // podaním a rozhodnutím zmení — patrí do prehľadu.
+                  meta: [
+                    formatAmount(t, o.amount, o.property?.transaction_type ?? 'SALE'),
+                    formatDate(language, o.created_at),
+                    o.status === 'PENDING' && o.viewed_by_owner_at ? t('profil.seenByOwner') : null,
+                    cd ? cd.text : null,
+                  ]
+                    .filter(Boolean)
+                    .join(' · '),
+                  metaUrgent: cd?.urgent ?? false,
+                  badge: getOfferStatusLabel(t)[o.status],
+                  onPress: () =>
+                    router.push({ pathname: '/nehnutelnost/[id]', params: { id: o.property_id } }),
+                };
+              })}
             />
 
             <SectionList
@@ -267,7 +288,7 @@ function SectionList({
 }: {
   label: string;
   empty: string;
-  rows: { key: string; title: string; meta: string; badge: string; onPress: () => void }[];
+  rows: { key: string; title: string; meta: string; metaUrgent?: boolean; badge: string; onPress: () => void }[];
 }) {
   const palette = useTheme();
   return (
@@ -287,7 +308,11 @@ function SectionList({
             <Text numberOfLines={1} style={[styles.listTitle, { color: palette.textPrimary }]}>
               {r.title}
             </Text>
-            <Text style={[styles.hint, { color: palette.textMuted }]}>{r.meta}</Text>
+            {/* Posledná hodina platnosti ponuky = zvýraznenie (Rastio,
+                1.9.2026) — platí aj tu, nie len na detaile ponuky. */}
+            <Text style={[styles.hint, { color: r.metaUrgent ? palette.danger : palette.textMuted, fontWeight: r.metaUrgent ? Weight.bold : Weight.regular }]}>
+              {r.meta}
+            </Text>
           </View>
           <Badge text={r.badge} />
         </Pressable>

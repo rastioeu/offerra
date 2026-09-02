@@ -12,8 +12,10 @@
 import { Image } from 'expo-image';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation, type TFunc } from '@/i18n';
+import { offerCountdown } from '@/lib/offer-validity';
 import {
   closedLabel,
   deadlineLabel,
@@ -49,9 +51,12 @@ export function conversionLabel(t: TFunc, views: number, offers: number): string
 export function MyListingRow({
   item,
   onPress,
+  now,
 }: {
   item: PropertyWithMedia;
   onPress: () => void;
+  /** Spoločný tikajúci čas z „Moje inzeráty" (Profil) — pozri `PropertyCard`. */
+  now?: number;
 }) {
   const palette = useTheme();
   const { t, language } = useTranslation();
@@ -61,6 +66,15 @@ export function MyListingRow({
   const urgency = deadlineUrgency(item.offer_deadline);
   const deadline = deadlineLabel(t, language, item.offer_deadline);
   const conversion = conversionLabel(t, item.view_count, offers);
+  const ownTick = useOfferCountdownTick([item.nearest_offer_valid_until], now == null);
+  const liveNow = now ?? ownTick;
+  // Najbližšie vypršiavajúca ČAKAJÚCA ponuka — to vlastníka zaujíma
+  // najviac (Rastio, 2.9.2026), nie ktorá je najvyššia. `status` napevno
+  // 'PENDING' z rovnakého dôvodu ako v `PropertyCard`: sem sa dostane len
+  // ponuka, ktorá pri načítaní expirovaná nebola.
+  const nearestOfferCd = item.nearest_offer_valid_until
+    ? offerCountdown(t, language, 'PENDING', item.nearest_offer_valid_until, liveNow)
+    : null;
 
   // Najvyššia ponuka má prednosť pred orientačnou cenou — je to živý údaj
   // a je to to, na čo sa vlastník pozerá.
@@ -133,6 +147,19 @@ export function MyListingRow({
               { color: urgency === 'SOON' ? palette.danger : urgency === 'PASSED' ? palette.textMuted : palette.textSecondary },
             ]}>
             {deadline}
+          </Text>
+        ) : null}
+
+        {nearestOfferCd ? (
+          <Text
+            style={[
+              styles.meta,
+              {
+                color: nearestOfferCd.tier === 'expired' ? palette.textMuted : nearestOfferCd.urgent ? palette.danger : palette.accentDeep,
+                fontWeight: nearestOfferCd.urgent ? Weight.bold : Weight.regular,
+              },
+            ]}>
+            {t('myListingRow.nearestOfferPrefix')} · {nearestOfferCd.text}
           </Text>
         ) : null}
       </View>

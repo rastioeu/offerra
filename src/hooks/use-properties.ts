@@ -62,23 +62,38 @@ async function attachOfferStats(rows: PropertyWithMedia[]): Promise<PropertyWith
   // `offerra.expire_offers()` beží každých 5 minút, takže PENDING ponuka
   // s prešlou platnosťou by bez toho ešte chvíľu vyhrávala v katalógu ako
   // najvyššia, hoci ju už nikto nemôže prijať.
-  const best = new Map<string, { top: number | null; count: number; pending: number }>();
+  const best = new Map<
+    string,
+    { top: number | null; topValidUntil: string | null; count: number; pending: number; nearestValidUntil: string | null }
+  >();
   for (const o of (data ?? []) as { property_id: string; amount: number; status: string; valid_until: string | null }[]) {
     if (o.status !== 'PENDING' && o.status !== 'ACCEPTED') continue;
     if (o.status === 'PENDING' && isOfferExpired(o.status, o.valid_until)) continue;
-    const cur = best.get(o.property_id) ?? { top: null, count: 0, pending: 0 };
+    const cur = best.get(o.property_id) ?? { top: null, topValidUntil: null, count: 0, pending: 0, nearestValidUntil: null };
     cur.count += 1;
     // ČAKAJÚCE sa počítajú zvlášť: v „Moje inzeráty" sa podľa nich riadok
     // zvýrazní. Prijatá ponuka už nič nečaká, tá zvýraznenie nezaslúži.
-    if (o.status === 'PENDING') cur.pending += 1;
-    if (cur.top == null || o.amount > cur.top) cur.top = o.amount;
+    if (o.status === 'PENDING') {
+      cur.pending += 1;
+      // Najbližšie vypršiavajúca ČAKAJÚCA ponuka — ISO 8601 sa dá
+      // porovnávať priamo ako reťazec, netreba `Date`.
+      if (o.valid_until && (cur.nearestValidUntil == null || o.valid_until < cur.nearestValidUntil)) {
+        cur.nearestValidUntil = o.valid_until;
+      }
+    }
+    if (cur.top == null || o.amount > cur.top) {
+      cur.top = o.amount;
+      cur.topValidUntil = o.valid_until;
+    }
     best.set(o.property_id, cur);
   }
   return rows.map((r) => ({
     ...r,
     top_offer: best.get(r.id)?.top ?? null,
+    top_offer_valid_until: best.get(r.id)?.topValidUntil ?? null,
     pending_count: best.get(r.id)?.pending ?? 0,
     offer_count: best.get(r.id)?.count ?? 0,
+    nearest_offer_valid_until: best.get(r.id)?.nearestValidUntil ?? null,
   }));
 }
 
