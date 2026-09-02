@@ -209,3 +209,21 @@ vidieť aj bez otvárania inzerátu:
 
 Rovnaké pravidlo: **žiadne screenshoty ani video** — len slovný popis podľa
 bodov vyššie.
+
+### 7d. Dodatok 2.9.2026 — oprava formátu (žiadna dvojbodka)
+
+Opravené presne to, čo ukázal tvoj screenshot. Over na tých istých
+miestach ako v 7c, že text teraz znie takto (nikde dvojbodka):
+
+1. Viac než deň: „ostáva 3 dni" (nezmenené, len slovo „ostáva" namiesto
+   „Platí ešte").
+2. Menej než deň: „ostáva 4h 32m" — NIE „4:32".
+3. Posledná hodina: „ostáva 47m 12s" — NIE „00:47:12".
+4. Posledná minúta (pod 60 sekúnd): „ostáva 38 s" — bez „0m" pred tým.
+5. Skontroluj, že to takto vyzerá na VŠETKÝCH štyroch miestach naraz:
+   katalóg (badge na fotke pri najvyššej ponuke), „Moje inzeráty"
+   (najbližšia ponuka), „Moje ponuky" (každá tvoja ponuka) a detail
+   ponuky (`/ponuka/[id]`) — mali by sa zmeniť všetky súčasne, je to
+   jedna spoločná funkcia.
+
+Žiadne screenshoty ani video — len slovami, čo presne vidíš.

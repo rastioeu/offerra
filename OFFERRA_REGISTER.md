@@ -5800,6 +5800,58 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+### 31.11 Oprava formátu — žiadny dvojbodkový čas (Rastio, 2.9.2026, po screenshote z appky) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Rastio poslal screenshot: badge na karte v katalógu ukazoval „Najvyššia
+ponuka · 14:07" — dvojbodkový formát sa dá prečítať ako HODINU NA
+HODINÁCH („o pol tretej"), nie ako zostávajúce trvanie. Rovnaký problém
+mali `hm` (predtým `HH:MM`) aj `hms` (predtým `HH:MM:SS`) stupne
+odpočtu (31.9) — na VŠETKÝCH šiestich miestach naraz, lebo všetky idú cez
+JEDNU čistú funkciu `offerCountdown()` (`src/lib/offer-validity.ts`):
+katalóg, „Moje inzeráty", „Moje ponuky", detail ponuky (`ponuka/[id].tsx`),
+panel vlastníka (`owner-offers.tsx`) aj podtab „Ponuky" (`offer-list.tsx`) —
+overené `grep`om nižšie.
+
+**Nový formát (jednotky namiesto dvojbodky, slovo „ostáva" pred číslom —
+rovnaký vzor ako existujúci countdown uzávierky inzerátu, „ostáva 44 dní"):**
+
+| Stupeň | Predtým | Teraz |
+|---|---|---|
+| ≥ 1 deň | „Platí ešte 5 dní" | „ostáva 5 dní" |
+| < 1 deň, ≥ 1 h | „05:07" | „ostáva 5h 7m" |
+| < 1 h, ≥ 1 min | „00:47:32" | „ostáva 47m 32s" |
+| < 1 min | „00:00:38" | „ostáva 38 s" (BEZ „0m") |
+
+Posledný riadok je NOVÝ podstupeň v rámci `hms` — pod minútu odpočtu sa
+minútová jednotka (`0m`) vynecháva, lebo „ostáva 0m 38s" by čítal horšie
+než „ostáva 38 s".
+
+**i18n:** kľúč `offerValidity.countdownDays` (31.9) je nahradený
+JEDNÝM spoločným `offerValidity.countdown` = „ostáva {{value}}" (sk) /
+„{{value}} left" (en) / „noch {{value}}" (de) — použitý pre všetky štyri
+stupne naraz (`value` je buď sklonovaný počet dní z
+`offerValidityDaysLabel`, alebo jazykovo neutrálny reťazec s h/m/s
+jednotkami zložený priamo v `offerCountdown()`). Jeden kľúč namiesto
+štyroch znamená, že sa obal („ostáva…"/„…left"/„noch…") nemôže medzi
+stupňami rozísť.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| logika odpočtu — 4 stupne + hranice (24 h, 1 h, 1 min) prepísané na nový formát | `npx --yes tsx scripts/check-offer-validity.ts` | **23/23 OK** |
+| lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **15/15 OK** |
+| typy | `npx tsc --noEmit -p .` | čisté |
+| žiadny iný zdroj dvojbodkového odpočtu | `grep -rn "offerCountdown\|OfferCountdownText" src/app src/components` | 6 volaní, všetky cez jednu funkciu — žiaden vlastný `HH:MM` kód nikde inde |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** |
+
+**Čo dôkaz NEDOKAZUJE:** ako presne text vyzerá a číta sa na telefóne —
+`grep` dokazuje len to, že JEDEN kód rozhoduje o texte na všetkých
+šiestich miestach, nie ako to tam vyzerá. Potvrdiť môže len pohľad na
+appku (report §7d).
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.

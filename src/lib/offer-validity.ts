@@ -60,18 +60,30 @@ export function isOfferExpired(status: string, validUntil: string | null, now: n
 }
 
 /**
- * Odpočet platnosti ponuky, ŽIVO a STUPŇOVITO (Rastio, 1.9.2026):
+ * Odpočet platnosti ponuky, ŽIVO a STUPŇOVITO (Rastio, 1.9.2026, formát
+ * OPRAVENÝ 2.9.2026 po nasadení):
  *
- *   - `days` — 24 hodín a viac: „Platí ešte 5 dní". Netreba tikať po
+ *   - `days` — 24 hodín a viac: „ostáva 5 dní". Netreba tikať po
  *     sekundách, stačí prekresliť raz za čas (o to sa stará
  *     `useOfferCountdownTick` — sekundy tikajúce celý deň by zbytočne
  *     zaťažovali batériu bez toho, aby to niekomu pomohlo).
- *   - `hm` — menej než 24 hodín: `HH:MM`, reálne odpočítava (napr. „23:55"
- *     → o minútu „23:54").
- *   - `hms` — posledná hodina: `HH:MM:SS`, tiká po sekundách a `urgent` je
- *     `true` — appka to má zvýrazniť farebne, nech je naliehavosť jasná.
+ *   - `hm` — menej než 24 hodín: „ostáva 4h 32m", reálne odpočítava.
+ *   - `hms` — posledná hodina: tiká po sekundách a `urgent` je `true` —
+ *     „ostáva 47m 12s", a pod poslednú minútu (`m === 0`) už len
+ *     „ostáva 38 s" (jednotku minút netreba ukazovať, keď je nulová).
  *   - `expired` — platnosť uplynula, appka to musí ukázať OKAMŽITE (živo z
  *     `valid_until`), nie až keď to o niekoľko minút neskôr prekvapí cron.
+ *
+ * PREČO NIE DVOJBODKOVÝ FORMÁT (Rastio, 2.9.2026, po screenshote z appky):
+ * pôvodná verzia ukazovala „14:07" — človek si to prečíta ako HODINU NA
+ * HODINÁCH („o pol tretej"), nie ako zostávajúce trvanie. Jednotky (h/m/s)
+ * a slovo pred číslom („ostáva…") odlíšia trvanie od hodiny na hodinách
+ * hneď od prvého pohľadu — presne ako existujúci countdown uzávierky
+ * inzerátu („ostáva 44 dní", `deadline.ts`), s ktorým je tento odpočet
+ * teraz zjednotený. `offerValidity.countdown` je JEDEN spoločný i18n
+ * kľúč pre všetky štyri stupne — mení sa len `value` (deň/hodinová
+ * jednotka), obal („ostáva …" / „… left" / „noch …") je vo všetkých
+ * rovnaký, takže sa nemôže rozísť medzi stupňami.
  *
  * `null` len keď ponuka platnosť vôbec nemá (`valid_until` je `null`) —
  * vtedy appka o platnosti mlčí, presne ako pri uzávierke bez termínu.
@@ -90,10 +102,6 @@ export interface OfferCountdown {
   urgent: boolean;
 }
 
-function pad2(n: number): string {
-  return String(n).padStart(2, '0');
-}
-
 export function offerCountdown(
   t: TFunc,
   language: string,
@@ -107,16 +115,20 @@ export function offerCountdown(
   }
   const totalSeconds = Math.max(0, Math.floor((new Date(iso).getTime() - now) / 1000));
   if (totalSeconds < 3_600) {
-    const h = Math.floor(totalSeconds / 3_600);
-    const m = Math.floor((totalSeconds % 3_600) / 60);
+    const m = Math.floor(totalSeconds / 60);
     const s = totalSeconds % 60;
-    return { tier: 'hms', text: `${pad2(h)}:${pad2(m)}:${pad2(s)}`, urgent: true };
+    const value = m > 0 ? `${m}m ${s}s` : `${s} s`;
+    return { tier: 'hms', text: t('offerValidity.countdown', { value }), urgent: true };
   }
   if (totalSeconds < 86_400) {
     const h = Math.floor(totalSeconds / 3_600);
     const m = Math.floor((totalSeconds % 3_600) / 60);
-    return { tier: 'hm', text: `${pad2(h)}:${pad2(m)}`, urgent: false };
+    return { tier: 'hm', text: t('offerValidity.countdown', { value: `${h}h ${m}m` }), urgent: false };
   }
   const days = Math.floor(totalSeconds / 86_400);
-  return { tier: 'days', text: t('offerValidity.countdownDays', { days: offerValidityDaysLabel(t, language, days) }), urgent: false };
+  return {
+    tier: 'days',
+    text: t('offerValidity.countdown', { value: offerValidityDaysLabel(t, language, days) }),
+    urgent: false,
+  };
 }

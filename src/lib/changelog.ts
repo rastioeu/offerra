@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet platnosti ponuky — opravený formát',
+    items: [
+      'Odpočet teraz píše „ostáva 4h 32m" namiesto „4:32" — pôvodný tvar sa dal prečítať ako hodinu na hodinách, nie ako zostávajúci čas.',
+      'V poslednej hodine: „ostáva 47m 12s", pod minútu už len „ostáva 38 s".',
+      'Platí to všade naraz — katalóg, Moje inzeráty, Moje ponuky aj detail ponuky.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet platnosti ponuky aj v zoznamoch',
     items: [
       'V katalógu vidíš pri najvyššej ponuke priamo na fotke, ako dlho ešte platí.',
