@@ -6080,6 +6080,16 @@ minútového tiku. Okno, pri ktorom sa tiká po sekundách, je teraz 24 hodín
 **Čo dôkaz NEDOKAZUJE:** že sekundy na telefóne skutočne VIDNO tikať
 v pill-e aj mimo poslednej hodiny — len logiku a formát textu.
 
+**OTA k tomuto kolu SAMOSTATNE NEPUBLIKOVANÁ.** `eas update` (commit
+`476dffa`) bol spustený a bežal na pozadí, kým prišlo 31.17 a zmenilo
+zdrojové súbory znova — Metro export číta disk pri behu, nie git snapshot
+z okamihu spustenia, takže obsah balíka pri takom prekrytí NIE JE
+spoľahlivo priraditeľný k `476dffa` (mohol zachytiť čiastočne aj neskoršie
+zmeny, mohol aj nie — nezmerané, teda sa to NEPOUŽÍVA ako dôkaz). Namiesto
+dohadovania: publikovaná bola len OTA nižšie pri 31.17, spustená AŽ z
+čistého, plne commitnutého stromu pri `e8fea3e` — tá jediná je dôkazom
+runtime pre OBE kolá (31.16 aj 31.17) naraz.
+
 ### 31.17 Šieste kolo — dvojciferný zápis + hodiny aj v stupni „dni" (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
 
 Ešte pred vizuálnym overením 31.16 prišlo upresnenie presného formátu:
@@ -6121,6 +6131,14 @@ odpočtami naraz vie overiť len pohľad na telefón, nie tento test.
 **Čo dôkaz NEDOKAZUJE:** ako presne text vyzerá na karte (dĺžka „12h 35m
 08s" v pill-e, čitateľnosť) a ako appka reaguje pri rýchlom scrollovaní
 zoznamu s viacerými odpočtami naraz — to vie potvrdiť len Rastio.
+
+**Publikované OTA — ✅ OVERENÉ RUNTIME (pokrýva 31.16 aj 31.17).** Commit
+`e8fea3e`, spustené z čistého stromu (žiadna zmena súborov počas behu).
+Runtime zhodné s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android).
+iOS update `01a061dd-d432-7ff7-885f-a814eb192415` (skupina
+`a2c2ba62-09c2-42af-8fac-7988d85885d6`), Android update
+`01a061dd-d432-7856-b00e-1b198e81e250` (skupina
+`11cbf8e4-d70e-4fe2-a44c-eb73b9b249bd`).
 
 ---
 
