@@ -265,3 +265,27 @@ Tretie kolo k tomu istému textu. Over:
    uplynula" (predtým holé „Platnosť uplynula").
 
 Žiadne screenshoty ani video — len slovami.
+
+### 7g. Dodatok 2.9.2026 — pill s ikonou hodín namiesto sivého textu
+
+Štvrté kolo. Sivá z 7f splynula s ostatnými meta údajmi na karte — teraz
+má odpočet VLASTNÝ vizuálny tvar. Over:
+
+1. **Katalóg, pod sumou** — namiesto obyčajného sivého riadku vidíš malý
+   zaoblený štítok (podobný tým hore na fotke — PREDAJ, typ nehnuteľnosti,
+   len menší) s jemným teplým pozadím, ikonou hodín a textom „Ponuka
+   platí ešte 12h 52m" v teplej (terakotovej) farbe. Je to na prvý pohľad
+   VIDIEĽ, nedá sa to prehliadnuť ako predtým.
+2. **Moje inzeráty** — rovnaký štítok pri riadku „Najbližšia ponuka platí
+   ešte…".
+3. **Farba a čitateľnosť štítku** — over, že text v štítku sa dá pohodlne
+   prečítať (kontrast textu oproti pozadiu štítku). Táto konkrétna dvojica
+   farieb nie je strojovo premeraná, len odvodená podobnosťou — ak by bol
+   text na štítku ťažko čitateľný, napíš to, nepredpokladaj že je to OK.
+4. **Posledná hodina** — nezmenené, stále plain červený tučný text BEZ
+   štítku (nie pill, poplašná červená farba).
+5. Over, že ŠTÍTOK sa objaví/zmizne správne pri zmene stavu (napr. keď
+   ponuka prejde z „viac než hodina" do „posledná hodina" — štítok by mal
+   zmiznúť a nahradiť ho červený text).
+
+Žiadne screenshoty ani video — len slovami.

@@ -26,6 +26,7 @@ import {
 } from '@/lib/property';
 import { Money as MoneyType, Radius, Spacing, Type, Weight } from '@/theme/tokens';
 
+import { OfferCountdownPill } from './offer-countdown';
 import { Badge } from './ui';
 
 /** „3 ponuky" so správnym tvarom. Bez toho by tam bolo „3 ponuka". */
@@ -142,23 +143,26 @@ export function MyListingRow({
             „Najvyššia ponuka" hore, ale ponúk vo všeobecnosti, takže
             patrí k tomuto riadku, nie k uzávierke o pár riadkov nižšie. */}
         {nearestOfferCd ? (
-          // Vlastný podmet („Najbližšia ponuka…"), nie holé `nearestOfferCd.text`
-          // (to by zopakovalo slovo „ponuka" druhýkrát — „Najbližšia ponuka ·
-          // Ponuka platí ešte…"). Farba len podľa SKUTOČNEJ naliehavosti
-          // (`urgent`, teda len posledná hodina) — inak tlmená sivá ako
-          // bežný meta text (Rastio, 2.9.2026, tretie kolo spätnej väzby).
-          <Text
-            style={[
-              styles.meta,
-              {
-                color: nearestOfferCd.urgent ? palette.danger : palette.textMuted,
-                fontWeight: nearestOfferCd.urgent ? Weight.bold : Weight.regular,
-              },
-            ]}>
-            {nearestOfferCd.tier === 'expired'
-              ? t('myListingRow.nearestOfferExpired')
-              : t('myListingRow.nearestOfferRemaining', { value: nearestOfferCd.value })}
-          </Text>
+          // Vlastný podmet („Najbližšia ponuka…"), nie holý `nearestOfferCd.value`
+          // bez neho. Posledná hodina = plain červený tučný text (rovnaká
+          // zásada ako v `property-card.tsx` — poplašná farba tam má
+          // zmysel, pill by ju len zoslabil). Uplynutá platnosť = tlmená
+          // sivá, fakt nie odpočet. Inak — bežiaci, nie naliehavý stav —
+          // VLASTNÁ vizuálna forma (pill + ikona hodín), lebo tlmená sivá
+          // splývala s ostatnými riadkami („3 ponuky", „Bratislava…")
+          // a odpočet zanikol úplne (Rastio, 2.9.2026, štvrté kolo).
+          nearestOfferCd.urgent ? (
+            <Text style={[styles.meta, { color: palette.danger, fontWeight: Weight.bold }]}>
+              {t('myListingRow.nearestOfferRemaining', { value: nearestOfferCd.value })}
+            </Text>
+          ) : nearestOfferCd.tier === 'expired' ? (
+            <Text style={[styles.meta, { color: palette.textMuted }]}>{t('myListingRow.nearestOfferExpired')}</Text>
+          ) : (
+            <OfferCountdownPill
+              text={t('myListingRow.nearestOfferRemaining', { value: nearestOfferCd.value })}
+              style={styles.nearestOfferPill}
+            />
+          )
         ) : null}
 
         <Text style={[styles.meta, { color: palette.textMuted }]}>
@@ -202,4 +206,5 @@ const styles = StyleSheet.create({
   title: { ...Type.bodyLg, fontWeight: Weight.semibold },
   money: { fontFamily: MoneyType.fontFamily, ...MoneyType.small, fontWeight: Weight.bold },
   meta: { ...Type.caption },
+  nearestOfferPill: { marginVertical: 1 },
 });

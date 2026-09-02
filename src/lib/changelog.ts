@@ -21,6 +21,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet ponuky má vlastný štítok s ikonou',
+    items: [
+      'Namiesto obyčajného sivého textu má teraz malý zaoblený štítok s ikonou hodín a jemným teplým pozadím — nedá sa prehliadnuť medzi ostatnými údajmi na karte.',
+      'Posledná hodina zostáva výrazná červená, bez štítku.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet ponuky — kto platí a kedy je to naozaj naliehavé',
     items: [
       'Text teraz vždy povie, čoho sa týka: „Ponuka platí ešte 4h 32m" namiesto holého „ostáva 4h 32m".',

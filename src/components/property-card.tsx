@@ -44,6 +44,7 @@ import { Money as MoneyType, Radius, Shadow, Spacing, Type, Weight } from '@/the
 import { FavoriteHeart } from './favorite-heart';
 import { Icon } from './icon';
 import { LongPressMenu, tapFeedback, type LongPressAction } from './long-press-menu';
+import { OfferCountdownPill } from './offer-countdown';
 import { Badge, Eyebrow, PhotoBadge } from './ui';
 import { errorText } from '@/lib/errors';
 
@@ -292,19 +293,24 @@ export function PropertyCard({
                   {headlineValue}
                 </Text>
                 {offerCd ? (
-                  // ČERVENÁ LEN v poslednej hodine (`offerCd.urgent`) — nie
-                  // stále, kým ponuka platí (Rastio, 2.9.2026, tretie kolo
-                  // spätnej väzby): pri 13 hodinách do konca bola červená
-                  // zbytočne dramatická a odvykla by si od skutočnej
-                  // naliehavosti. `offerCd.text` už obsahuje podmet
-                  // („Ponuka platí ešte…") — appka ho tu neskladá sama.
-                  <Text
-                    style={[
-                      offerCd.urgent ? styles.offerExpiryUrgent : styles.offerExpiry,
-                      { color: offerCd.urgent ? palette.danger : palette.textMuted },
-                    ]}>
-                    {offerCd.text}
-                  </Text>
+                  offerCd.urgent ? (
+                    // ČERVENÁ LEN v poslednej hodine — tam má poplašná farba
+                    // zmysel (Rastio, 2.9.2026). Plain text, žiaden pill:
+                    // ten by naliehavosť len zoslabil.
+                    <Text style={[styles.offerExpiryUrgent, { color: palette.danger }]}>{offerCd.text}</Text>
+                  ) : offerCd.tier === 'expired' ? (
+                    // Uplynutá platnosť je FAKT, nie odpočet — tlmená sivá,
+                    // bez pill-u.
+                    <Text style={[styles.offerExpiry, { color: palette.textMuted }]}>{offerCd.text}</Text>
+                  ) : (
+                    // Bežiaci, NIE naliehavý odpočet — VLASTNÁ vizuálna
+                    // forma (pill + ikona hodín), nie len farba textu.
+                    // Tlmená sivá splývala s ostatnými meta údajmi na
+                    // karte a odpočet zanikol úplne (Rastio, 2.9.2026,
+                    // štvrté kolo). `offerCd.text` už obsahuje podmet
+                    // („Ponuka platí ešte…") — appka ho tu neskladá sama.
+                    <OfferCountdownPill text={offerCd.text} style={styles.offerExpiryPill} />
+                  )
                 ) : null}
               </>
             ) : (
@@ -390,5 +396,6 @@ const styles = StyleSheet.create({
   // hovorí, čoho sa odpočet týka, bez kolízie s badge uzávierky inzerátu.
   offerExpiry: { ...Type.caption },
   offerExpiryUrgent: { ...Type.caption, fontWeight: Weight.bold },
+  offerExpiryPill: { marginTop: 2 },
   aside: { ...Type.caption, textAlign: 'right' },
 });

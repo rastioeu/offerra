@@ -55,6 +55,15 @@ export type Palette = {
    * Opticky tá istá farba, len prejde kontrastom.
    */
   accentDeep: string;
+  /**
+   * Jemné teplé pozadie pod `accentDeep` textom — pill/odznak, ktorý má
+   * byť VIDITEĽNÝ na prvý pohľad, ale NIE poplašný (Rastio, 2.9.2026:
+   * odpočet platnosti ponuky, keď ešte nie je v poslednej hodine). Svetlosť
+   * je zámerne blízka `surfacePressed`, s ktorým `accentDeep` text už na
+   * appke bežia vedľa seba (`MyListingRow`, riadok s čakajúcimi ponukami) —
+   * rovnaká dvojica farieb, len teplejšie sfarbená.
+   */
+  accentSoft: string;
   /** Text NA vyplnenom `primary`/`secondary` povrchu (tlačidlo, badge). */
   onPrimary: string;
 
@@ -123,6 +132,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     link: '#1B71D0',
     accent: '#C9703B',
     accentDeep: '#A85526',
+    accentSoft: '#F2DFCE',
     onPrimary: '#FFFFFF',
     onPhotoSurface: 'rgba(255,255,255,0.92)',
     scrim: 'rgba(28,24,21,0.55)',
@@ -154,6 +164,7 @@ export const Colors: { light: Palette; dark: Palette } = {
     // rozdvojenie netreba — obe smerujú na ten istý odtieň.
     accent: '#E39A5E',
     accentDeep: '#E39A5E',
+    accentSoft: '#3A2C21',
     onPrimary: '#161311',
     onPhotoSurface: 'rgba(33,29,26,0.92)',
     scrim: 'rgba(0,0,0,0.62)',

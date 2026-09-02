@@ -5988,6 +5988,61 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+### 31.15 Štvrté kolo — vlastná vizuálna forma namiesto (ne)farby (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+31.14 zamenila červenú za tlmenú sivú mimo poslednej hodiny — a tá teraz
+splývala s ostatnými meta údajmi na karte („Bratislava · 236 izieb",
+„Pridané…"), takže odpočet zanikol. Rastiova diagnóza: problém nebola
+FARBA, ale že text nemal ŽIADNU vlastnú vizuálnu formu. Riešenie preto
+nie je tretia farba, ale **pill/odznak s ikonou**, rovnaká rodina ako
+appka už používa (`Badge`/`PhotoBadge`), len menší a decentnejší:
+
+- jemné teplé pozadie (nový token `accentSoft`, viď nižšie),
+- ikona hodín (`Icon name="clock"`, SF Symbol, cez `expo-symbols` —
+  rovnaký mechanizmus ako existujúce ikony appky, OTA bez nového buildu),
+- text v `accentDeep` (rovnaká farba, akou appka už kreslí „malý teplý
+  text" — napr. čakajúce ponuky v tomto istom komponente), NIE `accent`
+  (ten je vyhradený pre VEĽKÉ čísla, viď komentár v `tokens.ts`).
+
+**Posledná hodina OSTÁVA presne ako v 31.14** — plain červený tučný text,
+BEZ pill-u (Rastio: „tam už má poplašná farba zmysel", pill by ju len
+zoslabil). Uplynutá platnosť ostáva tlmená sivá bez pill-u — je to fakt,
+nie odpočet.
+
+**Nový token (`src/theme/tokens.ts`, §5 — jediný zdroj farieb, žiadna
+hardcodovaná farba v komponente):** `accentSoft` — jemné teplé pozadie
+pre `accentDeep` text. Svetlosť zámerne blízka `surfacePressed`, s ktorým
+`accentDeep` text už na appke bežia vedľa seba (`MyListingRow`, riadok
+čakajúcich ponúk) — rovnaká dvojica farieb, len teplejšie sfarbená.
+**Presný kontrastný pomer `accentDeep` na `accentSoft` NIE JE strojovo
+premeraný** (na rozdiel od pôvodnej WCAG revízie palety vo Fáze 1) —
+odvodené z podobnosti k už zmeranej dvojici. Ak text na pille pôsobí
+nečitateľne, treba to nahlásiť, nie predpokladať, že je to v poriadku.
+
+**Nová zdieľaná komponenta:** `OfferCountdownPill` (`offer-countdown.tsx`,
+vedľa `OfferCountdownText`) — len samotný pill, výber MEDZI pill/plain
+červená/plain sivá robí VOLAJÚCI (`property-card.tsx`, `my-listing-row.tsx`).
+Použitá na oboch miestach z 31.12: katalóg (pod sumou najvyššej ponuky)
+aj „Moje inzeráty" (riadok „Najbližšia ponuka…"). Detail ponuky, panel
+vlastníka, verejný zoznam „Ponuky" a „Moje ponuky" NEMENENÉ — tam
+odpočet stojí vedľa sumy TEJ ponuky, nie medzi viacerými podobnými meta
+riadkami, takže rovnaký problém (splynutie) tam nevznikol.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| logika odpočtu (nezmenená) | `npx --yes tsx scripts/check-offer-validity.ts` | 23/23 OK |
+| lokalizácia (nezmenená, žiadny nový i18n kľúč) | `npx --yes tsx scripts/check-i18n.ts` | 15/15 OK |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** (ikona `clock` je v `expo-symbols`, ktoré je v binárke od buildu #3) |
+
+**Čo dôkaz NEDOKAZUJE:** ako pill vyzerá a číta sa na telefóne — najmä
+kontrast `accentDeep`/`accentSoft`, ktorý tu nie je strojovo premeraný.
+To vie potvrdiť len pohľad na appku.
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.
