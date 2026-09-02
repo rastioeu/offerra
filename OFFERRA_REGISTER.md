@@ -5859,6 +5859,52 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+### 31.12 Oprava umiestnenia — odpočet ponuky sa NEDÁVA na badge uzávierky (Rastio, 2.9.2026, druhý screenshot) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+31.11 opravila FORMÁT („ostáva 13h 52m"), ale Rastio poslal ďalší
+screenshot: „Najvyššia ponuka · ostáva 13h 52m" na fotke katalógovej
+karty sa dá prečítať ako **uzávierku inzerátu** („do konca prijímania
+ponúk ostáva…"), nie ako platnosť tej konkrétnej ponuky — a keď má
+inzerát AJ uzávierku AJ platnú najvyššiu ponuku, na fotke by boli DVA
+vizuálne rovnaké štítky vedľa seba, nedajúce sa od seba odlíšiť.
+
+**Princíp opravy — odpočet vždy PRI TOM, čoho sa týka, nie pri niečom
+inom len preto, že tam bolo miesto:**
+
+- **Badge na fotke v katalógu = LEN uzávierka inzerátu** (nezmenené,
+  „Ponuky do… · ostáva X dní"). Platnosť ponuky sa odtiaľ ODSTRÁNILA.
+- **Platnosť najvyššej ponuky = dolu PRI SUME** — pod „NAJVYŠŠIA PONUKA /
+  {{suma}}" pribudol tretí riadok s odpočtom (`styles.offerExpiry` /
+  `offerExpiryUrgent` v `property-card.tsx`), farebne zvýraznený
+  v poslednej hodine. Kontext (suma tesne nad ním) jednoznačne hovorí,
+  že ide o TÚTO ponuku, nie o inzerát.
+- **„Moje inzeráty" (`MyListingRow`)** — odpočet najbližšie
+  vypršiavajúcej ponuky sa presunul: bol pod riadkom uzávierky (mohol
+  sa čítať ako jej pokračovanie), teraz je hneď POD riadkom „X ponúk ·
+  Y čaká na teba" — patrí k počtu ponúk, nie k uzávierke, ktorá je teraz
+  o riadok nižšie, oddelená.
+- **Detail ponuky, panel vlastníka, verejný zoznam „Ponuky", „Moje
+  ponuky"** — skontrolované, NEMENENÉ: v každom z nich je odpočet
+  odjakživa v tej istej karte/riadku ako suma TEJ ponuky, o ktorej ide,
+  a nikde vedľa neho nestojí konkurenčná uzávierka inzerátu. Žiadna
+  kolízia tam nikdy nevznikla.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| logika odpočtu (nezmenená) | `npx --yes tsx scripts/check-offer-validity.ts` | 23/23 OK |
+| logika uzávierky (nezmenená) | `npx --yes tsx scripts/check-deadline.ts` | OK |
+| lokalizácia | `npx --yes tsx scripts/check-i18n.ts` | 15/15 OK |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** |
+
+**Čo dôkaz NEDOKAZUJE:** ako presne to teraz vyzerá na karte a v Moje
+inzeráty — len beh appky vie potvrdiť, že sa badge na fotke a text pri
+sume už naozaj nedajú zameniť. Pozri report §7e.
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.

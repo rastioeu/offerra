@@ -227,3 +227,23 @@ miestach ako v 7c, že text teraz znie takto (nikde dvojbodka):
    jedna spoločná funkcia.
 
 Žiadne screenshoty ani video — len slovami, čo presne vidíš.
+
+### 7e. Dodatok 2.9.2026 — odpočet ponuky preč z badge uzávierky
+
+Presne to, čo ukázal druhý screenshot: „Najvyššia ponuka · ostáva…" na
+fotke sa dalo prečítať ako uzávierku inzerátu. Over:
+
+1. **Katalóg** — badge na fotke teraz ukazuje LEN uzávierku inzerátu
+   („Ponuky do… · ostáva X dní"), presne ako predtým. Platnosť najvyššej
+   ponuky odtiaľ zmizla.
+2. **Katalóg, dolu pri sume** — pod „NAJVYŠŠIA PONUKA" a sumou pribudol
+   malý riadok s odpočtom platnosti tej ponuky (napr. „ostáva 13h 52m").
+   V poslednej hodine je zvýraznený.
+3. Nájdi (alebo si vytvor testovací) inzerát, ktorý má SÚČASNE aj
+   uzávierku aj platnú najvyššiu ponuku — over, že badge na fotke a text
+   pri sume sú teraz zjavne o dvoch rôznych veciach, nie o čitateľne
+   rovnakej.
+4. **Moje inzeráty** — riadok „Najbližšia ponuka · [odpočet]" je teraz
+   hneď pod riadkom s počtom ponúk, uzávierka je oddelene pod ním.
+
+Žiadne screenshoty ani video — len slovami.

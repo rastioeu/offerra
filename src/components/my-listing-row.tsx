@@ -136,6 +136,24 @@ export function MyListingRow({
           {pending > 0 ? t('myListingRow.pendingSuffix', { count: pending }) : ''}
         </Text>
 
+        {/* Platnosť najbližšie vypršiavajúcej PONUKY hneď POD riadkom
+            o počte ponúk — nie pri uzávierke nižšie (Rastio, 2.9.2026,
+            po druhom screenshote): tá sa netýka rovnakej sumy ako
+            „Najvyššia ponuka" hore, ale ponúk vo všeobecnosti, takže
+            patrí k tomuto riadku, nie k uzávierke o pár riadkov nižšie. */}
+        {nearestOfferCd ? (
+          <Text
+            style={[
+              styles.meta,
+              {
+                color: nearestOfferCd.tier === 'expired' ? palette.textMuted : nearestOfferCd.urgent ? palette.danger : palette.accentDeep,
+                fontWeight: nearestOfferCd.urgent ? Weight.bold : Weight.regular,
+              },
+            ]}>
+            {t('myListingRow.nearestOfferPrefix')} · {nearestOfferCd.text}
+          </Text>
+        ) : null}
+
         <Text style={[styles.meta, { color: palette.textMuted }]}>
           {[item.city, t('propertyCard.viewCount', { count: item.view_count }), conversion].filter(Boolean).join(' · ')}
         </Text>
@@ -147,19 +165,6 @@ export function MyListingRow({
               { color: urgency === 'SOON' ? palette.danger : urgency === 'PASSED' ? palette.textMuted : palette.textSecondary },
             ]}>
             {deadline}
-          </Text>
-        ) : null}
-
-        {nearestOfferCd ? (
-          <Text
-            style={[
-              styles.meta,
-              {
-                color: nearestOfferCd.tier === 'expired' ? palette.textMuted : nearestOfferCd.urgent ? palette.danger : palette.accentDeep,
-                fontWeight: nearestOfferCd.urgent ? Weight.bold : Weight.regular,
-              },
-            ]}>
-            {t('myListingRow.nearestOfferPrefix')} · {nearestOfferCd.text}
           </Text>
         ) : null}
       </View>

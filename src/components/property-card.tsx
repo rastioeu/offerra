@@ -127,11 +127,14 @@ export function PropertyCard({
   // Ľavý stĺpec pätky = hlavné číslo. Pravý = to druhé, menšie a sivé.
   const isOffer = pd.headline === 'TOP_OFFER' && pd.topOffer != null;
   // Odpočet platnosti NAJVYŠŠEJ ponuky, verejne na karte (Rastio, 2.9.2026)
-  // — vytvára prirodzenú naliehavosť pre ďalších záujemcov. `status`
-  // posielam napevno ako 'PENDING': `top_offer_valid_until` sem príde LEN
-  // z ponuky, ktorá už pri načítaní prešla filtrom „nie je expirovaná"
-  // (`attachOfferStats`), takže vetva `status === 'EXPIRED'` v
-  // `offerCountdown` sa tu nemá ako spustiť inak než živým odtikaním času.
+  // — vytvára prirodzenú naliehavosť pre ďalších záujemcov. Zobrazuje sa
+  // DOLU PRI SUME, nie na fotke (druhý screenshot 2.9.2026 ukázal, že
+  // štítok na fotke vedľa uzávierky vyzeral ako DRUHÝ odpočet do TEJ
+  // ISTEJ veci) — kontext pri sume „Najvyššia ponuka" je jednoznačný.
+  // `status` posielam napevno ako 'PENDING': `top_offer_valid_until` sem
+  // príde LEN z ponuky, ktorá už pri načítaní prešla filtrom „nie je
+  // expirovaná" (`attachOfferStats`), takže vetva `status === 'EXPIRED'`
+  // v `offerCountdown` sa tu nemá ako spustiť inak než živým odtikaním času.
   const offerCd = isOffer && item.top_offer_valid_until
     ? offerCountdown(t, language, 'PENDING', item.top_offer_valid_until, liveNow)
     : null;
@@ -209,37 +212,28 @@ export function PropertyCard({
             kolízie). Vľavo hore sú pilulky, vpravo hore zdieľať a
             srdiečko, takže spodok je jediné voľné miesto.
 
-            Odpočet platnosti najvyššej ponuky (ak je) má VLASTNÝ riadok
-            NAD touto lištou — rovnaký štítok (`PhotoBadge`) ako uzávierka,
-            len iný riadok, aby sa oba mohli zobraziť naraz bez kolízie
-            (uzávierka inzerátu a platnosť KONKRÉTNEJ ponuky bežia nezávisle
-            — `offer-validity.ts`). */}
-        {deadline || item.media.length > 1 || offerCd ? (
-          <View style={styles.photoFootWrap}>
-            {offerCd ? (
-              <View style={styles.photoFootRow}>
-                <PhotoBadge
-                  text={`${t('propertyCard.topOffer')} · ${offerCd.text}`}
-                  tone={offerCd.tier === 'expired' ? 'muted' : offerCd.urgent ? 'urgent' : 'warm'}
-                />
-              </View>
-            ) : null}
-            {deadline || item.media.length > 1 ? (
-              <View style={styles.photoFoot}>
-                {deadline ? (
-                  <PhotoBadge
-                    text={deadline}
-                    tone={urgency === 'PASSED' ? 'muted' : urgency === 'SOON' ? 'urgent' : 'warm'}
-                  />
-                ) : (
-                  <View />
-                )}
-                {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. Číslo
-                    vpredu ukazuje SKUTOČNÚ pozíciu rotujúcej titulky, nie
-                    vždy „1". */}
-                {item.media.length > 1 ? <PhotoBadge text={`${coverIdx + 1}/${item.media.length}`} /> : null}
-              </View>
-            ) : null}
+            Platnosť NAJVYŠŠEJ PONUKY sem ZÁMERNE NEPATRÍ (Rastio,
+            2.9.2026, po druhom screenshote): tento štítok patrí
+            INZERÁTU (uzávierka príjmu ponúk) a keby vedľa neho pribudol
+            druhý, rovnako vyzerajúci štítok o platnosti KONKRÉTNEJ
+            ponuky, čítalo by sa to ako dva odpočty do TOHO ISTÉHO —
+            presne to Rastio nahlásil. Odpočet platnosti ponuky je
+            namiesto toho dolu pri sume „Najvyššia ponuka" (§ nižšie,
+            `styles.offerExpiry`), kde je z kontextu jasné, čoho sa týka. */}
+        {deadline || item.media.length > 1 ? (
+          <View style={styles.photoFoot}>
+            {deadline ? (
+              <PhotoBadge
+                text={deadline}
+                tone={urgency === 'PASSED' ? 'muted' : urgency === 'SOON' ? 'urgent' : 'warm'}
+              />
+            ) : (
+              <View />
+            )}
+            {/* Pri jednej fotke sa počítadlo nezobrazuje vôbec. Číslo
+                vpredu ukazuje SKUTOČNÚ pozíciu rotujúcej titulky, nie
+                vždy „1". */}
+            {item.media.length > 1 ? <PhotoBadge text={`${coverIdx + 1}/${item.media.length}`} /> : null}
           </View>
         ) : null}
       </View>
@@ -297,6 +291,15 @@ export function PropertyCard({
                   ]}>
                   {headlineValue}
                 </Text>
+                {offerCd ? (
+                  <Text
+                    style={[
+                      offerCd.urgent ? styles.offerExpiryUrgent : styles.offerExpiry,
+                      { color: offerCd.tier === 'expired' ? palette.textMuted : offerCd.urgent ? palette.danger : palette.textMuted },
+                    ]}>
+                    {offerCd.text}
+                  </Text>
+                ) : null}
               </>
             ) : (
               <Text style={[styles.facts, { color: palette.textMuted }]}>{pd.note}</Text>
@@ -359,15 +362,11 @@ const styles = StyleSheet.create({
     gap: Spacing.md,
   },
   badges: { position: 'absolute', top: Spacing.sm, left: Spacing.sm, flexDirection: 'row', gap: Spacing.xs },
-  photoFootWrap: {
+  photoFoot: {
     position: 'absolute',
     left: Spacing.sm,
     right: Spacing.sm,
     bottom: Spacing.sm,
-    gap: 4,
-  },
-  photoFootRow: { flexDirection: 'row' },
-  photoFoot: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -380,5 +379,10 @@ const styles = StyleSheet.create({
   footMain: { flexShrink: 1, gap: 2 },
   footAside: { alignItems: 'flex-end' },
   money: { fontFamily: MoneyType.fontFamily, fontWeight: Weight.bold, ...MoneyType.large },
+  // Platnosť najvyššej ponuky — priamo pod jej sumou, nie na fotke
+  // (Rastio, 2.9.2026): kontext („Najvyššia ponuka" nad tým) jednoznačne
+  // hovorí, čoho sa odpočet týka, bez kolízie s badge uzávierky inzerátu.
+  offerExpiry: { ...Type.caption },
+  offerExpiryUrgent: { ...Type.caption, fontWeight: Weight.bold },
   aside: { ...Type.caption, textAlign: 'right' },
 });

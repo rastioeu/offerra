@@ -21,6 +21,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet platnosti ponuky — teraz pri sume, nie pri uzávierke',
+    items: [
+      'Badge na fotke v katalógu opäť ukazuje len uzávierku inzerátu — platnosť najvyššej ponuky sa presunula dolu pod jej sumu, kde je jasné, čoho sa týka.',
+      'V „Moje inzeráty" je odpočet najbližšie vypršiavajúcej ponuky teraz pri počte ponúk, nie pri uzávierke.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet platnosti ponuky — opravený formát',
     items: [
       'Odpočet teraz píše „ostáva 4h 32m" namiesto „4:32" — pôvodný tvar sa dal prečítať ako hodinu na hodinách, nie ako zostávajúci čas.',
