@@ -7,10 +7,14 @@
  *
  * Frekvencia je STUPŇOVITÁ podľa najbližšej platnosti spomedzi všetkých
  * poslaných `validUntil`, nie pevná:
- *   - NIEKTORÁ ponuka je v poslednej hodine → tiká po SEKUNDÁCH (musí, aby
- *     `HH:MM:SS` v `offerCountdown` reálne odpočítaval).
- *   - inak → tiká raz za MINÚTU (pre `HH:MM` aj pre „X dní" to stačí;
- *     sekundy tikajúce celý deň by len zaťažovali batériu bez úžitku).
+ *   - NIEKTORÁ ponuka je pod 24 hodín (`hm` ALEBO `hms` stupeň v
+ *     `offerCountdown`) → tiká po SEKUNDÁCH. Pôvodne to platilo len pre
+ *     poslednú hodinu — Rastio, 2.9.2026, štvrté kolo: „pridaj tam ešte
+ *     sekundy, nie len poslednú hodinu", `offerCountdown` teraz ukazuje
+ *     sekundy v OBOCH stupňoch pod deň, takže bez tejto zmeny by boli
+ *     sekundy v `hm` stupni zamrznuté až minútu.
+ *   - inak (stupeň „X dní") → tiká raz za MINÚTU, dni sa tak často
+ *     nemenia, minúta stačí.
  *
  * Cleanup pri unmounte aj pri KAŽDEJ zmene frekvencie (inak by starý
  * interval bežal ďalej popri novom).
@@ -23,25 +27,25 @@
  */
 import { useEffect, useState } from 'react';
 
-const URGENT_WINDOW_MS = 3_600_000; // posledná hodina — viď offerCountdown
-const URGENT_TICK_MS = 1_000;
+const SECONDS_VISIBLE_WINDOW_MS = 86_400_000; // pod deň — `hm` aj `hms` stupeň v offerCountdown ukazujú sekundy
+const SECONDS_TICK_MS = 1_000;
 const NORMAL_TICK_MS = 60_000;
 
 export function useOfferCountdownTick(validUntils: (string | null | undefined)[], enabled: boolean = true): number {
   const [now, setNow] = useState(() => Date.now());
 
-  const anyUrgent = validUntils.some((iso) => {
+  const anySecondsVisible = validUntils.some((iso) => {
     if (!iso) return false;
     const ms = new Date(iso).getTime() - now;
-    return ms > 0 && ms <= URGENT_WINDOW_MS;
+    return ms > 0 && ms <= SECONDS_VISIBLE_WINDOW_MS;
   });
 
   useEffect(() => {
     if (!enabled) return;
-    const intervalMs = anyUrgent ? URGENT_TICK_MS : NORMAL_TICK_MS;
+    const intervalMs = anySecondsVisible ? SECONDS_TICK_MS : NORMAL_TICK_MS;
     const id = setInterval(() => setNow(Date.now()), intervalMs);
     return () => clearInterval(id);
-  }, [anyUrgent, enabled]);
+  }, [anySecondsVisible, enabled]);
 
   return now;
 }

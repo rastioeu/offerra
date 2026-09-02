@@ -68,21 +68,24 @@ console.log('\n── offerCountdown: STUPŇOVITÝ odpočet (Rastio, 1.9.2026) �
   check('presne 24 h → text "Ponuka platí ešte 1 deň"', cd?.text === 'Ponuka platí ešte 1 deň', `„${cd?.text}"`);
 }
 {
-  // < 24 h, ≥ 1 h → tier "hm", formát „Xh Ym" — NIE dvojbodkový (Rastio,
-  // 2.9.2026: „14:07" sa dá prečítať ako HODINA na hodinách, nie ako
-  // trvanie). NIE JE urgent — hodiny do konca nie sú skutočná naliehavosť
-  // (Rastio, 2.9.2026, tretie kolo: červená len v poslednej hodine).
-  const cd = offerCountdown(t, language, 'PENDING', inMs(5 * 3_600_000 + 7 * 60_000), NOW);
-  check('5 h 7 min → tier "hm"', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
-  check('5 h 7 min → value "5h 7m"', cd?.value === '5h 7m', `„${cd?.value}"`);
-  check('5 h 7 min → text "Ponuka platí ešte 5h 7m"', cd?.text === 'Ponuka platí ešte 5h 7m', `„${cd?.text}"`);
-  check('5 h 7 min → NIE JE urgent', cd?.urgent === false, `${JSON.stringify(cd)}`);
+  // < 24 h, ≥ 1 h → tier "hm", formát „Xh Ym Zs" — NIE dvojbodkový
+  // (Rastio, 2.9.2026: „14:07" sa dá prečítať ako HODINA na hodinách,
+  // nie ako trvanie). Sekundy sú SÚČASŤOU tohto stupňa (Rastio, 2.9.2026,
+  // štvrté kolo: „pridaj tam ešte sekundy, nie len poslednú hodinu" —
+  // predtým tento stupeň tikal len po minútach). NIE JE urgent — hodiny
+  // do konca nie sú skutočná naliehavosť (Rastio, 2.9.2026, tretie kolo:
+  // červená len v poslednej hodine); sekundy menia len živosť, nie farbu.
+  const cd = offerCountdown(t, language, 'PENDING', inMs(5 * 3_600_000 + 7 * 60_000 + 42_000), NOW);
+  check('5 h 7 min 42 s → tier "hm"', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
+  check('5 h 7 min 42 s → value "5h 7m 42s"', cd?.value === '5h 7m 42s', `„${cd?.value}"`);
+  check('5 h 7 min 42 s → text "Ponuka platí ešte 5h 7m 42s"', cd?.text === 'Ponuka platí ešte 5h 7m 42s', `„${cd?.text}"`);
+  check('5 h 7 min 42 s → NIE JE urgent', cd?.urgent === false, `${JSON.stringify(cd)}`);
 }
 {
   // presne na hranici 1 h (3 600 s) → ešte "hm" (posledná sekunda pred hms).
   const cd = offerCountdown(t, language, 'PENDING', inMs(3_600_000), NOW);
-  check('presne 1 h → tier "hm" (Ponuka platí ešte 1h 0m)', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
-  check('presne 1 h → text "Ponuka platí ešte 1h 0m"', cd?.text === 'Ponuka platí ešte 1h 0m', `„${cd?.text}"`);
+  check('presne 1 h → tier "hm" (Ponuka platí ešte 1h 0m 0s)', cd?.tier === 'hm', `${JSON.stringify(cd)}`);
+  check('presne 1 h → text "Ponuka platí ešte 1h 0m 0s"', cd?.text === 'Ponuka platí ešte 1h 0m 0s', `„${cd?.text}"`);
 }
 {
   // < 1 h, ≥ 1 min → tier "hms", formát „Xm Ys", tiká po sekundách, URGENT

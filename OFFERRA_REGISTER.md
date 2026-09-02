@@ -6048,6 +6048,38 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 `01a0617b-4d75-7102-8ff0-3e3183b4b0b6` (skupina
 `f53fbd46-d53a-493e-bf22-220f71ff0735`).
 
+### 31.16 Piate kolo — sekundy aj mimo poslednej hodiny (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Rastio: „pridaj tam ešte sekundy, nie len poslednú hodinu". Predtým
+`offerCountdown` (`src/lib/offer-validity.ts`) ukazoval sekundy len
+v poslednej hodine (`hms`, „47m 12s"); stupeň pod 24 hodín (`hm`) sa
+zastavil na minútach („5h 7m") a tikal len raz za minútu.
+
+**Zmena:** oba stupne pod 24 hodín teraz počítajú `value` JEDNÝM spoločným
+vzorcom (h/m/s z rovnakého `totalSeconds`), `tier`/`urgent` sa naďalej
+lámu presne na hranici 1 hodiny — to sa nemení, farba a pill/plain-text
+rozhodnutie u volajúceho (31.15) teda ostávajú presne také, ako boli.
+Mení sa len TEXT vnútri: „Ponuka platí ešte 5h 7m 42s" namiesto „5h 7m",
+živo tikajúci.
+
+**`useOfferCountdownTick` (`src/hooks/use-offer-countdown-tick.ts`):**
+sekundový interval predtým bežal len keď bola niektorá ponuka v poslednej
+hodine — bez zmeny by sekundy v `hm` stupni boli zamrznuté až do ďalšieho
+minútového tiku. Okno, pri ktorom sa tiká po sekundách, je teraz 24 hodín
+(`SECONDS_VISIBLE_WINDOW_MS`), nie 1 hodina.
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| typy | `npx tsc --noEmit -p .` | čisté |
+| logika odpočtu (upravené hranice + hodnoty) | `npx --yes tsx scripts/check-offer-validity.ts` | 23/23 OK |
+| lokalizácia (nezmenená, žiadny nový i18n kľúč) | `npx --yes tsx scripts/check-i18n.ts` | 15/15 OK |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** |
+
+**Čo dôkaz NEDOKAZUJE:** že sekundy na telefóne skutočne VIDNO tikať
+v pill-e aj mimo poslednej hodiny — len logiku a formát textu.
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)

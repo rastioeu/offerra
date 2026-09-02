@@ -21,6 +21,14 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet ponuky tiká po sekundách aj mimo poslednej hodiny',
+    items: [
+      'Štítok s časom pri ponuke teraz odpočítava aj sekundy, nielen hodiny a minúty — vidno ho naozaj naživo tikať, nielen v poslednej hodine.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet ponuky má vlastný štítok s ikonou',
     items: [
       'Namiesto obyčajného sivého textu má teraz malý zaoblený štítok s ikonou hodín a jemným teplým pozadím — nedá sa prehliadnuť medzi ostatnými údajmi na karte.',

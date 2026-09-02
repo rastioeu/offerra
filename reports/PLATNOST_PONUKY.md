@@ -289,3 +289,20 @@ má odpočet VLASTNÝ vizuálny tvar. Over:
    zmiznúť a nahradiť ho červený text).
 
 Žiadne screenshoty ani video — len slovami.
+
+### 7h. Dodatok 2.9.2026 — sekundy aj mimo poslednej hodiny
+
+Piate kolo. Predtým štítok (pill) mimo poslednej hodiny ukazoval len
+„12h 35m" a menil sa raz za minútu. Teraz pribudli sekundy aj tam. Over:
+
+1. **Katalóg, pod sumou (pill)** — text v štítku znie napr. „Ponuka platí
+   ešte 5h 7m 42s" (s SEKUNDAMI na konci), nie len „5h 7m".
+2. **Sekundy sa naozaj MENIA** — pozeraj štítok pár sekúnd, posledné
+   číslo (sekundy) sa má viditeľne odpočítavať, nie stáť na mieste do
+   ďalšej minúty.
+3. **Moje inzeráty** — rovnaké, „Najbližšia ponuka platí ešte 4h 32m 9s"
+   so živo tikajúcimi sekundami.
+4. **Posledná hodina** — nezmenené, stále „47m 12s" bez hodinovej časti,
+   plain červený text bez štítku.
+
+Žiadne screenshoty ani video — len slovami.
