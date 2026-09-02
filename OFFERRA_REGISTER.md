@@ -5903,6 +5903,13 @@ inom len preto, že tam bolo miesto:**
 inzeráty — len beh appky vie potvrdiť, že sa badge na fotke a text pri
 sume už naozaj nedajú zameniť. Pozri report §7e.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `6c0e7f7`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a06133-3fa3-741b-be88-6461be0b57b0` (skupina
+`49ef8efe-913a-4fd4-9fac-b310c513db18`), Android update
+`01a06133-3fa3-7944-9248-bedcadd7bd19` (skupina
+`ca9fa876-7fe1-46ac-9b22-322c6685db9e`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
