@@ -247,3 +247,21 @@ fotke sa dalo prečítať ako uzávierku inzerátu. Over:
    hneď pod riadkom s počtom ponúk, uzávierka je oddelene pod ním.
 
 Žiadne screenshoty ani video — len slovami.
+
+### 7f. Dodatok 2.9.2026 — podmet v texte a farba len pri naliehavosti
+
+Tretie kolo k tomu istému textu. Over:
+
+1. **Katalóg, pod sumou** — text teraz znie „Ponuka platí ešte 12h 52m"
+   (nie holé „ostáva 12h 52m") — jasné, čoho sa odpočet týka.
+2. **Farba** — pokiaľ do konca platnosti ostáva viac než hodina, text je
+   TLMENE SIVÝ (rovnaký odtieň ako ostatné drobné texty na karte), nie
+   červený. Až v POSLEDNEJ hodine sa zmení na červený a pribudnú sekundy
+   („Ponuka platí ešte 47m 12s").
+3. **Moje inzeráty** — riadok teraz znie „Najbližšia ponuka platí ešte
+   4h 32m" (jedna plynulá veta, nie „Najbližšia ponuka · ostáva…").
+   Rovnaké pravidlo farby — sivá, červená len v poslednej hodine.
+4. Ak nájdeš expirovanú ponuku, over že text znie „Platnosť ponuky
+   uplynula" (predtým holé „Platnosť uplynula").
+
+Žiadne screenshoty ani video — len slovami.

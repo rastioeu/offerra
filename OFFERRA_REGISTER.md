@@ -5934,6 +5934,53 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+### 31.14 Tretie kolo — podmet v texte + farba len pri skutočnej naliehavosti (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Dva samostatné problémy v tom istom texte pod sumou v katalógu:
+
+1. **„ostáva 12h 52m" nepovie, ČOHO sa to týka** — inzerátu, ponuky,
+   niečoho iného. Oprava: `offerValidity.countdown` (jediný spoločný
+   i18n kľúč pre všetky štyri stupne, 31.11) teraz znie „Ponuka platí
+   ešte {{value}}" — podmet je VŽDY súčasťou vety. To isté pre
+   `offerValidity.expired`: „Platnosť ponuky uplynula" (predtým holé
+   „Platnosť uplynula").
+2. **Červená pri 13 hodinách do konca bola zbytočne dramatická** — 31.13
+   ju spravila červenou VŽDY, kým ponuka platí. Vrátené na pôvodný
+   princíp (31.9): `urgent` (a s ním farba) je `true` LEN pre stupeň
+   `hms`, teda skutočne poslednú hodinu. Mimo nej je text tlmenou sivou
+   ako bežný meta údaj na karte.
+
+**Architektúra — `OfferCountdown` dostal tretie pole `value`:** doteraz
+`text` bolo jediné hotové pole (podmet zapečený vnútri). Volajúci
+s VLASTNÝM, jednoznačnejším podmetom to ale zdvojovalo — `MyListingRow`
+(„Najbližšia ponuka") by s novým `text` vypísal „Najbližšia ponuka ·
+Ponuka platí ešte 4h 32m". `value` je preto holé trvanie BEZ podmetu
+(„4h 32m", „47m 12s", „38 s", „3 dni"), z ktorého si `MyListingRow`
+skladá vlastnú vetu („Najbližšia ponuka platí ešte 4h 32m", nové kľúče
+`myListingRow.nearestOfferRemaining`/`nearestOfferExpired` nahrádzajú
+starý `nearestOfferPrefix`). Farba v `MyListingRow` je tiež opravená na
+rovnaký princíp — len `urgent`, nie `accentDeep` ako predtým.
+
+Katalóg (`property-card.tsx`), detail ponuky, panel vlastníka, verejný
+zoznam „Ponuky" a „Moje ponuky" používajú default `text` bez zmeny kódu
+— dostali podmet aj opravenú farbu AUTOMATICKY, lebo idú cez tú istú
+zdieľanú funkciu (rovnaký dôkaz architektúry ako pri 31.11/31.12).
+
+**Dôkazy:**
+
+| Čo | Ako | Výsledok |
+|---|---|---|
+| logika — nové `value` pole, podmet vo `text`, `urgent` len pre `hms` | `npx --yes tsx scripts/check-offer-validity.ts` | **23/23 OK** |
+| lokalizácia SK/EN/DE | `npx --yes tsx scripts/check-i18n.ts` | **15/15 OK** |
+| typy | `npx tsc --noEmit -p .` | čisté |
+| `package.json` (§9) | `git diff --stat package.json` | prázdne → **IDE OTA** |
+
+**Čo dôkaz NEDOKAZUJE:** ako presne text a farba vyzerajú na telefóne —
+len beh appky vie potvrdiť, že „Ponuka platí ešte…" je čitateľné a že
+sivá/červená teraz naozaj zodpovedá skutočnej naliehavosti.
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.

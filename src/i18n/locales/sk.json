@@ -391,8 +391,8 @@
     "pillHighest": "NAJVYŠŠIA"
   },
   "offerValidity": {
-    "expired": "Platnosť uplynula",
-    "countdown": "ostáva {{value}}",
+    "expired": "Platnosť ponuky uplynula",
+    "countdown": "Ponuka platí ešte {{value}}",
     "pickerNone": "Bez obmedzenia",
     "pickerDaysOne": "{{count}} deň",
     "pickerDaysFew": "{{count}} dni",
@@ -437,7 +437,8 @@
     "highestOfferSuffix": " · najvyššia ponuka",
     "noPrice": "Cena neuvedená",
     "pendingSuffix": " · {{count}} čaká na teba",
-    "nearestOfferPrefix": "Najbližšia ponuka"
+    "nearestOfferRemaining": "Najbližšia ponuka platí ešte {{value}}",
+    "nearestOfferExpired": "Najbližšia ponuka: platnosť uplynula"
   },
   "ownerOffers": {
     "dealClosedToast": "Obchod uzavretý — teraz sa môžete ohodnotiť",

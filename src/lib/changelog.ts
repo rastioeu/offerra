@@ -21,6 +21,15 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '2. septembra 2026',
+    title: 'Odpočet ponuky — kto platí a kedy je to naozaj naliehavé',
+    items: [
+      'Text teraz vždy povie, čoho sa týka: „Ponuka platí ešte 4h 32m" namiesto holého „ostáva 4h 32m".',
+      'Červená farba je späť len pre skutočnú naliehavosť — poslednú hodinu platnosti. Inak je text tlmene sivý ako ostatné údaje na karte.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '2. septembra 2026',
     title: 'Odpočet ponuky pri sume je teraz vždy červený',
     items: [
       'Predtým bol červený len v poslednej hodine, teraz je červený počas celej doby, kým ponuka platí.',

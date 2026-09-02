@@ -388,8 +388,8 @@
     "pillHighest": "HIGHEST"
   },
   "offerValidity": {
-    "expired": "Expired",
-    "countdown": "{{value}} left",
+    "expired": "Offer expired",
+    "countdown": "Offer valid for {{value}} more",
     "pickerNone": "No limit",
     "pickerDaysOne": "{{count}} day",
     "pickerDaysMany": "{{count}} days",
@@ -432,7 +432,8 @@
     "highestOfferSuffix": " · highest offer",
     "noPrice": "No price given",
     "pendingSuffix": " · {{count}} awaiting you",
-    "nearestOfferPrefix": "Nearest offer"
+    "nearestOfferRemaining": "Nearest offer valid for {{value}} more",
+    "nearestOfferExpired": "Nearest offer: expired"
   },
   "ownerOffers": {
     "dealClosedToast": "Deal closed — you can now rate each other",

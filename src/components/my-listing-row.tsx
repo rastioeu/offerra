@@ -142,15 +142,22 @@ export function MyListingRow({
             „Najvyššia ponuka" hore, ale ponúk vo všeobecnosti, takže
             patrí k tomuto riadku, nie k uzávierke o pár riadkov nižšie. */}
         {nearestOfferCd ? (
+          // Vlastný podmet („Najbližšia ponuka…"), nie holé `nearestOfferCd.text`
+          // (to by zopakovalo slovo „ponuka" druhýkrát — „Najbližšia ponuka ·
+          // Ponuka platí ešte…"). Farba len podľa SKUTOČNEJ naliehavosti
+          // (`urgent`, teda len posledná hodina) — inak tlmená sivá ako
+          // bežný meta text (Rastio, 2.9.2026, tretie kolo spätnej väzby).
           <Text
             style={[
               styles.meta,
               {
-                color: nearestOfferCd.tier === 'expired' ? palette.textMuted : nearestOfferCd.urgent ? palette.danger : palette.accentDeep,
+                color: nearestOfferCd.urgent ? palette.danger : palette.textMuted,
                 fontWeight: nearestOfferCd.urgent ? Weight.bold : Weight.regular,
               },
             ]}>
-            {t('myListingRow.nearestOfferPrefix')} · {nearestOfferCd.text}
+            {nearestOfferCd.tier === 'expired'
+              ? t('myListingRow.nearestOfferExpired')
+              : t('myListingRow.nearestOfferRemaining', { value: nearestOfferCd.value })}
           </Text>
         ) : null}
 

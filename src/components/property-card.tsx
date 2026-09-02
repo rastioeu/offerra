@@ -292,14 +292,16 @@ export function PropertyCard({
                   {headlineValue}
                 </Text>
                 {offerCd ? (
-                  // ČERVENÁ VŽDY, nie len v poslednej hodine (Rastio,
-                  // 2.9.2026) — kým beží, má sa to odlíšiť od bežného
-                  // sivého textu na karte. Tučné písmo ostáva len pre
-                  // poslednú hodinu (`offerCd.urgent`) ako ďalší stupeň.
+                  // ČERVENÁ LEN v poslednej hodine (`offerCd.urgent`) — nie
+                  // stále, kým ponuka platí (Rastio, 2.9.2026, tretie kolo
+                  // spätnej väzby): pri 13 hodinách do konca bola červená
+                  // zbytočne dramatická a odvykla by si od skutočnej
+                  // naliehavosti. `offerCd.text` už obsahuje podmet
+                  // („Ponuka platí ešte…") — appka ho tu neskladá sama.
                   <Text
                     style={[
                       offerCd.urgent ? styles.offerExpiryUrgent : styles.offerExpiry,
-                      { color: offerCd.tier === 'expired' ? palette.textMuted : palette.danger },
+                      { color: offerCd.urgent ? palette.danger : palette.textMuted },
                     ]}>
                     {offerCd.text}
                   </Text>
