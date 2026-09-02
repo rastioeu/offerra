@@ -5979,6 +5979,13 @@ zdieľanú funkciu (rovnaký dôkaz architektúry ako pri 31.11/31.12).
 len beh appky vie potvrdiť, že „Ponuka platí ešte…" je čitateľné a že
 sivá/červená teraz naozaj zodpovedá skutočnej naliehavosti.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `2cb27f2`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a0616c-63ee-7734-8c25-29476380001d` (skupina
+`2ded27c7-b082-456f-809d-b0d1970234e2`), Android update
+`01a0616c-63ee-7b63-82a7-3c0bdb1fb1c0` (skupina
+`7789e672-c459-4cc5-9342-1788a1350588`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
