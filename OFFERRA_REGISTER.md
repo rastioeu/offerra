@@ -5925,6 +5925,13 @@ tá zostáva ešte o stupeň výraznejšia.
 **Dôkazy:** `npx tsc --noEmit -p .` čisté, `package.json` nedotknutý →
 **IDE OTA**. Ako presne farba vyzerá na telefóne vie potvrdiť len Rastio.
 
+**Publikované OTA — ✅ OVERENÉ RUNTIME.** Commit `8ebbb68`. Runtime zhodné
+s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
+`01a0615c-6bf1-7f13-b25d-5bc83f120c21` (skupina
+`7c84ccf4-5e87-4e6e-87e5-58decbaea279`), Android update
+`01a0615c-6bf1-7817-978c-2f49264a667a` (skupina
+`d4a4d470-74b0-4805-a118-0c8e01f566c8`).
+
 ---
 
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
