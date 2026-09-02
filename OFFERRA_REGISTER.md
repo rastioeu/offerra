@@ -5912,6 +5912,21 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+### 31.13 Drobnosť — odpočet pri sume vždy červený (Rastio, 2.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+Text platnosti najvyššej ponuky pod sumou v katalógu (`property-card.tsx`,
+31.12) bol sivý (`palette.textMuted`) mimo poslednej hodiny, červený
+(`palette.danger`) len v nej. Rastio chcel červenú stále, nie len ako
+príznak naliehavosti — zmenené na `palette.danger` vo všetkých bežiacich
+stupňoch (`days`/`hm`/`hms`), `expired` ostáva sivý (fakt, nie odpočet).
+Tučné písmo ostáva rezervované pre poslednú hodinu (`offerCd.urgent`) —
+tá zostáva ešte o stupeň výraznejšia.
+
+**Dôkazy:** `npx tsc --noEmit -p .` čisté, `package.json` nedotknutý →
+**IDE OTA**. Ako presne farba vyzerá na telefóne vie potvrdiť len Rastio.
+
+---
+
 ## Fáza 32 — Duplicitné tlačidlá v detaile inzerátu (2.9.2026, nález zo screenshotov)
 
 Podrobnosti a dôkazy: `reports/DUPLICITNE_TLACIDLA.md`.

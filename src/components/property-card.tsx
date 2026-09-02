@@ -292,10 +292,14 @@ export function PropertyCard({
                   {headlineValue}
                 </Text>
                 {offerCd ? (
+                  // ČERVENÁ VŽDY, nie len v poslednej hodine (Rastio,
+                  // 2.9.2026) — kým beží, má sa to odlíšiť od bežného
+                  // sivého textu na karte. Tučné písmo ostáva len pre
+                  // poslednú hodinu (`offerCd.urgent`) ako ďalší stupeň.
                   <Text
                     style={[
                       offerCd.urgent ? styles.offerExpiryUrgent : styles.offerExpiry,
-                      { color: offerCd.tier === 'expired' ? palette.textMuted : offerCd.urgent ? palette.danger : palette.textMuted },
+                      { color: offerCd.tier === 'expired' ? palette.textMuted : palette.danger },
                     ]}>
                     {offerCd.text}
                   </Text>
