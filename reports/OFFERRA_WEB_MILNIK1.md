@@ -79,13 +79,31 @@ aký už mal nastavený `/root/offerra`.
   predčasne ukončiť tag (XSS cez vlastný inzerát).
 - `npx tsc --noEmit` aj `npm run build` prechádzajú čisto.
 
+## Dočasný verejný odkaz (kým nemáme `app.offerra.sk`)
+
+Cloudflare „quick tunnel" — anonymná, bezplatná funkcia priamo
+v `cloudflared`, žiadny účet ani token netreba. **Past, na ktorú som
+narazil:** `cloudflared tunnel --url ...` si TICHO našiel existujúci
+`/root/.cloudflared/config.yml` (patrí Famiglia tunelu — vlastný
+`tunnel:`/`credentials-file:`/`ingress:`) a jeho ingress pravidlá
+(končiace catch-all `http_status:404`) prebili môj `--url` cieľ —
+appka bola nedostupná (404) aj keď bolo spojenie „zdravé". Opravené
+explicitným `--config <prázdny súbor>`, aby si žiadny cudzí config
+nenačítal — Famiglia tunel som sa tým vôbec nedotkol, len bežal vedľa
+neho ako úplne nezávislý proces.
+
+**Overené — appka je naozaj vidieť:** `HTTPS 200`, `x-powered-by:
+Next.js`, katalóg so všetkými 48 inzerátmi cez tento odkaz.
+
+⚠️ Je to **dočasný, verejný, neautentifikovaný** odkaz — beží, len kým
+beží proces na serveri, a inú URL dostane pri každom novom spustení.
+Nie je to `app.offerra.sk` a nemá to byť trvalé riešenie — len aby si
+teraz reálne videl, čo je hotové.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
-  založenie zóny `app.offerra.sk` a tunela, aby appka bola vôbec
-  verejne dostupná mimo tohto servera. Bez neho appku vieš zatiaľ overiť
-  len tak, že mi napíšeš, čo mám opísať — priamy odkaz do prehliadača
-  ešte nemáš.
+  založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela.
 - **Filtre a vyhľadávanie** v katalógu (appka: `search.ts` +
   `use-properties.ts`).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
