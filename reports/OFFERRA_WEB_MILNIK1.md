@@ -432,6 +432,41 @@ s automatickým dopĺňaním okresu/kraja).
 
 **Tým je Fáza 5 z pôvodného plánu KOMPLETNÁ.**
 
+## Fáza 4 (pridanie/úprava inzerátu s fotkami) — DOKONČENÁ — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Nový inzerát vzniká hneď ako DRAFT v DB (appka: `pridat.tsx` — fotky sa
+nahrávajú do `{ownerId}/{propertyId}/…`, teda `propertyId` musí
+existovať PRED prvým uploadom; vedľajší efekt je dobrý — rozrobený
+inzerát sa nestratí). Editor (`/moje-inzeraty/[id]/upravit`) je JEDNA
+obrazovka na vytvorenie aj úpravu, presne ako appka. Zverejnenie je
+SAMOSTATNÁ akcia (appková validácia `missingForPublish` — názov,
+mesto, izby, výmera, aspoň jedna fotka — prenesená 1:1), nie posledný
+krok formulára, aby sa nedokončený koncept nedostal do katalógu.
+
+Upload fotky ide cez Server Action (Next.js podporuje `File` vo
+`FormData` priamo, netreba samostatný API route ani klientský Supabase
+kód) — cesta `{ownerId}/{propertyId}/{časová pečiatka}.{ext}`, limit
+8 MB (appka rovnako). Zmazanie fotky: najprv DB riadok, Storage súbor
+až potom (appka: osirelý súbor je menšie zlo než fotka, ktorá sa „nedá
+zmazať").
+
+**Zjednodušené oproti appke** (priznané, nie tichá medzera):
+- Žiadne priebežné autosave každého poľa (appka: `useFormDraft`) — web
+  má jedno tlačidlo „Uložiť" pre celý formulár naraz.
+- Mesto/ulica sú voľný text, nie appkový `CityPicker`/`StreetPicker`
+  (2 925 obcí s automatickým dopĺňaním okresu/kraja a geokódovaním).
+- Kraj/okres sa nezachytávajú vôbec.
+
+Overené naozaj bežiacim serverom: editor bez prihlásenia vrátil presne
+`307 → /login?next=/moje-inzeraty/<id>/upravit`, ostatné stránky
+nezregresovali. **Samotné vytvorenie/uloženie/upload fotky neviem
+overiť sám** — vyžaduje prihláseného používateľa, rovnaké obmedzenie
+ako pri Ponukách/Správach/Obhliadke.
+
+**Tým je Fáza 4 — posledná celá fáza z pôvodného plánu — DOKONČENÁ.**
+Celý pôvodný rozsah (Fázy 0 až 6, v rôznej hĺbke) má teraz aspoň prvú
+funkčnú verziu.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
@@ -440,9 +475,10 @@ s automatickým dopĺňaním okresu/kraja).
 - **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
   platnosti ponuky, realtime správy** (predošlé kolá Fázy 3).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
-- **Fáza 4** — pridanie/úprava inzerátu vrátane uploadu fotiek. Jediná
-  celá zvyšná fáza z pôvodného plánu.
-- **CityPicker pre dopyty** (obec je zatiaľ voľný text).
+- **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
+  zatiaľ voľný text na oboch miestach).
+- **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
+  „Uložiť").
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -453,7 +489,9 @@ s automatickým dopĺňaním okresu/kraja).
 
 ## Ďalší krok
 
-Fázy 3 aj 5 sú hotové. Skús prosím Google prihlásenie znova (oprava
-vyššie). Ostáva Fáza 4 (pridanie/úprava inzerátu s fotkami) ako
-posledná celá fáza z pôvodného plánu — a Cloudflare token pre trvalý
-odkaz namiesto dočasného.
+**Celý pôvodný rozsah zo zadania má teraz aspoň prvú funkčnú verziu.**
+Skús prosím Google prihlásenie znova (oprava vyššie) — bez neho neviem
+sám overiť žiadnu z akcií, čo vyžadujú prihlásenie (podanie ponuky,
+odoslanie dopytu, pridanie inzerátu s fotkami...). Zvyšné body vyššie
+sú buď priznané zjednodušenia (dobrovoľné doplnenie), alebo čakajú na
+Cloudflare token pre trvalý verejný odkaz.
