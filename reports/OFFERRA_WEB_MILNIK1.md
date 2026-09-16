@@ -134,8 +134,24 @@ ukazuje reálny stav prihlásenia (e-mail alebo tlačidlo „Prihlásiť sa"),
 na `/login?next=...`, s prihlásením číta AJ DRAFT/uzavreté vlastníkove
 inzeráty (rovnaká logika ako appkové `useMyProperties`, RLS).
 
-**Apple Sign In na webe chýba** — vyžaduje Services ID naviazané na
-konkrétnu doménu, dáva zmysel doplniť až s trvalou doménou.
+**✅ Apple Sign In na webe DOKONČENÉ (16.9.2026)** — teraz keď appka má
+trvalú doménu `app.offerra.sk` (pozri `OFFERRA_WEB_DOMENA.md`), Rastio
+založil Services ID `com.offerra.app` (náhodou rovnaký identifier ako
+appkové Bundle ID — Supabase Client ID pole je preto pre native aj web
+tok spoločné), poslal Team ID/Key ID/`.p8`. JWT client secret som
+vygeneroval lokálne (`crypto.createSign('SHA256')` s
+`dsaEncoding:'ieee-p1363'`, žiadna nová závislosť), sám overil
+(`crypto.verify` round-trip), platný do 15.3.2027 (6 mesiacov, treba
+obnoviť). Rastio ho vložil do Supabase Providers → Apple → Secret Key.
+Pridané `apple-sign-in-button.tsx` (rovnaký vzor ako Google), obe
+tlačidlá na `/login`.
+
+Overené naozaj bežiacim serverom: `npm run build` čisto, `/login`
+vracia obe tlačidlá („Prihlásiť sa cez Google", „Prihlásiť sa cez
+Apple"), regresný prieskum `/`, `/dopyty`, `/moje-inzeraty`,
+`/nastavenia`, `/admin` bez zmeny (chránené stránky stále `307`).
+**Čo NEVIEM overiť sám:** samotný Apple OAuth beh v prehliadači (musí
+Rastio) — účet nemám.
 
 **Čo je overené naozaj bežiacim serverom:** odhlásený stav hlavičky
 („Prihlásiť sa", nie e-mail), `/moje-inzeraty` bez prihlásenia vrátilo

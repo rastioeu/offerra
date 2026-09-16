@@ -266,3 +266,112 @@ Fázu 1 (verejný katalóg + detail) začínam teraz — nečaká na Cloudflare
 token, appku viem stavať a spúšťať na serveri interne (na svojom porte)
 bez neho. Token bude treba až v momente, keď appku pripájame na
 verejnú adresu.
+
+---
+
+## OPRAVA (16.9.2026) — subdoménová delegácia NEJDE na free/pro pláne
+
+Keď prišiel Cloudflare API token a skúsil som založiť zónu **len** pre
+`app.offerra.sk` presne podľa plánu vyššie, Cloudflare to odmietol:
+
+```
+{"success":false,"errors":[{"code":1116,"message":"Please ensure you are
+providing the root domain and not any subdomains (e.g., example.com,
+not subdomain.example.com)"}]}
+```
+
+Overil som cez viacero Cloudflare community vlákien: **samostatná zóna
+len pre poddoménu („Subdomain Zones"/LTZ) je funkcia LEN Enterprise
+plánu.** Na bežnom účte to API zahodí. Pôvodný sľub „zmenia sa len 2 NS
+riadky, `offerra.sk` sa vôbec nedotkne" preto **neplatí** — toto som
+nevedel, kým som to teraz naozaj nevyskúšal (nie odvodené, zmerané).
+
+**Rastio (16.9.2026) OK na alternatívu A: presunúť nameservery CELEJ
+domény `offerra.sk` na Cloudflare** — rovnaký spôsob, akým beží
+`joinfamiglia.com` v tomto istom prostredí. Funkčne sa nič nemení:
+existujúce záznamy (WordPress, pošta) ostanú „DNS only" (bez proxy,
+identické IP ako dnes), pridá sa len nový proxovaný záznam pre
+`app.offerra.sk`.
+
+### Záloha DNS záznamov PRED zmenou — nameservery ešte na Websupporte
+
+Zistené priamo z verejného DNS (`dig`), 16.9.2026 11:16 UTC — toto je
+presne to, čo treba 1:1 zachovať v Cloudflare ako „DNS only":
+
+| Typ | Meno | Hodnota | TTL/prio |
+|---|---|---|---|
+| A | `offerra.sk` (apex) | `37.9.175.195` | |
+| A | `www.offerra.sk` | `37.9.175.195` | |
+| A | `mail.offerra.sk` | `45.13.137.6` | |
+| A | `webmail.offerra.sk` | `45.13.137.6` | |
+| A | `ftp.offerra.sk` | `37.9.175.196` | |
+| A | `cpanel.offerra.sk` | `37.9.175.196` | |
+| A | `autoconfig.offerra.sk` | `37.9.175.196` | (mailový klient auto-setup) |
+| A | `autodiscover.offerra.sk` | `37.9.175.196` | (mailový klient auto-setup) |
+| MX | `offerra.sk` | `mx10.websupport.sk` | priorita 10 |
+| MX | `offerra.sk` | `mx20.websupport.sk` | priorita 100 |
+| TXT | `offerra.sk` | `v=spf1 a mx include:_spf.m1.websupport.sk ?all` | SPF |
+| TXT | `offerra.sk` | `spf2.0/pra a mx include:_sid.m1.websupport.sk ?all` | SPF (starší formát) |
+| TXT | `mail._domainkey.offerra.sk` | `v=DKIM1; k=rsa; p=MIIBIjANBgkq...` (nájdené teraz, predtým nie — selektor je `mail`) | DKIM |
+
+**Nenájdené:** `AAAA` (žiadna IPv6), `_dmarc.offerra.sk` TXT (žiadny
+explicitný DMARC záznam — websupport ho zjavne nemá nastavený,
+nesúvisí s touto migráciou), `CNAME www` (www ide ako vlastný A
+záznam, nie CNAME), `CAA` (žiadny).
+
+Aktuálne nameservery (pred zmenou): `ns1.websupport.sk`,
+`ns2.websupport.sk`, `ns3.websupport.sk`.
+
+### Ako sa zaručí, že MX/SPF/DKIM prežijú 1:1
+
+Nespolieham sa na Cloudflare „auto-scan" pri zakladaní zóny (ten sa
+robí len cez dashboard „Add a Site", nie cez API) — namiesto toho po
+založení zóny **vytvorím v Cloudflare presne tieto záznamy z tabuľky
+vyššie ručne cez API**, všetky s `proxied:false` („DNS only"), a
+**overím ich cez API výpis PRED tým**, než dám NS hodnoty na prepnutie.
+Jediný nový, proxovaný (`proxied:true`) záznam bude `app.offerra.sk`
+pre tunel appky.
+
+### HOTOVO (16.9.2026) — zóna založená, VŠETKY záznamy overené pred prepnutím NS
+
+Zóna `offerra.sk` v Cloudflare: `id=c0af7261fd123d4a23e12f6221690b0b`,
+`account=Rastioeu@gmail.com's Account`.
+
+Overené priamo cez `GET /zones/{id}/dns_records` (13 záznamov, presne
+zodpovedajú záložnej tabuľke vyššie), všetky okrem `app.offerra.sk`
+majú `proxied:false`:
+
+- 8x A (`offerra.sk`, `www`, `mail`, `webmail`, `ftp`, `cpanel`,
+  `autoconfig`, `autodiscover`) - identické IP ako v zálohe
+- 2x MX (`mx10`/prio 10, `mx20`/prio 100)
+- 2x TXT SPF (nový aj starý formát)
+- 1x TXT DKIM (`mail._domainkey`)
+
+Nový tunel appky: `offerra-web` (`id=1e20a64d-019f-4d5f-9e1c-64252cffecb8`),
+bežiaci ako VLASTNÁ, samostatná systemd služba
+`cloudflared-offerra-web.service` (nezávislá od `cloudflared.service`,
+ktorá naďalej obsluhuje Famiglia - nič sa tam nemenilo), ingress
+`app.offerra.sk -> http://localhost:3001`, potvrdené `active (running)`
+so 4 registrovanými spojeniami na Cloudflare edge. DNS záznam
+`app.offerra.sk` CNAME na `<tunnel>.cfargotunnel.com`, `proxied:true`.
+
+**NS hodnoty na prepnutie na Websupporte** (nahradiť terajšie
+`ns1/ns2/ns3.websupport.sk` týmito dvomi):
+
+```
+sue.ns.cloudflare.com
+vin.ns.cloudflare.com
+```
+
+**Čo sledovať po prepnutí:**
+
+- Zóna je teraz `status:pending` - aktivuje sa, keď Cloudflare zbadá,
+  že NS naozaj ukazujú na nich (zvyčajne desiatky minút, pri `.sk`
+  môže byť aj niekoľko hodín kvôli TTL, výnimočne do 24h).
+- Over `dig NS offerra.sk` - keď ukáže `sue`/`vin`, zóna je aktívna.
+- Over `https://offerra.sk` a `https://www.offerra.sk` ukazujú ten istý
+  WordPress ako predtým (záznamy sú DNS-only, správanie sa nemení).
+- **Over poštu ako prvé, nie web** - pošli si testovací e-mail na
+  vlastnú `@offerra.sk` schránku a over, že príde aj sa dá odoslať.
+- Keď pošta aj web sedia, `https://app.offerra.sk` by mal ukázať appku
+  (tunel aj DNS záznam už bežia, čakajú len na aktiváciu zóny).
