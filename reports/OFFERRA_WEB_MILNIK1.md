@@ -100,12 +100,37 @@ beží proces na serveri, a inú URL dostane pri každom novom spustení.
 Nie je to `app.offerra.sk` a nemá to byť trvalé riešenie — len aby si
 teraz reálne videl, čo je hotové.
 
+## Filtre a vyhľadávanie — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
+
+Tri riadky (Predaj/Prenájom · typ nehnuteľnosti · triedenie) + voľné
+vyhľadávanie, presne podľa zadania. `parseQuery`/`stemSk`/`CatalogFilter`
+prenesené 1:1 z appky (`search.ts`) — „3 izbový byt do 150000" sa
+rozloží na štruktúrovaný filter rovnako ako v appke, vrátane
+slovenského skloňovania a diakritiky.
+
+**Architektonické rozhodnutie:** filtre idú cez URL parametre
+(`?q=&transaction=&type=&sort=`), NIE cez klientský stav — filtrovaný
+výsledok má vlastnú indexovateľnú URL (dobré pre SEO — „byty na predaj
+Bratislava" môže byť vlastná URL, nie skrytá za JS) a funguje aj úplne
+bez JavaScriptu (obyčajné odkazy + GET formulár). Explicitne kliknutý
+filter (napr. „Prenájom") má prednosť pred tým, čo vyplynulo z voľného
+textu — používateľ klikol zámerne.
+
+**Overené naozaj bežiacim serverom, nie len buildom:**
+- `?transaction=RENT` / `?transaction=SALE` rozdelili 48 inzerátov
+  presne na 16 + 32 (súčet sedí).
+- `?transaction=SALE&q=do+100000` — žiadna zobrazená cena nad limitom,
+  inzeráty BEZ ceny („Cena na dohodu") správne ostali v zozname (rovnaká
+  logika ako appka — cena je nepovinná, cenový filter ju nesmie
+  vyradiť).
+- `?q=3 izbový byt do 150000` — chip nad výsledkami správne ukázal
+  „Rozumiem: byt, 3 izb., do 150 000 €".
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
-  založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela.
-- **Filtre a vyhľadávanie** v katalógu (appka: `search.ts` +
-  `use-properties.ts`).
+  založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
+  tej doby appku vidno cez dočasný odkaz vyššie.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -116,6 +141,8 @@ teraz reálne videl, čo je hotové.
 
 ## Ďalší krok
 
-Filtre a vyhľadávanie v katalógu. GitHub push aj Supabase dáta fungujú
-naživo, katalóg aj detail sú hotové — jediné, čo appku drží mimo
-prehliadača, je Cloudflare token.
+Katalóg (s filtrami), detail aj vyhľadávanie sú hotové a overené
+naživo. Zvyšné body z pôvodného plánu (Fáza 2+: prihlásenie, Moje
+inzeráty/ponuky/dopyty, admin) čakajú na tvoje ďalšie „pokračuj" —
+jediné, čo appku drží mimo TRVALÉHO verejného odkazu, je Cloudflare
+token.
