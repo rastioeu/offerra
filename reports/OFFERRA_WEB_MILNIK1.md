@@ -190,6 +190,50 @@ na projektové „Site URL" (predvolené, nezmenené: `http://localhost:3000`).
 Príčina je teda s istotou potvrdená, nie len odhadnutá. Čaká sa na
 Rastiovu zmenu v Supabase Dashboard (Redirect URLs + Site URL).
 
+### Čo presne treba pre GOOGLE (zhrnutie)
+
+Google používa ROVNAKÝ Supabase projekt/klient ako appka — netreba nič
+nové zakladať v Google Cloud Console, len Supabase musí smieť
+presmerovať späť na náš web:
+
+1. Supabase Dashboard → Authentication → URL Configuration
+2. **Redirect URLs** → pridaj `https://commissioners-opportunity-reflections-same.trycloudflare.com/**`
+3. **Site URL** → zmeň z `http://localhost:3000` na tú istú adresu (záloha pre presne tento prípad)
+4. Skús znova — malo by to prejsť.
+
+### Čo presne treba pre APPLE (nové, appka to má, web ešte nie)
+
+Appka používa NATÍVNE „Sign in with Apple" (`expo-apple-authentication`)
+— telefón sám vyrobí token a Supabase ho overí voči Bundle ID appky
+(`com.offerra.app`). **Web funguje inak** — ide cez prehliadač na
+`appleid.apple.com` a späť, presne ako Google — a to si vyžaduje
+DODATOČNÉ nastavenie v Apple Developer účte, ktoré appka nepotrebovala:
+
+1. **[developer.apple.com](https://developer.apple.com) → Certificates,
+   IDs & Profiles → Identifiers → Services IDs → „+"** — založ nové
+   Services ID, napr. `com.offerra.web` (INÉ než appkové Bundle ID).
+2. Zapni pri ňom „Sign in with Apple", „Configure":
+   - **Primary App ID:** vyber existujúcu appku Offerra.
+   - **Domains and Subdomains:** `app.offerra.sk` — **MUSÍ to byť
+     trvalá doména, nie dočasný `trycloudflare.com` odkaz** (Apple si
+     doménu overuje vlastníctvom, dočasnú by sme museli prenastavovať
+     zakaždým, keď sa zmení).
+   - **Return URLs:** `https://vxqvpgzwefcehugmhaft.supabase.co/auth/v1/callback`
+     (ten istý Supabase endpoint, čo používa Google).
+3. **Keys → „+"** — nový kľúč, zapni „Sign in with Apple", priraď k appke,
+   stiahni `.p8` súbor (dá sa stiahnuť LEN RAZ) a zapíš si **Key ID**.
+4. Zapíš si aj **Team ID** (vpravo hore na developer.apple.com, alebo
+   Membership).
+5. Supabase Dashboard → Authentication → Providers → **Apple**: zapni,
+   vlož Services ID (`com.offerra.web`), Team ID, Key ID a obsah `.p8`
+   súboru. (Appkové Bundle ID tam nechaj — to zostáva pre appku, toto
+   je NAVYŠE pre web, nie náhrada.)
+
+**Odporúčam počkať s Apple, kým bude hotový Cloudflare token a
+`app.offerra.sk` reálne existuje** — kvôli bodu 2 (doména sa musí dať
+overiť ako trvalá). Google medzitým funguje aj na dočasnom odkaze, tak
+to nie je blokujúce pre zvyšok práce.
+
 ## Fáza 2 — Nastavenia (GDPR export, zmazanie účtu) — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
 
 Volajú PRESNE tie isté RPC ako appka (`offerra.export_my_data`,
@@ -289,16 +333,37 @@ výzvu na prihlásenie namiesto chatu, `/inzerat/[id]/spravy/[otherId]`
 bez prihlásenia vrátilo `307 → /login?next=<správna cesta i s ID>`,
 ostatné stránky nezregresovali.
 
+## Fáza 3 — Obhliadka na detaile inzerátu — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Posledný podtab tejto dávky (Hypotéka, Hodnotenia ostávajú). Žiadosť
+vznikne ako `REQUESTED` pod prezývkou bez kontaktu, vlastník ju
+potvrdí/zamietne, až potvrdením (`CONFIRMED`) sa kontakt
+(prezývka/meno/telefón/e-mail) odkryje OBOM stranám naraz cez
+`viewing_contact()` RPC — rovnaký mechanizmus ako pri prijatí ponuky.
+Appka nenavrhuje ani nepotvrdzuje TERMÍNY, ostáva na telefonáte mimo
+appky (presne appková zásada).
+
+Znovu-žiadosť: `viewing` má `unique(property_id, requester_id)`, druhá
+žiadosť je vždy `UPDATE` existujúcej `CANCELLED` riadky, nikdy nový
+insert — rovnaká logika ako appka.
+
+`window.confirm` namiesto natívneho `Alert.alert` — funkčne to isté:
+potvrdenie PRED žiadosťou/potvrdením/zrušením s viditeľným textom
+súhlasu (informovaný súhlas, appková zásada).
+
+Overené naozaj bežiacim serverom: neprihlásený stav správne ukázal
+výzvu na prihlásenie namiesto formulára, ostatné stránky nezregresovali.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
 - **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
-  platnosti ponuky, realtime správy** (vyššie).
+  platnosti ponuky, realtime správy** (predošlé kolá).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
-- **Zvyšok detailu inzerátu** — appka má na detaile aj Obhliadku,
-  Hypotéku, Hodnotenia (podtaby). Zatiaľ Ponuky a Správy.
+- **Zvyšok detailu inzerátu** — appka má na detaile aj Hypotéku,
+  Hodnotenia (podtaby). Zatiaľ Ponuky, Správy, Obhliadka.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -309,7 +374,6 @@ ostatné stránky nezregresovali.
 
 ## Ďalší krok
 
-Čakám na tvoje potvrdenie, že Google prihlásenie funguje (bez neho sa
-Ponuky ani Správy nedajú overiť naozaj z pohľadu prihláseného človeka)
-a na Cloudflare token. Dovtedy môžem pokračovať Obhliadkou (ďalší
-podtab detailu), alebo čímkoľvek iným, čo poviaš.
+Čakám na tvoje potvrdenie z Supabase (Google prihlásenie) a na
+Cloudflare token. Dovtedy môžem pokračovať Hypotékou alebo Hodnoteniami
+(zvyšné podtaby detailu), alebo čímkoľvek iným, čo poviaš.
