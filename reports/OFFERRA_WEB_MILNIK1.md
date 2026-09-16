@@ -126,11 +126,41 @@ textu — používateľ klikol zámerne.
 - `?q=3 izbový byt do 150000` — chip nad výsledkami správne ukázal
   „Rozumiem: byt, 3 izb., do 150 000 €".
 
+## Fáza 2 (prihlásenie, Moje inzeráty) — 🟡 KÓD HOTOVÝ, ČIASTOČNE OVERENÉ
+
+Google prihlásenie (`@supabase/ssr`, PKCE cez `/auth/callback`), hlavička
+ukazuje reálny stav prihlásenia (e-mail alebo tlačidlo „Prihlásiť sa"),
+„Moje inzeráty" ako prvá chránená stránka — bez prihlásenia presmeruje
+na `/login?next=...`, s prihlásením číta AJ DRAFT/uzavreté vlastníkove
+inzeráty (rovnaká logika ako appkové `useMyProperties`, RLS).
+
+**Apple Sign In na webe chýba** — vyžaduje Services ID naviazané na
+konkrétnu doménu, dáva zmysel doplniť až s trvalou doménou.
+
+**Čo je overené naozaj bežiacim serverom:** odhlásený stav hlavičky
+(„Prihlásiť sa", nie e-mail), `/moje-inzeraty` bez prihlásenia vrátilo
+presne `307 → /login?next=/moje-inzeraty`, katalóg aj detail
+nezregresovali.
+
+**Čo NEVIEM overiť sám:** samotný Google prihlasovací kolotoč (kliknutie
+→ Google súhlas → návrat s session) — nemám prehliadač. Navyše na to,
+aby to reálne prešlo, treba, aby si **pridal web redirect URL do
+zoznamu povolených v Supabase Auth nastaveniach** — skúsil som to
+urobiť sám cez Management API token, ktorý mám (rovnaký, čo sa používa
+na DB zmeny), ale na túto časť nemá prístup (`401 Unauthorized`).
+Skús to vyskúšať cez dočasný odkaz vyššie (tlačidlo „Prihlásiť sa cez
+Google") — ak to zlyhá s chybou o redirect URL, presne to je dôvod, a
+treba pridať `https://<aktuálna trycloudflare.com adresa>/**` (alebo
+neskôr `https://app.offerra.sk/**`) v Supabase Dashboard →
+Authentication → URL Configuration → Redirect URLs.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
+- **Moje ponuky / Moje dopyty / Nastavenia** — rovnaký vzor ako „Moje
+  inzeráty", ešte nespravené.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -141,8 +171,7 @@ textu — používateľ klikol zámerne.
 
 ## Ďalší krok
 
-Katalóg (s filtrami), detail aj vyhľadávanie sú hotové a overené
-naživo. Zvyšné body z pôvodného plánu (Fáza 2+: prihlásenie, Moje
-inzeráty/ponuky/dopyty, admin) čakajú na tvoje ďalšie „pokračuj" —
-jediné, čo appku drží mimo TRVALÉHO verejného odkazu, je Cloudflare
-token.
+Moje ponuky a Moje dopyty (rovnaký vzor ako Moje inzeráty). Skús prosím
+medzitým kliknúť „Prihlásiť sa cez Google" na dočasnom odkaze — potrebné
+je to na overenie CELÉHO prihlasovacieho toku, nie len kódu, a sám to
+overiť neviem.
