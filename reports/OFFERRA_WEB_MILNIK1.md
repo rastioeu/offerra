@@ -1,8 +1,27 @@
 # Offerra Web — Fáza 1 (verejný katalóg + detail), priebežný stav
 
 Nadväzuje na `OFFERRA_WEB_PLAN.md` a `OFFERRA_WEB_DOMENA.md`. Kód žije
-v novom, samostatnom adresári `/root/offerra-web` (zatiaľ len lokálny git,
-pozri „Čo chýba" nižšie) — appka `/root/offerra` sa nemenila.
+v novom adresári `/root/offerra-web` a je publikovaný v existujúcom
+repozitári `rastioeu/offerra_web` (Rastiovo rozhodnutie — nie nový repo,
+pozri „Vyriešené" nižšie) — appka `/root/offerra` sa nemenila.
+
+## ✅ Vyriešené — repozitár
+
+Web appka ide do **existujúceho** `rastioeu/offerra_web` (doteraz len
+Privacy/Terms/Support pre App Store), nie do nového repozitára. Next.js
+kód a doterajšie GitHub Pages právne stránky žijú v repozitári vedľa
+seba — žiadny súbor sa nezmazal ani neprepísal, `index.html`,
+`privacy.html`, `terms.html`, `support.html` naďalej servírujú presne
+to isté (overené naživo: `curl` na `rastioeu.github.io/offerra_web/`
+aj `/privacy.html` po pushi vrátil `HTTP 200`, obsah nezmenený).
+
+Push najprv zlyhával (`403 Permission denied`) aj s novým tokenom — nie
+kvôli rozsahu repozitárov, ale kvôli oprávneniu „Contents" nastavenému
+len na Read. Po zmene na „Read and write" (Rastio) push prešiel. Cestou
+som ešte našiel a opravil samostatnú vec: globálny git credential
+helper na serveri ticho zatieňoval repo-špecifický (vracal
+neplatné prihlásenie namiesto správneho) — opravené rovnakým vzorom,
+aký už mal nastavený `/root/offerra`.
 
 ## Čo je hotové — 🟡 KÓD HOTOVÝ, NIE JE ČO VIZUÁLNE OVEROVAŤ (ešte žiadna
 obrazovka)
@@ -25,20 +44,8 @@ obrazovka)
   role kľúč nikde v projekte**.
 - `npx tsc --noEmit` aj `npm run build` prechádzajú čisto.
 
-## Čo chýba, aby appka niekam smerovala
+## Čo ešte chýba, aby appka bola verejne dostupná
 
-- **Nový GitHub repozitár `rastioeu/offerra-web-app` sa NEDÁ založiť môjmu
-  tokenu** — `GITHUB_TOKEN` v `.offerra-secrets` je (správne, podľa
-  tvojho vlastného pravidla „vlastný token na projekt") obmedzený len na
-  existujúci repozitár `offerra`, nemá právo zakladať nové repozitáre
-  (GitHub vrátil `403 Resource not accessible by personal access
-  token`). Kód je zatiaľ len lokálny git commit na serveri, nikde
-  nepublikovaný.
-  **Potrebujem buď:** založ prázdny `rastioeu/offerra-web-app` repozitár
-  ty a ja doň pushnem, ALEBO mi daj nový token s právom `Contents: Write`
-  + „Administration: Write" (na založenie repa) scoped buď na celý účet,
-  alebo (menej pohodlné, ale bezpečnejšie) založ repo ty a token nechaj
-  ako je.
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie zóny `app.offerra.sk` a tunela, aby appka bola vôbec
   verejne dostupná.
