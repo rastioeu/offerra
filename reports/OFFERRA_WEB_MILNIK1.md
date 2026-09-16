@@ -376,6 +376,62 @@ nezregresovali.
 **Tým je Fáza 3 (interaktívne podtaby detailu: Ponuky, Správy,
 Obhliadka, Hypotéka, Hodnotenia) KOMPLETNÁ.**
 
+## ✅ OPRAVENÉ — Google prihlásenie napokon nešlo pre druhý, nezávislý dôvod
+
+Zmenil si Site URL aj Redirect URLs v Supabase na tunelovú adresu, ale
+prihlásenie ťa aj tak hádzalo na `https://localhost:3001` — teraz s
+iným portom (3001) než predtým (3000), čo bola dôležitá stopa.
+
+**Overil som priamo, nie odhadom:**
+
+```
+$ curl [náš /auth/callback cez tunel]
+Location: https://localhost:3001/login?error=auth   ← PRED opravou
+```
+
+Príčina: moja `/auth/callback` route (Next.js) si adresu na
+presmerovanie po prihlásení skladala z `request.url` — a to za
+akýmkoľvek reverse proxy (Cloudflare Tunnel teraz, neskôr aj
+`app.offerra.sk`) odráža to, čo vidí PÔVODCOVSKÝ server
+(`http://localhost:3001`, presne kam `cloudflared` pripája), nie
+verejnú adresu z adresného riadku prehliadača. Bola to teda ÚPLNE INÁ,
+nezávislá príčina od tej predošlej (Supabase Site URL) — obe museli byť
+opravené, nie len jedna.
+
+**Oprava:** používať `x-forwarded-host`/`x-forwarded-proto` hlavičky
+(presne rovnaký vzor odporúča aj Supabase vo vlastných príkladoch pre
+appky bežiace za proxy), na `request.url` spadnúť len keď tieto
+hlavičky chýbajú.
+
+```
+$ curl [to isté, PO oprave]
+Location: https://commissioners-...trycloudflare.com/login?error=auth   ← teraz správne
+```
+
+Over prosím Google prihlásenie ešte raz — malo by to teraz naozaj prejsť.
+
+## Fáza 5 (dopyty) — DOKONČENÁ — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
+
+Verejný katalóg dopytov (`/dopyty`, appka: `(tabs)/dopyty.tsx`), detail
+s oslovením vlastným inzerátom (`/dopyt/[id]`, `request_outreach`,
+appka: `dopyt/[id].tsx`), chat pri dopyte (rovnaká komponenta ako pri
+inzerátoch, znovupoužitá — appka to robí rovnako), zoznam „kto ma
+oslovil" pre zadávateľa a nová stránka na pridanie dopytu
+(`/dopyty/novy`).
+
+**Skutočná chyba nájdená a opravená počas tejto práce:** stránka detailu
+dopytu volala `fetchOutreach()` aj pre neprihláseného návštevníka —
+`anon` rola ale na `request_outreach` nemá SELECT grant VÔBEC (nie len
+RLS na prázdny výsledok), takže stránka padala na `HTTP 500` (`42501
+permission denied`). Opravené — volanie beží len pre prihláseného.
+Overené naozaj bežiacim serverom PRED aj PO oprave.
+
+**Zjednodušené oproti appke** (priznané, nie tichá medzera): obec pri
+zakladaní dopytu je voľný text, nie appkový `CityPicker` (2 925 obcí
+s automatickým dopĺňaním okresu/kraja).
+
+**Tým je Fáza 5 z pôvodného plánu KOMPLETNÁ.**
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
@@ -384,8 +440,9 @@ Obhliadka, Hypotéka, Hodnotenia) KOMPLETNÁ.**
 - **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
   platnosti ponuky, realtime správy** (predošlé kolá Fázy 3).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
-- **Fáza 4** — pridanie/úprava inzerátu vrátane uploadu fotiek.
-- **Fáza 5** — dopyty (verejný katalóg dopytov, pridanie, oslovenie).
+- **Fáza 4** — pridanie/úprava inzerátu vrátane uploadu fotiek. Jediná
+  celá zvyšná fáza z pôvodného plánu.
+- **CityPicker pre dopyty** (obec je zatiaľ voľný text).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -396,7 +453,7 @@ Obhliadka, Hypotéka, Hodnotenia) KOMPLETNÁ.**
 
 ## Ďalší krok
 
-Fáza 3 je hotová celá. Čakám na tvoje potvrdenie z Supabase (Google
-prihlásenie) a na Cloudflare token pre trvalý odkaz — dovtedy môžem
-pokračovať Fázou 4 (pridanie inzerátu) alebo Fázou 5 (dopyty), alebo
-čímkoľvek iným, čo poviaš.
+Fázy 3 aj 5 sú hotové. Skús prosím Google prihlásenie znova (oprava
+vyššie). Ostáva Fáza 4 (pridanie/úprava inzerátu s fotkami) ako
+posledná celá fáza z pôvodného plánu — a Cloudflare token pre trvalý
+odkaz namiesto dočasného.
