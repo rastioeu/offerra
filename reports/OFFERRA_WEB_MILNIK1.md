@@ -23,8 +23,7 @@ helper na serveri ticho zatieňoval repo-špecifický (vracal
 neplatné prihlásenie namiesto správneho) — opravené rovnakým vzorom,
 aký už mal nastavený `/root/offerra`.
 
-## Čo je hotové — 🟡 KÓD HOTOVÝ, NIE JE ČO VIZUÁLNE OVEROVAŤ (ešte žiadna
-obrazovka)
+## Čo je hotové
 
 - **Scaffold:** Next.js 16 (App Router), TypeScript, Tailwind CSS 4,
   ESLint, `src/` layout — cez `create-next-app`.
@@ -42,19 +41,45 @@ obrazovka)
   (`NEXT_PUBLIC_SUPABASE_*` v `.env.local`, gitignorované) — rovnaká
   Supabase databáza ako appka (`vxqvpgzwefcehugmhaft`), **žiadny service
   role kľúč nikde v projekte**.
+- **Paleta appky prenesená 1:1** (`src/theme/tokens.ts` → CSS premenné
+  v `globals.css`, Tailwind v4 `@theme inline`) — svetlá aj tmavá téma,
+  presne tie isté hex hodnoty ako appka. Typografia/spacing NIE sú
+  prenesené 1:1 (mobilné minimá 13px sú pre web malé) — bežná webová
+  škála, podľa tvojho „prispôsobené desktopu, nie roztiahnutá mobilná
+  appka".
+- **Katalóg (`/`) — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM (nie len
+  build):** Server Component číta ACTIVE inzeráty priamo zo zdieľanej
+  Supabase databázy pri requeste (SSR). Spustil som `npm run build` +
+  `npm run start` naozaj na porte a overil `curl`-om (nie screenshot) —
+  **48 reálnych inzerátov**, správne naformátovaná cena
+  (`152 000 €`), správne sklonované izby (`236 izieb`, `2 izby`, `3
+  izby` — SK trojtvarové skloňovanie z appky funguje), foto cez
+  `next/image` z rovnakého Supabase Storage bucketu ako appka.
+  Filtre/vyhľadávanie ešte nie sú (appka ich má v `search.ts` —
+  nasledujúci krok), zatiaľ len zoznam najnovších 60.
 - `npx tsc --noEmit` aj `npm run build` prechádzajú čisto.
 
-## Čo ešte chýba, aby appka bola verejne dostupná
+## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie zóny `app.offerra.sk` a tunela, aby appka bola vôbec
-  verejne dostupná.
-- Skutočné obrazovky (katalóg, detail) — zatiaľ je tam len defaultná
-  Next.js úvodná stránka zo scaffoldu, nič appke vlastné.
+  verejne dostupná mimo tohto servera. Bez neho appku vieš zatiaľ overiť
+  len tak, že mi napíšeš, čo mám opísať — priamy odkaz do prehliadača
+  ešte nemáš.
+- **Detail inzerátu** (`/inzerat/[id]`) — katalógová karta naň už
+  odkazuje, stránka samotná ešte neexistuje (404).
+- **Filtre a vyhľadávanie** v katalógu (appka: `search.ts` +
+  `use-properties.ts`).
+- **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
+  zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
+  prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
+  query param vs. Accept-Language, ovplyvňuje to SEO/hreflang). Keďže
+  `offerra.sk` cieli primárne na slovenský trh, navrhujem toto vyriešiť
+  AŽ PO tom, čo SK verzia reálne beží verejne — nie je to blokujúce pre
+  míľnik 1.
 
 ## Ďalší krok
 
-Pokračujem na dizajnových tokenoch (port palety/typografie appky do
-Tailwindu) a i18n scaffolde, potom katalóg. GitHub/Cloudflare prístupy
-nie sú blokujúce pre túto prácu — appku viem stavať a testovať lokálne
-na serveri (`npm run dev`/`npm run build`) bez nich.
+Detail inzerátu, potom filtre. GitHub push aj Supabase dáta teraz
+fungujú naživo — jediné, čo appku drží mimo prehliadača, je Cloudflare
+token.
