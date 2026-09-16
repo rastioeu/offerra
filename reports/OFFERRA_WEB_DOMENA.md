@@ -64,19 +64,29 @@ v tom, či sa existujúci A záznam na WordPress zachová alebo časom zruší).
 
 ## 1–2. Musia sa presunúť nameservery, alebo stačí CNAME na Websupporte?
 
-**Musia sa presunúť nameservery.** Samotný CNAME na Websupporte na
-`<tunnel-id>.cfargotunnel.com` nestačí — Cloudflare Tunnel funguje tak,
-že Cloudflare na svojej hrane rozpoznáva a smeruje prevádzku (a vydáva
-certifikát) len pre domény, ktoré sú aktívnou zónou v ich systéme, teda
-pre ktoré sú nastavené ich nameservery. Cloudflarova vlastná
-dokumentácia to explicitne nehovorí jednou vetou (pozeral som), ale ich
-popis správania to potvrdzuje nepriamo („`cfargotunnel.com` proxuje
-prevádzku len pre DNS záznamy v TOM ISTOM Cloudflare účte") — a hlavne to
-**potvrdzuje priamy dôkaz z vášho vlastného servera**:
+**OPRAVA k tomuto bodu (po tvojom rozhodnutí „appka ide na poddoménu,
+offerra.sk ostáva nedotknutá"):** pôvodná odpoveď nižšie (že treba
+presunúť nameservery CELEJ domény) platí len ak by appka mala ísť na
+apex `offerra.sk` samotný. Keď appka ide na **poddoménu**, existuje
+lepší, užší spôsob — **subdoménová delegácia** — ktorý sa nedotkne
+zvyšku zóny vôbec. Podrobne v novej sekcii nižšie
+(„AKTUALIZÁCIA — subdoménová delegácia"). Pôvodný text nechávam ako
+záznam toho, čo by bolo treba PRE APEX doménu, keby sme sa niekedy
+rozhodli inak.
+
+Samotný CNAME na Websupporte na `<tunnel-id>.cfargotunnel.com` nestačí
+pre APEX doménu — Cloudflare Tunnel funguje tak, že Cloudflare na svojej
+hrane rozpoznáva a smeruje prevádzku (a vydáva certifikát) len pre
+domény, ktoré sú aktívnou zónou v ich systéme, teda pre ktoré sú
+nastavené ich nameservery. Cloudflarova vlastná dokumentácia to
+explicitne nehovorí jednou vetou, ale ich popis správania to potvrdzuje
+nepriamo („`cfargotunnel.com` proxuje prevádzku len pre DNS záznamy
+v TOM ISTOM Cloudflare účte") — a potvrdzuje to aj priamy dôkaz z
+vášho servera:
 
 ### Ako je to pri joinfamiglia.com — priamo som to overil
 
-Áno, **je to ten istý prípad**. Pozrel som DNS priamo:
+Áno, pre APEX doménu je to presne tento prípad. Pozrel som DNS priamo:
 
 ```
 $ dig NS joinfamiglia.com
@@ -84,14 +94,76 @@ vin.ns.cloudflare.com.
 sue.ns.cloudflare.com.
 ```
 
-`joinfamiglia.com` má nameservery presunuté NA Cloudflare (nie na pôvodnom
-registrátorovi) — presne to, čo by som teraz navrhol aj pre `offerra.sk`.
-Je to teda overený, už bežiaci vzor na tom istom Hetzner serveri, nie
-niečo nové.
+`joinfamiglia.com` má nameservery CELEJ domény presunuté na Cloudflare —
+ale to je preto, lebo `joinfamiglia.com` na Cloudflare potrebuje bežať
+celý (apex aj `api.` poddoména). Pre `offerra.sk`, keď appka ide LEN na
+poddoménu, to isté riešenie znamená viac, než treba — pozri sekciu
+nižšie.
 
 ---
 
-## Čo sa NEROZBIJE a čo treba dávať pozor — presný postup
+## AKTUALIZÁCIA — subdoménová delegácia (lepšia odpoveď na bod 4)
+
+Overil som si to priamo v oficiálnej Cloudflare dokumentácii (nie som to
+len odvodil): existuje presne určený spôsob, ako dať Cloudflare do
+správy LEN JEDNU poddoménu, zatiaľ čo zvyšok domény (vrátane `offerra.sk`
+a `www.offerra.sk` s WordPressom, aj pošta) ostáva úplne tak, ako je,
+spravovaný ďalej na Websupporte. Cloudflare tomu hovorí „Subdomain
+setup" / „parent on full" — presne prípad „rodičovská zóna je úplne
+mimo Cloudflare, len jedna poddoména sa deleguje":
+<https://developers.cloudflare.com/dns/zone-setups/subdomain-setup/setup/parent-on-full/>
+
+**Ako to funguje:** `app.offerra.sk` sa v Cloudflare založí ako VLASTNÁ,
+samostatná zóna (nie súčasť zóny `offerra.sk`). Tá dostane svoje VLASTNÉ
+2 nameservery (iné než by dostal apex `offerra.sk`). Na Websupporte sa
+potom pre zónu `offerra.sk` pridajú len **2 nové NS záznamy** s menom
+`app`, smerujúce na tieto 2 nové nameservery — to je JEDINÁ zmena na
+Websupporte. Nič iné v zóne `offerra.sk` (WordPress A záznamy, MX, SPF,
+mail/webmail/ftp/cpanel) sa nemení, nemaže, ani sa nepresúva nikam inam.
+
+**Presná odpoveď na tvoj bod 4: NIE, netreba presúvať nameservery celej
+domény.** Táto poddoménová cesta je navyše BEZPEČNEJŠIA než moja pôvodná
+odpoveď vyššie — zasahuje len do jedného, úzko vymedzeného miesta.
+
+### Presný DNS záznam, ktorý nastavíš na Websupporte
+
+| Typ | Meno | Hodnota |
+|---|---|---|
+| `NS` | `app` | *(prvý Cloudflare nameserver pre zónu `app.offerra.sk` — dám ti presnú hodnotu, keď tú zónu založím, pozri „Čo ešte potrebujem" nižšie)* |
+| `NS` | `app` | *(druhý Cloudflare nameserver, tej istej zóny)* |
+
+Toto sú DVA riadky (dva samostatné NS záznamy s rovnakým menom `app`,
+každý s inou hodnotou) — presne taký formát, aký má Websupport panel na
+pridanie NS záznamu k poddoméne.
+
+### Čo ešte potrebujem, aby som ti mohol dať presné hodnoty
+
+Aby som zónu `app.offerra.sk` a tunel v Cloudflare vôbec mohol založiť
+(a dostal tak tie 2 konkrétne nameservery), potrebujem prístup do
+Cloudflare účtu. Existujúci `cloudflared` na serveri má len prihlasovacie
+údaje k JEDNÉMU UŽ EXISTUJÚCEMU tunelu (Famiglia) — to mi nedovoľuje
+založiť novú zónu ani nový tunel pre Offerru.
+
+Najčistejšie riešenie: vytvor mi v Cloudflare účte **API token** s
+právami len na to, čo skutočne potrebujem (nie plný prístup k účtu):
+„Zone → DNS → Edit" a „Zone → Zone → Edit" (na založenie novej zóny
+`app.offerra.sk`) a „Account → Cloudflare Tunnel → Edit" (na založenie
+nového tunelu). Cloudflare Dashboard → vpravo hore ikonka profilu → „My
+Profile" → „API Tokens" → „Create Token" → vlastný token s týmito
+právami. Token mi pošli tu v správe (rovnako ako predtým heslo — viem
+s tým zaobchádzať opatrne, nikde ho nezapíšem do repozitára).
+
+---
+
+## Čo sa NEROZBIJE a čo treba dávať pozor — presný postup (PRE APEX doménu, momentálne NEPOUŽÍVAME)
+
+**Táto sekcia opisovala pôvodný plán presunu nameserverov CELEJ domény.
+Po rozhodnutí „appka na poddoméne" ju nepoužívame** — ideme cestou
+subdoménovej delegácie vyššie, ktorá je jednoduchšia (pridajú sa len 2
+NS riadky, nič iné sa v zóne `offerra.sk` nemení, takže nasledujúca
+tabuľka záznamov na prenesenie ani 13-krokový postup nie sú potrebné).
+Nechávam to tu pre prípad, že by sa niekedy v budúcnosti appka predsa
+len mala presunúť na apex `offerra.sk` — vtedy by tento postup platil.
 
 **Dobrá správa: presun nameserverov na Cloudflare NEZNAMENÁ presun
 webhostingu ani pošty.** Cloudflare sa stane len tým, kto odpovedá na
@@ -175,18 +247,22 @@ to, KTO odpovedá na DNS otázky pre `offerra.sk`.
 
 ---
 
-## Zhrnutie — čo potrebujem od teba, aby som mohol pokračovať
+## Zhrnutie (STAV k rozhodnutiu „appka na poddoméne")
 
-1. **Čo s existujúcim WordPress webom** (možnosť 1/2/3 v úvode) — toto
-   je nový nález, na ktorý si sa v zadaní nepýtal, lebo si o ňom
-   asi nevedel.
-2. Ak ide appka na poddoménu (odporúčam) — **aký názov** (`app.`,
-   `reality.`, iný?).
-3. Export DNS zóny z Websupportu (alebo potvrdenie, že tabuľka vyššie
-   je kompletná) — kvôli DKIM/DMARC, ktoré som zvonku nevedel nájsť.
-4. Tvoje **OK na presun nameserverov** — je to zásah do živej domény
-   s poštou, urobím ho až po tvojom výslovnom súhlase, nie
-   automaticky.
+✅ 1. Vyriešené — appka ide na poddoménu, `offerra.sk` sa nedotýka.
+✅ 2. Poddoména — navrhujem `app.offerra.sk`.
+✅ 4. Vyriešené — subdoménová delegácia, NIE presun nameserverov celej
+   domény. `offerra.sk` (WordPress, pošta) sa nemení vôbec.
+🔴 **Ešte chýba: Cloudflare API token**, aby som mohol založiť zónu
+   `app.offerra.sk` a tunel a dať ti presné 2 NS hodnoty — popis
+   presne akých práv treba je v sekcii „AKTUALIZÁCIA" vyššie.
+🟡 3. DNS export z Websupportu kvôli DKIM/DMARC — toto sa teraz už
+   priamo netýka appky (netýkame sa zóny `offerra.sk`), takže to už
+   NIE JE blokujúce pre Fázu 1 ani pre pripojenie poddomény. Necháva sa
+   otvorené len ako všeobecná hygiena pošty, nie ako niečo, čo musí byť
+   hotové skôr, než začnem.
 
-Keď toto potvrdíš, napíšem presný postup pre Fázu 1 (verejný katalóg +
-detail) a začnem.
+Fázu 1 (verejný katalóg + detail) začínam teraz — nečaká na Cloudflare
+token, appku viem stavať a spúšťať na serveri interne (na svojom porte)
+bez neho. Token bude treba až v momente, keď appku pripájame na
+verejnú adresu.
