@@ -143,24 +143,53 @@ presne `307 → /login?next=/moje-inzeraty`, katalóg aj detail
 nezregresovali.
 
 **Čo NEVIEM overiť sám:** samotný Google prihlasovací kolotoč (kliknutie
-→ Google súhlas → návrat s session) — nemám prehliadač. Navyše na to,
-aby to reálne prešlo, treba, aby si **pridal web redirect URL do
-zoznamu povolených v Supabase Auth nastaveniach** — skúsil som to
-urobiť sám cez Management API token, ktorý mám (rovnaký, čo sa používa
-na DB zmeny), ale na túto časť nemá prístup (`401 Unauthorized`).
-Skús to vyskúšať cez dočasný odkaz vyššie (tlačidlo „Prihlásiť sa cez
-Google") — ak to zlyhá s chybou o redirect URL, presne to je dôvod, a
-treba pridať `https://<aktuálna trycloudflare.com adresa>/**` (alebo
-neskôr `https://app.offerra.sk/**`) v Supabase Dashboard →
-Authentication → URL Configuration → Redirect URLs.
+→ Google súhlas → návrat s session) — nemám prehliadač.
+
+### Dodatok — Rastio nahlásil, že prihlásenie cez Google nejde
+
+Diagnostikoval som **pred akoukoľvek zmenou kódu** (žiadny kód sa v tejto
+časti nezmenil, len som meral):
+
+```
+$ curl [Supabase /auth/v1/authorize s naším redirect_to]
+HTTP/2 302
+location: https://accounts.google.com/o/oauth2/v2/auth?...&redirect_uri=
+  https://vxqvpgzwefcehugmhaft.supabase.co/auth/v1/callback&...
+```
+
+**Krok appky → Supabase → Google funguje správne** — presne ten istý
+Supabase Google klient, aký používa aj iOS appka (rovnaký
+`client_id`), appku naozaj presmeruje na Google prihlasovaciu obrazovku.
+Toto potvrdzuje, že kód appky (tlačidlo, `signInWithOAuth`) robí presne
+to, čo má, a je to rovnaký mechanizmus ako appka — nie iné chovanie.
+
+Zlyhanie je takmer isto v **poslednom kroku**, ktorý sám otestovať
+neviem (vyžaduje reálne prihlásenie do Google účtu v prehliadači):
+keď sa Google vráti k Supabase, Supabase presmeruje prehliadač NA NAŠU
+`redirect_to` adresu — ALE LEN ak je v zozname povolených. Appka na
+telefóne funguje, lebo `offerra://` tam už je. Web tam ešte nie je.
+
+**Presný krok, ktorý to opraví (musíš urobiť ty, nemám na to prístup —
+skúsil som cez Management API token, `401 Unauthorized`):**
+
+1. Supabase Dashboard → projekt `vxqvpgzwefcehugmhaft` → Authentication
+   → URL Configuration → Redirect URLs.
+2. Pridaj `https://commissioners-opportunity-reflections-same.trycloudflare.com/**`
+   (aktuálny dočasný odkaz — POZOR, mení sa pri každom reštarte servera,
+   túto hodnotu preto treba časom nahradiť trvalou `app.offerra.sk`).
+3. Skús znova „Prihlásiť sa cez Google".
+
+Ak to ani potom nepôjde, napíš mi prosím **presné znenie chyby, ktorú
+vidíš** (text na obrazovke po návrate od Googlu) — to je jediný spôsob,
+ako zúžiť príčinu ďalej bez toho, aby som hádal.
 
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Moje ponuky / Moje dopyty / Nastavenia** — rovnaký vzor ako „Moje
-  inzeráty", ešte nespravené.
+- **Nastavenia** — jazyk (SK/EN/DE prepínač, kým web renderuje len SK),
+  odhlásenie je zatiaľ len v hlavičke.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -171,7 +200,7 @@ Authentication → URL Configuration → Redirect URLs.
 
 ## Ďalší krok
 
-Moje ponuky a Moje dopyty (rovnaký vzor ako Moje inzeráty). Skús prosím
-medzitým kliknúť „Prihlásiť sa cez Google" na dočasnom odkaze — potrebné
-je to na overenie CELÉHO prihlasovacieho toku, nie len kódu, a sám to
-overiť neviem.
+Čakám na tvoje potvrdenie, že Google prihlásenie funguje (postup v
+dodatku vyššie), a na Cloudflare token pre trvalý odkaz. Dovtedy môžem
+pokračovať na Nastaveniach alebo na admin konzole — napíš, čo má
+prioritu.
