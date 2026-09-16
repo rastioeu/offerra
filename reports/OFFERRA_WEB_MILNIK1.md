@@ -236,12 +236,44 @@ jeden admin účet, čo by DB zbytočne zaťažovalo). Zatiaľ priamo cez URL
 Overené naozaj bežiacim serverom: `/admin` bez prihlásenia vrátilo
 `307 → /login?next=/admin`, ostatné stránky nezregresovali.
 
+## Fáza 3 — Ponuky na detaile inzerátu — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Verejný, pseudonymný zoznam ponúk pribudol na `/inzerat/[id]` — suma,
+prezývka, stav, presne ako appka (`useOffers`). Prihlásený záujemca
+(nie vlastník) vidí formulár na podanie ponuky (suma, odkaz, voliteľná
+platnosť — `OfferValidityPicker` prenesený z appky) alebo už podanú
+ponuku s možnosťou upraviť/stiahnuť. Jedna ŽIVÁ ponuka na záujemcu
+a inzerát — zvýšenie je `UPDATE` tej istej, nie nový `insert`, rovnaká
+zásada ako appka (DB unikátny index).
+
+**Čo je overené naozaj bežiacim serverom:** na skutočnom inzeráte sa
+zobrazili dve reálne ponuky („Rastio", 155 000 € a 3 €, obe „Platnosť
+uplynula"), neprihlásený stav správne ukázal „Prihlás sa a podaj
+vlastnú ponuku" namiesto formulára.
+
+**Čo NEVIEM overiť sám:** samotné ODOSLANIE formulára — vyžaduje
+prihláseného používateľa (čaká sa na Google, pozri vyššie).
+
+**Chýba oproti appke** (priznané v kóde aj tu, nie tichá medzera):
+- **Rozhodovanie majiteľa** (prijať/odmietnuť ponuku, odkrytie kontaktu
+  po prijatí) — appkový `OwnerOffers`, zatiaľ nutné vybaviť v appke.
+- **Dotazník nájomcu pri prenájme** — appka ho pri podaní ponuky na
+  prenájom vyžaduje (počet osôb, zamestnanie...), web zatiaľ ponuku na
+  prenájom odošle aj bez neho.
+- **Živý, po sekundách tikajúci odpočet platnosti ponuky** — vo
+  appke veľká viackolová práca (pill s ikonou, farby podľa
+  naliehavosti). Web zatiaľ ukazuje len statický stav.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Admin — zvyšok** (vyššie).
+- **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet**
+  (vyššie).
+- **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
+- **Zvyšok detailu inzerátu** — appka má na detaile aj Správy, Obhliadku,
+  Hypotéku, Hodnotenia (podtaby). Zatiaľ len Ponuky.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -252,9 +284,8 @@ Overené naozaj bežiacim serverom: `/admin` bez prihlásenia vrátilo
 
 ## Ďalší krok
 
-Celý pôvodný rozsah (katalóg, detail, filtre, prihlásenie, Moje
-inzeráty/ponuky/dopyty, Nastavenia, základ admin konzoly) je hotový
-a overený naozaj bežiacim serverom. Čakám na tvoje potvrdenie z
-Supabase Dashboard, že Google prihlásenie prešlo, a na Cloudflare
-token pre trvalý odkaz — dovtedy môžem doplniť zvyšok admin konzoly,
-alebo čokoľvek iné, čo poviaš.
+Čakám na tvoje potvrdenie, že Google prihlásenie funguje (bez neho sa
+Ponuky ani zvyšok Fázy 3 nedajú overiť naozaj z pohľadu prihláseného
+človeka) a na Cloudflare token. Dovtedy môžem pokračovať Správami
+alebo Obhliadkou (ďalšie podtaby detailu), alebo čímkoľvek iným, čo
+poviaš.
