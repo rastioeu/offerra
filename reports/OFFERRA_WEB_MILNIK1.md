@@ -183,13 +183,39 @@ Ak to ani potom nepôjde, napíš mi prosím **presné znenie chyby, ktorú
 vidíš** (text na obrazovke po návrate od Googlu) — to je jediný spôsob,
 ako zúžiť príčinu ďalej bez toho, aby som hádal.
 
+**Rastio potvrdil presný príznak:** po Google súhlase appku posiela na
+`localhost:3000`. To presne sedí s diagnózou — Supabase, keď `redirect_to`
+nie je v povolenom zozname, sa NEZASTAVÍ s chybou, ale potichu presmeruje
+na projektové „Site URL" (predvolené, nezmenené: `http://localhost:3000`).
+Príčina je teda s istotou potvrdená, nie len odhadnutá. Čaká sa na
+Rastiovu zmenu v Supabase Dashboard (Redirect URLs + Site URL).
+
+## Fáza 2 — Nastavenia (GDPR export, zmazanie účtu) — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
+
+Volajú PRESNE tie isté RPC ako appka (`offerra.export_my_data`,
+`offerra.delete_my_account`) — obe už scope-nuté na `auth.uid()` na
+strane servera, žiadna nová DB práca. Export stiahne JSON priamo
+v prehliadači (náhrada appkového natívneho Share). Zmazanie účtu má
+dve potvrdenia, po úspechu odhlási a presmeruje na domov.
+
+**Zámerne chýba prepínač jazyka** — web zatiaľ renderuje len SK, vypínač
+čo nič neprepne by len klamal (rovnaká zásada ako appkové „text, ktorý
+klame o tom, ako appka funguje, je horší než žiadny").
+
+Hlavička zjednodušená: namiesto e-mailu + „Odhlásiť sa" priamo v nej
+teraz len odkaz „Nastavenia" (tam je oboje, spolu s účtom) — rovnaké
+odseparovanie Profil/Nastavenia ako appka.
+
+Overené naozaj bežiacim serverom: `/nastavenia` bez prihlásenia vrátilo
+`307 → /login?next=/nastavenia`, katalóg aj ostatné stránky
+nezregresovali.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Nastavenia** — jazyk (SK/EN/DE prepínač, kým web renderuje len SK),
-  odhlásenie je zatiaľ len v hlavičke.
+- **Admin konzola** — zatiaľ nespravená.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -200,7 +226,7 @@ ako zúžiť príčinu ďalej bez toho, aby som hádal.
 
 ## Ďalší krok
 
-Čakám na tvoje potvrdenie, že Google prihlásenie funguje (postup v
-dodatku vyššie), a na Cloudflare token pre trvalý odkaz. Dovtedy môžem
-pokračovať na Nastaveniach alebo na admin konzole — napíš, čo má
-prioritu.
+Nastavenia sú hotové. Čakám na tvoje potvrdenie z Supabase Dashboard
+(Redirect URLs + Site URL), aby som vedel, že Google prihlásenie
+skutočne prešlo, a na Cloudflare token pre trvalý odkaz. Dovtedy môžem
+pokračovať na admin konzole.
