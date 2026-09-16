@@ -376,6 +376,12 @@ nezregresovali.
 **Tým je Fáza 3 (interaktívne podtaby detailu: Ponuky, Správy,
 Obhliadka, Hypotéka, Hodnotenia) KOMPLETNÁ.**
 
+## ✅ POTVRDENÉ POUŽÍVATEĽOM — Google prihlásenie funguje
+
+Rastio potvrdil, že prihlásenie cez Google prešlo. Prvé reálne
+overenie CELÉHO auth toku od prihláseného človeka — dovtedy som mal
+overené len kód a nezalogovaný stav.
+
 ## ✅ OPRAVENÉ — Google prihlásenie napokon nešlo pre druhý, nezávislý dôvod
 
 Zmenil si Site URL aj Redirect URLs v Supabase na tunelovú adresu, ale
@@ -467,13 +473,35 @@ ako pri Ponukách/Správach/Obhliadke.
 Celý pôvodný rozsah (Fázy 0 až 6, v rôznej hĺbke) má teraz aspoň prvú
 funkčnú verziu.
 
+## Rozhodovanie majiteľa o ponukách — DOKONČENÉ — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Vlastník teraz vidí odkaz pri každej ponuke (`offer_messages()` RPC —
+vlastník všetky, záujemca len svoju), tlačidlá „Prijať"/„Odmietnuť" pre
+čakajúce ponuky, a po prijatí sa mu rovno zobrazí odkrytý kontakt
+(meno/telefón/e-mail cez `offer_contact()` RPC — appka má na to
+samostatné tlačidlo „Zobraziť kontakt", web ho načíta rovno,
+zjednodušenie). „Uzavrieť obchod" (`close_deal()` — jedna DB funkcia
+mení stav inzerátu, víťaznú ponuku, konečnú sumu aj ostatné čakajúce
+ponuky naraz) je SAMOSTATNÁ akcia od prijatia, presne ako appka —
+prijatá ponuka znamená „dohodnime sa", uzavretý obchod znamená
+„hotovo".
+
+**Chýba oproti appke:** dotazník nájomcu pri prenájme, appkový
+`OfferTimeline` (vizuálna história stavu ponuky).
+
+Overené naozaj bežiacim serverom: detail s ponukami stále funguje bez
+chyby (`offer_messages()` korektne vrátila prázdny výsledok pre
+neprihláseného namiesto pádu), ostatné stránky nezregresovali. Samotné
+prijatie/odmietnutie/uzavretie neviem overiť sám — vyžaduje
+prihláseného vlastníka.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
-  platnosti ponuky, realtime správy** (predošlé kolá Fázy 3).
+- **Dotazník nájomcu, živý odpočet platnosti ponuky, realtime správy,
+  appkový OfferTimeline** (predošlé kolá Fázy 3).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
 - **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
   zatiaľ voľný text na oboch miestach).
@@ -489,9 +517,11 @@ funkčnú verziu.
 
 ## Ďalší krok
 
-**Celý pôvodný rozsah zo zadania má teraz aspoň prvú funkčnú verziu.**
-Skús prosím Google prihlásenie znova (oprava vyššie) — bez neho neviem
-sám overiť žiadnu z akcií, čo vyžadujú prihlásenie (podanie ponuky,
-odoslanie dopytu, pridanie inzerátu s fotkami...). Zvyšné body vyššie
+**Celý pôvodný rozsah zo zadania má teraz aspoň prvú funkčnú verziu, aj
+s rozhodovaním majiteľa o ponukách.** Prihlásenie funguje (potvrdené) —
+teraz by si prvý raz vedel appku naozaj vyskúšať zvnútra, ako prihlásený
+človek. To je jediný spôsob, ako sa dá overiť zvyšok (podanie ponuky,
+prijatie ponuky, odoslanie dopytu, pridanie inzerátu s fotkami...), ja
+naďalej vidím len neprihlásený stav. Zvyšné body vyššie
 sú buď priznané zjednodušenia (dobrovoľné doplnenie), alebo čakajú na
 Cloudflare token pre trvalý verejný odkaz.
