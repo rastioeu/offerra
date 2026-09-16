@@ -264,16 +264,41 @@ prihláseného používateľa (čaká sa na Google, pozri vyššie).
   appke veľká viackolová práca (pill s ikonou, farby podľa
   naliehavosti). Web zatiaľ ukazuje len statický stav.
 
+## Fáza 3 — Správy na detaile inzerátu — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Chat medzi záujemcom a vlastníkom, presne ako appka (`messages.ts`):
+VŽDY DVAJA (chráni RLS `message_select_parties` V DATABÁZE), identita
+pod prezývkou, kontakt sa v správach nedá napísať (`send_message()` ho
+odmietne — `contactInText` na webe je len klientská kópia tej istej
+kontroly, okamžitá spätná väzba, nie ochrana).
+
+Nie-vlastník vidí priamo svoju konverzáciu s predávajúcim. Vlastník
+vidí zoznam vlákien (**každý záujemca má VLASTNÉ vlákno, o sebe
+navzájom nevedia** — presne appková zásada) — nová stránka
+`/inzerat/[id]/spravy/[otherId]` pre konkrétnu konverzáciu. Označenie
+„prečítané" beží pri otvorení vlákna, rovnako ako appka.
+
+**Chýba oproti appke:** žiadne live/realtime aktualizácie — appka
+používa `useRealtimeChannel` (CLAUDE.md appky §11), web zatiaľ nemá
+realtime infraštruktúru vôbec, nová správa sa objaví až po
+znovunačítaní stránky. Toto je väčšia, samostatná téma (websocket
+spojenie z Client Component), nie detail na dokončenie mimochodom.
+
+Overené naozaj bežiacim serverom: neprihlásený stav správne ukázal
+výzvu na prihlásenie namiesto chatu, `/inzerat/[id]/spravy/[otherId]`
+bez prihlásenia vrátilo `307 → /login?next=<správna cesta i s ID>`,
+ostatné stránky nezregresovali.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet**
-  (vyššie).
+- **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
+  platnosti ponuky, realtime správy** (vyššie).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
-- **Zvyšok detailu inzerátu** — appka má na detaile aj Správy, Obhliadku,
-  Hypotéku, Hodnotenia (podtaby). Zatiaľ len Ponuky.
+- **Zvyšok detailu inzerátu** — appka má na detaile aj Obhliadku,
+  Hypotéku, Hodnotenia (podtaby). Zatiaľ Ponuky a Správy.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -285,7 +310,6 @@ prihláseného používateľa (čaká sa na Google, pozri vyššie).
 ## Ďalší krok
 
 Čakám na tvoje potvrdenie, že Google prihlásenie funguje (bez neho sa
-Ponuky ani zvyšok Fázy 3 nedajú overiť naozaj z pohľadu prihláseného
-človeka) a na Cloudflare token. Dovtedy môžem pokračovať Správami
-alebo Obhliadkou (ďalšie podtaby detailu), alebo čímkoľvek iným, čo
-poviaš.
+Ponuky ani Správy nedajú overiť naozaj z pohľadu prihláseného človeka)
+a na Cloudflare token. Dovtedy môžem pokračovať Obhliadkou (ďalší
+podtab detailu), alebo čímkoľvek iným, čo poviaš.
