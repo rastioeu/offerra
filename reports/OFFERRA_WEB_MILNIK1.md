@@ -57,6 +57,26 @@ aký už mal nastavený `/root/offerra`.
   `next/image` z rovnakého Supabase Storage bucketu ako appka.
   Filtre/vyhľadávanie ešte nie sú (appka ich má v `search.ts` —
   nasledujúci krok), zatiaľ len zoznam najnovších 60.
+- **Detail inzerátu (`/inzerat/[id]`) — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM
+  SERVEROM:** vlastná SSR stránka pre KAŽDÝ inzerát — dynamický
+  `<title>`/meta description/Open Graph podľa konkrétneho inzerátu
+  (mesto, cena, začiatok popisu), plus JSON-LD `RealEstateListing`
+  (structured data pre Google). Toto je hlavný SEO povrch celého
+  projektu — presne tieto stránky má Google indexovať. Fotogaléria
+  (hlavná fotka + náhľady, prepínanie je klientské, zvyšok stránky
+  ostáva server-rendered), stavebné údaje pre byty (poschodie, výťah,
+  mesačné náklady) a nájomné údaje (zábezpeka, dostupnosť, zariadenie)
+  prenesené z appky (`buildingRows`/`rentalRows`). Odpočet uzávierky
+  ponúk (`deadline.ts`, tá istá logika ako appka).
+  Overené naozaj bežiacim serverom: reálny inzerát „Bytový dom" vrátil
+  správny title/description/OG obrázok (skutočná Supabase Storage URL),
+  stavebné údaje („8. poschodie z 12", „Zábezpeka: 600 € (1× mesačný
+  nájom)"), a neexistujúce ID vrátilo skutočné `HTTP 404`, nie prázdnu
+  stránku.
+  **Bezpečnostná poznámka:** JSON-LD skladá text z DB (názov/popis
+  inzerátu, teda používateľský vstup) — pridal som escapovanie `<` na
+  `<`, aby text inzerátu obsahujúci napr. `</script>` nemohol
+  predčasne ukončiť tag (XSS cez vlastný inzerát).
 - `npx tsc --noEmit` aj `npm run build` prechádzajú čisto.
 
 ## Čo ešte chýba
@@ -66,8 +86,6 @@ aký už mal nastavený `/root/offerra`.
   verejne dostupná mimo tohto servera. Bez neho appku vieš zatiaľ overiť
   len tak, že mi napíšeš, čo mám opísať — priamy odkaz do prehliadača
   ešte nemáš.
-- **Detail inzerátu** (`/inzerat/[id]`) — katalógová karta naň už
-  odkazuje, stránka samotná ešte neexistuje (404).
 - **Filtre a vyhľadávanie** v katalógu (appka: `search.ts` +
   `use-properties.ts`).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
@@ -80,6 +98,6 @@ aký už mal nastavený `/root/offerra`.
 
 ## Ďalší krok
 
-Detail inzerátu, potom filtre. GitHub push aj Supabase dáta teraz
-fungujú naživo — jediné, čo appku drží mimo prehliadača, je Cloudflare
-token.
+Filtre a vyhľadávanie v katalógu. GitHub push aj Supabase dáta fungujú
+naživo, katalóg aj detail sú hotové — jediné, čo appku drží mimo
+prehliadača, je Cloudflare token.
