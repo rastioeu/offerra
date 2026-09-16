@@ -210,12 +210,38 @@ Overené naozaj bežiacim serverom: `/nastavenia` bez prihlásenia vrátilo
 `307 → /login?next=/nastavenia`, katalóg aj ostatné stránky
 nezregresovali.
 
+## Admin konzola (Fáza 6, časť) — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
+
+Prvá verzia: prehľadové dlaždice (`admin_stats()`) a zoznam nahlásení
+(tabuľka `report`) s vybavením (`admin_resolve_report()` — jedna
+transakcia na serveri: prepíše stav, voliteľne skryje inzerát,
+upozorní nahláseného, presne ako appka).
+
+**Ochrana je V DATABÁZE** (`offerra.is_admin()`), nie v appke — rovnaká
+zásada ako appka („skrytie je pohodlie, nie ochrana"). Keď `admin_stats()`
+vráti chybu (bežný účet), stránka to ukáže ako „Nemáš prístup", nepadne.
+
+**Chýba oproti appke** (appka má naviac, appka je oveľa hlbšia tu):
+správa používateľov (`admin_users`, blokovanie), podozrivé vzorce
+(záplava ponúk, podozrivo nízke ponuky, shill bidding), duplicitné
+kontakty, nastavenia prahov (`app_config`). Toto je zámerne odložené —
+prehľad + nahlásenia sú operačne najdôležitejšie, zvyšok pridám na
+požiadanie.
+
+**Odkaz v hlavičke zatiaľ chýba** — vyžadovalo by extra RPC volanie na
+KAŽDEJ stránke len na rozhodnutie, či link ukázať (v praxi je presne
+jeden admin účet, čo by DB zbytočne zaťažovalo). Zatiaľ priamo cez URL
+`/admin`.
+
+Overené naozaj bežiacim serverom: `/admin` bez prihlásenia vrátilo
+`307 → /login?next=/admin`, ostatné stránky nezregresovali.
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
-- **Admin konzola** — zatiaľ nespravená.
+- **Admin — zvyšok** (vyššie).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -226,7 +252,9 @@ nezregresovali.
 
 ## Ďalší krok
 
-Nastavenia sú hotové. Čakám na tvoje potvrdenie z Supabase Dashboard
-(Redirect URLs + Site URL), aby som vedel, že Google prihlásenie
-skutočne prešlo, a na Cloudflare token pre trvalý odkaz. Dovtedy môžem
-pokračovať na admin konzole.
+Celý pôvodný rozsah (katalóg, detail, filtre, prihlásenie, Moje
+inzeráty/ponuky/dopyty, Nastavenia, základ admin konzoly) je hotový
+a overený naozaj bežiacim serverom. Čakám na tvoje potvrdenie z
+Supabase Dashboard, že Google prihlásenie prešlo, a na Cloudflare
+token pre trvalý odkaz — dovtedy môžem doplniť zvyšok admin konzoly,
+alebo čokoľvek iné, čo poviaš.
