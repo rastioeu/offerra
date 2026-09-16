@@ -354,16 +354,38 @@ súhlasu (informovaný súhlas, appková zásada).
 Overené naozaj bežiacim serverom: neprihlásený stav správne ukázal
 výzvu na prihlásenie namiesto formulára, ostatné stránky nezregresovali.
 
+## Fáza 3 — Hypotéka a Hodnotenia — DOKONČENÁ FÁZA 3 — 🟡 KÓD HOTOVÝ, ✅ OVERENÉ ŽIVÝM SERVEROM
+
+**Hypotéka:** odhad mesačnej splátky, čisto klientský výpočet (žiadna
+DB závislosť vôbec), prenesené 1:1 z appky. Zobrazuje sa LEN pri
+predaji. Cena z inzerátu má prednosť, chýba-li, nastúpi najvyššia živá
+ponuka — presná appková logika.
+
+**Hodnotenia:** po uzavretí obchodu (`property.status = CLOSED`)
+vlastník hodnotí víťaza ponuky a naopak, cez `can_rate()`/`rating`
+upsert presne ako appka — appka sa nepýta „som vlastník?", odpoveď je
+v DB. Verejná povesť predávajúceho (`Reviews`) sa ukazuje VŽDY,
+nezávisle od stavu inzerátu — je to jeho povesť naprieč všetkými
+obchodmi, nie len týmto inzerátom.
+
+Overené naozaj bežiacim serverom: kalkulačka sa správne zobrazila na
+SALE inzeráte a NEzobrazila na RENT inzeráte, Hodnotenia správne
+ukázali výzvu na prihlásenie pre neprihláseného, ostatné stránky
+nezregresovali.
+
+**Tým je Fáza 3 (interaktívne podtaby detailu: Ponuky, Správy,
+Obhliadka, Hypotéka, Hodnotenia) KOMPLETNÁ.**
+
 ## Čo ešte chýba
 
 - **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
   založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
   tej doby appku vidno cez dočasný odkaz vyššie.
 - **Rozhodovanie majiteľa o ponukách, dotazník nájomcu, živý odpočet
-  platnosti ponuky, realtime správy** (predošlé kolá).
+  platnosti ponuky, realtime správy** (predošlé kolá Fázy 3).
 - **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
-- **Zvyšok detailu inzerátu** — appka má na detaile aj Hypotéku,
-  Hodnotenia (podtaby). Zatiaľ Ponuky, Správy, Obhliadka.
+- **Fáza 4** — pridanie/úprava inzerátu vrátane uploadu fotiek.
+- **Fáza 5** — dopyty (verejný katalóg dopytov, pridanie, oslovenie).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
@@ -374,6 +396,7 @@ výzvu na prihlásenie namiesto formulára, ostatné stránky nezregresovali.
 
 ## Ďalší krok
 
-Čakám na tvoje potvrdenie z Supabase (Google prihlásenie) a na
-Cloudflare token. Dovtedy môžem pokračovať Hypotékou alebo Hodnoteniami
-(zvyšné podtaby detailu), alebo čímkoľvek iným, čo poviaš.
+Fáza 3 je hotová celá. Čakám na tvoje potvrdenie z Supabase (Google
+prihlásenie) a na Cloudflare token pre trvalý odkaz — dovtedy môžem
+pokračovať Fázou 4 (pridanie inzerátu) alebo Fázou 5 (dopyty), alebo
+čímkoľvek iným, čo poviaš.
