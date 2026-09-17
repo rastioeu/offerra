@@ -2265,3 +2265,76 @@ sm:translate-x-10` potvrdená vo vrátenom HTML.
 
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** je posun teraz dosť/práve
 toľko, koľko si chcel, alebo to chce viac/menej?
+
+## DIZAJN — ikony na badge + dlhšie vyhľadávacie pole (17.9.2026)
+
+Zadanie explicitne cielilo na web (`rastioeu/offerra_web`) — potvrdené,
+pracoval som v `/root/offerra-web`.
+
+### ⚠️ PUSH skript — rovnaká poznámka ako pri predošlých dvoch zadaniach
+
+Skript smeroval do správneho repozitára, ale opäť s tokenom priamo
+v URL (`.git/config` v plaintexte) a plošným `git add -A`. Nepoužil
+som ho doslovne z rovnakých dôvodov ako predtým (CLAUDE.md git
+protokol, web má push nastavený bez tokenu v URL celú túto session).
+Zmena je pushnutá do toho istého repozitára bežným bezpečným
+spôsobom. „Zvýš verziu" znova preskočené — web nemá EAS/OTA
+verzovanie, ktoré by sa dalo zvýšiť.
+
+### 1) Zjednotenie vizuálu dvoch badge — čo UŽ bolo hotové, čo pribudlo
+
+Základné zjednotenie (rovnaká pilulka, rovnaké miesto na fotke, farba
+nesie význam) som urobil v predošlom kole tejto session (commit
+`83256e4`) — je stále live, overil som to znova. Toto zadanie žiadalo
+NAVYŠE jasný rozlišovač, keď sa oba badge zobrazia naraz: „malá
+ikonka alebo skrátený label pred textom."
+
+- **`src/components/deadline-badge.tsx`** — `onPhoto` variant má teraz
+  malú ikonu kalendára pred textom.
+- **`src/components/offer-countdown-pill.tsx`** — `onPhoto` variant má
+  ikonu hodín (rovnaká ikona, akú má appkový/webový ne-`onPhoto`
+  variant nižšie na stránke — teraz je aj vizuálne jasné, že ide o TEN
+  ISTÝ koncept „platnosť ponuky", len v inom kontexte).
+
+Kalendár = termín INZERÁTU, hodiny = platnosť KONKRÉTNEJ PONUKY —
+rozdiel je teraz čitateľný na prvý pohľad, nielen z textu.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` vrátil **HTTP 200**, `journalctl` bez chýb.
+Vo vrátenom HTML: karta s uzávierkou má SVG kalendár pred „Ponuky do
+23. septembra 2026 · ostáva 6 dní", karta so živou ponukou má SVG
+hodiny pred „Ponuka platí ešte 1 deň 6h" — oba na fotke, rovnaká
+trieda pozadia (`bg-on-photo-surface`), líši sa farba textu aj ikona.
+
+**🔴 STÁLE NEOVERENÉ na živých dátach:** karta s OBOMA badge naraz —
+prezrel som všetkých 48 kariet v katalógu (rovnaký skript ako
+v predošlom kole) a ŽIADNA momentálne nemá súčasne aktívnu uzávierku
+AJ živú najvyššiu ponuku. Kód pre súbežné zobrazenie (stohovanie pod
+sebou, `flex-col gap-1`) je nasadený a rovnaký ako pri jednotlivých
+prípadoch, ale nemám ako to reálne uvidieť na dátach, kým taká karta
+nevznikne — to nie je niečo, čo viem obísť bez vytvorenia/úpravy
+skutočných dát v produkčnej DB len na tento účel.
+
+### 2) Predĺžené vyhľadávacie pole
+
+- **`src/app/[locale]/page.tsx`** — riadok predtým `sm:grid-cols-3`
+  (tri ROVNAKÉ stĺpce), pole malo navyše vlastný strop
+  `max-w-[380px]` — aj keby stĺpec bol širší, pole sa samo nenatiahlo.
+  Teraz `sm:grid-cols-[minmax(0,1fr)_auto_auto]`: pole dostane VŠETOK
+  voľný priestor v riadku (žiaden vlastný strop), CTA aj počet
+  inzerátov sú `auto` stĺpce — veľké presne na svoj obsah, čo ich drží
+  pri pravom okraji riadku rovnako ako predtým (v skutočnosti
+  STABILNEJŠIE než predtým — predtým ich pozícia záviselo od pomeru
+  1/3 šírky riadku, teraz sú pevne pri pravom okraji bez ohľadu na
+  šírku obrazovky).
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` vrátil **HTTP 200**, `journalctl` bez chýb.
+Vo vrátenom HTML je pole v `<div class="w-full sm:justify-self-start">`
+BEZ akéhokoľvek `max-w-*` obmedzenia — dostane celý zvyšný priestor
+riadku po odpočítaní šírky CTA a počtu. Funkčnosť filtra overená
+(`?transaction=RENT` → 16 kariet).
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** je placeholder text teraz
+celý viditeľný, nie orezaný? Sedí CTA aj počet stále na mieste, kam
+patria (nesklzli nikam inam, keď sa pole roztiahlo)?
