@@ -1771,3 +1771,37 @@ skrátiť."
 nevie ukázať: pôsobí motto vedľa loga dobre, nezráža sa s navigáciou na
 šírke bežného notebooku? Chýba ti nadpis/popis na katalógovej stránke,
 alebo je takto lepšie?
+
+## Motto pod logo, tmavšie, aktívny odkaz v navigácii viditeľný (17.9.2026)
+
+Rastio, ďalšie spresnenie: „vyhľadávacie pole vycentruj, motto daj pod
+logo tmavším písmom, a keď mám niečo hore stlačené tak nech je to tiež
+tmavšie, žeby som videl."
+
+- **Vyhľadávacie pole** — už bolo centrované (`mx-auto` na
+  `max-w-[420px]` bloku, port z predošlého kroku), tu sa nemenilo nič —
+  overené, že centrovanie v kóde skutočne je.
+- **Motto** (`src/components/site-header.tsx`) — bolo VEDĽA loga
+  oddelené zvislou čiarou, svetlou `text-muted` farbou, viditeľné až od
+  `lg:`. Teraz je POD logom (`flex-col`, bez oddeľovača), farba
+  `text-secondary` (tmavšia) — a keďže stohovanie neberie navigácii
+  vodorovné miesto, dá sa ukázať už od `md:` (768px), nie až od `lg:`.
+- **Aktívny odkaz v navigácii** (nový `src/components/nav-link.tsx`,
+  klientská komponenta s `usePathname`) — odkazy v hornom menu aj
+  v mobilnom hamburgeri predtým mali LEN `hover:`, žiadny signál pre
+  stránku, na ktorej používateľ PRÁVE je. Aktívny odkaz je teraz
+  tučný a `text-primary` (tmavší) namiesto `text-secondary`, plus
+  `aria-current="page"` pre čítačky obrazovky. Platí pre desktopové
+  menu (`SiteHeader`) aj mobilný hamburger (`MobileNav`).
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (SK/EN/DE):
+- motto (`Obrátený trh s nehnuteľnosťami` / `A reverse real estate
+  market` / `Ein umgekehrter Immobilienmarkt`) je vo vrátenom HTML POD
+  logom (`<span class="hidden text-xs font-medium text-text-secondary
+  md:block">`), nie vedľa.
+- na `/dopyty` má odkaz „Dopyty" `aria-current="page"` a triedy
+  `font-semibold text-text-primary`, ostatné odkazy zostávajú
+  `text-text-secondary` — overené aj na `/ako-to-funguje`.
+- na domovskej stránke (kde v navigácii nie je priamy odkaz na `/`)
+  nemá aktívny žiadny odkaz — správne, nič sa nezvýrazňuje nesprávne.
