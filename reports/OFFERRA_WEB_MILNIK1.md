@@ -1570,3 +1570,44 @@ Predošlá verzia mala medzi skupinami len 1px čiarku na dotyk
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — pozri sa prosím na
 `app.offerra.sk`, či je odstup medzi skupinami teraz dosť viditeľný, a
 či to na šírke desktopu vyzerá „dizajnovo" tak, ako si predstavoval.
+
+## Filter — šiesty pokus, späť na bok so sekciami (17.9.2026)
+
+Rastio na zhustený horný riadok: „nie je to dobré, daj to na bok, ale
+lepšie rozlož, aby som to vedel filtrovať naraz aj na notebooku."
+
+Späť na bočný panel, ale NIE pôvodná voľne plávajúca verzia z prvého
+pokusu, ktorú Rastio na začiatku zamietol. Tentoraz:
+
+- Panel je ukotvená karta (`rounded-2xl border bg-surface shadow-card`),
+  s nadpisom „Filtre" a „Vymazať filter" v jednom riadku hore.
+- Každá kategória (Typ obchodu / Typ nehnuteľnosti / Triedenie) je
+  VLASTNÁ SEKCIA s malým nadpisom (`Typ obchodu`, ...) a tenkou deliacou
+  čiarou medzi sekciami — presne to, čo Rastio pri prvom pokuse na bok
+  chcel a čo vtedy chýbalo.
+- Tri sekcie idú POD SEBOU, nie v jednom riadku — na boku je výška
+  zadarmo (panel rastie vedľa mriežky kariet, nezaberá miesto NAD ňou
+  ako predošlé horné pokusy), takže „príliš veľké" tu nehrozí a všetky
+  tri kategórie sú vidieť a klikateľné NARAZ, bez skrolovania či
+  rozbaľovania.
+- Panel má pevnú `lg:w-64` (256px) šírku — nie plávajúcu, ktorá by sa
+  pri užšom okne notebooku správala nepredvídateľne. Mriežka kariet sa
+  vrátila na `sm:grid-cols-2 xl:grid-cols-3` (z predošlých pokusov
+  s hornou lištou, kde bola voľná celá šírka).
+- Nový i18n kľúč `catalog.filtersTitle` („Filtre"/„Filters"/„Filter")
+  pridaný do SK/EN/DE.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (SK, EN cez `/en`, DE cez
+`/de`):
+- panel `<aside>` s `lg:w-64 lg:shrink-0` a nadpisom „Filtre"/
+  „Filters"/„Filter" prítomný vo všetkých troch jazykoch.
+- tri sekcie s nadpismi (`Typ obchodu`, `Typ nehnuteľnosti`,
+  `Triedenie`) a chipmi vo vnútri.
+- `?transaction=SALE&type=APARTMENT&sort=ENDING_SOON` vrátil **8
+  kariet** — kombinácia troch filtrov naraz funguje aj v tomto rozložení.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
+nevie ukázať: sadne si panel na boku dobre pri šírke bežného notebooku
+(nie len veľkého monitora)? Sú sekcie s nadpismi a čiarami dosť
+„rozložené", alebo to ešte chce upraviť?
