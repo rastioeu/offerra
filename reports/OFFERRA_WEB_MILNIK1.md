@@ -569,14 +569,77 @@ neprihláseného namiesto pádu), ostatné stránky nezregresovali. Samotné
 prijatie/odmietnutie/uzavretie neviem overiť sám — vyžaduje
 prihláseného vlastníka.
 
+## Vizuálna identita — desktop redizajn (17.9.2026) — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
+
+Rastio (17.9.2026): appka má vyladenú vizuálnu identitu, web má z nej
+prevziať presne TOTO (nie novú paletu), ale rozloženie má byť
+skutočne desktopové, nie mobil roztiahnutý na monitor. Urobil som
+audit appkových `theme/tokens.ts` vs webové `globals.css` (farby už
+boli 1:1 zhodné od Fázy 1), a doplnil chýbajúce kusy:
+
+- **Wordmark s teplým glow** (appka: `logo.tsx`, 6 priesvitných RN
+  vrstiev bez natívneho blur) — web má skutočné CSS `filter: blur()`,
+  stačí jedna vrstva rovnakého efektu. `Logo` komponenta, oba varianty
+  (svetlý/tmavý) skopírované z appky (`assets/images/wordmark*.png`),
+  v hlavičke namiesto textového „Offerra".
+- **Chýbajúci token `--color-on-photo-surface`** — appka má vlastnú
+  priesvitnú farbu pre odznaky NAD fotkou (`onPhotoSurface`), web ju
+  nemal vôbec a používal `onPrimary` ako náhradu (v tmavom režime by to
+  vyšlo takmer čierne, nie zamýšľaná teplá priesvitnosť). Doplnené do
+  `globals.css`, uzávierková pilulka na karte ju teraz používa presne
+  ako appkový `PhotoBadge`.
+- **Cena vo Georgia serife v presnej appkovej veľkosti** — predtým
+  generické Tailwind `text-xl`/`text-3xl` (20px/30px), teraz `22px`
+  na karte / `27px` na detaile — presne appkové `Money.large`/`Money.hero`.
+- **Odznak typu ponuky** — predtým svetlý priesvitný chip, teraz plná
+  navy pilulka s bielym textom (appkový `Badge tone="navy"`).
+- **`--shadow-card` token** (appkový `Shadow.card`: farebný, nízka
+  krytosť) namiesto genérického Tailwind `shadow-lg`.
+- **Katalóg — bočný panel filtrov na desktope** (`lg:` a vyššie):
+  predtým tri riadky zalamovaných chipov nad výsledkami, teraz vertikálny
+  panel vľavo (`Typ ponuky`/`Typ nehnuteľnosti`/`Triedenie` s nadpismi),
+  mriežka výsledkov `sm:2 / xl:3` stĺpce. Mobil beží ako predtým (chipy
+  sa vracajú do zalamovaného riadku pod `lg`), bez klientského JS — stále
+  čisté odkazy/GET formulár.
+- **Detail inzerátu — dvojstĺpcový layout na desktope**: galéria, popis,
+  podrobnosti, hodnotenia a správy vľavo; cena + uzávierka + ponuky +
+  obhliadka + hypotéka v LEPIVOM (`sticky`) paneli vpravo (`380px`) —
+  klasické realitné rozloženie namiesto všetkého pod sebou. Mobil
+  jednostĺpcový, poradie zachované.
+
+Overené naozaj bežiacim serverom: `npm run build` čisto, regresný
+prieskum `/`, `/dopyty`, `/moje-inzeraty`, `/nastavenia`, `/admin`,
+`/inzerat/[id]` bez zmeny HTTP kódov, logo súbory sa reálne servujú
+(`/brand/wordmark.png`, `/brand/wordmark-dark.png` vrátené v HTML),
+presné veľkosti ceny aj `on-photo-surface` trieda potvrdené v
+vygenerovanom HTML.
+
+**Čo NEVIEM overiť sám:** ako to VYZERÁ (farby v prehliadači, blur
+efekt glow, responzívne správanie pri zmene šírky okna, hover stavy) —
+to vyžaduje skutočný prehliadač. Toto je prvé kolo, nie kompletná
+parita — appkový avatar systém, kompletná typografická škála
+(`Type`/`Money` ako tokeny, nie len tieto dve konkrétne veľkosti),
+počítadlo fotiek na karte a appkový `OfferCountdownPill` (platnosť
+PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
+
 ## Čo ešte chýba
 
-- **Cloudflare API token** (popísané v `OFFERRA_WEB_DOMENA.md`) — na
-  založenie TRVALEJ zóny `app.offerra.sk` a pomenovaného tunela. Do
-  tej doby appku vidno cez dočasný odkaz vyššie.
-- **Dotazník nájomcu, živý odpočet platnosti ponuky, realtime správy,
-  appkový OfferTimeline** (predošlé kolá Fázy 3).
-- **Admin — zvyšok** (správa používateľov, podozrivé vzorce, nastavenia).
+- **Živý odpočet uzávierky inzerátu** — ✅ HOTOVÉ (17.9.2026, `DeadlineBadge`
+  + `useOfferCountdownTick`, port appkového hooku).
+- **Živý, po sekundách tikajúci odpočet PLATNOSTI PONUKY** (appka:
+  `offerCountdown`/`OfferCountdownPill` — iná vec než uzávierka
+  inzerátu vyššie, patrí jednej konkrétnej ponuke záujemcu) — web má
+  zatiaľ len statický dátum/stav (appkový `offer-validity.ts` je
+  ported len čiastočne, `offerCountdown` chýba).
+- **Dotazník nájomcu pri prenájme, realtime správy (appka to tiež
+  nemá — nie je to skutočná parita, len budúce vylepšenie), appkový
+  OfferTimeline**.
+- **Admin — zvyšok**: podozrivé vzorce, duplicitné kontakty, overenie
+  používateľa, nastavenia prahov, zmena roly (správa používateľov
+  hotová 17.9.2026, pozri vyššie).
+- **Appkový avatar systém, počítadlo fotiek na karte, CityPicker/
+  StreetPicker (2 925 obcí), per-keystroke autosave v editore
+  inzerátu.**
 - **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
   zatiaľ voľný text na oboch miestach).
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
