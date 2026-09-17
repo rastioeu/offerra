@@ -1394,3 +1394,64 @@ Prosím pozri sa na `app.offerra.sk` a over/opíš:
 3. **Vyhľadávanie** — je pole na prvý pohľad vidieť ako vyhľadávanie
    (ikona lupy, na celú šírku nad filtrami)? Funguje na telefóne aj na
    šírokej obrazovke?
+
+## Dve dizajnové úpravy katalógu (17.9.2026)
+
+Rastio, po tom istom prezretí: vyhľadávacie pole je príliš veľké (na
+desktope pôsobilo ako hero prvok), bočný filter „pôsobí divne". Ponúkol
+dve možnosti (A: ukotvený bočný panel, B: kompaktná horná lišta
+s rozbaľovacími menu) a odporučil B, s dôvodom „pri katalógu s kartami
+je lepšie nechať čo najviac šírky na samotné inzeráty" — s tým, že sa
+mám rozhodnúť podľa toho, ako to reálne vyzerá.
+
+**Prečo B a nie vlastné porovnanie:** v tomto prostredí nie je
+prehliadač ani simulátor (rovnaké obmedzenie ako pri screenshotoch,
+CLAUDE.md §1) — nemám ako oba návrhy reálne vizuálne porovnať a
+rozhodnúť sa „podľa toho, ako to vyzerá". Šiel som teda podľa
+Rastiovho vlastného odporúčania a dôvodu, ktorý dal — nie podľa
+vlastného úsudku, ktorý by bol len hádaním bez toho, aby som to videl.
+
+- **Vyhľadávacie pole zmenšené** — `SearchBox` teraz v `<div className="w-full lg:max-w-[460px]">`
+  (`src/app/[locale]/page.tsx`): na mobile plná šírka (nezmenené, tam to
+  dáva zmysel), od `lg:` max. 460px. Bežná výška poľa a ikona lupy
+  ostali z predošlého kroku bez zmeny.
+- **Bočný panel preč, nahradený hornou lištou** — nový
+  `src/components/catalog-filter-bar.tsx` (`CatalogFilterBar`, klientská
+  komponenta, rovnaký vzor ako `SearchBox`): tri `<select>` v jednom
+  riadku (Typ obchodu / Typ nehnuteľnosti / Triedenie), každý vo vlastnom
+  orámovanom boxe s názvom filtra vľavo od hodnoty. Zmena hodnoty mení
+  `?transaction=&type=&sort=` v URL (`router.replace`) — filter má stále
+  vlastnú indexovateľnú URL, len sa k nej dochádza cez menu miesto čipov.
+  Starý `src/components/catalog-filters.tsx` (bočný stĺpec `lg:w-64`)
+  odstránený, nič iné ho nepoužívalo (`DemandFilters` na `/dopyty` je
+  samostatný súbor s vlastným rozložením — nebol súčasťou tohto hlásenia,
+  Rastio hovoril konkrétne o katalógu, ktorý si prezeral).
+- **Mriežka kariet využíva uvoľnenú šírku** — `xl:grid-cols-3` →
+  `lg:grid-cols-3 xl:grid-cols-4` (predtým bočný panel bral takmer
+  štvrtinu šírky len pre tri filtre; teraz namiesto prázdneho miesta
+  pribudol štvrtý stĺpec kariet na širokých obrazovkách).
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- `<div class="w-full lg:max-w-[460px]">` obaľuje vyhľadávacie pole vo
+  vrátenom HTML.
+- tri `<select>` prítomné, žiadny zvyšok `lg:w-64` bočného panela.
+- `?transaction=RENT` vrátil **16 kariet** (z celkových 48) a `<option
+  value="RENT" selected>` v selecte potvrdzuje, že dropdown správne
+  ukazuje aktívny filter — funguje aj po refreshi/priamom odkaze, nie
+  len po kliknutí.
+- mriežka vo vrátenom HTML má `sm:grid-cols-2 lg:grid-cols-3
+  xl:grid-cols-4`.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
+nevie ukázať:
+1. Pôsobí vyhľadávacie pole na desktope teraz primerane veľké
+   (nie ako hero prvok)?
+2. Vyzerá horná lišta s rozbaľovacími menu dobre — sadnú si tri boxy
+   vedľa seba, nepôsobia stiesnene ani príliš voľne?
+3. Screenshot z katalógu **nemôžem poslať** — CLAUDE.md, pravidlo
+   z 17.8.2026 („screenshoty nechcem, nemám ich ako zobraziť — platí
+   aj do budúcna"), a ani v tomto prostredí nie je prehliadač/simulátor,
+   ktorý by ho vedel vyrobiť. Prosím pozri sa priamo na
+   `app.offerra.sk` a opíš, čo vidíš — najmä ak lišta B pôsobí horšie
+   než pôvodný bočný panel, poviem A ako druhú možnosť.
