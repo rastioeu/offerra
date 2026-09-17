@@ -541,9 +541,19 @@ kód) — cesta `{ownerId}/{propertyId}/{časová pečiatka}.{ext}`, limit
 až potom (appka: osirelý súbor je menšie zlo než fotka, ktorá sa „nedá
 zmazať").
 
-**Zjednodušené oproti appke** (priznané, nie tichá medzera):
-- Žiadne priebežné autosave každého poľa (appka: `useFormDraft`) — web
-  má jedno tlačidlo „Uložiť" pre celý formulár naraz.
+**OPRAVA (17.9.2026) — preskúmané, `useFormDraft` nie je skutočná
+medzera:** appkový `useFormDraft`/`form-draft.ts` NIE JE DB autosave —
+appkový vlastný komentár to hovorí priamo („ÚMYSELNE obyčajná pamäť
+procesu, nie AsyncStorage... nemá prežiť reštart appky"). Je to len
+poistka proti KONKRÉTNEMU appkovému bugu z 9.8.2026: obrazovka napĺňala
+formulár v `useEffect(…, [item])`, a každý `reload()` (napr. po pridaní
+fotky) vytvoril nový objekt, čo prepísalo rozpísaný text hodnotami z
+DB. Webový `ListingEditorForm` má formulár v `useState(() =>
+formFromProperty(property))` — LENIVÝ inicializátor sa spustí len RAZ
+pri prvom vykreslení, žiadny `useEffect` ho nerefreshuje pri zmene
+`property` propu, takže rovnaký bug tu vzniknúť nemôže — appkový
+mechanizmus by web riešil problém, ktorý nemá. Tlačidlo „Uložiť" pre
+celý formulár naraz je preto konečné riešenie, nie zjednodušenie.
 
 **✅ Mesto/ulica DOKONČENÉ (17.9.2026)** — `CityPicker`/`StreetPicker`
 (port appkových, 2 925 obcí, živé vyhľadávanie), kraj/okres/súradnice
@@ -655,8 +665,9 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   350ms, žiadne tlačidlo „Hľadať", presne ako appka).
 - **Realtime správy** (appka to tiež nemá — nie je to skutočná parita,
   len budúce vylepšenie).
-- **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
-  „Uložiť").
+- **Priebežné autosave** — preskúmané a vyradené zo zoznamu medzier,
+  pozri opravu vyššie pri Fáze 4: appkový `useFormDraft` rieši bug,
+  ktorý web architektonicky nemá.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
