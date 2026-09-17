@@ -1110,10 +1110,39 @@ SK/EN/DE, `<title>What's new | Offerra</title>` priamo v HTML na
 
 ---
 
-**Zvyšok z pôvodného prieskumu appka-vs-web, vedome ešte neriešený:**
-appkový „Profil" (aktivitná časová os, nahrávanie profilovky) — appka
-ho má ako jednu bohatú obrazovku, web má ekvivalent rozdelený na
-Nastavenia + Moje inzeráty/ponuky/dopyty + Obľúbené. Časová os aktivity
-naprieč všetkými týmito by bola samostatná, väčšia práca (zlučovanie
-viacerých tabuliek chronologicky) — nezačaté, čaká na Rastiovo
-rozhodnutie, či to web vôbec potrebuje.
+**Zvyšok z pôvodného prieskumu appka-vs-web:** appkový „Profil" mal dve
+časti — časovú os aktivity a nahrávanie profilovky. Rastio (po otázke,
+či je funkčne hotové všetko): „urob si ten profil čo si vynechal, veď
+skryť [ho] vieme potom" — teda dorobiť, nie nechať otvorené.
+
+## Časová os aktivity — `/aktivita` (17.9.2026)
+
+Port appkového vzoru z `profil.tsx`: 4 zdroje (vlastné inzeráty, podané
+ponuky, oslovenia vlastných dopytov, vlastné dopyty) zlúčené a zoradené
+chronologicky — presne appkové poradie zdrojov aj appkové vynechanie
+`PONUKA_PRIJATA` z reálneho zoznamu (appka má ten typ v definícii, ale
+nikdy ho nepridáva do `timeline` poľa — zmerané priamo v appkovom kóde,
+nie odvodené). Zoskupené podľa dňa (Dnes/Včera/dátum), zvislá os
+s bodkou, rovnaký appkový vizuál.
+
+Odkaz v Nastaveniach (sekcia Účet) a v mobilnom hamburger menu —
+**zámerne NIE v hlavnom desktopovom riadku**, ten je už preplnený
+(Rastio to predtým vytkol pri karte „Ako funguje").
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `/aktivita` `307`
+(presmerovanie na prihlásenie bez session, rovnaký vzor ako ostatné
+chránené stránky) v SK/EN/DE, `/nastavenia` bez zmeny správania,
+`robots.txt` obsahuje `/aktivita`, `journalctl` bez chýb.
+
+**🟡 Čaká na Rastiovo overenie** (prihlásený, s reálnymi dátami —
+`curl` toto nevie dokázať): otvor `/aktivita` a skontroluj, či sa tam
+objavia tvoje inzeráty/ponuky/dopyty zoradené podľa času, správne
+zoskupené pod „Dnes"/„Včera".
+
+**Nahrávanie profilovky — vedome NEURÝCHLENÉ, iný dôvod než zvyšok:**
+appka ukladá fotku do Storage cez natívny `expo-image-picker`. Web má
+už fungujúci vzor presne na toto (`PhotoManager` pri fotkách inzerátu),
+takže technicky by to nebol veľký krok — ale profilovka sa dnes NIKDE
+na webe nezobrazuje (žiadny avatar v hlavičke ani inde), takže by to
+bola funkcia bez viditeľného efektu. Keď bude jasné, kde by sa
+profilovka na webe vôbec ukázala, dorobí sa spolu s tým miestom.
