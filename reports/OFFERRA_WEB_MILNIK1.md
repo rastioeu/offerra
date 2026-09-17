@@ -341,10 +341,14 @@ nevidí tlačidlo blokovania pri vlastnom účte (appka to robí rovnako).
 Dôvod blokovania je pevný text („Zablokované administrátorom"), appka
 má rovnaký princíp (pevný text cez `t('admin.blockedReason')`).
 
+**✅ Overenie používateľa a rola správcu DOKONČENÉ (17.9.2026)** —
+`admin_set_verified` (poznámka POVINNÁ pri overovaní, appka to isté)
+a `admin_set_role` (bezpečnostné pravidlá — nemeniť vlastnú rolu,
+aspoň jeden admin musí ostať — sú v databáze, nie v kóde).
+
 **Ešte chýba oproti appke:** podozrivé vzorce (záplava ponúk,
-podozrivo nízke ponuky, shill bidding), duplicitné kontakty, overenie
-používateľa (`admin_set_verified`), nastavenia prahov (`app_config`),
-zmena roly (`admin_set_role`). Odložené, pridám na požiadanie.
+podozrivo nízke ponuky, shill bidding), duplicitné kontakty, nastavenia
+prahov (`app_config`). Odložené, pridám na požiadanie.
 
 **Odkaz v hlavičke zatiaľ chýba** — vyžadovalo by extra RPC volanie na
 KAŽDEJ stránke len na rozhodnutie, či link ukázať (v praxi je presne
@@ -635,9 +639,9 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
 - **Dotazník nájomcu pri prenájme, realtime správy (appka to tiež
   nemá — nie je to skutočná parita, len budúce vylepšenie), appkový
   OfferTimeline**.
-- **Admin — zvyšok**: podozrivé vzorce, duplicitné kontakty, overenie
-  používateľa, nastavenia prahov, zmena roly (správa používateľov
-  hotová 17.9.2026, pozri vyššie).
+- **Admin — zvyšok**: podozrivé vzorce (záplava/lowball/shill),
+  duplicitné kontakty, nastavenia prahov (`app_config`). Správa
+  používateľov, overenie a zmena roly hotové 17.9.2026, pozri vyššie.
 - **CityPicker/StreetPicker (2 925 obcí), per-keystroke autosave v
   editore inzerátu.**
 - **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
