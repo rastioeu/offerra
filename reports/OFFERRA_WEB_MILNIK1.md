@@ -626,20 +626,20 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
 
 - **Živý odpočet uzávierky inzerátu** — ✅ HOTOVÉ (17.9.2026, `DeadlineBadge`
   + `useOfferCountdownTick`, port appkového hooku).
-- **Živý, po sekundách tikajúci odpočet PLATNOSTI PONUKY** (appka:
-  `offerCountdown`/`OfferCountdownPill` — iná vec než uzávierka
-  inzerátu vyššie, patrí jednej konkrétnej ponuke záujemcu) — web má
-  zatiaľ len statický dátum/stav (appkový `offer-validity.ts` je
-  ported len čiastočne, `offerCountdown` chýba).
+- **Živý, po sekundách tikajúci odpočet PLATNOSTI PONUKY** — ✅ HOTOVÉ
+  (17.9.2026, `offerCountdown` doplnený do `offer-validity.ts` +
+  `OfferCountdownPill`, presne appkový stupňovitý formát).
+- **Appkový avatar systém, počítadlo fotiek na karte** — ✅ HOTOVÉ
+  (17.9.2026, `avatar.tsx`, deterministický z prezývky, rovnaké CC0
+  obrázky).
 - **Dotazník nájomcu pri prenájme, realtime správy (appka to tiež
   nemá — nie je to skutočná parita, len budúce vylepšenie), appkový
   OfferTimeline**.
 - **Admin — zvyšok**: podozrivé vzorce, duplicitné kontakty, overenie
   používateľa, nastavenia prahov, zmena roly (správa používateľov
   hotová 17.9.2026, pozri vyššie).
-- **Appkový avatar systém, počítadlo fotiek na karte, CityPicker/
-  StreetPicker (2 925 obcí), per-keystroke autosave v editore
-  inzerátu.**
+- **CityPicker/StreetPicker (2 925 obcí), per-keystroke autosave v
+  editore inzerátu.**
 - **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
   zatiaľ voľný text na oboch miestach).
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
