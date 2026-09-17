@@ -1229,3 +1229,22 @@ funguje offerra."
 sekcie sa renderujú, karta „Ako funguje Offerra" na tejto stránke už nie
 je prítomná, build čistý, reštart, `/nastavenia` bez zmeny správania
 v SK/EN/DE, `journalctl` bez chýb.
+
+## Pätička — zmenšená (17.9.2026)
+
+Rastio hneď po nasadení: „pätička s kontaktom je príliš veľká a
+výrazná... telefón a e-mail majú veľkosť skoro ako nadpisy, tučné."
+
+- Nadpis „KONTAKT" preč — pri telefónnom čísle a e-maile je aj tak
+  jasné, čo to je.
+- Telefón/e-mail: `text-sm` namiesto `text-lg`, bez `font-semibold`,
+  tlmená `text-secondary` farba namiesto `text-primary`.
+- Odkazy vpravo (Ako funguje, Ochrana osobných údajov, Podmienky
+  používania) teraz v JEDNOM riadku vedľa seba, nie pod sebou.
+- Odsadenie zmenšené (`py-4` namiesto `py-8`, `gap-1.5` namiesto
+  `gap-6`) — celá pätička teraz zaberá zlomok pôvodnej výšky.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na `/` potvrdzuje
+žiadny nadpis „Kontakt", správne zmenšené/stlmené triedy priamo vo
+vrátenom HTML, odkazy v jednom `<nav>` riadku, žiadna regresia,
+`journalctl` bez chýb.
