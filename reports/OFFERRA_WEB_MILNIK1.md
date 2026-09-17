@@ -391,7 +391,7 @@ prihláseného používateľa (čaká sa na Google, pozri vyššie).
 - Rozhodovanie majiteľa — ✅ HOTOVÉ (16.9.2026).
 - Dotazník nájomcu pri prenájme — ✅ HOTOVÉ (17.9.2026, `tenant_profile`).
 - Živý odpočet platnosti ponuky — ✅ HOTOVÉ (17.9.2026).
-- Zostáva: appkový `OfferTimeline` (vizuálna história stavu).
+- OfferTimeline (vizuálna história stavu) — ✅ HOTOVÉ (17.9.2026).
 
 ## Fáza 3 — Správy na detaile inzerátu — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
 
@@ -572,8 +572,7 @@ ponuky naraz) je SAMOSTATNÁ akcia od prijatia, presne ako appka —
 prijatá ponuka znamená „dohodnime sa", uzavretý obchod znamená
 „hotovo".
 
-**Chýba oproti appke:** dotazník nájomcu pri prenájme, appkový
-`OfferTimeline` (vizuálna história stavu ponuky).
+**Dotazník nájomcu a OfferTimeline — ✅ HOTOVÉ (17.9.2026).**
 
 Overené naozaj bežiacim serverom: detail s ponukami stále funguje bez
 chyby (`offer_messages()` korektne vrátila prázdny výsledok pre
@@ -646,15 +645,12 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   obrázky).
 - **Dotazník nájomcu pri prenájme** — ✅ HOTOVÉ (17.9.2026, `tenant_profile`,
   sekcia „O nájomcovi" viditeľná len majiteľovi).
-- **Realtime správy (appka to tiež nemá — nie je to skutočná parita,
-  len budúce vylepšenie), appkový OfferTimeline**.
-- **Admin — zvyšok**: nastavenia prahov (`app_config`), limit inzerátov,
-  opakované porušenia, upozornenia, top vystavovatelia. Správa
-  používateľov, overenie, zmena roly a podozrivé vzorce hotové
-  17.9.2026, pozri vyššie.
+- **OfferTimeline** — ✅ HOTOVÉ (17.9.2026).
 - **CityPicker/StreetPicker** — ✅ HOTOVÉ (17.9.2026), pozri vyššie.
-- **Per-keystroke autosave v editore inzerátu, dotazník nájomcu,
-  appkový OfferTimeline.**
+- **Admin — zvyšok**: nastavenia prahov — ✅ HOTOVÉ (17.9.2026). Zostáva:
+  opakované porušenia, upozornenia, top vystavovatelia.
+- **Realtime správy** (appka to tiež nemá — nie je to skutočná parita,
+  len budúce vylepšenie).
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
   „Uložiť").
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
