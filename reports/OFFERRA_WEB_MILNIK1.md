@@ -685,6 +685,37 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   Doplnený aj `metadataBase` v `layout.tsx` (predtým chýbal — Next.js
   by inak relatívne OG URL riešil voči `localhost:3000`, nie skutočnej
   doméne).
+
+- **✅ AI viditeľnosť + bohatšie structured data (17.9.2026)** — Rastio:
+  „aby to aj AI brala všade."
+  - `llms.txt` (`llmstxt.org` — vznikajúci štandard, obdoba
+    `robots.txt` pre AI asistentov) — stručný Markdown popis webu,
+    odkazy na katalóg/dopyty/sitemap, priamo pri koreni domény.
+  - `robots.txt` teraz EXPLICITNE povoľuje 14 známych AI crawlerov
+    (GPTBot, OAI-SearchBot, ChatGPT-User, ClaudeBot, anthropic-ai,
+    Claude-Web, PerplexityBot, Google-Extended, Applebot-Extended,
+    Bytespider, CCBot, Amazonbot, meta-externalagent, DuckAssistBot) —
+    predtým ich púšťal len všeobecný `*` riadok bez jasného zámeru.
+  - `Organization` + `WebSite` (s `SearchAction`) JSON-LD na KAŽDEJ
+    stránke (predtým nikde, len appka mala appkovú identitu).
+  - `RealEstateListing` JSON-LD na detaile inzerátu obohatený o `geo`
+    (súradnice z `CityPickera`), `numberOfRooms`, `floorSize`,
+    `datePosted`, `offers.availability`.
+  - Detail inzerátu, detail dopytu, katalóg (aj s filtrami) a zoznam
+    dopytov majú teraz `openGraph`, `twitter` card a
+    self-referencing `alternates.canonical` — predtým mal čiastočné OG
+    len detail inzerátu, nič iné.
+  - Katalóg s filtrami má DYNAMICKÝ title/description podľa kombinácie
+    filtrov („Byty na prenájom v Bratislave"), plus `ItemList` JSON-LD
+    zo zobrazených inzerátov.
+
+  Overené naozaj bežiacim serverom: `/llms.txt` aj `/robots.txt`
+  vracajú `200` aj na `app.offerra.sk`, `RealEstateListing` aj
+  `Organization`/`WebSite` JSON-LD sú v skutočnom vygenerovanom HTML,
+  regresný prieskum všetkých stránok bez zmeny HTTP kódov. **Čo
+  NEVIEM overiť sám:** ako presne Google/Bing/AI asistenti tento
+  obsah naozaj skonzumujú a zaindexujú — to je mimo môjho dosahu,
+  viditeľné až s odstupom týždňov/mesiacov.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
