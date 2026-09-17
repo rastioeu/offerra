@@ -2175,3 +2175,78 @@ ukázať — vyzerá tlačidlo dobre zarovnané s ostatnými ikonami (výška,
 vertikálne centrovanie), nepôsobí „prilepené"? Funguje reálne
 KLIKNUTIE myšou aj šípkou/Enter z klávesnice (otvorenie menu, výber
 položky)? Vedie klik na hlavný text rovno do editora nového konceptu?
+
+## CTA presunuté z hlavičky vedľa vyhľadávania, počet inzerátov napravo (17.9.2026)
+
+Rastio, hneď po predošlom kroku: „pridať inzerát by som dal niekde
+vedľa vyhľadávacieho poľa, niekde do stredu, aby to nebolo prázdne.
+Vyhľadávacie pole daj miesto toho, kde je počet inzerátov, počet
+inzerátov daj úplne napravo, nad krajnú fotku."
+
+Tri prehodenia na katalógovej stránke:
+
+- **CTA „+ Pridať inzerát" je preč z hlavičky**, presunuté na
+  katalógovú stránku vedľa vyhľadávacieho poľa — `AddListingCta`
+  (rovnaká komponenta ako predtým, len iné miesto vykreslenia) sa
+  vykresľuje v `src/app/[locale]/page.tsx`, nie v `SiteHeader`-i.
+  Texty (`addListing`/`addDemand`/`creating`) presunuté z
+  `SiteHeader`-ovej lokálnej mapy do nového
+  `src/lib/add-listing-labels.ts`, aby si oba súbory (predtým hlavička,
+  teraz stránka) nemuseli držať vlastnú kópiu.
+- **Vyhľadávacie pole je teraz tam, kde bol predtým počet inzerátov**
+  — v obsahovom stĺpci (vedľa bočného panela filtrov), nad mriežkou
+  kariet, spolu s CTA v tom istom riadku vľavo.
+- **Počet inzerátov („48 inzerátov") je teraz úplne napravo** — v tom
+  istom riadku ako pole+CTA, zarovnaný `sm:text-right` na koniec
+  riadku, ktorý má rovnakú šírku ako mriežka kariet pod ním — teda nad
+  pravým okrajom poslednej karty v riadku.
+- **Karta „Ako funguje" ostáva sama hore** (predtým párovaná
+  s vyhľadávacím poľom v jednom riadku) — karta má vlastný obsah,
+  nepôsobí ako prázdny ostrov tak, ako to vadilo pri holom
+  vyhľadávacom poli osamote.
+
+**✅ OVERENÉ RUNTIME** (poučenie z predošlého kroku — po tejto zmene
+som ZNOVA reštartoval a ZNOVA curl-oval, nespoliehal som sa len na
+čistý `next build`): build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` vrátil **HTTP 200** prihlásenému aj
+neprihlásenému, `journalctl` bez chýb.
+- vo vrátenom HTML je jeden riadok s poľom, CTA (`bg-accent-deep`,
+  „+ Pridať inzerát") a napravo `<p ...>48 inzerátov</p>` — presne
+  v tomto poradí zľava doprava.
+- neprihlásenému sa CTA nezobrazuje vôbec (rovnaká podmienka ako
+  predtým v hlavičke — zakladanie inzerátu vyžaduje účet), pole a
+  počet ostávajú.
+- karta „Ako funguje" je vo výstupe sama, bez vyhľadávacieho poľa
+  vedľa seba.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** vyzerá riadok pole+CTA
+teraz „nie prázdny", ako si chcel? Sadne si počet inzerátov vizuálne
+nad pravý okraj poslednej karty v riadku mriežky?
+
+## CTA presne do stredu (17.9.2026)
+
+Rastio, hneď potom: „pridať inzerát daj do stredu medzi vyhľadávanie
+a počet inzerátov." Predošlá verzia mala CTA hneď VEDĽA poľa (obe
+vľavo), nie v strede riadku.
+
+- **`src/app/[locale]/page.tsx`** — riadok je teraz `grid-cols-3`
+  namiesto `flex`/`justify-between`: pole `justify-self-start`, CTA
+  `justify-self-center`, počet `justify-self-end`. Dôvod, prečo grid
+  a nie flex: pri flexe by sa „stred" posúval podľa šírky poľa a CTA
+  (nebol by to skutočný stred RIADKU); `grid-cols-3` s `justify-self`
+  drží tri veci PRESNE vľavo/stred/vpravo bez ohľadu na šírku susedných
+  buniek. Keď CTA chýba (neprihlásený) alebo počet chýba (žiadny
+  výsledok), príslušná bunka je prázdny `<div />` — nie `null` — aby
+  zvyšné prvky neposkočili do iného stĺpca.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` vrátil **HTTP 200** (prihlásený aj
+neprihlásený), `journalctl` bez chýb. Vo vrátenom HTML: `<div
+class="... sm:justify-self-start">` s poľom, `<div
+class="sm:justify-self-center">` s CTA, `<p class="...
+sm:justify-self-end">48 inzerátov</p>` — presne v tomto poradí.
+Neprihlásený: stredová bunka je prázdny `<div></div>`, pole aj počet
+ostávajú na svojich miestach.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** sedí CTA teraz vizuálne
+presne v strede riadku, nie len vedľa poľa?
