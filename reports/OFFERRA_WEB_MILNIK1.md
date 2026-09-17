@@ -647,8 +647,12 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   sekcia „O nájomcovi" viditeľná len majiteľovi).
 - **OfferTimeline** — ✅ HOTOVÉ (17.9.2026).
 - **CityPicker/StreetPicker** — ✅ HOTOVÉ (17.9.2026), pozri vyššie.
-- **Admin — zvyšok**: nastavenia prahov — ✅ HOTOVÉ (17.9.2026). Zostáva:
-  opakované porušenia, upozornenia, top vystavovatelia.
+- **Admin konzola — KOMPLETNÁ (17.9.2026)**: všetky appkové sekcie
+  (prehľad, nahlásenia, používatelia, overenie, rola, podozrivé
+  vzorce, duplicitné kontakty, nastavenia prahov, upozornenia,
+  opakované porušenia, top vystavovatelia) má teraz aj web.
+- **Živé vyhľadávanie v katalógu** — ✅ HOTOVÉ (17.9.2026, debounce
+  350ms, žiadne tlačidlo „Hľadať", presne ako appka).
 - **Realtime správy** (appka to tiež nemá — nie je to skutočná parita,
   len budúce vylepšenie).
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
