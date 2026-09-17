@@ -856,8 +856,115 @@ otvor `https://app.offerra.sk/en` a `https://app.offerra.sk/de` na
 telefóne aj počítači a over slovom:
 - Vidno anglický/nemecký text namiesto slovenského (nadpisy, tlačidlá,
   labely formulárov)?
-- Prepínanie funguje len ručnou zmenou URL zatiaľ — **prepínač jazyka
-  v menu ešte NIE JE hotový**, to je vedomá medzera, nie bug.
 - Časť textov (napr. „Nehnuteľnosti", „Cena na dohodu", „Bez fotky" na
   karte v katalógu) je zatiaľ NAPEVNO po slovensky aj na `/en`/`/de` —
-  tiež vedomá, ešte nedokončená medzera, nie niečo, čo malo fungovať.
+  vedomá, ešte nedokončená medzera, nie niečo, čo malo fungovať.
+
+## Zvonček, „Ako funguje", prepínač jazyka, brána prezývky (17.9.2026)
+
+Rastio prešiel appku a nahlásil chýbajúce: *„a nedal si tam vsetko neni
+tam napriklad ako to funguje, prebehni vsetky funkcie ios appky ani
+zvoncek tam neni"* → `pokracuj aj s tymito`. Postupne pridané, každé
+✅ OVERENÉ RUNTIME (build → reštart → curl na skutočnom HTML), 🟡 len
+tam, kde ide o vizuálne overenie, ktoré viem dokázať len HTTP kódom,
+nie zážitkom:
+
+- **Zvonček oznámení** — port appkového `use-notifications.ts`:
+  `NotificationsProvider` (React kontext, jeden zdieľaný Realtime kanál
+  na celý web, rovnaký dôvod ako appkový fix z 8.8.2026), `/oznamenia`
+  stránka. `notification-route.ts` má webové zjednodušenie: web nemá
+  appkovú samostatnú obrazovku správy ponúk majiteľa (`/ponuky/[id]`),
+  ponuky sú priamo v `OffersSection` na `/inzerat/[id]` — tam preto
+  vedú všetky typy s `property_id`.
+- **„Ako funguje Offerra"** — port appkového `how-it-works.ts` (text už
+  bol v zdieľanom i18n slovníku SK/EN/DE, chýbalo len UI): krátka karta
+  na hlavnej + v Nastaveniach, plná verzia na `/ako-to-funguje`, odkaz
+  aj priamo v hlavičke vedľa prihlásenia (Rastio: „ako to funguje by
+  som dal niekde ako je prihlásenie").
+- **Karta na hlavnej sa dá zavrieť** (`DismissibleCard`,
+  `localStorage` — appka zatvorenie ukladá do profilu, web pre to
+  zatiaľ nemá kam, vedomý kompromis) a hlavička katalógu je od tohto
+  kola na `lg:` dvojstĺpcová (nadpis vľavo, karta vpravo fixnej šírky)
+  — predtým „plávala krivo" na širokej obrazovke (Rastio).
+- **Prepínač jazyka SK/EN/DE v hlavičke** — dovtedy sa dalo prepnúť len
+  ručnou zmenou URL. Funguje aj bez prihlásenia, prepína na TEN ISTÝ
+  obsah v inom jazyku (nie na domovskú), zachová aj query parametre.
+
+### 🔴 Skutočná chyba nájdená pri tomto kole, nie vopred predpokladaná
+
+Rastio hneď po nasadení prepínača nahlásil: *„ked vyberiem jazyk tak ho
+zmeni a hned zmeni naspat"*. Prepínač sám bol správny (overené priamo
+v HTML — `aria-current`, `href` ukazovali na správny cieľ). Skutočná
+príčina: **úplne KAŽDÝ iný interný odkaz a presmerovanie na webe bolo
+napevno bez jazykovej predpony** — `href="/inzerat/${id}"`,
+`redirect("/login?next=/moje-inzeraty")`, `router.push("/")`, filtre v
+katalógu/dopytoch, živé vyhľadávanie. Kliknutie na ČOKOĽVEK z `/de/...`
+(kartu inzerátu, filter, odkaz „Prihlás sa", auth bránu na chránenej
+stránke) skončilo na SK — presne dojem „jazyk sa hneď vrátil naspäť",
+hoci to s prepínačom priamo nesúvisí.
+
+Opravené na **~25 miestach** naprieč katalógom, dopytmi, správami,
+editorom inzerátu, prihlásením, admin konzolou — `localizeHref(locale,
+path)` na každom odkaze, nový `redirectLocalized()` +
+`loginRedirectPath()` helper (`src/i18n/server.ts`/`href.ts`) pre
+server-side presmerovania. **Aj `next=` v `/login?next=...` musí byť
+lokalizovaný** — inak by prihlásenie z `/de/...` aj po oprave `/login`
+samotného skončilo späť na SK.
+
+**✅ OVERENÉ RUNTIME:** curl na chránené stránky z `/de/*` teraz
+správne vracia `307 → /de/login?next=%2Fde%2F...` (predtým `/login` bez
+predpony — zmerané priamo, nie odvodené). Verejné stránky (katalóg,
+detail inzerátu/dopytu) v SK/EN/DE majú VŠETKY interné odkazy v
+skutočnom vrátenom HTML správne s jazykovou predponou (grep na `curl`
+výstupe, nie na kóde). `journalctl` bez chýb po reštarte.
+
+### 🔴 Druhá, nezávislá kritická chyba nájdená pri tomto prieskume
+
+Web **nikdy nezakladal `offerra.profile`** pri prvom prihlásení. Appka
+to robí cez povinnú obrazovku prezývky (`prezyvka.tsx`, LOGIN → NICKNAME
+→ appka) — web nemal ekvivalent VÔBEC. Zmerané priamo cez Supabase
+Management API: `property`, `property_offer`, `buyer_request`,
+`message`, `rating`, `viewing`, `notification` a ďalšie majú cudzí kľúč
+na `offerra.profile`, a **žiadny DB trigger profil web-only používateľovi
+nezaloží** (jediný trigger na `auth.users` zapisuje do `public.profiles`
+— cudzia tabuľka, iný projekt na tej istej zdieľanej databáze, nie
+`offerra.profile`). Overené aj nepriamo: len 3 neseed profily v DB,
+2 z nich majú appkové polia `age_confirmed_at` — silný náznak, že
+doteraz úplne KAŽDÝ testovaný účet mal profil už z appky, a web-only
+registrácia s pokusom o ponuku/inzerát/správu nebola nikdy reálne
+vyskúšaná až do konca.
+
+**Dôsledok, keby sa to nenašlo teraz:** nový človek, čo príde na
+`app.offerra.sk` cez Google/Apple (nikdy predtým appku neinštaloval),
+by pri prvom pokuse podať ponuku/vytvoriť inzerát/napísať správu dostal
+surovú chybu porušenia cudzieho kľúča z Postgresu — nezrozumiteľnú a
+appka/web by ho nikam nenasmerovali.
+
+**Oprava:** port appkovej `prezyvka.tsx` na `/prezyvka` (prezývka min. 3
+znaky, meno-návrh z OAuth metadát, telefón POVINNÝ, potvrdenie 18+ a
+vlastného mena — rovnaké právne náležitosti ako appka, s rovnakým
+dôvodom v komentári prevzatým 1:1) + **brána v `proxy.ts`** (rovnaký
+princíp ako appkový `_layout.tsx`): prihlásený človek bez profilu sa z
+ktorejkoľvek stránky (okrem `/login`, `/prezyvka`, statických routov)
+presmeruje na `/prezyvka` skôr, než sa čokoľvek iné stihne pokaziť.
+Editácia existujúceho profilu (prezývka/meno/telefón) doplnená aj do
+Nastavení.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `/prezyvka` vracia `200`
+(SK/EN/DE) pre neprihláseného presmerovanie na `/login?next=/prezyvka`
+(očakávané, rovnaké ako ostatné chránené stránky). Samotnú bránu (nový
+človek bez profilu → automatické presmerovanie) **nejde overiť curl-om
+bez reálneho Google/Apple prihlásenia** — logika je odvodená z
+zmeraných DB grantov/FK a 1:1 zrkadlí appkový overený vzor, ale
+**skutočné vyskúšanie novým účtom je 🟡, čaká Rastiovo potvrdenie.**
+
+**🟡 Čaká na Rastiove overenie, konkrétne:**
+- Skús sa odhlásiť a prihlásiť úplne NOVÝM Google účtom (taký, čo
+  appku ani web ešte nikdy nepoužil) — mal by ťa web poslať na obrazovku
+  prezývky skôr, než čokoľvek iné.
+- Na `/en` a `/de` klikni na kartu inzerátu, na filter, na „Ako
+  funguje" v hlavičke, prepni jazyk na inej stránke než domovskej — nikde
+  by sa už nemalo skočiť späť na slovenčinu.
+- Zvonček: príde ti niekedy nové oznámenie (napr. niekto podá ponuku na
+  tvoj inzerát) — ukáže sa počet na zvončeku živo, bez obnovenia
+  stránky?
