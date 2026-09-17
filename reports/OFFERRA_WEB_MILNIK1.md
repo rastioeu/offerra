@@ -1611,3 +1611,32 @@ pokusu, ktorú Rastio na začiatku zamietol. Tentoraz:
 nevie ukázať: sadne si panel na boku dobre pri šírke bežného notebooku
 (nie len veľkého monitora)? Sú sekcie s nadpismi a čiarami dosť
 „rozložené", alebo to ešte chce upraviť?
+
+## Počet vyfiltrovaných inzerátov (17.9.2026)
+
+Rastio: „ešte by tam mohlo byť koľko ponúk je práve vyfiltrovaných."
+
+Appka toto už má — `catalog.countOne/Few/Many` kľúče (tri skloňovacie
+tvary v SK, appka: `app/(tabs)/index.tsx`, nad zoznamom). Web mal tie
+isté kľúče v prekladových súboroch (skopírované s celým slovníkom), len
+sa nikde nepoužívali.
+
+- **`src/lib/property.ts`** — nová `catalogCountLabel(t, language,
+  count)`, 1:1 port appkovej logiky z `index.tsx` (SK tri tvary: 1
+  inzerát / 2-4 inzeráty / 5+ inzerátov, EN/DE len jednotné/množné).
+- **`src/app/[locale]/page.tsx`** — text sa zobrazí NAD zoznamom kariet
+  (`text-sm font-medium text-text-secondary`, o čosi výraznejšie než
+  vedľajší „Rozumiem: ..." riadok), len keď je aspoň jeden výsledok —
+  pri nule výsledkoch už namiesto neho stojí „Tomuto hľadaniu nič
+  nezodpovedá", ktoré to isté hovorí zrozumiteľnejšie ako „0 inzerátov".
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- bez filtra: „**48 inzerátov**" (SK), „**48 listings**" (EN), „**48
+  Inserate**" (DE).
+- `?transaction=RENT`: „**16 inzerátov**".
+- `?transaction=SALE&type=LAND`: „**4 inzeráty**" — potvrdené správne
+  skloňovanie (2-4 tvar, nie „4 inzerátov").
+- kombinácia filtrov s nulovým výsledkom (`?transaction=SALE&type=LAND&sort=ENDING_SOON&q=xyzxyzxyz`):
+  číslo sa nezobrazí, namiesto neho `noMatchTitle` text — overené
+  priamo vo vrátenom HTML.
