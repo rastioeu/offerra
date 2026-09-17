@@ -677,6 +677,14 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
 - **Priebežné autosave** — preskúmané a vyradené zo zoznamu medzier,
   pozri opravu vyššie pri Fáze 4: appkový `useFormDraft` rieši bug,
   ktorý web architektonicky nemá.
+- **✅ SEO základ HOTOVÝ (17.9.2026)** — `robots.txt` a `sitemap.xml`
+  CHÝBALI ÚPLNE (404), napriek tomu, že SEO je hlavný dôvod celého
+  projektu. `sitemap.xml` teraz dynamicky vypíše VŠETKY `ACTIVE`
+  inzeráty aj dopyty (vlastná URL, `lastmod`), `robots.txt` povoľuje
+  verejný katalóg/detail a zakazuje prihlásením chránené stránky.
+  Doplnený aj `metadataBase` v `layout.tsx` (predtým chýbal — Next.js
+  by inak relatívne OG URL riešil voči `localhost:3000`, nie skutočnej
+  doméne).
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
