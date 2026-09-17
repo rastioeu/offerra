@@ -1146,3 +1146,65 @@ takže technicky by to nebol veľký krok — ale profilovka sa dnes NIKDE
 na webe nezobrazuje (žiadny avatar v hlavičke ani inde), takže by to
 bola funkcia bez viditeľného efektu. Keď bude jasné, kde by sa
 profilovka na webe vôbec ukázala, dorobí sa spolu s tým miestom.
+
+## Overenie prihláseným demo účtom (17.9.2026)
+
+Rastio: „skús to prihlásený ty, ja idem overiť." Doteraz som web overoval
+LEN cez `curl` bez prihlásenia (§1: HTTP kód dokazuje, že stránka
+existuje, nie že to, čo je za prihlásením, naozaj funguje). Prihlásil
+som sa priamo cez Supabase (demo účet App Store review,
+`applereview@offerra.app`, heslo z `/root/.offerra-secrets`
+`DEMO_PASSWORD`) a s tou reláciou som na `app.offerra.sk` skutočne robil
+veci, nie len pozeral:
+
+- **Nastavenia** — formulár sa naplnil REÁLNYMI dátami účtu (prezývka,
+  meno, telefón) — `my_profile()` cez skutočnú session funguje.
+- **Obľúbené** — pridal som skutočný inzerát do obľúbených priamym
+  zápisom (rovnaká cesta, akou by prešiel klik na srdiečko), `/oblubene`
+  ho hneď ukázal.
+- **Moje dopyty aj Moje inzeráty** — vytvoril som testovací dopyt aj
+  koncept inzerátu, oba sa objavili v príslušných zoznamoch.
+- **Moja aktivita** — obe nové udalosti sa ukázali správne zoradené
+  (najnovšie hore), zoskupené pod „Dnes", so správnym štítkom stavu
+  („Rozpracované") aj naformátovaným rozpočtom. Zlučovanie zo 4 zdrojov
+  naozaj funguje, nie len teoreticky.
+- Všetky testovacie dáta (dopyt, koncept, obľúbené) som po sebe zmazal
+  — demo účet je presne taký, ako pred testom.
+
+**Stále NEoverené** (vyžaduje to skutočný prehliadač): klik na srdiečko
+cez UI, zvonček naživo (Realtime, vyžaduje dve súčasné relácie), nový
+Google účet cez `/prezyvka` bránu, formuláre cez skutočné písanie do
+polí. Dátová vrstva pod nimi je teraz overiteľne funkčná — zvyšok je na
+Rastiovom vyskúšaní v prehliadači.
+
+## Kontaktné údaje — telefón, e-mail (17.9.2026)
+
+Rastio: telefón `+421 944 357 671`, e-mail `kontakt@offerra.sk`.
+
+- **Hlavička** — dve kompaktné ikony (`tel:`/`mailto:`) na desktope
+  vpravo vedľa prihlásenia/prepínača jazyka, na mobile schované do
+  hamburger menu (appka: presne Rastiova požiadavka „nech nezaberá
+  miesto"). `MobileNav` rozšírený o voliteľný `children` slot na toto.
+- **Pätička** — dovtedy web ŽIADNU nemal. Plný telefón aj e-mail,
+  odkazy na Ochranu osobných údajov a Podmienky používania (vedú na
+  `rastioeu.github.io/offerra_web/privacy.html`/`terms.html` — appka
+  odkazuje na TÚ ISTÚ verejnú verziu, „appka nemôže tvrdiť niečo iné než
+  verejná stránka, na ktorú odkazuje App Store Connect" — preto odkaz
+  von, nie nová kópia obsahu vo web appke), rok/copyright.
+- **JSON-LD** (`schema.org` Organization) — `telephone`, `email` a
+  `ContactPoint` (`customer service`, `areaServed: SK`,
+  `availableLanguage: [sk, en, de]`) — Google to môže ukázať priamo vo
+  výsledkoch vyhľadávania, presne ako si žiadal.
+- Jeden zdroj pravdy pre číslo/e-mail (`src/lib/contact.ts`) — hlavička,
+  pätička aj JSON-LD z neho čítajú, nemôžu sa rozísť.
+- Všetko cez i18n kľúče (nová `footer` doména), SK/EN/DE.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na `/` v SK/EN/DE
+ukazuje `tel:`/`mailto:` odkazy v hlavičke aj pätičke priamo vo vrátenom
+HTML, správne preložené „Ochrana osobných údajov"/„Privacy Policy"/
+„Datenschutz", JSON-LD obsahuje `telephone` aj `email`, žiadna regresia
+na ostatných routách, `journalctl` bez chýb.
+
+**🟡 Čaká na Rastiovo vizuálne overenie:** dve nové ikony v hlavičke —
+vyzerajú decentne, nerozbíjajú riadok na desktope? Pätička — vyzerá
+dobre na mobile aj širokej obrazovke?
