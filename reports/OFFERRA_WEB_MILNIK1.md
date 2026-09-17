@@ -2069,3 +2069,41 @@ stránky.
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** cíti sa teraz okolo poľa
 menej prázdneho priestoru, alebo to chce ešte niečo iné (napr. pole
 na celú šírku dostupného priestoru namiesto pevných 460px)?
+
+## Ikony neboli dobré + telefón/mail preč z hlavičky (17.9.2026)
+
+Rastio: „tie ikony zmeň, nie sú dobré, a telefón a mail nemusia byť
+hore na lište." Dve samostatné veci.
+
+**1. Telefón a e-mail preč z hlavičky.** Boli tam od Rastiovej prvej
+kontaktnej požiadavky (17.9.2026, skorší krok) — teraz sa vracia
+späť: kontakt ostáva LEN v pätičke, kde je aj tak plný a výrazný.
+`HeaderContact`/`MobileNavContact` a ich pomocná ikona (`mailIconSvg`)
+sú v `src/components/contact-links.tsx` úplne ZMAZANÉ (nič iné ich
+nepoužívalo), nie len odpojené — súbor teraz nesie len `FooterMailLink`
+pre pätičku.
+
+**2. Ikony pre Obľúbené/Nastavenia/Ako funguje boli VLASTNÉ, narýchlo
+nakreslené SVG cesty** (predošlý krok) — bez prehliadača v tomto
+prostredí sa nedali overiť vopred, a Rastio potvrdil, že nevyzerali
+dobre. Namiesto ďalšieho vlastného pokusu naslepo:
+- **Srdiečko (Obľúbené)** ostáva — je to ten istý overený tvar ako
+  appkové/webové `FavoriteHeart` (skutočne používaná, zrevidovaná
+  ikona), nie nový návrh.
+- **Ozubené koliesko (Nastavenia)** a **otáznik v krúžku (Ako
+  funguje)** nahradené známymi, širokopoužívanými ikonami z Heroicons
+  (`Cog6Tooth`/`QuestionMarkCircle`, rovnaký `outline` štýl), nie
+  vlastnou geometriou vymyslenou bez možnosti si ju tu reálne
+  pozrieť — nižšie riziko, že budú „zase zlé", lebo sú to overené,
+  bežne používané tvary.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (prihlásený demo účet):
+- `tel:+421944357671` a `mailto:kontakt@offerra.sk` sa vo vrátenom
+  HTML vyskytujú presne RAZ, a to v pätičke (`border-t` sekcia) — nie
+  v hlavičke.
+- ikony Nastavenia/Ako funguje majú vo vrátenom HTML nové Heroicons
+  cesty (`Cog6Tooth`/`QuestionMarkCircle`), nie pôvodné vlastné.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** vyzerajú teraz tieto tri
+ikony (srdiečko/ozubené koliesko/otáznik) dobre vedľa zvončeka?
