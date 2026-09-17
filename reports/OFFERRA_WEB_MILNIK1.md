@@ -637,11 +637,35 @@ vygenerovanom HTML.
 
 **Čo NEVIEM overiť sám:** ako to VYZERÁ (farby v prehliadači, blur
 efekt glow, responzívne správanie pri zmene šírky okna, hover stavy) —
-to vyžaduje skutočný prehliadač. Toto je prvé kolo, nie kompletná
-parita — appkový avatar systém, kompletná typografická škála
-(`Type`/`Money` ako tokeny, nie len tieto dve konkrétne veľkosti),
-počítadlo fotiek na karte a appkový `OfferCountdownPill` (platnosť
-PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
+to vyžaduje skutočný prehliadač.
+
+### Druhé kolo (17.9.2026) — ✅ zdieľaná `Button` komponenta + `Shadow.button`
+
+Appkový avatar systém, `OfferCountdownPill` a počítadlo fotiek z
+prvého kola sú hotové (pozri nižšie v „Čo ešte chýba" históriu). Druhé
+kolo sa sústredilo na TOTO:
+
+- **Zdieľaná `Button` komponenta** (`src/components/button.tsx`) —
+  predtým **17 miest** v kóde kopírovalo rovnaké Tailwind triedy pre
+  primárne/sekundárne/danger tlačidlá ručne (ľahko rozíditeľné,
+  appkové pravidlo CLAUDE.md §5 „žiadna komponenta nesmie mať vlastnú
+  hardcodovanú farbu" rozšírené aj na tlačidlá). Teraz `variant="primary"
+  | "secondary" | "danger"`, padding/veľkosť ostáva na volajúcom
+  zámerne (nechcem ticho zmeniť rozmery, ktoré sám nevidím).
+- **`--shadow-button` token** — appkový `Shadow.button` (farebný
+  terakotový tieň na primárnych tlačidlách, nie generický sivý),
+  doplnený pre svetlý aj tmavý režim, aplikovaný na `variant="primary"`.
+- **Vedome NEURČITÁ kompletná Type/Money škála ako tokeny** — appkový
+  komentár v `globals.css` hovorí explicitne: „appkové minimá (13px) sú
+  pre web zbytočne malé, tu je normálna webová škála" (Rastio,
+  schválené pri prvom kole). 1:1 port appkových presných px hodnôt by
+  preto bol KROK SPÄŤ, nie dokončenie — toto zámerne NEROBÍM, kým
+  nepríde iný pokyn.
+
+Overené naozaj bežiacim serverom: `npm run build` čisto, regresný
+prieskum všetkých hlavných stránok bez zmeny HTTP kódov, `shadow-[var(--shadow-button)]`
+trieda potvrdená vo vygenerovanom HTML na viacerých stránkach. **Čo
+NEVIEM overiť sám:** ako presne tieň vyzerá v prehliadači.
 
 ## Čo ešte chýba
 
