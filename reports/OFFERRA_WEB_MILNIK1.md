@@ -1730,3 +1730,44 @@ class="mx-auto flex w-full max-w-2xl flex-col items-center gap-4
 text-center">` obsahuje titulok, text aj vyhľadávacie pole; karta „Ako
 funguje Offerra" nasleduje v samostatnom `<div class="mx-auto w-full
 max-w-md">` POD hlavičkou, nie vedľa nej.
+
+## Nadpis a popis — tretí pokus, motto vedľa loga (17.9.2026)
+
+Rastio na vycentrovanú hlavičku: „nie je to pekné, 'Nehnuteľnosti' aj
+ten popis by mohli byť niekde hore vedľa loga ako motto, skús to
+skrátiť."
+
+- **`src/i18n/locales/{sk,en,de}.json`** — nový kľúč `catalog.motto`,
+  skrátená prvá veta z existujúceho `catalog.lead` („Obrátený trh
+  s nehnuteľnosťami" / „A reverse real estate market" / „Ein
+  umgekehrter Immobilienmarkt"), nie nový text — druhá polovica vety
+  o ponukách do motta vedľa loga nepatrí.
+- **`src/components/site-header.tsx`** — logo a motto sú teraz JEDNA
+  skupina vľavo v hlavičke (predtým bolo `justify-between` len medzi
+  logom a navigáciou; motto muselo byť v tej istej skupine ako logo,
+  inak by `justify-between` rozhádzalo tri veci namiesto dvoch).
+  Motto je viditeľné až od `lg:` (1024px) — pri prihlásenom je
+  navigácia sama osebe dlhá (8 odkazov + zvonček + jazyk + kontakt) a na
+  `md` (768px) je to už tesné; motto navyše by ju vtedy pretláčalo do
+  druhého riadku.
+- **`src/app/[locale]/page.tsx`** — veľký vycentrovaný blok (nadpis
+  `text-2xl` + odsek) z tela stránky PREČ, nahradený `<h1
+  className="sr-only">` (ostáva pre SEO/čítačky obrazovky — Google aj
+  naďalej vidí `<h1>Nehnuteľnosti</h1>`, len sa nezobrazuje vizuálne,
+  keďže tú istú vec teraz hovorí motto v hlavičke). Vyhľadávacie pole
+  ostáva, vycentrované, ako prvá viditeľná vec na stránke.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (SK/EN/DE):
+- `<h1 class="sr-only">Nehnuteľnosti</h1>` prítomný (SEO zachované),
+  starý viditeľný veľký nadpis preč.
+- motto „Obrátený trh s nehnuteľnosťami" / „A reverse real estate
+  market" / „Ein umgekehrter Immobilienmarkt" vedľa loga, vo VŠETKÝCH
+  troch jazykoch.
+- motto sa objaví aj na iných stránkach (`/dopyty`, `/ako-to-funguje`)
+  — je súčasťou zdieľanej hlavičky, nie len domovskej stránky.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
+nevie ukázať: pôsobí motto vedľa loga dobre, nezráža sa s navigáciou na
+šírke bežného notebooku? Chýba ti nadpis/popis na katalógovej stránke,
+alebo je takto lepšie?
