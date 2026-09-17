@@ -1208,3 +1208,24 @@ na ostatných routách, `journalctl` bez chýb.
 **🟡 Čaká na Rastiovo vizuálne overenie:** dve nové ikony v hlavičke —
 vyzerajú decentne, nerozbíjajú riadok na desktope? Pätička — vyzerá
 dobre na mobile aj širokej obrazovke?
+
+## Nastavenia — prerobené (17.9.2026)
+
+Rastio: „stránku nastavenia prerob nie je pekná a tam nemusí byť ako
+funguje offerra."
+
+- Každá sekcia (Účet, Prezývka a kontakt, Moje dáta, Nebezpečná zóna) je
+  teraz skutočná karta (`rounded-2xl border bg-surface shadow-card`,
+  rovnaký appkový vzhľad ako karta inzerátu/formulár ponuky) — predtým
+  mali sekcie len malý nadpis bez akéhokoľvek vizuálneho rámca.
+- Karta „Ako funguje Offerra" z tejto stránky preč — ostáva len na
+  hlavnej stránke a ako obyčajný odkaz v hlavičke/pätičke.
+- „Moja aktivita" a „Čo je nové" presunuté z roztrúsených miest do
+  vlastnej karty „Rýchle odkazy".
+- Nebezpečná zóna má jemné červené orámovanie — vizuálne odlíšená od
+  ostatných kariet už na prvý pohľad, nie len cez nadpis.
+
+**✅ OVERENÉ RUNTIME** (demo účtom, rovnaký postup ako vyššie): všetky
+sekcie sa renderujú, karta „Ako funguje Offerra" na tejto stránke už nie
+je prítomná, build čistý, reštart, `/nastavenia` bez zmeny správania
+v SK/EN/DE, `journalctl` bez chýb.
