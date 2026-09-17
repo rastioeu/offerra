@@ -1083,3 +1083,37 @@ opravu popri inom.
 aj chránené routy v SK/EN/DE, `robots.txt` obsahuje `/en/`, `/de/`
 varianty všetkých chránených ciest, `sitemap.xml` obsahuje
 `ako-to-funguje`, `journalctl` bez chýb.
+
+## „Čo je nové" (17.9.2026) — posledná pôvodne nájdená chýbajúca funkcia
+
+Rastio: „jazyky su ok podme dalej." Posledná položka z pôvodného
+prieskumu appka-vs-web (spolu so zvončekom, „Ako funguje", prezývkou,
+obľúbenými — všetky už hotové). **Nie port appkového changelogu**
+(appkový je plný appkovo-špecifických vecí — natívne gestá, TestFlight
+buildy — čo sa na webe nikdy nestali) — vlastný web changelog so
+skutočnými dátumami zo `git log` (16.–17.9.2026, kedy web reálne
+vznikol), zoskupený do používateľsky zmysluplných záznamov namiesto
+jedného na commit.
+
+**Rozhodnutie, nie prehliadnutie:** obsah `CHANGELOG` je zámerne LEN po
+slovensky — rovnaký vzor, aký appka sama používa pre svoj vlastný
+changelog (ten je tiež SK-only napriek tomu, že appka má EN/DE) — je to
+historický záznam, nie časť webu, ktorú niekto reálne používa. Nadpis
+a úvod okolo neho preložené sú.
+
+Odkaz „Čo je nové" v Nastaveniach vedľa karty „Ako funguje", pridané aj
+do `sitemap.xml`.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `/novinky` `200` v
+SK/EN/DE, `<title>What's new | Offerra</title>` priamo v HTML na
+`/en/novinky`, `/nastavenia` bez zmeny správania, `journalctl` bez chýb.
+
+---
+
+**Zvyšok z pôvodného prieskumu appka-vs-web, vedome ešte neriešený:**
+appkový „Profil" (aktivitná časová os, nahrávanie profilovky) — appka
+ho má ako jednu bohatú obrazovku, web má ekvivalent rozdelený na
+Nastavenia + Moje inzeráty/ponuky/dopyty + Obľúbené. Časová os aktivity
+naprieč všetkými týmito by bola samostatná, väčšia práca (zlučovanie
+viacerých tabuliek chronologicky) — nezačaté, čaká na Rastiovo
+rozhodnutie, či to web vôbec potrebuje.
