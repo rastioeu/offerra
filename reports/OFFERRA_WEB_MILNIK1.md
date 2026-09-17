@@ -978,8 +978,26 @@ celé Nastavenia vrátane potvrdzovacích dialógov pri zmazaní účtu a
 exportu dát — appka mala bohatý `nastavenia` slovník už hotový, stačilo
 ho použiť namiesto natvrdo napísaného textu.
 
-**🔴 VEDOME OTVORENÉ, nie tichá medzera:** editor inzerátu (formulár s
-desiatkami polí), formulár ponuky, nadpisy na Moje inzeráty/ponuky/
-dopyty, admin konzola sú zatiaľ len po slovensky aj na `/en`/`/de`.
-Toto je najväčší zvyšný i18n blok — samostatná ďalšia fáza, nie
-prehliadnutie.
+**Druhé a tretie kolo (Rastio: „ale neni vsetko prelozene napriklad
+vsetko vsetky inzeraty najnivsie" a následný grep na zvyšok):**
+dokončené — editor inzerátu (celý, appkový `inzeratEdit` slovník bol
+už hotový, stačilo ho napojiť), formulár ponuky, katalógové aj
+dopytové filtre (Všetko/Všetky typy/Typ obchodu/Triedenie/Najnovšie/
+Končí čoskoro/Hľadať), CityPicker/StreetPicker, nadpisy a prázdne stavy
+na Moje inzeráty/ponuky/dopyty, prihlasovacia stránka, vlastná 404,
+editor fotiek, texty „Hodnotenia"/„Ponuky (N)"/„Prihlás sa" pri
+detaile inzerátu.
+
+Systematická kontrola (`grep` na slovenskú diakritiku v JSX naprieč
+celým webom) na konci potvrdila: mimo admin konzoly web už neobsahuje
+napevno slovenský viditeľný text.
+
+**🔴 VEDOME OTVORENÉ, nie tichá medzera:** len admin konzola —
+jediný používateľ je Rastio, preklad by nemal praktický prínos, preto
+zámerne vynechaná.
+
+**Vedľajšie zistenie, nie chyba tejto fázy:** `/inzerat/<hocičo-nie-je-UUID>`
+(neplatný formát, nie len neexistujúce id) vyhodí surovú chybu Postgresu
+namiesto vlastnej 404 stránky — existovalo to už predtým, nesúvisí s
+prekladmi, nízka priorita (interné odkazy vždy posielajú skutočné UUID,
+zasiahne len ručne upravenú URL).
