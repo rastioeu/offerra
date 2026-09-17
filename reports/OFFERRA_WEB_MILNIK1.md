@@ -1001,3 +1001,37 @@ zámerne vynechaná.
 namiesto vlastnej 404 stránky — existovalo to už predtým, nesúvisí s
 prekladmi, nízka priorita (interné odkazy vždy posielajú skutočné UUID,
 zasiahne len ručne upravenú URL).
+
+## Štvrté kolo prekladov + srdiečko obľúbených (17.9.2026)
+
+Rastio pri ďalšom prezeraní webu opäť nahlásil zvyšky: *„este neni
+prelozene vsetko pises stiahnut ponuku spat do katalogu"*. Predošlé
+kolá hľadali len slová s diakritikou (`grep` na `áäčďéíĺľňóôŕšťúýž`) —
+**tento sweep pridal aj čisto ASCII-vyzerajúce slovenské slová**
+(„Popis", „Podrobnosti"), ktoré diakritický filter neodhalil.
+
+**✅ OVERENÉ RUNTIME:**
+- Dokončené: potvrdenia a tlačidlá pri Prijať/Odmietnuť/Uzavrieť
+  obchod, Stiahnuť ponuku, chybové hlášky vo VŠETKÝCH formulároch
+  (doteraz boli 100 % napevno po slovensky, aj keď zvyšok formulára už
+  bol preložený — nízka viditeľnosť ich nechala prehliadnuté 3× po sebe),
+  aria-label na hamburger menu a zatváracom krížiku, „Popis"/
+  „Podrobnosti"/„Pridal:" na detaile inzerátu.
+- Všetky zvyšné `<title>` (Moje inzeráty/ponuky/dopyty, editor, správy,
+  nastavenia, prihlásenie) prevedené z napevno reťazca na
+  `generateMetadata` + `t()` — predtým prekladal len VIDITEĽNÝ obsah
+  stránky, karta v prehliadači zostávala po slovensky.
+- **Nová funkcia, nie len preklad:** srdiečko obľúbených inzerátov.
+  Appka to má len ako sekciu v Profile (žiadna appková samostatná
+  obrazovka), web dostal vlastnú `/oblubene`. `FavoritesProvider`
+  (rovnaký vzor ako `NotificationsProvider` — jeden zdieľaný stav pre
+  celý web, appkový dôvod pre `favorite` tabuľku: RLS drží súkromie, nie
+  len UI), srdiečko na katalógovej karte aj detaile inzerátu
+  (optimistické, appkový kontrastný kruh pod ikonou prevzatý 1:1),
+  odkaz v hlavičke aj hamburgeri.
+- Build čistý, reštart, `/oblubene` `200` v SK/EN/DE, `<title>Sign in |
+  Offerra</title>` priamo vo vrátenom HTML na `/en/login`, `journalctl`
+  bez chýb.
+
+**🟡 Čaká na Rastiovo overenie:** klikni na srdiečko pri inzeráte (v
+katalógu aj na detaile) a skontroluj `/oblubene` — mal by tam byť.
