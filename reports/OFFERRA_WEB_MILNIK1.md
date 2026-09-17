@@ -1539,3 +1539,34 @@ webe zaberali zbytočne veľa výšky navyše k hlavičke aj mriežke kariet.
 ukázať: je jeden zhustený riadok teraz primeranej výšky, nie „moc
 veľký"? Zalamujú sa čipy na mobile rozumne (viac riadkov len keď sa
 nezmestia, nie vždy)?
+
+## Filter — piaty pokus, odstup medzi skupinami (17.9.2026)
+
+Rastio na jeden zhustený riadok: „lepšie ale medzi tými troma filtrami
+daj medzeru alebo niečo na dizajn."
+
+Predošlá verzia mala medzi skupinami len 1px čiarku na dotyk
+(`mx-0.5`) — vizuálne takmer nerozoznateľnú od bežnej medzery medzi
+čipmi v tej istej skupine.
+
+- Tri skupiny (typ obchodu / typ nehnuteľnosti / triedenie) sú teraz
+  VLASTNÉ `<div>` bloky s vlastným `gap-1.5` vnútri.
+- Medzi skupinami navyše `gap-x-5` na vonkajšom paneli (namiesto
+  `gap-1.5` predtým — skutočný odstup, nie len čiarka).
+- Druhá a tretia skupina majú od `sm:` navyše `border-l border-border
+  pl-5` — deliaca čiara AJ odsadenie naraz, výraznejšie než predošlý
+  1px `<span>`.
+- Na mobile (pod `sm:`) sa čiara/odsadenie vypína — nalepená na ľavý
+  okraj zalomeného riadku by vyzerala ako chyba, nie dizajn.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- panel má `gap-x-5 gap-y-2` (predtým `gap-1.5`).
+- `sm:border-l sm:border-border sm:pl-5` prítomné na druhej aj tretej
+  skupine vo vrátenom HTML.
+- `?transaction=RENT&type=APARTMENT` vrátil **12 kariet** —
+  kombinovaný filter cez čipy naďalej funguje.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — pozri sa prosím na
+`app.offerra.sk`, či je odstup medzi skupinami teraz dosť viditeľný, a
+či to na šírke desktopu vyzerá „dizajnovo" tak, ako si predstavoval.
