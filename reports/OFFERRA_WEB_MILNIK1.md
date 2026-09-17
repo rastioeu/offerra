@@ -1248,3 +1248,149 @@ výrazná... telefón a e-mail majú veľkosť skoro ako nadpisy, tučné."
 žiadny nadpis „Kontakt", správne zmenšené/stlmené triedy priamo vo
 vrátenom HTML, odkazy v jednom `<nav>` riadku, žiadna regresia,
 `journalctl` bez chýb.
+
+## Tri hlásené chyby po prezretí webu (17.9.2026)
+
+Rastio prešiel `app.offerra.sk` a nahlásil tri konkrétne veci.
+
+### 1. E-mail v pätičke rozbitý Cloudflare Email Obfuscation
+
+„Cloudflare email obfuscation ho premenil na '[email protected]'... Vyzerá
+to ako chyba webu."
+
+Cloudflare Scrape Shield prehľadáva odpoveď a e-maily prepisuje na
+zašifrovaný odkaz + JS dekodér — keď dekodér nespustí, vidno doslova
+placeholder text.
+
+**Prvý pokus (nefunkčný, zistené AŽ PO nasadení):** zakódovať `@` v
+surových bajtoch ako HTML entitu `&#64;`, s teóriou, že Scrape Shield
+skenuje bajty regexom, ktorý entitu nenájde. `curl` na živý web po
+nasadení ukázal, že to nestačí — Scrape Shield entity DEKÓDUJE skôr, než
+porovnáva, takže `href="mailto:kontakt&#64;offerra.sk"` napriek tomu
+NAŠIEL a prepísal na `/cdn-cgi/l/email-protection#…`. Viditeľný text
+(ten bol tiež ako entita) ostal čitateľný, takže PÔVODNÝ nahlásený
+problém by bol vyriešený, ale odkaz by sa stále spoliehal na to, že sa
+na klientovi stiahne a spustí Cloudflareov `email-decode.min.js` —
+presne tá istá krehkosť, kvôli ktorej chyba vznikla prvýkrát.
+
+**Skutočná oprava:** Cloudflare má na presne toto zdokumentovaný bypass
+— `<!--email_off-->…<!--/email_off-->` okolo obsahu vypne Scrape Shield
+pre všetko medzi týmito komentármi, bez ohľadu na API práva (token v
+`.offerra-secrets` nemá právo meniť nastavenia zóny — to sa nezmenilo,
+ale ani netreba). `href` aj viditeľný text teraz idú ako obyčajné
+`mailto:kontakt@offerra.sk`, Cloudflare sa ich vôbec nedotkne.
+(`src/components/contact-links.tsx`, `mailLinkHtml`.)
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (aj `/en`, `/de`) po reštarte:
+- `grep -c 'cdn-cgi/l/email-protection'` → **0**
+- `grep -c 'data-cfemail'` → **0**
+- `grep -c '\[email protected\]'` → **0**
+- skutočný vykreslený DOM (nie len RSC dáta) obsahuje
+  `<a href="mailto:kontakt@offerra.sk" ...>kontakt@offerra.sk</a>` —
+  overené priamym `grep` v stiahnutom HTML zo všetkých troch jazykov.
+
+Poznámka pre budúcnosť: JSON-LD (`application/ld+json`, pridané
+v predošlom kroku) obsahuje `"email":"kontakt@offerra.sk"` ako obyčajný
+JSON reťazec vnútri `<script>` — Cloudflare toto necháva bez zmeny (overené
+tým istým `curl`, text v `<script>` ostal netknutý), takže sa netýka.
+
+### 2. Ceny na kartách — chýbala najvyššia ponuka
+
+„V appke pritom rozlišujeme ORIENTAČNÚ CENU a NAJVYŠŠIU PONUKU — to je
+jadro celého konceptu Offerra (reverzný trh)... Na webe to vyzerá ako
+obyčajný realitný portál s pevnými cenami."
+
+Presne tak — karta doteraz ukazovala len `formatPrice(asking_price_hint)`
+alebo „Cena na dohodu". Appkový modul `price-display.ts`
+(`priceDisplay()`/`offerCountLabel()`) na webe vôbec neexistoval a
+`fetchCatalog` nepočítal súhrn ponúk k inzerátom.
+
+- **`src/lib/price-display.ts`** — nový, 1:1 port appkového modulu
+  (`priceDisplay`, `offerCountLabel`). Hlavné číslo je NAJVYŠŠIA PONUKA
+  vždy, keď nejaká živá (PENDING/ACCEPTED, nepremlčaná) existuje —
+  orientačná cena sa vtedy ukazuje vedľa, menšia a sivá. Presne appkové
+  pravidlo z mockupu „Dôveryhodne teplá" (8.8.2026): skutočná ponuka je
+  dôležitejšia než želanie predávajúceho.
+- **`src/lib/catalog.ts`** — nová `attachOfferStats()`, port appkového
+  `attachOfferStats` z `use-properties.ts`: jeden dotaz na `property_offer`
+  pre celú stránku výsledkov (nie N+1 na kartu), najvyššia SUMA a počet
+  ŽIVÝCH ponúk sa počítajú v pamäti, platnosť PENDING ponuky sa overuje
+  ŽIVO cez `isOfferExpired` (nie len podľa `status` — cron
+  `expire_offers()` beží len raz za pár minút).
+- **`src/lib/property.ts`** — `Property` typ má nové nepovinné polia
+  `top_offer`/`top_offer_valid_until`/`offer_count` (rovnaký vzor ako
+  appkový `property.ts`).
+- **`src/components/property-card.tsx`** — karta teraz renderuje
+  headline (Najvyššia ponuka/Orientačná cena, akcent vs. primárna farba),
+  `asideLines` (druhé, menšie číslo vedľa), počet ponúk a — keď je
+  ponuka aktívna a má platnosť — živý odpočet (`OfferCountdownPill`, už
+  existujúci appkový port, len doteraz nepoužitý na karte).
+
+Rozsah zámerne LEN karta v katalógu (`karta` je slovo, ktoré Rastio
+použil trikrát) — obrazovka detailu inzerátu (`/inzerat/[id]`) cenu
+zatiaľ nemenila a môže potrebovať rovnaké zjednotenie, ale to nebolo
+súčasťou tohto hlásenia.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` (DE, cez `?` bez filtra, 48
+kariet): **48/48 kariet ukazuje headline s cenou**, z toho karty
+s ponukami zobrazujú „Höchstes Angebot" (akcentová farba) + menší sivý
+„Richtwert" vedľa (keď orientačná cena existuje) — príklad z výstupu:
+„Höchstes Angebot 150 000 €" + živý odpočet „Angebot noch 9h 31m 23s
+gültig" + vedľa „Richtwert 152 000 €". Karty bez ponúk ukazujú
+„Richtpreis" v primárnej (navy) farbe. Toto je dôkaz zo SKUTOČNÝCH DÁT
+z produkčnej DB (rozdiel medzi kartami dokazuje, že `attachOfferStats`
+naozaj našiel a zoradil reálne ponuky), nie len že sa kód skompiloval.
+
+### 3. Chýbajúce vyhľadávanie
+
+„V katalógu sú len filtre... ale žiadne vyhľadávacie pole."
+
+Vyhľadávacie pole (`SearchBox`) aj jeho logika (`stemQuery`/`stemSk`/
+`parseQuery` v `src/lib/search.ts`) už na webe BOLI — 1:1 port appkového
+`src/lib/search.ts`, overené v predošlom kroku tejto session priamym
+porovnaním appka vs. web súbor (identické, len komentár navyše). Problém
+teda nebol v logike, ale v tom, že pole sedelo v úzkom `lg:w-64` bočnom
+stĺpci filtrov bez ikony — dalo sa prehliadnuť.
+
+Oprava:
+- `SearchBox` presunutý z `CatalogFilters` (bočný stĺpec) na CELÚ ŠÍRKU
+  stránky, nad riadok s filtrami a výsledkami (`src/app/[locale]/page.tsx`).
+- Pridaná ikona lupy do poľa (`src/components/search-box.tsx`) — predtým
+  to bol obyčajný text input bez vizuálneho signálu, že ide o
+  vyhľadávanie.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý web:
+- pole je teraz nad dvojstĺpcovým rozložením (potvrdené v HTML —
+  `<div class="relative w-full">` s SVG lupou pred `<input>`, mimo
+  bočného stĺpca filtrov).
+- `?q=bratislava` aj `?q=bratislave` (skloňovaný tvar bez diakritiky)
+  vrátili ROVNAKÝCH **5 kariet** — diakritika aj skloňovanie fungujú
+  zhodne ako appka.
+- `?q=byt` vrátil 20 kariet (z 48 celkovo) — fulltextové hľadanie funguje.
+- `?q=petrzalke` vrátilo 0 — overené, že to NIE JE regresia: v seed dátach
+  jednoducho nie je inzerát s mestom/okresom Petržalka (nie chyba
+  vyhľadávania, chýbajúce dáta).
+
+## Zhrnutie pre Rastia
+
+Všetky tri nahlásené veci sú opravené a overené priamo na živom
+`app.offerra.sk` (nie len lokálnym buildom) — dôkazy vyššie sú z `curl`u
+na skutočný vrátený HTML a zo skutočných dát v produkčnej DB, nie
+z čítania kódu.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — `curl` dokazuje, ČO je
+v HTML a AKÉ dáta/triedy sa poslali, nie ako to vyzerá na obrazovke.
+Prosím pozri sa na `app.offerra.sk` a over/opíš:
+1. **E-mail v pätičke aj v hlavičke** — vidíš teraz čitateľné
+   `kontakt@offerra.sk` (nie „[email protected]")? Funguje kliknutie
+   (otvorí sa e-mailový klient)?
+2. **Karty v katalógu** — vidíš pri inzerátoch s ponukou „Najvyššia
+   ponuka X €" väčšie/akcentovou farbou a menšiu sivú orientačnú cenu
+   vedľa nej? Vyzerá odpočet platnosti ponuky (pilulka) dobre, neláme
+   sa karta?
+3. **Vyhľadávanie** — je pole na prvý pohľad vidieť ako vyhľadávanie
+   (ikona lupy, na celú šírku nad filtrami)? Funguje na telefóne aj na
+   šírokej obrazovke?
