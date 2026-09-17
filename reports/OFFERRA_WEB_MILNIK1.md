@@ -1992,3 +1992,50 @@ len že sa kód skompiloval. Samotné KLIKNUTIE na tlačidlo v prehliadači
 (`window.confirm` dialóg) som nemal ako odskúšať (žiadny prehliadač
 v tomto prostredí), ale volá presne tú istú serverovú akciu, ktorú som
 overil priamo.
+
+## Obľúbené / Nastavenia / Ako funguje → ikony vedľa zvončeka (17.9.2026)
+
+Rastio, v dvoch krokoch: „ako to funguje daj pred nastavenia a daj tam
+iba nejakú ikonu a daj to ku zvončeku", potom „aj Obľúbené daj ikonu aj
+Nastavenia, veď to každý pozná."
+
+Tri textové odkazy (Obľúbené, Nastavenia, Ako funguje) sú preč
+z centrovaného textového riadku a sú teraz IKONY v ikonovom klastri
+vpravo, hneď vedľa zvončeka — presne v tomto poradí: Obľúbené
+(srdiečko) → Nastavenia (ozubené koliesko) → Ako funguje (otáznik
+v krúžku) → zvonček → jazyk → kontakt. Textový riadok v strede teraz
+nesie len obsahovú navigáciu: Dopyty, Moje inzeráty, Moje ponuky, Moje
+dopyty.
+
+- **`src/components/icon-nav-link.tsx`** — nová komponenta, rovnaký
+  vzhľad ako `NotificationBell` (`h-9 w-9 rounded-full`), rovnaká
+  aktívna logika ako `NavLink` (tmavšie pozadie na stránke, kde
+  používateľ práve je), `aria-label` + `title` namiesto viditeľného
+  textu (prístupnosť aj hover tooltip pre tých, čo ikonu na prvý
+  pohľad nespoznajú).
+- **`src/components/site-header.tsx`** — tri nové `IconNavLink`
+  (srdiečko, ozubené koliesko, otáznik v krúžku), Obľúbené a
+  Nastavenia LEN pre prihláseného (rovnaká podmienka ako predtým pri
+  textových odkazoch), Ako funguje pre oboch — zhoduje sa s tým, kde sa
+  predtým zobrazovalo ako text.
+- **Mobilný hamburger sa NEMENIL** — `MobileNav` má stále plné textové
+  odkazy vrátane Obľúbené/Nastavenia/Ako funguje/Moja aktivita; táto
+  úprava je len pre desktopovú lištu (cieľová obrazovka predošlej
+  „DIZAJN OPRAVA" bola „primárne NB/desktop").
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`, prihlásený aj neprihlásený:
+- prihlásený: textový riadok obsahuje presne `Dopyty, Moje inzeráty,
+  Moje ponuky, Moje dopyty` (4/4, nič viac) — potvrdené vo vrátenom
+  HTML.
+- ikonový klaster obsahuje `<a aria-label="Obľúbené">` →
+  `<a aria-label="Nastavenia">` → `<a aria-label="Ako funguje">` →
+  zvonček (`aria-label="Oznámenia"`) presne v tomto poradí, ikona Ako
+  funguje je bezprostredne vedľa zvončeka.
+- neprihlásený: Obľúbené a Nastavenia (vyžadujú účet) sa nezobrazujú
+  vôbec, „Ako funguje" ostáva, presne ako predtým pri textovej verzii.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** presne to, čo `curl` nevie
+ukázať — dávajú tri nové ikony bez textu zmysel na prvý pohľad (srdce
+= Obľúbené, ozubené koliesko = Nastavenia, otáznik = Ako funguje)? Sedí
+poradie/rozostupy v klastri dobre vedľa zvončeka a kontaktu?
