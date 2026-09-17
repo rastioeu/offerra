@@ -2371,3 +2371,27 @@ naďalej funguje — vrátil 12 kariet.
 mobile teraz prehľadnejšie — kompaktný riadok na posúvanie namiesto
 zalomenej steny čipov? Je jasné (aj bez toho, aby si videl všetky čipy
 naraz), že sa dá riadok posunúť doprava?
+
+## Prepínač jazyka — jedno tlačidlo (17.9.2026)
+
+Rastio: „prepínač jazykov daj do jedného tlačidla." Predtým tri
+samostatné odkazy (SK/EN/DE) vedľa seba v lište.
+
+- **`src/components/language-switcher.tsx`** — prepísaný na JEDNO
+  tlačidlo (aktuálny jazyk + šípka), ktoré otvára menu s ostatnými
+  dvoma voľbami. Rovnaký prístupný vzor ako `AddListingCta`
+  (`aria-haspopup="menu"`, `aria-expanded`, Escape zatvorí a vráti
+  fokus na tlačidlo, klik mimo zatvorí, `role="menu"`/`"menuitem"`).
+  Komponenta sa používa bez zmeny API (žiadne propsy), takže sa
+  automaticky vymenila aj v mobilnom riadku v `SiteHeader`-i.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` (SK aj `/en`) vrátil **HTTP 200**,
+`journalctl` bez chýb. Tlačidlo vo vrátenom HTML ukazuje správny
+aktuálny jazyk (`SK` na `/`, `EN` na `/en`) s `aria-haspopup="menu"` —
+samotné menu sa (správne, rovnako ako pri `AddListingCta`) objaví až
+po kliknutí, klientský stav sa v statickom SSR HTML nezobrazuje.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** otvorí sa menu kliknutím na
+tlačidlo, zobrazí správne dva zostávajúce jazyky, a prepne na správnu
+lokalizovanú URL po kliknutí na jeden z nich?
