@@ -1455,3 +1455,52 @@ nevie ukázať:
    ktorý by ho vedel vyrobiť. Prosím pozri sa priamo na
    `app.offerra.sk` a opíš, čo vidíš — najmä ak lišta B pôsobí horšie
    než pôvodný bočný panel, poviem A ako druhú možnosť.
+
+## Filter — tretí pokus, klikateľné čipy hore (17.9.2026)
+
+Rastio na rozbaľovacie menu z predošlého kroku: „nie je to dobré,
+klikateľný filter je lepší, aj keď je na boku je lepší, len to urob
+dizajnovejšie." Skúsil som najprv bočný panel (dizajnovanejšia verzia
+pôvodného — ukotvená karta so sekciami a deliacimi čiarami), ale skôr
+než som to nasadil, prišla spresňujúca správa: „alebo skús dať
+klikateľný filter najprv hore" — teda vyskúšať čipy HORE, nie na boku.
+
+Šiel som touto cestou, nie bočným panelom, z dvoch dôvodov:
+1. Je to explicitne to, čo Rastio žiadal vyskúšať ako prvé.
+2. Appka to už takto robí — `SearchBar` (`src/components/search-bar.tsx`)
+   má presne TRI RIADKY čipov (typ obchodu, typ nehnuteľnosti,
+   triedenie) HORE nad zoznamom, v tomto poradí (Rastio, 12.8.2026:
+   „najprv to, ČO človek hľadá... až za tým triedenie"). Web teraz robí
+   to isté, len v ukotvenej karte namiesto appkového plátna bez rámca.
+
+- **`src/components/catalog-filters.tsx`** — prepísaný z bočného `aside`
+  na plnú šírku: `rounded-2xl border bg-surface shadow-card` karta
+  (rovnaký vzhľad ako karta inzerátu), tri riadky čipov (Predaj/Prenájom
+  → typ nehnuteľnosti → triedenie), posledný riadok oddelený tenkou
+  linkou (`border-t`) a s odkazom „Zrušiť filter" zarovnaným doprava,
+  keď je aktívny nejaký filter (predtým bol tento odkaz osamotený pod
+  vyhľadávaním, teraz patrí do tej istej karty ako zvyšok filtra).
+- **`src/components/catalog-filter-bar.tsx`** (rozbaľovacie menu
+  z predošlého kroku) — zmazaný, nič iné ho nepoužívalo.
+- **`src/app/[locale]/page.tsx`** — mriežka kariet zostáva na plnú šírku
+  (`lg:grid-cols-3 xl:grid-cols-4`), keďže filter je teraz nad zoznamom,
+  nie vedľa neho — nekonkuruje o šírku.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- `<select` sa vo vrátenom HTML už nevyskytuje ani raz (rozbaľovacie
+  menu preč).
+- karta filtra (`rounded-2xl border border-border bg-surface p-4
+  shadow-[var(--shadow-card)]`) prítomná, s klikateľnými čipmi
+  (`rounded-full border...`).
+- `?transaction=RENT&type=APARTMENT` vrátil **12 kariet** — kombinácia
+  dvoch filtrov cez čipy funguje.
+- „Zrušiť filter" sa vo výstupe objaví LEN keď je filter aktívny
+  (overené prítomnosťou/neprítomnosťou v oboch prípadoch).
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
+nevie ukázať: pôsobí karta s čipmi hore nad zoznamom „dizajnovejšie" než
+predošlé dva pokusy? Sadnú si tri riadky (typ obchodu/typ nehnuteľnosti/
+triedenie) pod sebou dobre, alebo je karta príliš vysoká/nízka? Ak
+áno — potvrď, nech to môžem v registri označiť ako uzavreté aj vizuálne,
+nie len kódovo.
