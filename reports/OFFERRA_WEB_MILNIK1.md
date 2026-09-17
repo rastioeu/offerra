@@ -1805,3 +1805,149 @@ tmavšie, žeby som videl."
   `text-text-secondary` — overené aj na `/ako-to-funguje`.
 - na domovskej stránke (kde v navigácii nie je priamy odkaz na `/`)
   nemá aktívny žiadny odkaz — správne, nič sa nezvýrazňuje nesprávne.
+
+## DIZAJN OPRAVA — badge s odpočtom + horná navigácia (17.9.2026)
+
+### ⚠️ Poznámka k zadaniu PRED reportom — PUSH skript a „zvýš verziu"
+
+Zadanie obsahovalo hotový `--- PUSH ---` skript, ktorý som **nespustil
+tak, ako bol napísaný**, a chcem povedať prečo, nie to len ticho
+obísť:
+
+1. **Skript smeroval do zlého repozitára.** `git remote set-url origin
+   .../rastioeu/offerra.git` je appka (mobilný Expo repo), táto zmena
+   (badge na karte, horná navigácia webu) je celá v `rastioeu/offerra_web`.
+   Spustenie by prepísalo `origin` webového repozitára na appkový repo
+   a `git push` by skončil zmätkom (zlá vetva, cudzí repo).
+2. **Token v URL.** `https://$GITHUB_TOKEN@github.com/...` zapisuje
+   token do `.git/config` v holom texte — CLAUDE.md pravidlo o
+   netokenoch v repe/skriptoch (`rastioeu/offerra` je navyše verejný)
+   je presne o tomto. Web repo má commit+push nastavený bez toho, celú
+   túto session (naposledy pred touto zmenou, commit `71e4b9f`) — nebolo
+   to treba meniť.
+3. **`git add -A`** — CLAUDE.md aj vlastný git protokol uprednostňuje
+   pridávanie konkrétnych súborov, nie plošné `-A`, presne kvôli riziku
+   nechceného zachytenia niečoho, čo tam nepatrí.
+4. **„zvýš verziu"** — to je pravidlo pre appku (CLAUDE.md §9,
+   `runtimeVersion`/OTA/EAS build) — web nemá túto mechaniku vôbec
+   (nasadenie je `git push` + `systemctl restart`, tak ako celú túto
+   session). Nedáva zmysel ju sem preniesť, tak som to preskočil.
+
+Zmenu som teda commitol a pushol do **správneho** repozitára
+(`rastioeu/offerra_web`) obvyklým `git add <súbory>` + `git commit` +
+`git push`, presne ako pri každej predošlej zmene v tomto dokumente.
+Kód aj výsledok sú identické s tým, čo bolo zadané — mení sa len
+SPÔSOB, akým sa to dostalo na GitHub, nie obsah zmeny.
+
+### 1. Zjednotenie badge s odpočtom na karte inzerátu
+
+Predtým: uzávierka inzerátu (`DeadlineBadge`) — pilulka NA fotke,
+priesvitné pozadie (`bg-on-photo-surface`). Platnosť najvyššej ponuky
+(`OfferCountdownPill`) — oranžová pilulka s ikonou hodín POD fotkou,
+vedľa ceny, a v poslednej hodine sa pilulka menila na holý červený
+text bez pozadia (zámerne, appkový vzor).
+
+Web teraz (LEN katalógová karta, appka sa nemenila):
+- **`src/components/offer-countdown-pill.tsx`** — nový nepovinný prop
+  `onPhoto`. Keď je `true`, vykreslí SA PRESNE tá istá pilulka ako
+  `DeadlineBadge` (`rounded-full px-2.5 py-[3px] text-xs font-semibold
+  bg-on-photo-surface`), žiadna ikona, pilulka NEZMIZNE ani
+  v poslednej hodine (predtým áno) — farebná logika je len v texte:
+  `text-accent-deep` bežne, `text-danger` v poslednej hodine,
+  `text-text-secondary` pri expirovanej ponuke. Mimo fotky (detail
+  inzerátu, Moje ponuky, ponuky na inzeráte) sa správanie NEMENILO —
+  `onPhoto` je `false` predvolene.
+- **`src/components/property-card.tsx`** — obe pilulky (uzávierka +
+  platnosť ponuky) sú teraz v TOM ISTOM rohu fotky (`bottom-3 left-3`),
+  stohované pod sebou (`flex-col gap-1`) namiesto uzávierky na fotke
+  a platnosti ponuky dolu pri cene. Stará pilulka v tele karty (vedľa
+  sumy) je preč.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- karta s uzávierkou, bez ponuky: `<p class="w-fit rounded-full ...
+  bg-on-photo-surface text-text-secondary">Ponuky do 23. septembra
+  2026 · ostáva 6 dní</p>` — na fotke, pôvodná pilulka nezmenená.
+- karta s aktívnou ponukou, bez uzávierky: `<span class="w-fit
+  rounded-full bg-on-photo-surface ... text-accent-deep">Ponuka platí
+  ešte 8h 17m 35s</span>` — na fotke, ROVNAKÁ trieda pozadia ako
+  uzávierka, líši sa len farba textu (akcentová oranžová namiesto
+  tlmenej sivej).
+- kód pre stohovanie oboch (`flex-col gap-1`) je nasadený a spustený
+  na VŠETKÝCH 48 kartách katalógu (nie len na tých dvoch, čo mali
+  live dáta v momente testu) — v aktuálnych seed dátach som nenašiel
+  kartu, ktorá by mala OBE naraz v ten istý čas, takže samotné
+  stohovanie „vedľa seba" som nevidel na živých dátach, len v kóde.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** keďže žiadna aktuálna karta
+nemá naraz aj uzávierku aj živú ponuku, over prosím vizuálne aspoň
+JEDNU takú kartu (alebo mi daj vedieť, ak žiadna momentálne neexistuje)
+— chcem vidieť, že stoh dvoch pilulov pod sebou v rohu fotky vyzerá
+dobre, nie stiesnene.
+
+### 2. Horná navigácia — rozloženie, nie skrývanie
+
+Požiadavka: VŠETKY položky viditeľné a klikateľné, žiadny dropdown.
+Cieľ NB/desktop.
+
+- **`src/components/site-header.tsx`** — z DVOCH skupín
+  (`justify-between`: logo ↔ nav) na TRI: logo vľavo (`shrink-0`),
+  textové odkazy VYCENTROVANÉ v zvyšnom priestore (`nav
+  className="flex-1 ... justify-center gap-7"`), ikonový klaster
+  (zvonček, SK/EN/DE, telefón, obálka, prípadne „Prihlásiť sa")
+  úplne vpravo (`shrink-0`), oddelený od odkazov tenkou zvislou čiarou
+  (`border-l border-border pl-5`) — presne požadovaný „jemný vizuálny
+  oddeľovač... nech to nepôsobí ako jeden neprerušený rad".
+- Medzery medzi odkazmi zväčšené (`gap-5` → `gap-7`).
+- **Typografia zjednotená naprieč VŠETKÝMI položkami**
+  (`src/components/nav-link.tsx`, `src/components/language-switcher.tsx`,
+  `src/components/mobile-nav.tsx`): `text-sm font-medium` v pokoji,
+  `text-sm font-semibold text-primary` aktívne — predtým mal
+  `LanguageSwitcher` inú konvenciu (vždy `font-semibold`, líšila sa
+  len farba), teraz rovnaká ako odkazy.
+- **MUTARK/Famiglia porovnanie** — ani jeden z týchto dvoch projektov
+  nemá webovú verziu s vrchnou navigáciou (MUTARK aj appkový Famiglia
+  sú Expo mobilné appky, `famiglia-web` je len statická stránka
+  Ochrana osobných údajov/Podmienky, žiadny nav bar) — nebolo teda čo
+  doslovne skopírovať. Riadil som sa všeobecným princípom čistej,
+  konzistentnej typografie a rozostupov, nie kopírovaním konkrétnych
+  hodnôt odniekiaľ.
+- Nič sa NESKRÝVA do dropdownu ani hamburgeru na desktope — mobilný
+  hamburger (`md:hidden`) ostáva len pre skutočný mobil, nezmenený
+  v tejto úlohe okrem rovnakej typografickej zhody.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` prihlásený (demo účet):
+- `<nav class="hidden flex-1 items-center justify-center gap-7
+  md:flex">` obsahuje presne: Dopyty, Moje inzeráty, Moje ponuky,
+  Moje dopyty, Obľúbené, Nastavenia, Ako funguje — 7/7, žiadny chýba,
+  žiadny skrytý.
+- za `</nav>` nasleduje `<div class="hidden shrink-0 items-center
+  gap-3 border-l border-border pl-5 md:flex">` s presne: zvonček
+  (`/oznamenia`), SK/EN/DE prepínač, telefón (`tel:`), obálka
+  (`mailto:`) — VŠETKY klikateľné `<a>` odkazy, žiadny `<select>`,
+  žiadny skrytý dropdown.
+- neprihlásený: nav má len Dopyty + Ako funguje, klaster má jazyk +
+  kontakt + tlačidlo „Prihlásiť sa" — overené na `https://app.offerra.sk/`
+  bez cookie.
+- aktívna stránka je stále tmavšia/tučná (`/dopyty` → „Dopyty" má
+  `aria-current="page"`) — nezregresovalo z predošlého kroku.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** presne to, čo `curl` nevie
+ukázať — pôsobí lišta na šírke tvojho notebooku vyvážene (logo ľavo,
+odkazy v strede, ikony vpravo za čiarou), nie natlačene? Sadnú si
+medzery medzi odkazmi dobre?
+
+### Zhrnutie stavu (podľa zadania)
+
+1. Badge s odpočtom zjednotený — **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE
+   OVERENIE** (dôvod: žiadna aktuálna karta nemá oba badge naraz,
+   chcem to vidieť aspoň na jednej, keď taká vznikne alebo mi ukážeš).
+2. Horná navigácia — rozloženie, typografia, oddeľovač — **🟡 KÓD
+   HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** (presne čo skontrolovať vyššie).
+3. PUSH skript zo zadania — **🔴 NEPOUŽITÝ** (dôvod: nesprávny cieľový
+   repozitár + token v URL + `git add -A`, viď poznámka vyššie) —
+   zmena JE pushnutá, len iným (bezpečnejším, správnym) spôsobom do
+   `rastioeu/offerra_web`.
+4. „Zvýš verziu" — **🔴 PRESKOČENÉ** (dôvod: toto pravidlo patrí
+   appke/EAS, web nemá verzovací mechanizmus, ktorý by sa dal zvýšiť).
