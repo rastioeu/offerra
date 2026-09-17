@@ -2338,3 +2338,36 @@ riadku po odpočítaní šírky CTA a počtu. Funkčnosť filtra overená
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** je placeholder text teraz
 celý viditeľný, nie orezaný? Sedí CTA aj počet stále na mieste, kam
 patria (nesklzli nikam inam, keď sa pole roztiahlo)?
+
+## Mobilná verzia — filtre neprehľadné (17.9.2026)
+
+Rastio (po tom, čo si najprv overil predošlé zmeny): „pole je dobre,
+filtre neprehľadné" — na mobilnej verzii webu.
+
+Pod `lg:` (mimo notebooku/desktopu) je bočný panel filtrov PLNOU
+šírkou nad mriežkou kariet. Čipy sa doteraz ZALAMOVALI
+(`flex-wrap`) — sekcia „Typ nehnuteľnosti" má 6 čipov (Všetky typy +
+5 typov), na úzkej mobilnej šírke sa to natiahlo na 2-3 riadky
+nepredvídateľne, pôsobilo to ako stena čipov, nie usporiadaný zoznam.
+
+- **`src/components/catalog-filters.tsx`** — každý riadok čipov je
+  pod `lg:` teraz VODOROVNE POSÚVATEĽNÝ (`overflow-x-auto`, žiadne
+  zalamovanie, `shrink-0` na čipoch nech sa nezmršťujú) namiesto
+  zalamovania — pevná, predvídateľná výška na sekciu bez ohľadu na
+  počet čipov, nadpis sekcie ostáva čitateľný nad riadkom. Od `lg:`
+  (kde je panel v pevnej `lg:w-64` šírke a čipov sa zmestí menej na
+  riadok) sa vracia späť na `lg:flex-wrap` — desktopové/notebookové
+  správanie z predošlého kola sa nemenilo.
+- Vyhľadávacie pole som nemenil — potvrdil si, že je v poriadku.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` vrátil **HTTP 200**, `journalctl` bez chýb.
+Vo vrátenom HTML majú všetky tri riadky čipov triedu `overflow-x-auto`
+(žiadne `flex-wrap` pod `lg:`), 22 čipov má `shrink-0` (nezmenšia sa
+pri posúvaní). Kombinovaný filter (`?transaction=RENT&type=APARTMENT`)
+naďalej funguje — vrátil 12 kariet.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** pôsobí sekcia filtrov na
+mobile teraz prehľadnejšie — kompaktný riadok na posúvanie namiesto
+zalomenej steny čipov? Je jasné (aj bez toho, aby si videl všetky čipy
+naraz), že sa dá riadok posunúť doprava?
