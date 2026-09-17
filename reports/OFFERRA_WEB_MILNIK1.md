@@ -332,12 +332,19 @@ upozorní nahláseného, presne ako appka).
 zásada ako appka („skrytie je pohodlie, nie ochrana"). Keď `admin_stats()`
 vráti chybu (bežný účet), stránka to ukáže ako „Nemáš prístup", nepadne.
 
-**Chýba oproti appke** (appka má naviac, appka je oveľa hlbšia tu):
-správa používateľov (`admin_users`, blokovanie), podozrivé vzorce
-(záplava ponúk, podozrivo nízke ponuky, shill bidding), duplicitné
-kontakty, nastavenia prahov (`app_config`). Toto je zámerne odložené —
-prehľad + nahlásenia sú operačne najdôležitejšie, zvyšok pridám na
-požiadanie.
+**✅ Správa používateľov DOKONČENÁ (17.9.2026)** — nová sekcia
+„Používatelia" na `/admin`: zoznam cez `admin_users()` (nickname,
+e-mail, rola, blokovaný stav, počet inzerátov), tlačidlo
+Zablokovať/Odblokovať cez `admin_set_blocked()` (rovnaké RPC ako
+appka, pattern skopírovaný z appkového `(tabs)/admin.tsx`). Admin
+nevidí tlačidlo blokovania pri vlastnom účte (appka to robí rovnako).
+Dôvod blokovania je pevný text („Zablokované administrátorom"), appka
+má rovnaký princíp (pevný text cez `t('admin.blockedReason')`).
+
+**Ešte chýba oproti appke:** podozrivé vzorce (záplava ponúk,
+podozrivo nízke ponuky, shill bidding), duplicitné kontakty, overenie
+používateľa (`admin_set_verified`), nastavenia prahov (`app_config`),
+zmena roly (`admin_set_role`). Odložené, pridám na požiadanie.
 
 **Odkaz v hlavičke zatiaľ chýba** — vyžadovalo by extra RPC volanie na
 KAŽDEJ stránke len na rozhodnutie, či link ukázať (v praxi je presne
