@@ -786,6 +786,15 @@ Za posledné kolá pribudlo aj mimo pôvodného zoznamu medzier:
   dopyty namiesto paralelných v `OffersSection`/`ViewingSection`).
 - Zdieľaná `Button` komponenta, appkový `Shadow.button`.
 - Značková 404 stránka.
+- **Web beží ako systemd služba** (`offerra-web.service`), nie ako môj
+  ručne spustený `nohup` proces — Rastio nahlásil krátky výpadok pri
+  mobilnom refreshi, ktorý sa ukázal ako môj vlastný reštart počas
+  nasadzovania zmien (nie appkový bug — potvrdené v logoch aj tým, že
+  o chvíľu to zase išlo). Skutočný nájdený nedostatok popri tom:
+  appka doteraz NEMALA žiadny auto-reštart pri neplánovanom páde ani
+  pri reštarte servera — teraz má (`Restart=on-failure`,
+  `WantedBy=multi-user.target`, otestované priamym `kill -9` procesu,
+  systemd ho postavil späť do 4 sekúnd bez zásahu).
 
 **Otvorené, čaká na Rastiovo rozhodnutie, nie na prácu:** i18n EN/DE
 (pozri vyššie prečo je to zámerne odložené), formálna Type/Money
