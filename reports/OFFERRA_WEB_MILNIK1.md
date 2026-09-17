@@ -387,15 +387,11 @@ vlastnú ponuku" namiesto formulára.
 **Čo NEVIEM overiť sám:** samotné ODOSLANIE formulára — vyžaduje
 prihláseného používateľa (čaká sa na Google, pozri vyššie).
 
-**Chýba oproti appke** (priznané v kóde aj tu, nie tichá medzera):
-- **Rozhodovanie majiteľa** (prijať/odmietnuť ponuku, odkrytie kontaktu
-  po prijatí) — appkový `OwnerOffers`, zatiaľ nutné vybaviť v appke.
-- **Dotazník nájomcu pri prenájme** — appka ho pri podaní ponuky na
-  prenájom vyžaduje (počet osôb, zamestnanie...), web zatiaľ ponuku na
-  prenájom odošle aj bez neho.
-- **Živý, po sekundách tikajúci odpočet platnosti ponuky** — vo
-  appke veľká viackolová práca (pill s ikonou, farby podľa
-  naliehavosti). Web zatiaľ ukazuje len statický stav.
+**Stav k 17.9.2026 (predtým tu bol zoznam medzier, väčšina už hotová):**
+- Rozhodovanie majiteľa — ✅ HOTOVÉ (16.9.2026).
+- Dotazník nájomcu pri prenájme — ✅ HOTOVÉ (17.9.2026, `tenant_profile`).
+- Živý odpočet platnosti ponuky — ✅ HOTOVÉ (17.9.2026).
+- Zostáva: appkový `OfferTimeline` (vizuálna história stavu).
 
 ## Fáza 3 — Správy na detaile inzerátu — 🟡 KÓD HOTOVÝ, ✅ ČIASTOČNE OVERENÉ ŽIVÝM SERVEROM
 
@@ -648,9 +644,10 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
 - **Appkový avatar systém, počítadlo fotiek na karte** — ✅ HOTOVÉ
   (17.9.2026, `avatar.tsx`, deterministický z prezývky, rovnaké CC0
   obrázky).
-- **Dotazník nájomcu pri prenájme, realtime správy (appka to tiež
-  nemá — nie je to skutočná parita, len budúce vylepšenie), appkový
-  OfferTimeline**.
+- **Dotazník nájomcu pri prenájme** — ✅ HOTOVÉ (17.9.2026, `tenant_profile`,
+  sekcia „O nájomcovi" viditeľná len majiteľovi).
+- **Realtime správy (appka to tiež nemá — nie je to skutočná parita,
+  len budúce vylepšenie), appkový OfferTimeline**.
 - **Admin — zvyšok**: nastavenia prahov (`app_config`), limit inzerátov,
   opakované porušenia, upozornenia, top vystavovatelia. Správa
   používateľov, overenie, zmena roly a podozrivé vzorce hotové
