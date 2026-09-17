@@ -521,9 +521,9 @@ RLS na prázdny výsledok), takže stránka padala na `HTTP 500` (`42501
 permission denied`). Opravené — volanie beží len pre prihláseného.
 Overené naozaj bežiacim serverom PRED aj PO oprave.
 
-**Zjednodušené oproti appke** (priznané, nie tichá medzera): obec pri
-zakladaní dopytu je voľný text, nie appkový `CityPicker` (2 925 obcí
-s automatickým dopĺňaním okresu/kraja).
+**✅ CityPicker DOKONČENÝ (17.9.2026)** — obec pri zakladaní dopytu ide
+teraz cez ten istý `CityPicker` (2 925 obcí, živé vyhľadávanie priamo
+v `offerra.city`), čo aj editor inzerátu.
 
 **Tým je Fáza 5 z pôvodného plánu KOMPLETNÁ.**
 
@@ -548,9 +548,10 @@ zmazať").
 **Zjednodušené oproti appke** (priznané, nie tichá medzera):
 - Žiadne priebežné autosave každého poľa (appka: `useFormDraft`) — web
   má jedno tlačidlo „Uložiť" pre celý formulár naraz.
-- Mesto/ulica sú voľný text, nie appkový `CityPicker`/`StreetPicker`
-  (2 925 obcí s automatickým dopĺňaním okresu/kraja a geokódovaním).
-- Kraj/okres sa nezachytávajú vôbec.
+
+**✅ Mesto/ulica DOKONČENÉ (17.9.2026)** — `CityPicker`/`StreetPicker`
+(port appkových, 2 925 obcí, živé vyhľadávanie), kraj/okres/súradnice
+sa teraz zachytávajú spolu s obcou (predtým sa nezachytávalo nič).
 
 Overené naozaj bežiacim serverom: editor bez prihlásenia vrátil presne
 `307 → /login?next=/moje-inzeraty/<id>/upravit`, ostatné stránky
@@ -654,8 +655,9 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   opakované porušenia, upozornenia, top vystavovatelia. Správa
   používateľov, overenie, zmena roly a podozrivé vzorce hotové
   17.9.2026, pozri vyššie.
-- **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
-  zatiaľ voľný text na oboch miestach).
+- **CityPicker/StreetPicker** — ✅ HOTOVÉ (17.9.2026), pozri vyššie.
+- **Per-keystroke autosave v editore inzerátu, dotazník nájomcu,
+  appkový OfferTimeline.**
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
   „Uložiť").
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
