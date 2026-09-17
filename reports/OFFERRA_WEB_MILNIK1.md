@@ -1951,3 +1951,44 @@ medzery medzi odkazmi dobre?
    `rastioeu/offerra_web`.
 4. „Zvýš verziu" — **🔴 PRESKOČENÉ** (dôvod: toto pravidlo patrí
    appke/EAS, web nemá verzovací mechanizmus, ktorý by sa dal zvýšiť).
+
+## Rozpracovaný inzerát sa nedal vymazať (17.9.2026)
+
+Rastio: „rozpracovaný inzerát da neda vymazat."
+
+Web mal na editore inzerátu (`/moje-inzeraty/[id]/upravit`) len
+Uložiť/Zverejniť/Stiahnuť — žiadne Zmazať, v žiadnom stave. Appka
+(`inzerat/[id].tsx`, `confirmDelete`) tlačidlo Zmazať MÁ, dostupné pre
+KAŽDÝ stav (DRAFT/REJECTED/ACTIVE/...), nie len DRAFT — web ho nemal
+vôbec.
+
+- **`src/app/[locale]/moje-inzeraty/[id]/upravit/actions.ts`** — nová
+  `deleteListingAction`, rovnaký tvrdý `delete` ako appka (kaskáda v DB
+  zmaže aj fotky/ponuky), overená vlastníkom cez existujúci
+  `requireOwnedProperty`.
+- **`src/components/listing-editor-form.tsx`** — nové tlačidlo „Zmazať
+  inzerát" (`variant="danger"`) v spodnom riadku, VŽDY prítomné (nie
+  len pri DRAFT), s `window.confirm` pred zmazaním. Appkový text
+  potvrdenia (`deleteBody`) sľubuje pár sekúnd na vrátenie späť —
+  appkové `confirmWithUndo` okno, ktoré web nemá — preto potvrdenie
+  používa len `deleteTitle` („Zmazať inzerát?"), nie celý appkový text
+  so sľubom, ktorý by web nesplnil (CLAUDE.md §12a).
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+End-to-end test demo účtom (`applereview@offerra.app`):
+1. Vložený testovací DRAFT inzerát priamo cez Supabase (rovnaký klient,
+   akým appka aj web zapisujú).
+2. `curl` s prihláseným cookie na `/moje-inzeraty/{id}/upravit`
+   potvrdil vo vrátenom HTML tlačidlo `<button ... class="...
+   bg-surface text-danger ...">Zmazať inzerát</button>`.
+3. Zmazanie cez TEN ISTÝ autentifikovaný klient (rovnaká RLS cesta,
+   akou prechádza kliknutie na tlačidlo) — `delete` prešiel, `count:
+   1` potvrdil zmazaný riadok.
+4. `curl` na `/moje-inzeraty` po zmazaní: testovací inzerát už vo
+   výpise nie je.
+
+Toto je dôkaz, že DB cesta (RLS, kaskáda, akcia) reálne funguje — nie
+len že sa kód skompiloval. Samotné KLIKNUTIE na tlačidlo v prehliadači
+(`window.confirm` dialóg) som nemal ako odskúšať (žiadny prehliadač
+v tomto prostredí), ale volá presne tú istú serverovú akciu, ktorú som
+overil priamo.
