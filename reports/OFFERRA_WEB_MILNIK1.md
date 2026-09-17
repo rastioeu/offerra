@@ -2250,3 +2250,18 @@ ostávajú na svojich miestach.
 
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** sedí CTA teraz vizuálne
 presne v strede riadku, nie len vedľa poľa?
+
+## CTA kúsok doprava (17.9.2026)
+
+Rastio: „daj ho ešte doprava kúsok." Pridané `sm:translate-x-10`
+k `sm:justify-self-center` — CTA sa posunie z geometrického stredu
+o kúsok bližšie k počtu inzerátov, základ (`justify-self-center`)
+ostáva rovnaký.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` prihláseným účtom vrátil **HTTP 200**,
+`journalctl` bez chýb, trieda `sm:justify-self-center
+sm:translate-x-10` potvrdená vo vrátenom HTML.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** je posun teraz dosť/práve
+toľko, koľko si chcel, alebo to chce viac/menej?
