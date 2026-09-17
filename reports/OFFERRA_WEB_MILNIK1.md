@@ -968,3 +968,18 @@ zmeraných DB grantov/FK a 1:1 zrkadlí appkový overený vzor, ale
 - Zvonček: príde ti niekedy nové oznámenie (napr. niekto podá ponuku na
   tvoj inzerát) — ukáže sa počet na zvončeku živo, bez obnovenia
   stránky?
+
+### Preklady — prvé kolo (Rastio: „a doknči preklady, nie je všetko preložené")
+
+Preložené tam, kde to má najväčší dopad (každá návšteva stránky):
+katalógová karta („Bez fotky", „Cena na dohodu"), hlavná stránka
+(nadpis, úvodný text, „Rozumiem:", „Vymazať filter", aj `<title>`),
+celé Nastavenia vrátane potvrdzovacích dialógov pri zmazaní účtu a
+exportu dát — appka mala bohatý `nastavenia` slovník už hotový, stačilo
+ho použiť namiesto natvrdo napísaného textu.
+
+**🔴 VEDOME OTVORENÉ, nie tichá medzera:** editor inzerátu (formulár s
+desiatkami polí), formulár ponuky, nadpisy na Moje inzeráty/ponuky/
+dopyty, admin konzola sú zatiaľ len po slovensky aj na `/en`/`/de`.
+Toto je najväčší zvyšný i18n blok — samostatná ďalšia fáza, nie
+prehliadnutie.
