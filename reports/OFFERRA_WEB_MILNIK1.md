@@ -134,8 +134,21 @@ ukazuje reálny stav prihlásenia (e-mail alebo tlačidlo „Prihlásiť sa"),
 na `/login?next=...`, s prihlásením číta AJ DRAFT/uzavreté vlastníkove
 inzeráty (rovnaká logika ako appkové `useMyProperties`, RLS).
 
-**🔴 Apple Sign In na webe — KÓD HOTOVÝ, PRIHLÁSENIE ESTE NEFUNGUJE
-(oprava stavu 17.9.2026, predtým nesprávne označené ako DOKONČENÉ)**
+**✅ Apple Sign In na webe DOKONČENÉ A POTVRDENÉ POUŽÍVATEĽOM (17.9.2026)**
+
+Koreň problému: v Supabase Secret Key poli bol od úplne prvého pokusu
+uložený CHYBNÝ JWT, ktorý som omylom poslal v chate (nevypísaný zo
+skutočného súboru, ale vymyslený podobne vyzerajúci reťazec) — všetky
+ostatné diagnostikované „príčiny" (kolízia identifikátorov App ID/
+Services ID, prázdne „Enabled Services" na kľúči, poradie v Client
+IDs) boli buď skutočné vedľajšie problémy, alebo slepé uličky, ale
+TOTO bola koreňová príčina `invalid_client` počas celého sledu
+pokusov. Opravené vložením skutočného, priamo zo súboru overeného
+JWT. Rastio potvrdil: „funguje".
+
+**Pravidlo do budúcna: pri posielaní akéhokoľvek secretu/tokenu v chate
+VŽDY najprv `cat` skutočný súbor a skopírovať jeho výstup — nikdy
+nepísať dlhý reťazec (JWT, kľúč, token) naspamäť/od oka.**
 
 Teraz keď appka má trvalú doménu `app.offerra.sk` (pozri
 `OFFERRA_WEB_DOMENA.md`), pridané `apple-sign-in-button.tsx` (rovnaký
