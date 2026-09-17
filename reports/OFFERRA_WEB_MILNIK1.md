@@ -1706,3 +1706,27 @@ ním, nie v samostatnom riadku pod celou hlavičkou.
 
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
 nevie ukázať: pôsobí hlavička teraz vyváženo/symetricky?
+
+## Hlavička — druhý pokus, vycentrovaná (17.9.2026)
+
+Prvý pokus (zoskupiť vyhľadávanie pod titulok v ľavom stĺpci) problém
+neriešil: Rastio spresnil — „stále je to vľavo aj vyhľadávanie aj
+Nehnuteľnosti." Keďže ide o čisto vizuálny úsudok, ktorý neviem overiť
+(žiadny prehliadač v tomto prostredí) a predošlé dva pokusy netrafili,
+opýtal som sa priamo namiesto ďalšieho hádania — tri možnosti (vycentrovať
+/ kartu „Ako funguje" zrušiť / rovnaké šírky stĺpcov). Rastio vybral
+**vycentrovať názov aj vyhľadávanie**, s kartou „Ako funguje Offerra"
+POD tým, nie vedľa.
+
+- **`src/app/[locale]/page.tsx`** — hlavička je teraz JEDEN vycentrovaný
+  blok (`mx-auto max-w-2xl flex-col items-center text-center`): názov,
+  text, vyhľadávacie pole — všetko na stred stránky, nie zarovnané
+  naľavo. Karta „Ako funguje Offerra" je pod týmto blokom, samostatne
+  vycentrovaná na užšiu šírku (`max-w-md`), nie vedľa v druhom stĺpci.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` potvrdzuje: `<header
+class="mx-auto flex w-full max-w-2xl flex-col items-center gap-4
+text-center">` obsahuje titulok, text aj vyhľadávacie pole; karta „Ako
+funguje Offerra" nasleduje v samostatnom `<div class="mx-auto w-full
+max-w-md">` POD hlavičkou, nie vedľa nej.
