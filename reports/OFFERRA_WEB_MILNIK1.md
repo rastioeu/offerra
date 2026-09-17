@@ -796,7 +796,68 @@ Za posledné kolá pribudlo aj mimo pôvodného zoznamu medzier:
   `WantedBy=multi-user.target`, otestované priamym `kill -9` procesu,
   systemd ho postavil späť do 4 sekúnd bez zásahu).
 
-**Otvorené, čaká na Rastiovo rozhodnutie, nie na prácu:** i18n EN/DE
-(pozri vyššie prečo je to zámerne odložené), formálna Type/Money
-škála ako tokeny (pozri „Druhé kolo" vyššie prečo som to zámerne
-nespravil bez ďalšieho pokynu).
+**Otvorené, čaká na Rastiovo rozhodnutie, nie na prácu:** formálna
+Type/Money škála ako tokeny (pozri „Druhé kolo" vyššie prečo som to
+zámerne nespravil bez ďalšieho pokynu).
+
+## i18n EN/DE (17.9.2026) — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE
+
+URL štruktúra podľa Rastiovho výberu: SK bez prefixu (`/`, `/dopyty`,
+...), EN/DE cez prefix (`/en/...`, `/de/...`) — odporúčané pre
+SEO/hreflang, Rastio to takto potvrdil. Implementácia:
+
+- Presun všetkých route súborov pod `src/app/[locale]/` (dynamický
+  segment), `src/proxy.ts` prepisuje SK request interne na
+  `/sk/...`, EN/DE idú cez segment priamo. `<html lang>` a
+  `alternates.languages` (hreflang) nastavené per-locale v
+  `app/[locale]/layout.tsx`.
+- i18n modul rozdelený na dve časti — dôvod: Edge Middleware (`proxy.ts`)
+  nesmie importovať `next/headers`, inak sa nezabalí:
+  - `src/i18n/index.ts` — čistá časť (žiadny modulový stav, appka mala
+    tento istý dôvod pri appkovom `createT`): `createT(locale)` vracia
+    `t` funkciu, bezpečné volať aj z klientskych komponent.
+  - `src/i18n/server.ts` — `getLocale()`/`getT()`, cez `React.cache()`
+    (nie modulový singleton — Node obsluhuje viacero requestov
+    súčasne, mutovateľná premenná na úrovni modulu by bola pretekom
+    naprieč nimi).
+
+**Skutočná chyba nájdená pri prvom nasadení, nie vopred predpokladaná:**
+React Server Components zakazujú poslať FUNKCIU ako prop zo Server
+Component do Client Component (serializačná hranica — platí bez
+ohľadu na `"use client"`). Prvý pokus posielal `t: TFunc` priamo takto
+na 11 miestach (`DeadlineBadge`, `OfferCountdownPill`, `OfferForm`,
+`OwnerOfferActions`, `RatingCard`, `MessageThreadClient`, `ViewingCard`,
+`OutreachPicker`, `NewDemandForm`, `ListingEditorForm`,
+`MortgageCalculatorCard`) — spôsobilo to `500` na katalógu (`/`, `/en`,
+`/de`) a pravdepodobne kdekoľvek inde v strome, čo sa práve vtedy
+neoverilo. Zistené priamo z `journalctl -u offerra-web.service`
+(`Error: Functions cannot be passed directly to Client Components...`),
+nie odhadom. Oprava: tieto komponenty teraz dostávajú len
+serializovateľný `language: Locale` (reťazec) a `t` si odvodia samé
+cez `createT(language)`. Komponenty, ktoré si `t` posielajú MEDZI
+sebou (klient → klient, napr. `OfferForm` → `OfferValidityPicker`,
+`ListingEditorForm` → `DeadlinePicker`, `MessageThreadClient` →
+`MessageSendForm`) hranicu neprekračujú, tam `t: TFunc` ostalo bezo
+zmeny.
+
+**✅ OVERENÉ RUNTIME:**
+- `npm run build` čistý (TypeScript aj Turbopack), `systemctl restart
+  offerra-web.service`, `journalctl` bez jedinej chyby po reštarte.
+- curl `200` na `/`, `/en`, `/de`, `/dopyty` (+ `/en`, `/de` varianty),
+  `/login` (+ varianty), na reálnom detaile inzerátu (`/inzerat/<id>`,
+  ktorý renderuje práve opravené `DeadlineBadge`, `OffersSection`,
+  `ViewingSection`, `MortgageCalculatorCard`) aj reálnom detaile dopytu
+  (`/dopyt/<id>`, `OutreachPicker`) — všetko v SK/EN/DE.
+- Commitnuté a pushnuté (`rastioeu/offerra_web`, `d3f72bf`).
+
+**🟡 Čaká na Rastiove vizuálne overenie** (curl dokazuje HTTP 200, nie
+že text vyzerá dobre — §1 pravidlo, neodvodzujem jedno z druhého):
+otvor `https://app.offerra.sk/en` a `https://app.offerra.sk/de` na
+telefóne aj počítači a over slovom:
+- Vidno anglický/nemecký text namiesto slovenského (nadpisy, tlačidlá,
+  labely formulárov)?
+- Prepínanie funguje len ručnou zmenou URL zatiaľ — **prepínač jazyka
+  v menu ešte NIE JE hotový**, to je vedomá medzera, nie bug.
+- Časť textov (napr. „Nehnuteľnosti", „Cena na dohodu", „Bez fotky" na
+  karte v katalógu) je zatiaľ NAPEVNO po slovensky aj na `/en`/`/de` —
+  tiež vedomá, ešte nedokončená medzera, nie niečo, čo malo fungovať.
