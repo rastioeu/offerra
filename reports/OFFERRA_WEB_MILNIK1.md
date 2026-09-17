@@ -1640,3 +1640,69 @@ sa nikde nepoužívali.
 - kombinácia filtrov s nulovým výsledkom (`?transaction=SALE&type=LAND&sort=ENDING_SOON&q=xyzxyzxyz`):
   číslo sa nezobrazí, namiesto neho `noMatchTitle` text — overené
   priamo vo vrátenom HTML.
+
+## „Moje ponuky" bez fotky a bez informácií (17.9.2026)
+
+Rastio: „v sekcii moje ponuky nie je fotka pri inzeráte a nie sú tam na
+tej stránke žiadne informácie, nič mi to nehovorí potom."
+
+Web ukazoval na riadok len názov, typ obchodu, sumu a stavový štítok —
+žiadna fotka, žiadny dátum podania, žiadny odpočet platnosti. Appkové
+„Moje ponuky" (`profil.tsx`, `SectionList`) samo osebe fotku nemá (je
+to textový riadok), ale má bohatšiu druhú informáciu (suma, dátum,
+„videná", odpočet platnosti) — web nemal ANI fotku ANI túto druhú
+informáciu, čo Rastio presne pomenoval: „nič mi to nehovorí."
+
+- **`src/lib/my-offers.ts`** — `fetchMyOffers` teraz doťahuje aj
+  `city` inzerátu a JEDNÝM dotazom pre celú stránku (rovnaký vzor ako
+  appkové `attachMedia`) titulnú fotku z `media` — nie N+1 na riadok.
+- **`src/app/[locale]/moje-ponuky/page.tsx`** — riadok teraz má:
+  - **fotku** (64-80px náhľad, `next/image`, placeholder ikona domu keď
+    fotka chýba),
+  - **mesto** a **dátum podania ponuky** (`formatDate`),
+  - **„videná"** pri čakajúcej ponuke, ktorú si majiteľ už otvoril
+    (appkový `profil.seenByOwner`, predtým na webe nikde),
+  - **živý odpočet platnosti ponuky** (`OfferCountdownPill`, ten istý
+    komponent ako na detaile inzerátu),
+  - sumu a stavový štítok ostali, len presunuté vpravo ako predtým.
+
+**✅ OVERENÉ RUNTIME** (demo účtom `applereview@offerra.app`, rovnaký
+postup ako pri skorších reportoch v tomto dokumente): vložil som
+testovaciu ponuku priamo do produkčnej DB (Supabase Management API,
+`.mutark-secrets` token — povolené výnimkou v CLAUDE.md), s reálnou
+platnosťou 3 dni, na inzerát s fotkou. `curl` s prihláseným cookie na
+živý `https://app.offerra.sk/moje-ponuky` potvrdil vo vrátenom HTML:
+- skutočnú fotku inzerátu (`_next/image` URL na `offerra-media` bucket).
+- „Trnava · 17. septembra 2026" (mesto + dátum podania).
+- živý odpočet „Ponuka platí ešte 2 dni 23h".
+- sumu „123 456 €" a štítok „Čaká na odpoveď".
+Po overení som testovaciu ponuku ZMAZAL (`DELETE` cez tú istú
+Management API, overené následným `SELECT count(*) = 0`) — na webe ani
+v appke ju nikto neuvidí, bola tam len na dôkaz.
+
+## Asymetrická hlavička katalógu (17.9.2026)
+
+Rastio, v tej istej správe: „a hore kde je nehnuteľnosti a hovorí že je
+to obrátený trh a vyhľadávacie pole tak je to také nesymetrické voči
+stránke celej."
+
+Predtým bolo vyhľadávacie pole SAMOSTATNÝ riadok na celú šírku stránky,
+zarovnaný len na 420px zľava — pod hlavičkou, ktorá SAMA bola dvojstĺpec
+na celú šírku (názov+text vľavo, karta „Ako funguje" vpravo). Výsledok:
+riadok s poľom mal veľkú prázdnu plochu napravo, nezarovnanú s ničím nad
+ani pod ním — presne to nesymetrické pôsobenie.
+
+- **`src/app/[locale]/page.tsx`** — vyhľadávacie pole je teraz PRESUNUTÉ
+  DO ľavého stĺpca hlavičky, pod názov a text, v tom istom
+  `lg:max-w-2xl` bloku. Teraz je vizuálne zoskupené s titulkom (rovnaký
+  ľavý okraj) a stojí symetricky oproti karte „Ako funguje Offerra"
+  vpravo — žiadny samostatný, nevyvážený riadok navyše.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` potvrdzuje vo vrátenom HTML,
+že vyhľadávacie pole je teraz vnorené v tom istom `<div
+class="flex flex-col gap-4 lg:max-w-2xl">` bloku ako `<h1>` a text pod
+ním, nie v samostatnom riadku pod celou hlavičkou.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne to, čo `curl`
+nevie ukázať: pôsobí hlavička teraz vyváženo/symetricky?
