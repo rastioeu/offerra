@@ -716,6 +716,23 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   NEVIEM overiť sám:** ako presne Google/Bing/AI asistenti tento
   obsah naozaj skonzumujú a zaindexujú — to je mimo môjho dosahu,
   viditeľné až s odstupom týždňov/mesiacov.
+
+- **✅ Značkové favicon + vlastný OG obrázok (17.9.2026):**
+  - `favicon.ico`/`icon.png`/`apple-icon.png` boli DOTERAZ predvolené
+    Next.js scaffold ikony (generický trojuholník, nie Offerra) —
+    nahradené appkovým 1024×1024 `icon.png` (rovnaký ako iOS App Icon).
+  - Zistil som (a opravil) skutočnú chybu: keď stránka definuje
+    VLASTNÝ `openGraph` objekt bez `images`, Next.js ho NEDOPLNÍ z
+    `layout.tsx` (nie je to hĺbkové zlúčenie) — detail dopytu tak
+    nemal ŽIADEN `og:image`, zdieľanie na Facebooku/Slacku/WhatsApp by
+    ukázalo prázdnu kartu. Rovnaké riziko hrozilo pri inzeráte bez
+    fotiek. Vyrobil som vlastný značkový `og-image.png` (1200×630,
+    logo + teplý glow + tagline, PIL z appkového wordmarku a
+    paletových farieb) a nastavil ho ako fallback všade, kde nie je
+    vlastná fotka.
+  - Overené naozaj bežiacim serverom: `<link rel="icon">`/`apple-touch-icon"`
+    tagy aj `og:image` na detaile dopytu vrátené v skutočnom HTML,
+    regresný prieskum bez zmeny.
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
