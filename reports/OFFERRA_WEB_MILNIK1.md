@@ -1504,3 +1504,38 @@ predošlé dva pokusy? Sadnú si tri riadky (typ obchodu/typ nehnuteľnosti/
 triedenie) pod sebou dobre, alebo je karta príliš vysoká/nízka? Ak
 áno — potvrď, nech to môžem v registri označiť ako uzavreté aj vizuálne,
 nie len kódovo.
+
+## Filter — štvrtý pokus, jeden zhustený riadok (17.9.2026)
+
+Rastio na tri stlačené riadky čipov: „je to lepšie ale nie dobre, sú to
+tri riadky, je to moc veľké."
+
+Tri samostatné, vypchaté riadky (appkové rozloženie „tri riadky podľa
+významu" — vhodné pre appku, kde má filter celú obrazovku pre seba) na
+webe zaberali zbytočne veľa výšky navyše k hlavičke aj mriežke kariet.
+
+- Všetky tri skupiny čipov (typ obchodu, typ nehnuteľnosti, triedenie)
+  idú teraz do JEDNÉHO riadku (`flex flex-wrap`), ktorý sa zalomí len
+  keď naň nie je miesto, nie vynútene vždy — oddelené tenkou zvislou
+  čiarou medzi skupinami namiesto samostatných `<div>` blokov s vlastným
+  odsadením.
+- Menšie čipy: `text-xs` (bolo `text-sm`), padding `px-2.5 py-1` (bolo
+  `px-3 py-1.5`).
+- Menší padding celého panela: `px-3 py-2` (bolo `p-4`/`p-5` na
+  troch riadkoch), panel `rounded-xl` namiesto väčšieho `rounded-2xl`.
+- „Zrušiť filter" ostáva zarovnané doprava na konci riadka, zobrazí sa
+  len keď je aktívny nejaký filter.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/`:
+- panel je teraz JEDEN `<div>` (`rounded-xl border border-border
+  bg-surface px-3 py-2 shadow-[var(--shadow-card)]`) so všetkými čipmi
+  vnútri, nie tri oddelené riadky.
+- `?transaction=SALE&type=HOUSE&sort=ENDING_SOON` vrátil **16 kariet** —
+  kombinácia troch filtrov naraz cez čipy funguje.
+- zvislé deliace čiary medzi skupinami prítomné vo výstupe.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — presne toto curl nevie
+ukázať: je jeden zhustený riadok teraz primeranej výšky, nie „moc
+veľký"? Zalamujú sa čipy na mobile rozumne (viac riadkov len keď sa
+nezmestia, nie vždy)?
