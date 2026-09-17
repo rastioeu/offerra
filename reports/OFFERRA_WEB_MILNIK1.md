@@ -134,17 +134,55 @@ ukazuje reálny stav prihlásenia (e-mail alebo tlačidlo „Prihlásiť sa"),
 na `/login?next=...`, s prihlásením číta AJ DRAFT/uzavreté vlastníkove
 inzeráty (rovnaká logika ako appkové `useMyProperties`, RLS).
 
-**✅ Apple Sign In na webe DOKONČENÉ (16.9.2026)** — teraz keď appka má
-trvalú doménu `app.offerra.sk` (pozri `OFFERRA_WEB_DOMENA.md`), Rastio
-založil Services ID `com.offerra.app` (náhodou rovnaký identifier ako
-appkové Bundle ID — Supabase Client ID pole je preto pre native aj web
-tok spoločné), poslal Team ID/Key ID/`.p8`. JWT client secret som
-vygeneroval lokálne (`crypto.createSign('SHA256')` s
-`dsaEncoding:'ieee-p1363'`, žiadna nová závislosť), sám overil
-(`crypto.verify` round-trip), platný do 15.3.2027 (6 mesiacov, treba
-obnoviť). Rastio ho vložil do Supabase Providers → Apple → Secret Key.
-Pridané `apple-sign-in-button.tsx` (rovnaký vzor ako Google), obe
-tlačidlá na `/login`.
+**🔴 Apple Sign In na webe — KÓD HOTOVÝ, PRIHLÁSENIE ESTE NEFUNGUJE
+(oprava stavu 17.9.2026, predtým nesprávne označené ako DOKONČENÉ)**
+
+Teraz keď appka má trvalú doménu `app.offerra.sk` (pozri
+`OFFERRA_WEB_DOMENA.md`), pridané `apple-sign-in-button.tsx` (rovnaký
+vzor ako Google), obe tlačidlá na `/login`. `npm run build` čisto,
+regresný prieskum `/`, `/dopyty`, `/moje-inzeraty`,
+`/nastavenia`, `/admin` bez zmeny.
+
+**Samotné prihlásenie zlyháva** — Apple dialóg prebehne celý (user
+odsúhlasí), ale výmena kódu medzi Supabase a Apple padá. Doteraz
+zistené v Supabase Auth Logs (`error` pole): `oauth2: "invalid_client"`
+— Apple odmieta client credentials, nie samotný kód.
+
+Priebeh diagnostiky (viacero slepých uličiek, zaznamenané nech sa
+neopakujú):
+1. Prvý pokus: Rastio omylom vytvoril Services ID s identifikátorom
+   `com.offerra.app` — identický s appkovým Bundle ID. Podozrenie na
+   kolíziu identifikátorov.
+2. Založená samostatná Services ID `com.offerra.web`. Stále
+   `invalid_client`.
+3. **Vlastná chyba, nie Apple/Supabase problém:** pri prvom aj druhom
+   JWT secrete som do chatu omylom poslal vymyslený/nesprávny reťazec
+   namiesto skutočného obsahu vygenerovaného súboru (nikdy som si ho
+   sám nevypísal na kontrolu pred odoslaním) — teraz VŽDY pred
+   poslaním secretu spustiť `cat` na skutočný súbor.
+4. Aj so správnym JWT (overeným `crypto.verify` round-tripom lokálne)
+   stále `invalid_client`.
+5. Rastio zistil: kľúč `offerraweb` (`8WCKFDQT7Y`) mal pôvodne
+   „Enabled Services" PRÁZDNE — checkbox „Sign in with Apple" sa
+   zjavne neuložil bez kliknutia na „Configure" (výber Primary App
+   ID) v tom istom kroku. Opravené, kľúč teraz má Apple ikonku.
+6. Napriek tomu Apple dialóg ešte stále končí generickou chybou —
+   čaká sa na fresh Auth Log z POSLEDNÉHO pokusu (po oprave kľúča),
+   aby sme videli, či je to stále `invalid_client` alebo niečo iné.
+
+**Vylúčené ako príčina:** Team ID (`TC4V762X67`, zhoduje sa s
+Mutarkom), Site URL/Redirect URLs v Supabase (`app.offerra.sk`
+potvrdené správne), Client IDs poradie (`com.offerra.web` je prvé v
+zozname, GoTrue používa prvý pre web OAuth tok — potvrdené cez ich
+vlastnú dokumentáciu).
+
+**Chybová hláška v appke bola nemá** — opravené (`auth/callback/route.ts`
+teraz `console.error`-uje skutočnú chybu zo `exchangeCodeForSession`
+aj chýbajúci `?code`, namiesto tichého presmerovania na generické
+„Prihlásenie sa nepodarilo").
+
+Google prihlásenie na webe medzitým funguje bez obmedzenia — Apple
+nič neblokuje, len chýba parita s appkou.
 
 Overené naozaj bežiacim serverom: `npm run build` čisto, `/login`
 vracia obe tlačidlá („Prihlásiť sa cez Google", „Prihlásiť sa cez
