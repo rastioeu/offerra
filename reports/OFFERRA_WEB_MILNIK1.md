@@ -2107,3 +2107,71 @@ dobre. Namiesto ďalšieho vlastného pokusu naslepo:
 
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** vyzerajú teraz tieto tri
 ikony (srdiečko/ozubené koliesko/otáznik) dobre vedľa zvončeka?
+
+## DIZAJN — CTA „+ Pridať inzerát" v hornej navigácii (17.9.2026)
+
+Zadanie explicitne cielilo na **web** (`rastioeu/offerra_web`), potvrdené
+— pracoval som v `/root/offerra-web`, nie v mobilnej appke.
+
+### ⚠️ Poznámka k PUSH skriptu — tentoraz správny repozitár, ale rovnaký problém s tokenom
+
+PUSH skript v zadaní tentoraz smeroval SPRÁVNE (`rastioeu/offerra_web`),
+na rozdiel od predošlého zadania. Napriek tomu som ho nepoužil doslovne
+— z rovnakého dôvodu ako minule: `https://$GITHUB_TOKEN@github.com/...`
+zapisuje token do `.git/config` v plaintexte (zbytočné, web repo má
+push nastavený bez toho celú túto session) a `git add -A` je plošné
+pridanie namiesto konkrétnych súborov (CLAUDE.md git protokol). Zmenu
+som pushol do toho istého, správneho repozitára obvyklým bezpečným
+spôsobom. „Zvýš verziu" opäť preskočené — web nemá EAS/OTA verzovanie.
+
+### Čo pribudlo
+
+Vpravo v lište (medzi ikonami a okrajom) je nové CTA — **split button**
+„+ Pridať inzerát" s malou šípkou:
+- **`src/components/add-listing-cta.tsx`** (nová, klientská) — plné
+  akcentové tlačidlo (`bg-accent-deep`), jediný sýto farebný prvok
+  lišty. Klik na text „+ Pridať inzerát" volá `createDraftAction`
+  (appkový vzor: DRAFT vzniká v DB HNEĎ, appka `pridat.tsx`), ktorá
+  presmeruje na editor nového konceptu. Šípka (`aria-haspopup="menu"`,
+  `aria-expanded`) otvára menu s DVOMA voľbami — „Pridať inzerát"
+  (rovnaká akcia) a „Pridať dopyt" (odkaz na existujúci formulár
+  `/dopyty/novy`, appka: dopyty majú vlastný flow, netreba nový).
+  Klávesnica: Escape zatvorí menu a vráti fokus na šípku, klik mimo
+  zatvorí, položky menu majú `role="menuitem"`.
+- **`src/components/site-header.tsx`** — CTA v ikonovom klastri vpravo,
+  rovnaká výška (`h-9`) ako zvonček/ikony vedľa neho, LEN pre
+  prihláseného (neprihlásený má už svoje CTA — „Prihlásiť sa").
+
+### Chyba nájdená AŽ PRI BEHU, nie pri builde — a prečo to dokazuje, že „build prešiel" nestačí
+
+Prvá verzia posielala `href` (funkciu) zo `SiteHeader` (Server
+Component) do `AddListingCta` (Client Component). `next build` prešiel
+čisto — TypeScript aj build tento druh chyby nezachytia. Až `curl` na
+živý web po reštarte ukázal skutočnú poruchu: stránka vracala HTTP 500,
+`journalctl` mal presnú chybu „Functions cannot be passed directly to
+Client Components". Opravené presunom na `locale` (reťazec, cez RSC
+hranicu bezpečný) a zostavením `href` PRIAMO v klientskej komponente
+cez ten istý `localizeHref`, akým to robia iné klientske komponenty
+na webe (rovnaký vzor ako `SearchBox`). Presne to je dôvod, prečo
+tento dokument nikdy nepíše „build prešiel" ako dôkaz behu — a prečo
+som aj tentoraz po oprave znova reštartoval a znova curl-oval, nie len
+spoľahol na druhý čistý build.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` s prihláseným demo účtom vrátil **HTTP 200**
+(predtým, s pôvodnou chybou, **HTTP 500** — zmerané, nie predpokladané)
+a `journalctl` bez chýb po oprave. Vo vrátenom HTML je split button
+`<div class="... bg-accent-deep ...">` s tlačidlom „+ Pridať inzerát"
+a šípkou (`aria-haspopup="menu"`). Neprihlásenému sa CTA vôbec
+nezobrazuje (`bg-accent-deep` sa vo výstupe nevyskytuje), namiesto
+neho „Prihlásiť sa" — overené na oboch stavoch. Podkladová DB operácia
+(rovnaký `insert` ako `createDraftAction`) funguje — vyskúšal som ju
+priamo ako demo používateľ (vytvoril a hneď zmazal testovací DRAFT,
+overené počtom pred/po). Cieľová stránka „Pridať dopyt"
+(`/dopyty/novy`) vrátila prihlásenému **HTTP 200**.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** presne to, čo `curl` nevie
+ukázať — vyzerá tlačidlo dobre zarovnané s ostatnými ikonami (výška,
+vertikálne centrovanie), nepôsobí „prilepené"? Funguje reálne
+KLIKNUTIE myšou aj šípkou/Enter z klávesnice (otvorenie menu, výber
+položky)? Vedie klik na hlavný text rovno do editora nového konceptu?
