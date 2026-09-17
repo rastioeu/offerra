@@ -733,6 +733,14 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   - Overené naozaj bežiacim serverom: `<link rel="icon">`/`apple-touch-icon"`
     tagy aj `og:image` na detaile dopytu vrátené v skutočnom HTML,
     regresný prieskum bez zmeny.
+  - **Ďalšia zistená chyba pri kontrole:** katalóg s filtrami (`/`)
+    nedostával príponu „| Offerra" do `<title>` napriek `template` v
+    `layout.tsx` — zmerané priamo (`/dopyty`, `/login`, obe so
+    statickým `export const metadata`, príponu dostanú správne; táto
+    JEDNA dynamická `generateMetadata` na koreňovej route nie, z
+    dôvodu, ktorý som nedohľadal). Opravené explicitnou príponou v
+    kóde namiesto spoliehania sa na dedenie.
+
 - **Otvorené rozhodnutie — i18n/EN/DE:** appka podporuje SK/EN/DE, web
   zatiaľ renderuje LEN SK (JSON slovník je prenesený, chýba len
   prepínanie a URL štruktúra pre viac jazykov — napr. `/en/...` vs.
