@@ -2039,3 +2039,33 @@ dopyty.
 ukázať — dávajú tri nové ikony bez textu zmysel na prvý pohľad (srdce
 = Obľúbené, ozubené koliesko = Nastavenia, otáznik = Ako funguje)? Sedí
 poradie/rozostupy v klastri dobre vedľa zvončeka a kontaktu?
+
+## Prázdne miesto okolo vyhľadávacieho poľa (17.9.2026)
+
+Rastio: „ešte ako je vyhľadávacie pole tak je tam veľa miesta
+prázdneho všade okolo."
+
+Po odstránení nadpisu/popisu (motto sa presunulo do hlavičky) ostalo
+vyhľadávacie pole SAMO na vlastnom vycentrovanom riadku (`mx-auto`,
+max. 420px) — a karta „Ako funguje" pod ním tiež sama na vlastnom
+vycentrovanom riadku (max. 448px). Na širokej stránke (`max-w-7xl`,
+1280px) to boli dva úzke, izolované „ostrovčeky" uprostred, každý
+obklopený veľkými prázdnymi okrajmi na oboch stranách — presne to, čo
+Rastio popísal.
+
+- **`src/app/[locale]/page.tsx`** — vyhľadávacie pole a karta „Ako
+  funguje" sú teraz v JEDNOM riadku vedľa seba (`lg:flex-row`), bez
+  `mx-auto` — zarovnané k ĽAVÉMU okraju rovnako ako zvyšok stránky
+  (filtre/mriežka kariet nižšie), nie vycentrované doprostred. Riadok
+  teraz zaberá viac zo šírky (pole + karta vedľa seba), namiesto dvoch
+  osamotených blokov nad sebou.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `journalctl` bez chýb.
+`curl` na živý `https://app.offerra.sk/` potvrdzuje: pole a karta sú
+v tom istom `<div class="flex flex-col gap-4 lg:flex-row ...">`, bez
+`mx-auto` na žiadnom z nich — zarovnané rovnako ako zvyšok obsahu
+stránky.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** cíti sa teraz okolo poľa
+menej prázdneho priestoru, alebo to chce ešte niečo iné (napr. pole
+na celú šírku dostupného priestoru namiesto pevných 460px)?
