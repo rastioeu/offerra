@@ -773,13 +773,21 @@ NEVIEM overiť sám:** ako presne tieň vyzerá v prehliadači.
   AŽ PO tom, čo SK verzia reálne beží verejne — nie je to blokujúce pre
   míľnik 1.
 
-## Ďalší krok
+## Stav k 17.9.2026 (prepísané, predošlý text bol zastaraný)
 
-**Celý pôvodný rozsah zo zadania má teraz aspoň prvú funkčnú verziu, aj
-s rozhodovaním majiteľa o ponukách.** Prihlásenie funguje (potvrdené) —
-teraz by si prvý raz vedel appku naozaj vyskúšať zvnútra, ako prihlásený
-človek. To je jediný spôsob, ako sa dá overiť zvyšok (podanie ponuky,
-prijatie ponuky, odoslanie dopytu, pridanie inzerátu s fotkami...), ja
-naďalej vidím len neprihlásený stav. Zvyšné body vyššie
-sú buď priznané zjednodušenia (dobrovoľné doplnenie), alebo čakajú na
-Cloudflare token pre trvalý verejný odkaz.
+**Celý pôvodný rozsah zo zadania beží na `https://app.offerra.sk`,
+vrátane admin konzoly, dotazníka nájomcu, OfferTimeline, realtime
+správ a dôkladného SEO/AI kola.** Prihlásenie (Google aj Apple)
+potvrdené Rastiom, appka je plne vyskúšateľná ako prihlásený človek.
+
+Za posledné kolá pribudlo aj mimo pôvodného zoznamu medzier:
+- Menšie skutočné chyby nájdené a opravené priebežne (chýbajúci
+  `og:image` na dopyte, chýbajúca title prípona na katalógu, sekvenčné
+  dopyty namiesto paralelných v `OffersSection`/`ViewingSection`).
+- Zdieľaná `Button` komponenta, appkový `Shadow.button`.
+- Značková 404 stránka.
+
+**Otvorené, čaká na Rastiovo rozhodnutie, nie na prácu:** i18n EN/DE
+(pozri vyššie prečo je to zámerne odložené), formálna Type/Money
+škála ako tokeny (pozri „Druhé kolo" vyššie prečo som to zámerne
+nespravil bez ďalšieho pokynu).
