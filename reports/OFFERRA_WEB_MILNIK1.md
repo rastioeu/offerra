@@ -663,8 +663,17 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
   opakované porušenia, top vystavovatelia) má teraz aj web.
 - **Živé vyhľadávanie v katalógu** — ✅ HOTOVÉ (17.9.2026, debounce
   350ms, žiadne tlačidlo „Hľadať", presne ako appka).
-- **Realtime správy** (appka to tiež nemá — nie je to skutočná parita,
-  len budúce vylepšenie).
+- **✅ Realtime správy HOTOVÉ (17.9.2026)** — nová vec pre web (appka
+  toto pre správy sama nemá), postavená na appkovej Realtime
+  infraštruktúre (`realtime.ts` + `use-realtime-channel.ts`, 1:1 port,
+  dokázaný appkový vzor z notifikácií). Nová správa sa objaví bez
+  obnovenia stránky. **DB zmena:** `offerra.message` pridaná do
+  `supabase_realtime` publikácie — predtým tam nebola vôbec, žiadne
+  `postgres_changes` by sa nedoručilo nikomu, appku ani web to
+  predtým netrápilo, lebo appka na túto tabuľku realtime nepoužíva.
+  **Čo NEVIEM overiť sám:** živé doručenie v dvoch prehliadačoch naraz
+  vyžaduje dvoch prihlásených ľudí súčasne — over si to prosím
+  otvorením konverzácie v dvoch okná/zariadeniach.
 - **Priebežné autosave** — preskúmané a vyradené zo zoznamu medzier,
   pozri opravu vyššie pri Fáze 4: appkový `useFormDraft` rieši bug,
   ktorý web architektonicky nemá.
