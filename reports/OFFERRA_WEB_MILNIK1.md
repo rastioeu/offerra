@@ -346,9 +346,20 @@ má rovnaký princíp (pevný text cez `t('admin.blockedReason')`).
 a `admin_set_role` (bezpečnostné pravidlá — nemeniť vlastnú rolu,
 aspoň jeden admin musí ostať — sú v databáze, nie v kóde).
 
-**Ešte chýba oproti appke:** podozrivé vzorce (záplava ponúk,
-podozrivo nízke ponuky, shill bidding), duplicitné kontakty, nastavenia
-prahov (`app_config`). Odložené, pridám na požiadanie.
+**✅ Podozrivé vzorce a duplicitné kontakty DOKONČENÉ (17.9.2026)** —
+nová sekcia „Podozrivé vzorce" na `/admin`: záplava ponúk
+(`admin_suspicious_offer_flood`), opakovane nízke ponuky
+(`admin_suspicious_lowball`), opakované ponúkanie tomu istému
+vlastníkovi (`admin_suspicious_shill_bidding`), rovnaký telefón/e-mail
+na viacerých účtoch (`admin_duplicate_contacts`) — rovnaké RPC ako
+appka, len signály na ručnú kontrolu, žiadna automatická akcia (appka
+to isté — „nikoho neblokuje sama").
+
+**Ešte chýba oproti appke:** nastavenia prahov (`app_config` —
+`SUSPICIOUS_CONFIG_KEYS`/`RATE_LIMIT_CONFIG_KEYS`), limit počtu
+inzerátov, opakované porušenia (`admin_repeat_offenders`), upozornenia
+(`admin_alerts`), top vystavovatelia (`admin_top_listers`). Odložené,
+pridám na požiadanie.
 
 **Odkaz v hlavičke zatiaľ chýba** — vyžadovalo by extra RPC volanie na
 KAŽDEJ stránke len na rozhodnutie, či link ukázať (v praxi je presne
@@ -639,11 +650,10 @@ PONUKY, nie uzávierky inzerátu — iná vec, pozri nižšie) ešte chýbajú.
 - **Dotazník nájomcu pri prenájme, realtime správy (appka to tiež
   nemá — nie je to skutočná parita, len budúce vylepšenie), appkový
   OfferTimeline**.
-- **Admin — zvyšok**: podozrivé vzorce (záplava/lowball/shill),
-  duplicitné kontakty, nastavenia prahov (`app_config`). Správa
-  používateľov, overenie a zmena roly hotové 17.9.2026, pozri vyššie.
-- **CityPicker/StreetPicker (2 925 obcí), per-keystroke autosave v
-  editore inzerátu.**
+- **Admin — zvyšok**: nastavenia prahov (`app_config`), limit inzerátov,
+  opakované porušenia, upozornenia, top vystavovatelia. Správa
+  používateľov, overenie, zmena roly a podozrivé vzorce hotové
+  17.9.2026, pozri vyššie.
 - **CityPicker/StreetPicker** pre dopyty aj pre editor inzerátu (obec je
   zatiaľ voľný text na oboch miestach).
 - **Priebežné autosave** v editore inzerátu (zatiaľ jedno tlačidlo
