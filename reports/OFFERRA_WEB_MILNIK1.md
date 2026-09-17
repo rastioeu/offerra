@@ -1035,3 +1035,51 @@ kolá hľadali len slová s diakritikou (`grep` na `áäčďéíĺľňóôŕšť
 
 **🟡 Čaká na Rastiovo overenie:** klikni na srdiečko pri inzeráte (v
 katalógu aj na detaile) a skontroluj `/oblubene` — mal by tam byť.
+
+## Piate kolo — dôvod, prečo predošlé štyri stále niečo nechali (17.9.2026)
+
+Rastio: *„pozri este raz cely web a najdi zvysok."* Skutočná príčina,
+prečo preklad unikal opakovane napriek štyrom kolám: **predošlé `grep`
+sweepy hľadali len reťazcové literály v úvodzovkách** (`"Zrušiť"`).
+Holý JSX textový uzol bez úvodzoviek (`<button>Zrušiť</button>`) im
+unikal úplne — nová metóda (grep na CELÉ riadky, čo sú len
+slovo/krátka fráza bez inej syntaxe) ho konečne odhalila.
+
+Nájdené a opravené touto metódou: „Zrušiť" v `viewing-card.tsx` a
+`outreach-picker.tsx`, „Bez fotky" v `photo-gallery.tsx` (tretie
+miesto s týmto textom po karte a detaile — každé bolo samostatná
+komponenta bez prístupu k jazyku), „Odosielam…" v
+`message-send-form.tsx`, „Píšeš s {meno}." v `message-thread-client.tsx`.
+
+**Skutočná chyba, nie len text:** `message-thread-client.tsx` mal
+natvrdo `new Intl.DateTimeFormat("sk-SK", ...)` pre čas správy —
+nezávisle od zvoleného jazyka by čas správy VŽDY vyzeral podľa
+slovenského formátu, aj na `/en`/`/de`. Opravené (`localeTag()`
+exportovaná z `lib/property.ts`, rovnaká funkcia, čo appka/web už
+používa na dátumy inde).
+
+**Druhý, systematickejší nález:** `throw new Error("...")` v SERVER
+AKCIÁCH (`submitOffer`, `createOutreachAction`, `requestViewingAction`,
+`createDemandAction`, `saveRatingAction`, `createDraftAction`,
+`publishListingAction`, nahrávanie/mazanie fotky) — tieto reťazce idú
+priamo do `e.message`, ktoré klientský `catch` zobrazí používateľovi.
+**Obišli VŠETKY doterajšie `t()`-based fallbacky**, lebo `e instanceof
+Error` je vždy `true` — fallback sa nikdy nespustil. Opravené vo
+všetkých nájdených miestach cez `getT()` v server akcii.
+
+**Vedľajšie, nie preklad, ale nájdené pri tomto prechode:** `robots.ts`
+nemal v `disallow` zozname `/prezyvka`, `/oblubene`, `/oznamenia` (nové
+chránené cesty z tejto session) — a **žiadna** chránená cesta nemala
+`/en`/`/de` variant, čiže `/en/nastavenia` mohol dovtedy indexovať
+vyhľadávač aj AI bot. Opravené. `sitemap.ts` nemal `/ako-to-funguje`,
+doplnené.
+
+**🔴 OTVORENÉ, vedome nie táto fáza:** `sitemap.xml` neobsahuje
+`/en`/`/de` varianty stránok (hreflang `alternates` pole) — väčšia SEO
+úprava, nie preklad, potrebuje samostatné rozhodnutie o rozsahu, nie
+opravu popri inom.
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na všetky verejné
+aj chránené routy v SK/EN/DE, `robots.txt` obsahuje `/en/`, `/de/`
+varianty všetkých chránených ciest, `sitemap.xml` obsahuje
+`ako-to-funguje`, `journalctl` bez chýb.
