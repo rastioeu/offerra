@@ -2395,3 +2395,35 @@ po kliknutí, klientský stav sa v statickom SSR HTML nezobrazuje.
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** otvorí sa menu kliknutím na
 tlačidlo, zobrazí správne dva zostávajúce jazyky, a prepne na správnu
 lokalizovanú URL po kliknutí na jeden z nich?
+
+## CTA prekrývalo počet inzerátov (18.9.2026)
+
+Rastio: „pridať inzerát sa prekrýva s počtom inzerátov, kúsok skráť
+vyhľadávacie pole."
+
+**Skutočná príčina prekrytia:** posun CTA doprava (predošlé kolo)
+používal `translate-x` — CSS transform, ktorý PREKRESLÍ obsah mimo
+jeho mriežkovej bunky, ale hranicu bunky (a teda ani susednú bunku
+s počtom) neposunie. Pri malej medzere medzi stĺpcami (`gap-3`,
+12px) a posune o 40px (`translate-x-10`) to vizuálne zasahovalo do
+stĺpca s počtom inzerátov — presne prekrytie, ktoré Rastio nahlásil.
+
+- **`src/app/[locale]/page.tsx`** — `sm:translate-x-10` nahradené
+  `sm:ml-6` (skutočný margin) — ten NIE JE len vizuálny, posúva aj
+  reálnu šírku mriežkovej bunky CTA, takže sa spolu s ním bezpečne
+  posunie aj bunka s počtom inzerátov namiesto toho, aby ju CTA
+  prekrylo.
+- Vyhľadávacie pole má naspäť strop šírky, tentoraz `sm:max-w-[480px]`
+  (menej než pôvodných 380px z prvého kola, viac než „bez stropu" po
+  predĺžení) — presne to, o čo Rastio žiadal („kúsok skráť").
+
+**✅ OVERENÉ RUNTIME:** build čistý, reštart, `curl` na živý
+`https://app.offerra.sk/` prihláseným účtom vrátil **HTTP 200**,
+`journalctl` bez chýb. Vo vrátenom HTML: pole má
+`sm:max-w-[480px]`, CTA je v `<div class="sm:ml-6">` (nie
+`translate-x`). Kombinovaný filter (`?transaction=RENT`) naďalej
+funguje — vrátil 16 kariet.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** zmizlo prekrytie CTA
+s počtom inzerátov? Je šírka poľa teraz primeraná (nie príliš
+krátke, nie prekrývajúce sa s ničím)?
