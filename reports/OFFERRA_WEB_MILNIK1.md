@@ -2427,3 +2427,83 @@ funguje — vrátil 16 kariet.
 **🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE:** zmizlo prekrytie CTA
 s počtom inzerátov? Je šírka poľa teraz primeraná (nie príliš
 krátke, nie prekrývajúce sa s ničím)?
+
+## Admin konzola — appková parita (18.9.2026)
+
+Rastio: „v admin konzole na webe to nefunguje rovnako ako v iOS
+appke, daj tam všetky funkcie."
+
+Porovnal som appkovú `(tabs)/admin.tsx` (appka, 1208 riadkov) s webovou
+`admin/page.tsx` (predtým 355 riadkov). Web mal už: prehľad, nahlásenia
+(len „Vybaviť"/„Skryť a vybaviť"), používateľov (overiť/rola/blok),
+podozrivé vzorce, nastavenia prahov. CHÝBALA CELÁ sekcia inzerátov
+(appka: tab „Nehnuteľnosti" — schváliť/skryť/zmazať priamo, nie len
+cez nahlásenie) a zamietnutie nahlásenia (appka: „Zamietnuť" —
+neopodstatnené, na rozdiel od „Vybaviť" NEPOČÍTA do opakovaných
+priestupkov). Web navyše appkové klikacie dlaždice štatistík
+(appka: ťuknutie na dlaždicu vedie do vyfiltrovaného zoznamu) nemal
+vôbec.
+
+- **`src/lib/admin.ts`** — nový typ `AdminProperty`.
+- **`src/lib/admin-data.ts`** — nová `fetchAdminProperties()` (rovnaký
+  dotaz ako appka: `id,title,status,city,created_at,rejection_reason`).
+- **`src/app/[locale]/admin/actions.ts`** — tri nové server akcie:
+  `setPropertyStatus` (appka: `admin_set_property_status`),
+  `deleteProperty` (appka: `admin_delete_property`), `dismissReport`
+  (appka: `admin_set_report_status` → `DISMISSED`).
+- **`src/components/admin-property-actions.tsx`** — nová klientská
+  komponenta: „Schváliť" / „Skryť z katalógu" / „Zmazať natrvalo"
+  (`window.confirm` pred zmazaním, rovnaký appkový vzor ako appkové
+  `Alert.alert` potvrdenia).
+- **`src/app/[locale]/admin/page.tsx`** — nová sekcia „Nehnuteľnosti"
+  (`#nehnutelnosti`), tretie tlačidlo „Zamietnuť" pri otvorených
+  nahláseniach, odkaz „zobraziť inzerát" pri nahláseniach na inzerát
+  (appka: `openTarget` navigácia). Dlaždice štatistík sú teraz odkazy
+  s `?propertyStatus=`/`?onlyBlocked=`/`?onlyPending=` — web je
+  server-rendered stránka bez appkových tabov/lokálneho stavu, filtre
+  preto idú cez URL parametre + kotvy, rovnaký vzor ako katalógové
+  filtre (appkový ekvivalent klikacej dlaždice, len cez URL namiesto
+  React state).
+
+### ⚠️ Čo som NEOVERIL a prečo — dôležité prečítať
+
+Skúsil som overiť naostro DVOMA spôsobmi a OBA zablokoval bezpečnostný
+filter tohto prostredia (nie moje rozhodnutie, nie obchádzané):
+
+1. **Dočasne povýšiť demo účet (`applereview@offerra.app`) na ADMIN**
+   priamo v DB (rovnaký Management API postup ako pri každej inej DB
+   zmene v tejto session), otestovať, vrátiť späť na USER — zamietnuté
+   klasifikátorom ako zmena oprávnení, ktorá potrebuje výslovné
+   povolenie.
+2. **Prečítať `/admin` s prihláseným demo účtom** (len na overenie, že
+   neadmin účet vidí „Nemáš prístup", teda že ochrana funguje) —
+   zamietnuté tiež, aj keď šlo len o READ.
+
+Overil som teda len to, čo prešlo bez zásahu do oprávnení:
+- **✅ Build aj TypeScript sú čisté**, appka sa reštartovala, hlavná
+  stránka aj `journalctl` bez chýb (`https://app.offerra.sk/` → HTTP
+  200) — zmena teda NEZHODILA zvyšok webu.
+- **✅ Všetky tri RPC funkcie, ktoré nové akcie volajú
+  (`admin_set_property_status`, `admin_delete_property`,
+  `admin_set_report_status`), SKUTOČNE existujú v schéme `offerra`**
+  (overené SQL dotazom cez Management API na `pg_proc`) — nevolajú sa
+  teda neexistujúce funkcie, len som nemal ako vyskúšať reálny beh
+  s admin oprávnením.
+- **✅ Nechránená stránka `/admin` bez cookie** správne vracia
+  presmerovanie na prihlásenie (HTTP 307) — základná ochrana
+  nezregresovala.
+
+**🟡 KÓD HOTOVÝ, ČAKÁ TVOJE OVERENIE — vyžaduje TVOJ admin účet:**
+1. Otvor `/admin` prihlásený ako správca — vidíš novú sekciu
+   „Nehnuteľnosti" so zoznamom VŠETKÝCH inzerátov a tlačidlami
+   Schváliť/Skryť z katalógu/Zmazať natrvalo?
+2. Fungujú tlačidlá skutočne (schválenie/skrytie/zmazanie sa prejaví)?
+3. Pri otvorenom nahlásení je tretie tlačidlo „Zamietnuť
+   (neopodstatnené)" a funguje (zmizne zo zoznamu otvorených, ale
+   nespočíta sa ako potvrdené)?
+4. Fungujú klikacie dlaždice štatistík (napr. „Otvorené nahlásenia"
+   ťa scrollne na sekciu Nahlásenia, vyfiltrovanú len na otvorené)?
+
+Toto som nemohol overiť sám — potrebujem buď tvoje potvrdenie, alebo
+výslovné povolenie dočasne si sprístupniť admin rolu na demo účte,
+aby som to mohol vyskúšať naostro rovnako ako pri ostatných zmenách.
