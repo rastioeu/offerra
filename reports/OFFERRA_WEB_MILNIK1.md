@@ -2679,6 +2679,6 @@ buildom + reštartom služby, appku sa to netýka:
 2. Po overení domény odošli v Search Console sitemap
    `https://offerra.sk/sitemap.xml`.
 3. ID `GT-WPQPTGWD` je zo starého webu — ak chceš nový GA4 dátový tok
-   pre nový web, pošli nové ID a vymením ho v `.env.local` (reštart bez
-   buildu netreba? — pre klientský prop stačí reštart služby, layout je
-   dynamický).
+   pre nový web, pošli nové ID a vymením ho v `.env.local` a reštartujem službu
+   (env sa číta za behu — pre `GOOGLE_SITE_VERIFICATION` v tom istom
+   layoute som to zmeral na scratch inštancii bez rebuildu).
