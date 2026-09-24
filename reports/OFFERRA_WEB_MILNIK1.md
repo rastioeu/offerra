@@ -2701,3 +2701,46 @@ v `matcher` v `src/proxy.ts`.
   overenie prijme, neviem. Súbor **nemazať** — Google ho kontroluje
   opakovane a po zmazaní vlastníctvo stratíš.
 - Potom: v Search Console → Sitemapy odošli `https://offerra.sk/sitemap.xml`.
+
+## Google One Tap na /login (24.9.2026)
+
+**Zadanie (Rastio):** „pridaj google one tap" — po diskusii o Apple: heslo
+Apple ID nevieme obísť (prihlasovaciu stránku a QR/passkey riadi Apple,
+Sign in with Apple JS nemá voľbu na to — zdroje v rozhovore), Google One
+Tap je jediné, čo je v našich rukách.
+
+**Čo je v kóde** (web; appku sa netýka):
+- `src/components/google-one-tap.tsx` — načíta `accounts.google.com/gsi/client`,
+  `google.accounts.id.initialize` + `prompt`, token → `supabase.auth.signInWithIdToken`
+  (nonce: Google dostane SHA-256, Supabase pôvodnú hodnotu). Po úspechu
+  celé načítanie stránky (layout musí dostať novú cookie). `next` sa
+  overuje (len `/…`, nie `//…`).
+- Logy na každý krok (1 START, 2 nezobrazené+dôvod, 3 credential, 4 chyba
+  Supabase, 5 prihlásený). Chyba (skript zablokovaný, zlá doména/klient,
+  odmietnutý token) sa ukáže používateľovi červenou hláškou; bežné
+  „nezobrazené" (zavrel, nie je prihlásený v Google) nie.
+- `src/lib/one-tap-labels.ts` (SK/EN/DE), `login/page.tsx` ho vykreslí, keď je
+  nastavené `GOOGLE_WEB_CLIENT_ID` (`.env.local`, verejné ID = klient
+  z Supabase Auth → Google, `external_google_client_id`).
+- **Len na `/login`, nie na každej stránke:** Google skript sa inak sťahuje
+  každému anonymnému návštevníkovi bez súhlasu. Rozšírenie na celý web
+  by šlo len za súhlasom (lišta z analytiky).
+
+**Dôkazy:** `tsc` + `next build` OK; live `/login`, `/en/login`, `/de/login`,
+`/login?next=/dopyty` → HTTP 200; živý JS balík `1slt19_8ljql6.js` na
+`offerra.sk` obsahuje `accounts.google.com/gsi/client`; journal bez chýb.
+(V SSR HTML skript nie je zámerne — vkladá ho klient.)
+
+**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE + JEDEN KROK U RASTIA**
+- ⚠️ **Krok v Google Cloud Console** (nemám prístup ani nástroj, ktorý by to
+  overil — `gsi/status` vracia 403 pre každú doménu): v klientovi
+  `545435480114-…` (OAuth Web client, ten istý ako v Supabase) pridaj do
+  **Authorized JavaScript origins** `https://offerra.sk`. Redirect prihlásenie
+  ho nepotrebuje, One Tap áno. Klient je zdieľaný s MUTARK — pridanie
+  originu je aditívne. Bez toho One Tap hlási „nie je dostupné".
+- Čo otestovať: na `offerra.sk/login` v prehliadači, kde si prihlásený do
+  Google, sa má hore vpravo (alebo ako okno prehliadača) objaviť „Pokračovať
+  ako <meno>". Klepnutie → prihlásený bez hesla a presmerovaný. Opíš
+  slovami, čo sa stalo; ak sa nič neukáže, ak sa ukáže červená hláška,
+  napíš mi jej text.
+- Apple heslo: bez zmeny (pozri vyššie), to nie je v našich rukách.
