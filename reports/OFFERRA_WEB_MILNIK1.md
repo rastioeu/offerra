@@ -2624,3 +2624,61 @@ prihlásenie na `offerra.sk` po pridaní domény do Services ID
 potrebný. Google prihlásenie na `offerra.sk` potvrdil Rastio skôr.
 Presun domény je tým z hľadiska prihlásenia uzavretý; ostáva
 Search Console (sitemap) a prípadná analytika — viď zoznam vyššie.
+
+## Analytika (Google Analytics so súhlasom) + overenie domény pre Google (24.9.2026)
+
+**Zadanie (Rastio):** „pridaj analytiku a google chce overenie domény".
+
+**Zistené na starom WordPresse** (cez `--resolve` na starý hosting): Google
+tag `GT-WPQPTGWD` (Site Kit), súhlas cez Complianz. Facebook Pixel ani GTM
+tam neboli, meta tag `google-site-verification` tiež nie. Nový web nemal
+nič z toho.
+
+**Čo je v kóde** — IDE OTA nie je relevantné (web, nie appka); web sa nasadí
+buildom + reštartom služby, appku sa to netýka:
+- `src/components/analytics.tsx` — lišta so súhlasom (SK/EN/DE, „Prijať" aj
+  „Odmietnuť" rovnako výrazné). `gtag.js` sa načíta **až po „Prijať"**;
+  `page_view` sa posiela pri každej zmene cesty (App Router nenačítava
+  stránku znovu). „Odmietnuť" nastaví `ga-disable-<id>` a zmaže `_ga*`
+  cookies. Voľba je v `localStorage` (`offerra-analytics-consent`).
+- `src/components/consent-settings-button.tsx` + pätička: odkaz „Nastavenia
+  cookies" znovu otvorí lištu (zmena rozhodnutia).
+- `src/lib/consent-labels.ts` — texty lišty.
+- `GA_MEASUREMENT_ID=GT-WPQPTGWD` v `.env.local` (verejné ID, aj tak je
+  v HTML každého webu s GA). Bez premennej sa nevykreslí lišta ani odkaz.
+- `layout.tsx`: `verification.google` sa vykreslí, len keď je nastavená
+  `GOOGLE_SITE_VERIFICATION` (env, za behu).
+
+**Dôkazy (curl, lokálne aj live):**
+- `/`, `/en`, `/de`, `/ako-to-funguje` → HTTP 200; v SSR HTML **0** výskytov
+  `googletagmanager`/`gtag/js` (skript sa pred súhlasom nenačíta);
+  pätička obsahuje „Nastavenia cookies" / „Cookie settings" /
+  „Cookie-Einstellungen"; `https://offerra.sk/` 200, 0 výskytov GA;
+  journal bez chýb.
+- Scratch inštancia s `GOOGLE_SITE_VERIFICATION=test-token-123` vykreslila
+  `<meta name="google-site-verification" content="test-token-123"/>`;
+  inštancia zrušená, port 3002 voľný.
+
+**Status:**
+- Kód analytiky + súhlasu: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE — Rastio:
+  na `offerra.sk` v novom (alebo inkognito) okne sa má dole zobraziť lišta
+  s dvoma tlačidlami; opíš slovami, ako vyzerá a či nezasahuje do obsahu.
+  Po „Prijať" lišta zmizne a v GA (Reports → Realtime) sa má objaviť
+  návšteva; po „Odmietnuť" nemá. Cez pätičku „Nastavenia cookies" sa lišta
+  vráti. **To, že GA reálne príjme dáta, som nemohol overiť** — nemám
+  prístup do jeho účtu ani prehliadač.
+- Overenie domény pre Google: 🔴 NEDOKONČENÉ — potrebujem od Rastia
+  overovací reťazec zo Search Console (pri „Doména" ide o DNS TXT
+  `google-site-verification=…`, pri „Prefix URL" o meta tag). Pridám ho
+  cez Cloudflare API (TXT na apex, mail záznamy sa nedotknú) alebo cez
+  `GOOGLE_SITE_VERIFICATION`.
+
+**Rozhodnutia pre Rastia:**
+1. `privacy.html` (GitHub Pages, právny text) musí spomínať Google
+   Analytics a cookies — text som **neupravoval**, je to tvoje rozhodnutie.
+2. Po overení domény odošli v Search Console sitemap
+   `https://offerra.sk/sitemap.xml`.
+3. ID `GT-WPQPTGWD` je zo starého webu — ak chceš nový GA4 dátový tok
+   pre nový web, pošli nové ID a vymením ho v `.env.local` (reštart bez
+   buildu netreba? — pre klientský prop stačí reštart služby, layout je
+   dynamický).
