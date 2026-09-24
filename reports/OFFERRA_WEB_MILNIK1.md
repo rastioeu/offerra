@@ -2507,3 +2507,87 @@ Overil som teda len to, čo prešlo bez zásahu do oprávnení:
 Toto som nemohol overiť sám — potrebujem buď tvoje potvrdenie, alebo
 výslovné povolenie dočasne si sprístupniť admin rolu na demo účte,
 aby som to mohol vyskúšať naostro rovnako ako pri ostatných zmenách.
+
+## Presun domény: app.offerra.sk → offerra.sk (24.9.2026)
+
+Rastio: „potrebujem to teraz tak aby to išlo na offerra.sk nie na
+app.offerra.sk aj SEO a všetko." Toto je možnosť 2 z
+`OFFERRA_WEB_DOMENA.md` („nová appka NAHRADÍ offerra.sk úplne") —
+rozhodnutie Rastia, nie moje.
+
+### Čo tam bolo predtým (zmerané pred zásahom)
+- Zóna `offerra.sk` je už CELÁ na Cloudflare (NS `sue`/`vin`), nie na
+  Websupporte ako v pôvodnom prieskume.
+- Apex aj `www` = A záznam `37.9.175.195` (WordPress na Websupporte,
+  Yoast SEO; apex robil 301 na `www`). Yoast sitemap: 20 stránok + 1
+  detail ponuky (zoznam v `src/lib/legacy-redirects.ts`).
+- Pošta: MX `mx10/mx20.websupport.sk`, SPF, DKIM, `mail.`/`webmail.`/
+  `ftp.`/`cpanel.`/`autoconfig.`/`autodiscover.` — **NEDOTKNUTÉ**.
+
+### Čo som zmenil
+1. **Kód** (`9499361`): `src/lib/site.ts` — verejná adresa je jedna
+   premenná `SITE_URL` (predtým natvrdo na ~15 miestach: canonical,
+   hreflang, JSON-LD, sitemap, robots, llms.txt, metadataBase).
+   `proxy.ts`: `www.`/`app.` → 301 na `SITE_URL` (výnimka `/auth/` —
+   PKCE cookie vzniká na hoste, kde sa prihlásenie začalo); 22 starých
+   WordPress URL → 301 na najbližší ekvivalent (FAQ/O nás →
+   `/ako-to-funguje`, právne texty → `rastioeu.github.io/offerra_web`,
+   účtové stránky → `/login`, ponuky/mapa/detail → `/`); `robots.txt`
+   dynamický (bol zapečený pri builde).
+2. **Cloudflare Tunnel** (`1e20a64d…`): do ingress pridané `offerra.sk`
+   a `www.offerra.sk` → `localhost:3001` (`app.offerra.sk` ostáva).
+3. **DNS**: zmazané A `offerra.sk` a `www.offerra.sk` (→ WordPress),
+   vytvorené proxied CNAME oboch na `1e20a64d….cfargotunnel.com`.
+4. **`.env.local`**: `SITE_URL=https://offerra.sk`, rebuild, reštart.
+5. **Supabase Auth**: `site_url` → `https://offerra.sk`, do
+   `uri_allow_list` PRIDANÉ `https://offerra.sk/**` (nič neodobrané —
+   projekt je zdieľaný s MUTARK, `app.offerra.sk/**` ostáva).
+
+### 🔴 Chyba nájdená testom PRED prepnutím
+Staré WordPress URL končia `/`. Vstavané presmerovanie Next.js
+(`/faq/` → `/faq`) skladá cieľ z internej adresy — `Location:
+http://localhost:3002/faq`. Za tunelom by každá stará SEO URL skončila
+na neexistujúcej adrese. Opravené `skipTrailingSlashRedirect` + vlastná
+logika v `proxy.ts` s verejným pôvodom. Overené PRED prepnutím DNS na
+oddelenej inštancii (port 3002, `SITE_URL=https://offerra.sk`).
+
+### ✅ OVERENÉ RUNTIME (po prepnutí, `curl` na živé adresy)
+- `https://offerra.sk/`, `/dopyty`, `/en`, `/robots.txt`,
+  `/sitemap.xml`, `/llms.txt`, `/login` → **200**.
+- canonical `https://offerra.sk`; JSON-LD `url`/`logo` na `offerra.sk`;
+  `Sitemap: https://offerra.sk/sitemap.xml`; sitemap neobsahuje ani
+  jedno `app.offerra.sk`; `llms.txt` na novej doméne.
+- `app.offerra.sk/…` a `www.offerra.sk/…` → **301** na `offerra.sk/…`
+  (aj s query, napr. `?x=1`).
+- `offerra.sk/faq/` → 301 `/ako-to-funguje`;
+  `/podmienky-pouzivania/` → 301 na `terms.html`.
+- Google aj Apple `…/auth/v1/authorize?redirect_to=https://offerra.sk/…`
+  → 302 na poskytovateľa (Apple `redirect_uri` je Supabase callback,
+  teda v Apple portáli netreba nič meniť).
+- `journalctl` bez chýb.
+
+### 🟡 NEOVERENÉ / musíš urobiť TY (nemám prístup)
+1. **Reálne prihlásenie cez Google/Apple na offerra.sk** — vyskúšaj
+   naozaj (overil som len, že autorizačný krok prijme novú doménu).
+2. **Google Search Console** — pridaj/over vlastníctvo `offerra.sk`
+   (ideálne „Doména"), odošli sitemap `https://offerra.sk/sitemap.xml`,
+   starý WordPress sitemap odstráň. Bez toho sa staré indexované URL
+   prekvapia pomalšie (301 ich prenášajú, ale Google to zistí až pri
+   ďalšom crawle).
+3. **Analytika** — na WordPresse bol Google Site Kit a Facebook Pixel;
+   nový web žiadnu nemá. Ak ich potrebuješ, je to samostatná úloha.
+4. **Cache prehliadačov/DNS** — niektorí návštevníci uvidia starý
+   WordPress ešte do ~5 min (TTL), potom už nie.
+5. SPF pre `offerra.sk` má mechanizmus `a` (apex A záznam). Apex teraz
+   ukazuje na Cloudflare, nie na Websupport — pošta cez Websupport
+   (`include:`/`mx`) prechádza ďalej, prestala by prechádzať len pošta
+   odoslaná PRIAMO z webhostingu (napr. formuláre WordPressu).
+
+### ↩️ ROLLBACK (ak treba vrátiť WordPress)
+Zálohy: `dns-a-before.json`, `tunnel-config-before.json` (scratchpad
+session). 1) v Cloudflare zmaž CNAME `offerra.sk` a `www`, vytvor A
+`offerra.sk` a `www` → `37.9.175.195` (DNS-only); 2) `SITE_URL` zo
+`.env.local` preč (alebo späť na `https://app.offerra.sk`) +
+`npm run build` + `systemctl restart offerra-web`; 3) Supabase Auth
+`site_url` späť na `https://app.offerra.sk`. Starý WordPress hosting na
+Websupporte som nemenil — po vrátení A záznamov beží hneď.
