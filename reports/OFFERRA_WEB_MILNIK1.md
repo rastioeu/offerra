@@ -2591,3 +2591,29 @@ session). 1) v Cloudflare zmaž CNAME `offerra.sk` a `www`, vytvor A
 `npm run build` + `systemctl restart offerra-web`; 3) Supabase Auth
 `site_url` späť na `https://app.offerra.sk`. Starý WordPress hosting na
 Websupporte som nemenil — po vrátení A záznamov beží hneď.
+
+### 🔴 Apple Sign In po presune domény (24.9.2026) — príčina nájdená, oprava je u Apple
+
+Rastio: na `app.offerra.sk` Apple prihlásenie fungovalo, na `offerra.sk`
+nie; Apple hlási „Overenie vašej identity sa nepodarilo".
+
+**Príčina (potvrdená z registra, nie odhad):** Services ID
+`com.offerra.web` má v Apple Developer portáli pri „Domains and
+Subdomains" zapísané LEN `app.offerra.sk` (sekcia Apple vyššie, bod 2 —
+Apple si doménu overuje). Prihlásenie sa teraz začína na `offerra.sk`,
+ktorú Apple pri tomto Services ID nepozná, a odmietne ho. Nie je to
+chyba kódu ani Supabase: Apple akceptuje náš `redirect_uri` (Supabase
+callback → 200; cudzí `redirect_uri` → 403; zmerané `curl`), Google na
+tej istej ceste funguje, a do nášho `/auth/callback` sa požiadavka vôbec
+nedostane (`journalctl` bez záznamu).
+
+**Oprava (len Rastio, Apple portál — prístup nemám):**
+developer.apple.com → Identifiers → Services IDs → `com.offerra.web` →
+Sign in with Apple → Configure → v „Domains and Subdomains" PRIDAŤ
+`offerra.sk` (app.offerra.sk nechať) → Return URLs nemeniť → Save.
+Ak Apple vyžiada overenie domény, stiahne sa súbor
+`apple-developer-domain-association.txt` — pošli mi jeho obsah a
+nahostujem ho na `https://offerra.sk/.well-known/…` (teraz 404).
+
+**Stav: 🔴 NEDOKONČENÉ** — čaká na krok v Apple portáli; po ňom prosím
+odskúšaj Apple prihlásenie znova.
