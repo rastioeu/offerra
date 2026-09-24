@@ -2617,3 +2617,10 @@ nahostujem ho na `https://offerra.sk/.well-known/…` (teraz 404).
 
 **Stav: 🔴 NEDOKONČENÉ** — čaká na krok v Apple portáli; po ňom prosím
 odskúšaj Apple prihlásenie znova.
+
+**✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 24.9.2026, „funguje"):** Apple
+prihlásenie na `offerra.sk` po pridaní domény do Services ID
+`com.offerra.web` v Apple portáli. Overovací súbor domény nebol
+potrebný. Google prihlásenie na `offerra.sk` potvrdil Rastio skôr.
+Presun domény je tým z hľadiska prihlásenia uzavretý; ostáva
+Search Console (sitemap) a prípadná analytika — viď zoznam vyššie.
