@@ -2682,3 +2682,22 @@ buildom + reštartom služby, appku sa to netýka:
    pre nový web, pošli nové ID a vymením ho v `.env.local` a reštartujem službu
    (env sa číta za behu — pre `GOOGLE_SITE_VERIFICATION` v tom istom
    layoute som to zmeral na scratch inštancii bez rebuildu).
+
+### Overenie domény pre Google — HTML súbor (24.9.2026)
+
+Rastio poslal `google-site-verification: google5fb4a29b3ae8bca2.html`, čiže
+metóda „HTML súbor" (Prefix URL). Súbor `public/google5fb4a29b3ae8bca2.html`
+s presne týmto obsahom. **Prvý pokus zlyhal:** proxy (locale rewrite)
+prepísal `.html` na `/sk/…` → 404. Oprava: výnimka `google*.html`
+v `matcher` v `src/proxy.ts`.
+
+- **✅ OVERENÉ RUNTIME (že súbor je servovaný):** `https://offerra.sk/google5fb4a29b3ae8bca2.html`
+  → HTTP/2 200, `content-type: text/html`, telo presne
+  `google-site-verification: google5fb4a29b3ae8bca2.html`; `/` a `/en` stále 200.
+  (Vedľajší efekt: `www.` na túto jednu cestu neprebehne cez 301 —
+  nevadí, Google overuje `offerra.sk`.)
+- **Samotné overenie v Search Console: 🟡 ČAKÁ na Rastia** — v Search
+  Console klikni „Overiť". Nemám prístup do jeho účtu, takže či Google
+  overenie prijme, neviem. Súbor **nemazať** — Google ho kontroluje
+  opakovane a po zmazaní vlastníctvo stratíš.
+- Potom: v Search Console → Sitemapy odošli `https://offerra.sk/sitemap.xml`.
