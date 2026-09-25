@@ -6349,6 +6349,25 @@ commit `34dbd0a`, iOS runtime `24919867e1bcc84715b1b4d6998cb6b27886e5d9` = build
 update group `25e58eea-270a-4f6d-82a9-5d3ea5d5bad3`, iOS update ID
 `01a0d7b1-996a-7453-84bf-82b696a42dfa`. (Rastio odpovedal „a" — prijaté ako „áno".)
 
+### 33.8 Staré inzeráty dostali pevnú titulnú fotku (Rastio, 25.9.2026: „aplikuj to aj na staré inzeráty")
+
+`scripts/backfill-cover-photo.mjs`: každý inzerát bez `is_cover` dostal za
+titulnú svoju **prvú** fotku (`sort_order`, `created_at`) — tú, ktorú editor
+doteraz označoval. Idempotentné, inzerát s vybranou titulnou sa nedotkne.
+**Zálohu** ID uložil skript pred zápisom (`--rollback <súbor>` ju vráti;
+súbor je v scratchpade mimo repa).
+- ✅ **OVERENÉ RUNTIME (DB, SELECT):** 65 inzerátov s fotkami → 65 s titulnou,
+  **0** inzerátov s dvoma, **0** titulných, ktoré nie sú prvé v poradí.
+  PostgREST (anon) pre ACTIVE inzerát vracia `is_cover: true` na fotke
+  `sort_order 0`.
+- **Dôsledok:** karta v katalógu **už nerotuje** pre žiadny existujúci inzerát
+  (rotácia z 13.8.2026 ostáva len pre inzeráty bez titulnej, teda nové, kým
+  vlastník nič nevyberie). Nie je potrebná OTA ani build — je to čisto dátová zmena.
+- **Nedokázané:** vzhľad karty v appke (🟡). Rastio: v katalógu zatvor
+  a otvor appku viackrát — každý inzerát má ukazovať vždy tú istú fotku.
+- **Otvorené (rozhodnutie Rastia):** nový inzerát bez výberu titulnej stále
+  rotuje. Ak má byť prvá nahraná fotka titulná automaticky, treba DB trigger.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
