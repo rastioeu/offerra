@@ -6401,6 +6401,11 @@ Otvorené: automatická titulná pre NOVÝ inzerát (trigger) — čaká na rozh
   nahraj naraz 3 fotky a opíš, či má prvá odznak TITULNÁ; potom ju zmaž a pozri,
   či odznak prešiel na ďalšiu.
 
+**Publikované OTA (33.10, len changelog) — ✅ OVERENÉ RUNTIME (publikovanie), 🟡 doručenie na telefón:**
+commit `27d6fa3`, iOS runtime `24919867e1bcc84715b1b4d6998cb6b27886e5d9` = build #5,
+update group `6aaa210e-134d-4c0c-a3ff-f310a5ffaa2b`, iOS update ID
+`01a0d7f6-b15d-7102-96e6-1ba5211842a9`. `package.json` nedotknutý.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
