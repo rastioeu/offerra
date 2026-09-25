@@ -6224,6 +6224,47 @@ s buildom #5 (`24919867e…` iOS / `eaadbb7ec…` Android). iOS update
 
 ---
 
+## Fáza 33 — Až 10 fotiek a výber viacerých naraz (25.9.2026, Rastio)
+
+**Zadanie:** „v iOS aplikácii viem pridať iba 3 fotky — uprav to na 10 a nech
+viem vybrať z albumu aj 10 fotiek naraz" (a „v podstate aj na webe").
+
+### 33.1 Diagnostika — NIE JE tam žiadny limit 3
+Zmerané: v `src/` ani v DB (`offerra.media`: žiadny trigger, len PK a FK;
+politiky len owner/locked) **nie je limit fotiek**. Výber bral **jednu fotku
+na ťuknutie** (`pickPhoto`, `allowsEditing`, `base64`) — preto sa to javilo
+ako „len 3". Pôvodný multiselect padal (7.8.2026, hlavička `lib/photo.ts`),
+lebo pri `allowsMultipleSelection` `base64` nechodí spoľahlivo.
+
+### 33.2 Zmena — 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE — IDE OTA
+- `src/lib/photo-limits.ts` — `MAX_PHOTOS = 10`, `remainingSlots`, `takeWithinLimit`
+  (čistý modul), test `scripts/check-photo-limits.ts`.
+- `src/lib/photo.ts` — nové `pickPhotos`: `allowsMultipleSelection`,
+  `selectionLimit` = voľné miesta, `orderedSelection`, **bez `base64`** (bajty
+  z `uri` cez `fetch`, kvôli pôvodnej chybe), bez `allowsEditing` (s multiselectom
+  sa nedá → fotky bez orezu). Log na každý krok `[FOTKY] 1…4`. `pickPhoto`
+  (jedna fotka, profilovka) ostáva.
+- `use-photo-upload.ts` — `addPhotos`: nahráva po jednej, pokrok `n/m`,
+  strop 10, pri zlyhaní Alert s číslom fotky a počtom uložených (uložené
+  ostávajú a zoznam sa obnoví), nič potichu.
+- `inzerat/[id].tsx` — `FOTKY (n/10)`, tlačidlo „+ Fotky" sa pri 10 skryje.
+- Preklady SK/EN/DE (hint už NEtvrdí „pridávajú sa po jednej" — §12a/§8).
+- Changelog záznam pridaný. Žiadny nový natívny modul (`expo-image-picker`
+  už je), `package.json` a `app.json` nedotknuté → **IDE OTA**, netreba build.
+
+### 33.3 Dôkazy
+- ✅ `npx --yes tsx scripts/check-photo-limits.ts` — VŠETKO OK (logika limitu).
+- ✅ `npx tsc --noEmit` čisté, `scripts/check-i18n.ts` VŠETKO OK (15 kontrol).
+- ⚠️ Nedokázané: že `fetch(file://…).arrayBuffer()` v iOS appke naozaj vráti
+  bajty, že výber pustí 10 fotiek a že nahratie prebehne — to sa dá len na telefóne.
+- **Rastio otestuje slovami:** v inzeráte ťukni „+ Fotky", v albume označ
+  naraz napr. 5 fotiek. Opíš: (1) či ti album dovolí označiť viac, (2) či
+  sa všetkých 5 objavilo v inzeráte v poradí výberu, (3) či počas nahrávania
+  bolo vidno „1/5…". Potom doplň do 10 a skús ešte jednu — tlačidlo má
+  zmiznúť. Ak niečo zlyhá, prepíš text hlášky (je v nej číslo kroku).
+
+---
+
 ## Rozsah appky — upresnenie (7.8.2026)
 
 Rastio: **iba nehnuteľnosti**, ale obe strany trhu a oba typy obchodu —

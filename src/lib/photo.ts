@@ -96,6 +96,80 @@ export async function pickPhoto(t: TFunc, aspect: [number, number]): Promise<Pic
   return { bytes, contentType, ext: ext === 'png' || ext === 'webp' ? ext : 'jpg' };
 }
 
+/**
+ * VIAC fotiek naraz (Rastio, 25.9.2026: až 10 z albumu naraz).
+ *
+ * Pozor na pôvodnú chybu z hlavičky súboru: pri viacnásobnom výbere
+ * `expo-image-picker` `base64` nevracia spoľahlivo. Preto tu `base64`
+ * NEPOUŽÍVAME — výber vráti len `uri` súborov a bajty sa čítajú z nich
+ * (`fetch(uri)`). `allowsEditing` sa s viacnásobným výberom nedá kombinovať,
+ * takže fotky idú bez orezu (karty aj galéria si ich ukážu cez `cover`).
+ * Vracia `[]`, keď používateľ výber zrušil. Fotky, ktoré sa nepodarilo
+ * načítať, sa NEpreskakujú potichu: chyba letí von s číslom fotky.
+ */
+export async function pickPhotos(t: TFunc, maxCount: number): Promise<PickedPhoto[]> {
+  console.log(`[FOTKY] 1 ŠTART (max ${maxCount})`);
+  if (maxCount <= 0) return [];
+
+  let ImagePicker: typeof ImagePickerType;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    ImagePicker = require('expo-image-picker');
+  } catch {
+    throw new PhotoError('1 modul', t('photo.noModule'));
+  }
+
+  console.log('[FOTKY] 2 pýtam povolenie');
+  const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (!permission.granted) {
+    throw new PhotoError('2 povolenie', t('photo.noPermission'));
+  }
+
+  console.log('[FOTKY] 3 otváram galériu');
+  const result = await ImagePicker.launchImageLibraryAsync({
+    mediaTypes: ['images'],
+    allowsMultipleSelection: true,
+    selectionLimit: maxCount,
+    orderedSelection: true,
+    quality: 0.6,
+  });
+  if (result.canceled) {
+    console.log('[FOTKY] 3 zrušené používateľom');
+    return [];
+  }
+  console.log(`[FOTKY] 3 vybraných ${result.assets.length}`);
+
+  const photos: PickedPhoto[] = [];
+  for (let i = 0; i < result.assets.length; i++) {
+    const asset = result.assets[i];
+    const n = i + 1;
+    let bytes: Uint8Array;
+    try {
+      const res = await fetch(asset.uri);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      bytes = new Uint8Array(await res.arrayBuffer());
+    } catch (e: unknown) {
+      console.log(`[FOTKY] 4 fotka ${n}: čítanie zlyhalo: ${errorText(e)}`);
+      throw new PhotoError(`4 načítanie fotky ${n}/${result.assets.length}`, t('photo.loadFailed'));
+    }
+    if (bytes.byteLength === 0) {
+      throw new PhotoError(`4 načítanie fotky ${n}/${result.assets.length}`, t('photo.loadFailed'));
+    }
+    if (bytes.byteLength > MAX_BYTES) {
+      throw new PhotoError(
+        `4 veľkosť fotky ${n}/${result.assets.length}`,
+        t('photo.tooLarge', { mb: (bytes.byteLength / 1048576).toFixed(1) })
+      );
+    }
+    console.log(`[FOTKY] 4 fotka ${n}: ${bytes.byteLength} B`);
+
+    const ext = (asset.uri.split('?')[0].split('.').pop() || 'jpg').toLowerCase();
+    const contentType = ext === 'png' ? 'image/png' : ext === 'webp' ? 'image/webp' : 'image/jpeg';
+    photos.push({ bytes, contentType, ext: ext === 'png' || ext === 'webp' ? ext : 'jpg' });
+  }
+  return photos;
+}
+
 /** Nahrá do Storage a vráti verejnú URL. Cesta MUSÍ začínať `auth.uid()`. */
 export async function uploadPhoto(path: string, photo: PickedPhoto, upsert: boolean): Promise<string> {
   console.log(`[FOTKA] 5 nahrávam → ${path}`);

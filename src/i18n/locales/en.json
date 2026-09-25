@@ -656,10 +656,10 @@
     "formLead": "While the listing is a draft, no one but you can see it. The price is optional — leave it blank if you want people to propose their own.",
     "visibleInCatalog": "Visible in the catalog",
     "visibleOnlyToYou": "Only you can see it until you publish",
-    "photosSection": "PHOTOS ({{count}})",
-    "photosHint": "At least one is required. Added one at a time — the first becomes the cover.",
+    "photosSection": "PHOTOS ({{count}}/{{max}})",
+    "photosHint": "At least one is required, up to {{max}}. You can pick several photos at once in the gallery — the first becomes the cover.",
     "coverBadge": "COVER",
-    "addPhotoButton": "+ Photo",
+    "addPhotoButton": "+ Photos",
     "transactionTypeLabel": "Deal type",
     "propertyTypeLabel": "Property type",
     "titleLabel": "Listing title (required)",
@@ -1250,7 +1250,11 @@
     "tooLarge": "The photo is {{mb}} MB, the limit is 8 MB. Try a smaller one.",
     "stepSuffix": "{{message}}\n\n(step {{step}})",
     "addFailedTitle": "Couldn't add the photo",
-    "removeFailedTitle": "Couldn't delete the photo"
+    "removeFailedTitle": "Couldn't delete the photo",
+    "limitTitle": "Photo limit",
+    "limitReached": "A listing can have up to {{max}} photos. Delete one first to add another.",
+    "droppedOverLimit": "Only the photos that fit the limit of {{max}} were added. The remaining {{dropped}} were not added.",
+    "partialFailed": "Saved {{saved}} of {{total}}. Photo {{n}} failed:\n\n{{message}}"
   },
   "pushPrompt": {
     "title": "Want to know about it?",

@@ -21,6 +21,7 @@ import { DeadlinePicker } from '@/components/deadline-picker';
 import { FormScreen } from '@/components/form-screen';
 import { Badge, Button, ChoiceRow, ErrorNote, Field } from '@/components/ui';
 import { usePhotoUpload } from '@/hooks/use-photo-upload';
+import { MAX_PHOTOS } from '@/lib/photo-limits';
 import { useRefreshOnFocus } from '@/hooks/use-refresh-on-focus';
 import { useProperty } from '@/hooks/use-properties';
 import { useSession } from '@/hooks/use-session';
@@ -68,7 +69,7 @@ export default function PropertyEditorScreen() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { uploading, addPhoto, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
+  const { uploading, progress, addPhotos, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
 
   /**
    * Zamknutý inzerát = existuje prijatá ponuka. Pýtame sa DATABÁZY, nie
@@ -253,10 +254,10 @@ export default function PropertyEditorScreen() {
 
             {/* ── fotky ── */}
             <Text style={[styles.section, { color: palette.textMuted }]}>
-              {t('inzeratEdit.photosSection', { count: photos.length })}
+              {t('inzeratEdit.photosSection', { count: photos.length, max: MAX_PHOTOS })}
             </Text>
             <Text style={[styles.sectionHint, { color: palette.textMuted }]}>
-              {t('inzeratEdit.photosHint')}
+              {t('inzeratEdit.photosHint', { max: MAX_PHOTOS })}
             </Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.photoRow}>
@@ -287,8 +288,9 @@ export default function PropertyEditorScreen() {
                 </View>
               ))}
 
+              {photos.length >= MAX_PHOTOS ? null : (
               <Pressable
-                onPress={() => addPhoto(photos.length)}
+                onPress={() => addPhotos(photos.length)}
                 disabled={uploading}
                 accessibilityRole="button"
                 style={({ pressed }) => [
@@ -297,11 +299,19 @@ export default function PropertyEditorScreen() {
                   { borderColor: palette.borderStrong, opacity: uploading ? 0.5 : pressed ? 0.85 : 1 },
                 ]}>
                 {uploading ? (
-                  <ActivityIndicator color={palette.primary} />
+                  <>
+                    <ActivityIndicator color={palette.primary} />
+                    {progress ? (
+                      <Text style={[styles.addPhotoText, { color: palette.textMuted }]}>
+                        {progress.done + 1}/{progress.total}
+                      </Text>
+                    ) : null}
+                  </>
                 ) : (
                   <Text style={[styles.addPhotoText, { color: palette.link }]}>{t('inzeratEdit.addPhotoButton')}</Text>
                 )}
               </Pressable>
+              )}
             </ScrollView>
 
             {/* ── základ ── */}

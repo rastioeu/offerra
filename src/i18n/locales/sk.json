@@ -662,10 +662,10 @@
     "formLead": "Kým je inzerát rozpracovaný, nevidí ho nikto okrem teba. Cena je nepovinná — ak ju necháš prázdnu, ľudia ti navrhnú vlastnú.",
     "visibleInCatalog": "Viditeľné v katalógu",
     "visibleOnlyToYou": "Vidíš len ty, kým nezverejníš",
-    "photosSection": "FOTKY ({{count}})",
-    "photosHint": "Aspoň jedna je povinná. Pridávajú sa po jednej — prvá sa použije ako titulná.",
+    "photosSection": "FOTKY ({{count}}/{{max}})",
+    "photosHint": "Aspoň jedna je povinná, najviac {{max}}. V galérii môžeš vybrať viac fotiek naraz — prvá sa použije ako titulná.",
     "coverBadge": "TITULNÁ",
-    "addPhotoButton": "+ Fotka",
+    "addPhotoButton": "+ Fotky",
     "transactionTypeLabel": "Typ obchodu",
     "propertyTypeLabel": "Typ nehnuteľnosti",
     "titleLabel": "Názov inzerátu (povinné)",
@@ -1256,7 +1256,11 @@
     "tooLarge": "Fotka má {{mb}} MB, limit je 8 MB. Skús menšiu.",
     "stepSuffix": "{{message}}\n\n(krok {{step}})",
     "addFailedTitle": "Fotku sa nepodarilo pridať",
-    "removeFailedTitle": "Fotku sa nepodarilo zmazať"
+    "removeFailedTitle": "Fotku sa nepodarilo zmazať",
+    "limitTitle": "Limit fotiek",
+    "limitReached": "Inzerát môže mať najviac {{max}} fotiek. Ak chceš pridať ďalšiu, jednu najprv zmaž.",
+    "droppedOverLimit": "Pridali sme len fotky, ktoré sa zmestili do limitu {{max}}. Zvyšných {{dropped}} sa nepridalo.",
+    "partialFailed": "Uložených {{saved}} z {{total}}. Fotka č. {{n}} zlyhala:\n\n{{message}}"
   },
   "pushPrompt": {
     "title": "Chceš o tom vedieť?",

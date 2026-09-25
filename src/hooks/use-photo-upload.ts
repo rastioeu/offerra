@@ -10,7 +10,8 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 
 import { useTranslation } from '@/i18n';
-import { BUCKET, photoErrorMessage, pickPhoto, uploadPhoto } from '@/lib/photo';
+import { BUCKET, photoErrorMessage, pickPhotos, uploadPhoto } from '@/lib/photo';
+import { MAX_PHOTOS, remainingSlots, takeWithinLimit } from '@/lib/photo-limits';
 import { db } from '@/lib/property';
 import { supabase } from '@/lib/supabase';
 
@@ -21,31 +22,63 @@ export function usePhotoUpload(
 ) {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
-  async function addPhoto(nextIndex: number) {
+  /** Pridá naraz viac fotiek (najviac do `MAX_PHOTOS` spolu s tými, čo už sú). */
+  async function addPhotos(currentCount: number) {
     if (!ownerId || !propertyId || uploading) return;
+    const slots = remainingSlots(currentCount);
+    if (slots === 0) {
+      Alert.alert(t('photo.limitTitle'), t('photo.limitReached', { max: MAX_PHOTOS }));
+      return;
+    }
     setUploading(true);
+    setProgress(null);
+    let saved = 0;
     try {
-      // Fotky nehnuteľností sú na šírku — 4:3 sedí kartám aj galérii.
-      const photo = await pickPhoto(t, [4, 3]);
-      if (!photo) return; // zrušené používateľom
+      const picked = await pickPhotos(t, slots);
+      if (picked.length === 0) return; // zrušené používateľom
+      const { accepted, dropped } = takeWithinLimit(picked, slots);
 
-      const path = `${ownerId}/${propertyId}/${Date.now()}.${photo.ext}`;
-      const url = await uploadPhoto(path, photo, false);
+      const stamp = Date.now();
+      for (let i = 0; i < accepted.length; i++) {
+        setProgress({ done: i, total: accepted.length });
+        const photo = accepted[i];
+        // Index v ceste — všetky fotky z jedného výberu majú rovnaký `stamp`.
+        const path = `${ownerId}/${propertyId}/${stamp}-${i}.${photo.ext}`;
+        try {
+          const url = await uploadPhoto(path, photo, false);
+          const { error } = await db()
+            .from('media')
+            .insert({ property_id: propertyId, url, sort_order: currentCount + i });
+          if (error) throw error;
+          saved++;
+        } catch (e: unknown) {
+          // Nič sa nestratí potichu: hlásime, ktorá fotka zlyhala a koľko
+          // ich už je uložených (tie ostávajú).
+          const m = photoErrorMessage(t, e);
+          console.log(`[FOTKY] ZLYHALO pri fotke ${i + 1}/${accepted.length}: ${m}`);
+          Alert.alert(
+            t('photo.addFailedTitle'),
+            t('photo.partialFailed', { saved, total: accepted.length, n: i + 1, message: m })
+          );
+          return;
+        }
+      }
 
-      const { error } = await db()
-        .from('media')
-        .insert({ property_id: propertyId, url, sort_order: nextIndex });
-      if (error) throw error;
-
-      console.log('[FOTKA] 7 HOTOVO');
-      await onChanged();
+      console.log(`[FOTKY] 7 HOTOVO (${saved})`);
+      if (dropped > 0) {
+        Alert.alert(t('photo.limitTitle'), t('photo.droppedOverLimit', { dropped, max: MAX_PHOTOS }));
+      }
     } catch (e: unknown) {
       const m = photoErrorMessage(t, e);
-      console.log(`[FOTKA] ZLYHALO: ${m}`);
+      console.log(`[FOTKY] ZLYHALO: ${m}`);
       Alert.alert(t('photo.addFailedTitle'), m);
     } finally {
       setUploading(false);
+      setProgress(null);
+      // Aj po čiastočnom zlyhaní sa zoznam obnoví — uložené fotky majú byť vidieť.
+      if (saved > 0) await onChanged();
     }
   }
 
@@ -72,5 +105,5 @@ export function usePhotoUpload(
     }
   }
 
-  return { uploading, addPhoto, removePhoto };
+  return { uploading, progress, addPhotos, removePhoto };
 }

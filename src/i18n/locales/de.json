@@ -656,10 +656,10 @@
     "formLead": "Solange das Inserat ein Entwurf ist, sieht es niemand außer dir. Der Preis ist optional — lass ihn leer, wenn Leute dir ihren eigenen Vorschlag machen sollen.",
     "visibleInCatalog": "Im Katalog sichtbar",
     "visibleOnlyToYou": "Nur du siehst es, bis du veröffentlichst",
-    "photosSection": "FOTOS ({{count}})",
-    "photosHint": "Mindestens eines ist Pflicht. Fotos werden einzeln hinzugefügt — das erste wird zum Titelbild.",
+    "photosSection": "FOTOS ({{count}}/{{max}})",
+    "photosHint": "Mindestens eines ist Pflicht, höchstens {{max}}. In der Galerie kannst du mehrere Fotos auf einmal auswählen — das erste wird zum Titelbild.",
     "coverBadge": "TITELBILD",
-    "addPhotoButton": "+ Foto",
+    "addPhotoButton": "+ Fotos",
     "transactionTypeLabel": "Geschäftstyp",
     "propertyTypeLabel": "Immobilientyp",
     "titleLabel": "Titel des Inserats (Pflicht)",
@@ -1250,7 +1250,11 @@
     "tooLarge": "Das Foto ist {{mb}} MB groß, das Limit liegt bei 8 MB. Versuch ein kleineres.",
     "stepSuffix": "{{message}}\n\n(Schritt {{step}})",
     "addFailedTitle": "Foto konnte nicht hinzugefügt werden",
-    "removeFailedTitle": "Foto konnte nicht gelöscht werden"
+    "removeFailedTitle": "Foto konnte nicht gelöscht werden",
+    "limitTitle": "Fotolimit",
+    "limitReached": "Eine Anzeige kann höchstens {{max}} Fotos haben. Lösche zuerst eines, um ein weiteres hinzuzufügen.",
+    "droppedOverLimit": "Es wurden nur Fotos hinzugefügt, die in das Limit von {{max}} passen. Die übrigen {{dropped}} wurden nicht hinzugefügt.",
+    "partialFailed": "{{saved}} von {{total}} gespeichert. Foto {{n}} ist fehlgeschlagen:\n\n{{message}}"
   },
   "pushPrompt": {
     "title": "Möchtest du davon erfahren?",

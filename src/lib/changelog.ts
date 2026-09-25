@@ -20,6 +20,17 @@ export type ChangelogEntry = {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
+    date: '25. septembra 2026',
+    title: 'Až 10 fotiek k inzerátu a výber viacerých naraz',
+    items: [
+      'K inzerátu môžeš mať najviac 10 fotiek (počítadlo hore ukazuje napríklad „FOTKY (3/10)").',
+      'V galérii môžeš označiť viac fotiek naraz — pridajú sa v poradí, v akom si ich vybral, a prvá je titulná.',
+      'Počas nahrávania je vidno, koľkátu fotku práve nahrávame. Keď niektorá zlyhá, appka povie ktorá a koľko ich už je uložených.',
+      'To isté funguje aj na webe.',
+    ],
+  },
+  {
+    version: '1.3.0',
     date: '2. septembra 2026',
     title: 'Odpočet ponuky ukazuje aj dni a hodiny spolu',
     items: [
