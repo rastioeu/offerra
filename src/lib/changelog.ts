@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '25. septembra 2026',
+    title: 'Titulná fotka sa nastaví sama',
+    items: [
+      'Prvá fotka, ktorú k inzerátu pridáš, je automaticky titulná — v katalógu sa ukazuje vždy ona.',
+      'Ak zmažeš titulnú fotku, titulnou sa stane ďalšia v poradí, takže inzerát nikdy nezostane bez pevnej titulnej.',
+      'Staré inzeráty majú titulnú fotku nastavenú tiež.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '25. septembra 2026',
     title: 'Titulnú fotku si vyberieš sám a ostane stále titulná',
     items: [
       'V úprave inzerátu ťukni na „Nastaviť titulnú" pri ktorejkoľvek fotke — presunie sa na začiatok a v katalógu sa ukazuje vždy ona.',

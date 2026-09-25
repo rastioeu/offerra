@@ -6379,6 +6379,28 @@ slovné hlásenie, že správanie sedí. Stav bodov 33.5–33.8 ostáva 🟡, k�
 nepotvrdí menovite (editor inzerátu / karta v katalógu).
 Otvorené: automatická titulná pre NOVÝ inzerát (trigger) — čaká na rozhodnutie Rastia.
 
+### 33.10 Trigger: titulná fotka sa nastaví sama (Rastio, 25.9.2026: „pridaj trigger")
+
+`scripts/apply-cover-trigger.mjs` (Management API, aditívne, schéma `offerra`):
+- **BEFORE INSERT** `media_auto_cover` — inzerát bez titulnej → nová fotka ju dostane
+  (advisory lock na inzerát, aby dva súbežné vklady nepadli na unikátnom indexe).
+- **AFTER DELETE** `media_promote_cover` — zmazaná titulná → titulnou sa stane prvá
+  z ostatných (inak by inzerát potichu prešiel na rotáciu). SECURITY DEFINER,
+  pevný `search_path`, `revoke` z public/anon/authenticated.
+- ✅ **OVERENÉ RUNTIME (DB):** `scripts/check-cover-trigger.mjs` pod rolou
+  `authenticated` s JWT vlastníka, v zrušenej transakcii: (1) prvá vložená fotka je
+  titulná, ďalšie nie; (2) vlastníkov výber ostane po ďalšom vklade; (3) zmazanie
+  titulnej → práve jedna titulná = prvá z ostatných; (4) zmazanie netitulnej nič
+  nezmení; (5) zmazanie poslednej fotky prejde. **Test som pustil aj PRED triggerom —
+  padol na kroku 1** („titulných 0"), teda dokazuje, že to robí trigger, nie náhoda.
+  Po teste v DB ostalo 195 fotiek / 65 titulných (bez zmeny).
+- Appka ani web sa nemenia (vkladajú len `property_id, url, sort_order`).
+  Changelog záznam pridaný — **do appky sa dostane pri najbližšej OTA** (trigger sám
+  je v DB a funguje už teraz).
+- **Nedokázané (§1): správanie na obrazovke** — 🟡. Rastio: vytvor nový inzerát,
+  nahraj naraz 3 fotky a opíš, či má prvá odznak TITULNÁ; potom ju zmaž a pozri,
+  či odznak prešiel na ďalšiu.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
