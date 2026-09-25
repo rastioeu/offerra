@@ -2744,3 +2744,25 @@ Tap je jediné, čo je v našich rukách.
   slovami, čo sa stalo; ak sa nič neukáže, ak sa ukáže červená hláška,
   napíš mi jej text.
 - Apple heslo: bez zmeny (pozri vyššie), to nie je v našich rukách.
+
+## Až 10 fotiek a výber viacerých naraz — web (25.9.2026)
+
+Rovnaká zmena ako v appke (register Fáza 33): limit v appke ani v DB nebol,
+web pridával jednu fotku na výber súboru.
+- `src/lib/photo-limits.ts` (kópia z appky), `photo-manager.tsx`: `<input multiple>`,
+  fotky sa nahrávajú **po jednej** (jedna Server Action na fotku), pokrok
+  `n/m`, pri zlyhaní hláška s číslom fotky a počtom uložených, pri 10 sa
+  tlačidlo skryje; nadbytok sa nepridá a povie sa to.
+- `photo-actions.ts`: strop 10 stráži aj **server** (počet riadkov v `media`
+  pred nahratím) a názov súboru má náhodnú príponu (rovnaká milisekunda).
+- `next.config.ts`: `serverActions.bodySizeLimit: "10mb"`. Predvolený limit
+  tela Server Action je 1 MB → fotka nad 1 MB by padla pred nahratím.
+  **Nezmerané, či to padalo naostro** (na to treba prihlásenie); nastavenie je
+  potvrdené v `required-server-files.json`.
+- Preklady SK/EN/DE.
+- **Dôkazy:** `tsc` + `next build` OK; po reštarte `/`, `/login`, `/en`,
+  `/dopyty` na `offerra.sk` → 200; v journale po reštarte žiadna nová chyba.
+- **Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Nahratie nemám ako
+  skúsiť (treba prihlásený účet). Rastio: na `offerra.sk` v úprave
+  vlastného inzerátu klikni „+ Fotky", vyber viac súborov naraz (Ctrl/Cmd
+  alebo Shift), opíš slovami, či sa objavili všetky a či bolo vidno „n/m".
