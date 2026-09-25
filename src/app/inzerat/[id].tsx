@@ -268,7 +268,10 @@ export default function PropertyEditorScreen() {
                     style={[styles.thumb, { backgroundColor: palette.surfacePressed }]}
                     contentFit="cover"
                   />
-                  {i === 0 ? (
+                  {/* Odznak = SKUTOČNE vybraná titulná (`is_cover`), nie „prvá v poradí".
+                      Prvá fotka bez výberu odznak nemá, lebo karta v katalógu vtedy
+                      rotuje — odznak by klamal (Rastio, 25.9.2026). */}
+                  {m.is_cover ? (
                     <View style={styles.coverTag}>
                       <Badge text={t('inzeratEdit.coverBadge')} tone="accent" />
                     </View>

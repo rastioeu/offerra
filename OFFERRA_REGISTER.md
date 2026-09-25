@@ -6328,6 +6328,22 @@ iOS runtime **`24919867e1bcc84715b1b4d6998cb6b27886e5d9`** = runtime buildu #5
 **Nedokázané:** že telefón balík stiahol — appku zavrieť a otvoriť (aj dvakrát);
 v úprave inzerátu s ≥2 fotkami má byť pri druhej „Nastaviť titulnú".
 
+### 33.7 Oprava: odznak TITULNÁ klamal, prvá fotka nemala tlačidlo (Rastio, 25.9.2026)
+
+**Nahlásené:** „keď označíme titulnú fotku, mení sa náhodne pri načítaní
+inzerátov." **Zmerané:** v DB `is_cover` = **0 z 193** riadkov — žiadna
+titulná nebola nikdy vybraná, takže rotácia bežala oprávnene. Update group
+s tlačidlom je na EAS (`update:list`), `is_cover` PostgREST vracia (`select=id,is_cover`),
+`set_cover_photo` je cez API dostupná (anon → `42501 permission denied`, nie 404).
+**Príčina v mojom návrhu (33.5):** odznak TITULNÁ mala vždy PRVÁ fotka, ale
+tlačidlo „Nastaviť titulnú" len ostatné. Kto ťukal na prvú (s odznakom), nemal
+čo stlačiť — a prvá nebola skutočná voľba, takže karta rotovala. Odznak klamal
+(§12a).
+**Oprava:** odznak je len pri fotke s `is_cover`; každá ostatná — vrátane
+prvej — má tlačidlo. App aj web. Bez výberu žiadny odznak (katalóg rotuje).
+**Nedokázané:** správanie na telefóne (🟡). Ak si Rastio tlačidlo aj pri
+druhej fotke stlačil a v DB stále nič nie je, treba text hlášky (log `[TITULNA]`).
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
