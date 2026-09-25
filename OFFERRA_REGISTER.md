@@ -6263,6 +6263,18 @@ lebo pri `allowsMultipleSelection` `base64` nechodí spoľahlivo.
   bolo vidno „1/5…". Potom doplň do 10 a skús ešte jednu — tlačidlo má
   zmiznúť. Ak niečo zlyhá, prepíš text hlášky (je v nej číslo kroku).
 
+### 33.4 Publikované OTA — ✅ OVERENÉ RUNTIME (publikovanie), 🟡 doručenie a funkcia na telefóne
+
+`eas update --branch production --environment production` (commit `d989e09`).
+iOS runtime **`24919867e1bcc84715b1b4d6998cb6b27886e5d9`** = runtime posledného
+hotového buildu #5 (`build:list`, Status finished) → balík sa na Rastiov
+TestFlight build **môže** dostať. Update group `56cdc8af-a382-4008-be9f-de9e52ccc785`,
+iOS update ID `01a0d747-875e-7118-a927-17e7a501daae`. (Android má iný runtime
+`eaadbb7e…` — nepoužívame ho.) `package.json` som nemenil.
+**Nedokázané:** že telefón balík už stiahol — appku treba zavrieť a otvoriť
+(prípadne dvakrát), potom sa v úprave inzerátu má ukázať „FOTKY (n/10)"
+a tlačidlo „+ Fotky". Ak sa ukáže starý text „+ Fotka", OTA ešte nedorazila.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
