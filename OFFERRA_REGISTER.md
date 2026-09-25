@@ -6406,6 +6406,10 @@ commit `27d6fa3`, iOS runtime `24919867e1bcc84715b1b4d6998cb6b27886e5d9` = build
 update group `6aaa210e-134d-4c0c-a3ff-f310a5ffaa2b`, iOS update ID
 `01a0d7f6-b15d-7102-96e6-1ba5211842a9`. `package.json` nedotknutý.
 
+**Rastio po OTA (25.9.2026):** „funguje to" — k automatickej titulnej fotke (33.10).
+Obrazovku menovite neuviedol → zapísané ako jeho slovné hlásenie, nie „✅ POTVRDENÉ
+POUŽÍVATEĽOM" pre konkrétnu obrazovku (§1). Stav ostáva 🟡.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
