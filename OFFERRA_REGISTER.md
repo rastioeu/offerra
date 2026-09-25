@@ -6358,8 +6358,10 @@ doteraz označoval. Idempotentné, inzerát s vybranou titulnou sa nedotkne.
 súbor je v scratchpade mimo repa).
 - ✅ **OVERENÉ RUNTIME (DB, SELECT):** 65 inzerátov s fotkami → 65 s titulnou,
   **0** inzerátov s dvoma, **0** titulných, ktoré nie sú prvé v poradí.
-  PostgREST (anon) pre ACTIVE inzerát vracia `is_cover: true` na fotke
-  `sort_order 0`.
+  PostgREST (anon) pre jediný ACTIVE inzerát (`b0171f0f…`) vracia `is_cover: true`
+  na fotke `sort_order 0`, ostatné `false`. (Testovací inzerát `32f3b4b4…` z 33.5 už
+  v DB nie je a počet inzerátov s fotkami klesol 66 → 65 — nie je to z mojich
+  skriptov, tie menia len `is_cover`/`sort_order`, test bežal v zrušenej transakcii.)
 - **Dôsledok:** karta v katalógu **už nerotuje** pre žiadny existujúci inzerát
   (rotácia z 13.8.2026 ostáva len pre inzeráty bez titulnej, teda nové, kým
   vlastník nič nevyberie). Nie je potrebná OTA ani build — je to čisto dátová zmena.
