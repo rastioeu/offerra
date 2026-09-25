@@ -6370,6 +6370,15 @@ súbor je v scratchpade mimo repa).
 - **Otvorené (rozhodnutie Rastia):** nový inzerát bez výberu titulnej stále
   rotuje. Ak má byť prvá nahraná fotka titulná automaticky, treba DB trigger.
 
+### 33.9 Rastiova spätná väzba (25.9.2026)
+
+Po backfille (33.8) Rastio napísal: „už to funguje" — o titulnej fotke
+u starého aj nového inzerátu. **Obrazovku nemenoval**, takže to NIE je
+„✅ POTVRDENÉ POUŽÍVATEĽOM" pre konkrétnu obrazovku (§1); zapisujem to ako jeho
+slovné hlásenie, že správanie sedí. Stav bodov 33.5–33.8 ostáva 🟡, kým
+nepotvrdí menovite (editor inzerátu / karta v katalógu).
+Otvorené: automatická titulná pre NOVÝ inzerát (trigger) — čaká na rozhodnutie Rastia.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
