@@ -6275,6 +6275,49 @@ iOS update ID `01a0d747-875e-7118-a927-17e7a501daae`. (Android má iný runtime
 (prípadne dvakrát), potom sa v úprave inzerátu má ukázať „FOTKY (n/10)"
 a tlačidlo „+ Fotky". Ak sa ukáže starý text „+ Fotka", OTA ešte nedorazila.
 
+### 33.5 Titulná fotka, ktorú si vlastník vyberie — stále titulná (Rastio, 25.9.2026)
+
+**Zadanie:** „keď niekto označí, že fotka je titulná, nech je stále titulná."
+**Zistené:** „titulná" nebola voľba — karta v katalógu **rotovala** fotky
+(`cover-photo.ts`) a v editore mal odznak vždy prvá fotka.
+
+**DB (Management API, `scripts/apply-cover-photo.mjs`, aditívne, len schéma
+`offerra`):** `media.is_cover boolean`, unikátny index (max. 1 titulná na
+inzerát), funkcia `offerra.set_cover_photo(uuid)` (SECURITY INVOKER — RLS platí;
+označí fotku a presunie ju na `sort_order 0`), stĺpcový `grant update (is_cover)`.
+Test **odhalil chýbajúce právo** (`permission denied for table media` — tabuľka
+mala UPDATE len na `sort_order`, `url`), doplnené.
+
+**Kód (IDE OTA, `package.json`/`app.json` nedotknuté):** `chosenCoverIndex`
+(vybraná = vždy ona, bez výberu rotácia ostáva), karta, `setCover` v hooku,
+tlačidlo „Nastaviť titulnú" v editore (skryté pri zamknutom inzeráte), preklady
+SK/EN/DE, hint v editore už opisuje skutočné správanie (§12a), changelog.
+Web: server action `setCoverPhotoAction`, tlačidlo v `PhotoManager`
+(web karty berú `media[0]`, čo je po presune vybraná fotka).
+
+**Dôkazy:**
+- ✅ **OVERENÉ RUNTIME (DB):** `node scripts/check-cover-photo-db.mjs` — pod rolou
+  `authenticated` s JWT vlastníka: titulná sa nastaví, je práve 1, leží na
+  `sort_order 0`, poradie `0,1,2`; zmena titulnej zruší starú; **cudzí používateľ
+  dostane chybu** (aj vetva „RLS potichu odfiltrovala" na ACTIVE inzeráte);
+  transakcia sa zámerne zruší → v DB `is_cover` ostalo 0 z 193 riadkov.
+- ✅ `check-cover-photo.ts` (vybraná stále ona cez 500 seedov, bez výberu rotácia
+  ostáva, staré dáta bez príznaku), `tsc` čisté, `check-i18n` OK.
+- ✅ Web: build OK, po reštarte `/`, `/en`, `/login`, `/dopyty` → 200.
+- **Nedokázané (§1): že tlačidlo a výsledok na obrazovke vyzerajú/fungujú** — telefón,
+  prihlásený účet.
+
+**§10 kontrola (karta v katalógu):** `check-deadline.ts` VŠETKO OK (logika).
+**DÁTA: ACTIVE inzerátov je 1 a žiadny nemá `offer_deadline` v budúcnosti →
+countdown štítok „Ponuky do…" je teraz na karte NEVIDITEĽNÝ kvôli dátam,
+nie kódu** (rovnaký stav ako pri 9.8.2026). Nie je to spôsobené touto zmenou.
+„Pridané [dátum]": kód karty som nemenil okrem výberu titulnej fotky.
+
+**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Rastio otestuje slovami:
+v úprave inzerátu s aspoň 2 fotkami ťukni pri druhej „Nastaviť titulnú".
+Opíš: (1) či sa presunula na začiatok s odznakom TITULNÁ, (2) či po
+zatvorení a otvorení appky (aj viackrát) katalóg ukazuje stále ju.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)

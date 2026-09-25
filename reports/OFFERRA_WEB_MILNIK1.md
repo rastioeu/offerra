@@ -2766,3 +2766,15 @@ web pridával jednu fotku na výber súboru.
   skúsiť (treba prihlásený účet). Rastio: na `offerra.sk` v úprave
   vlastného inzerátu klikni „+ Fotky", vyber viac súborov naraz (Ctrl/Cmd
   alebo Shift), opíš slovami, či sa objavili všetky a či bolo vidno „n/m".
+
+## Titulná fotka — web (25.9.2026)
+
+Rovnaká zmena ako v appke (register 33.5): DB funkcia `offerra.set_cover_photo`,
+`setCoverPhotoAction` (server action) a tlačidlo „Nastaviť titulnú" v
+`photo-manager.tsx`; prvá fotka má odznak TITULNÁ. Web karty a zoznam
+„Moje inzeráty" berú `media[0]`, čo je po presune vybraná fotka.
+- **Dôkazy:** DB časť ✅ (`scripts/check-cover-photo-db.mjs` v repe appky);
+  `tsc` + build OK; `offerra.sk` `/`, `/en`, `/login`, `/dopyty` → 200.
+- **Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — Rastio: na `offerra.sk`
+  v úprave vlastného inzerátu klikni pri druhej fotke „Nastaviť titulnú" a
+  opíš, či sa presunie na prvé miesto s odznakom.

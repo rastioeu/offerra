@@ -69,7 +69,7 @@ export default function PropertyEditorScreen() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
-  const { uploading, progress, addPhotos, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
+  const { uploading, progress, settingCover, addPhotos, setCover, removePhoto } = usePhotoUpload(session?.user.id, id, reload);
 
   /**
    * Zamknutý inzerát = existuje prijatá ponuka. Pýtame sa DATABÁZY, nie
@@ -272,7 +272,17 @@ export default function PropertyEditorScreen() {
                     <View style={styles.coverTag}>
                       <Badge text={t('inzeratEdit.coverBadge')} tone="accent" />
                     </View>
-                  ) : null}
+                  ) : locked ? null : (
+                    <Pressable
+                      onPress={() => setCover(m.id)}
+                      disabled={settingCover}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('inzeratEdit.makeCoverA11y')}
+                      hitSlop={6}
+                      style={[styles.makeCover, { backgroundColor: palette.surface, opacity: settingCover ? 0.5 : 1 }]}>
+                      <Text style={[styles.makeCoverText, { color: palette.link }]}>{t('inzeratEdit.makeCover')}</Text>
+                    </Pressable>
+                  )}
                   {/* Pri zámku krížik CHÝBA zámerne: DELETE by vrátil 204 a
                       fotka by ostala (tak funguje restrictive RLS). Tlačidlo,
                       po ktorom sa nič nestane, je horšie než žiadne (§2). */}
@@ -608,6 +618,8 @@ const styles = StyleSheet.create({
   thumbWrap: { position: 'relative' },
   thumb: { width: 116, height: 116, borderRadius: Radius.md },
   coverTag: { position: 'absolute', left: 4, bottom: 4 },
+  makeCover: { position: 'absolute', left: 4, bottom: 4, borderRadius: Radius.sm, paddingHorizontal: 6, paddingVertical: 3 },
+  makeCoverText: { ...Type.caption, fontWeight: Weight.semibold },
   remove: {
     position: 'absolute',
     top: -6,

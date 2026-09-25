@@ -126,6 +126,8 @@ export type Media = {
   property_id: string;
   url: string;
   sort_order: number;
+  /** Vlastník ju vybral ako titulnú — karta ju ukazuje vždy (rotácia sa vypne). */
+  is_cover: boolean;
   created_at: string;
 };
 

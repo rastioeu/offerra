@@ -22,6 +22,7 @@ export function usePhotoUpload(
 ) {
   const { t } = useTranslation();
   const [uploading, setUploading] = useState(false);
+  const [settingCover, setSettingCover] = useState(false);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   /** Pridá naraz viac fotiek (najviac do `MAX_PHOTOS` spolu s tými, čo už sú). */
@@ -82,6 +83,25 @@ export function usePhotoUpload(
     }
   }
 
+  /** Vlastník vyberie titulnú fotku — katalóg ju potom ukazuje vždy (`set_cover_photo`). */
+  async function setCover(mediaId: string) {
+    if (!ownerId || uploading || settingCover) return;
+    setSettingCover(true);
+    try {
+      console.log(`[TITULNA] 1 START ${mediaId}`);
+      const { error } = await db().rpc('set_cover_photo', { p_media_id: mediaId });
+      if (error) throw error;
+      console.log('[TITULNA] 2 HOTOVO');
+      await onChanged();
+    } catch (e: unknown) {
+      const m = photoErrorMessage(t, e);
+      console.log(`[TITULNA] ZLYHALO: ${m}`);
+      Alert.alert(t('photo.coverFailedTitle'), m);
+    } finally {
+      setSettingCover(false);
+    }
+  }
+
   async function removePhoto(mediaId: string, url: string) {
     try {
       const { error } = await db().from('media').delete().eq('id', mediaId);
@@ -105,5 +125,5 @@ export function usePhotoUpload(
     }
   }
 
-  return { uploading, progress, addPhotos, removePhoto };
+  return { uploading, progress, settingCover, addPhotos, setCover, removePhoto };
 }

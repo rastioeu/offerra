@@ -6,7 +6,7 @@
  *
  * SPUSTENIE: `npx tsx scripts/check-cover-photo.ts` (žiadna appka, žiadna databáza).
  */
-import { coverPhotoIndex } from '../src/lib/cover-photo';
+import { chosenCoverIndex, coverPhotoIndex } from '../src/lib/cover-photo';
 
 let fails = 0;
 
@@ -65,6 +65,22 @@ console.log('\n── RÔZNE inzeráty v tom istom seede (= tom istom spustení)
 }
 
 console.log('\n' + '='.repeat(60));
+console.log('── vlastníkom vybraná titulná je STÁLE ONA (25.9.2026) ──');
+{
+  const media = [{ is_cover: false }, { is_cover: false }, { is_cover: true }, { is_cover: false }];
+  const seen = new Set<number>();
+  for (let seed = 0; seed < 500; seed++) seen.add(chosenCoverIndex('prop-x', media, seed));
+  check('vybraná fotka je titulná pri každom spustení (500 seedov)', seen.size === 1 && seen.has(2), `indexy: ${[...seen].join(',')}`);
+
+  const none = [{ is_cover: false }, { is_cover: false }, { is_cover: false }];
+  const rot = new Set<number>();
+  for (let seed = 0; seed < 500; seed++) rot.add(chosenCoverIndex('prop-x', none, seed));
+  check('bez výberu rotácia ostáva (viac rôznych indexov)', rot.size > 1, `indexy: ${[...rot].sort().join(',')}`);
+
+  check('chýbajúci príznak (staré dáta) = bez výberu', chosenCoverIndex('p', [{}, {}], 1) === coverPhotoIndex('p', 2, 1), 'zhodné s rotáciou');
+  check('jedna fotka → index 0', chosenCoverIndex('p', [{ is_cover: false }]) === 0, '0');
+}
+
 if (fails > 0) {
   console.log(`ZLYHALO: ${fails} kontrol. Rotujúca titulná fotka je pokazená.`);
   process.exit(1);

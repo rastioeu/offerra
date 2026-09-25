@@ -30,3 +30,19 @@ export function coverPhotoIndex(propertyId: string, mediaCount: number, seed: nu
   if (mediaCount <= 1) return 0;
   return (hashString(propertyId) + seed) % mediaCount;
 }
+
+/**
+ * Index titulnej fotky karty. Ak vlastník fotku VYBRAL (`is_cover`), je to
+ * vždy ona — rotácia sa pre taký inzerát vypne (Rastio, 25.9.2026: „keď
+ * niekto označí, že fotka je titulná, nech je stále titulná"). Bez výberu
+ * platí pôvodná rotácia raz za spustenie appky.
+ */
+export function chosenCoverIndex(
+  propertyId: string,
+  media: { is_cover?: boolean }[],
+  seed?: number
+): number {
+  const chosen = media.findIndex((m) => m.is_cover === true);
+  if (chosen >= 0) return chosen;
+  return seed === undefined ? coverPhotoIndex(propertyId, media.length) : coverPhotoIndex(propertyId, media.length, seed);
+}

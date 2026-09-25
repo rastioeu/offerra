@@ -21,6 +21,16 @@ export const CHANGELOG: ChangelogEntry[] = [
   {
     version: '1.3.0',
     date: '25. septembra 2026',
+    title: 'Titulnú fotku si vyberieš sám a ostane stále titulná',
+    items: [
+      'V úprave inzerátu ťukni na „Nastaviť titulnú" pri ktorejkoľvek fotke — presunie sa na začiatok a v katalógu sa ukazuje vždy ona.',
+      'Ak titulnú nevyberieš, karta v katalógu ukazuje striedavo rôzne fotky inzerátu ako doteraz.',
+      'To isté funguje aj na webe.',
+    ],
+  },
+  {
+    version: '1.3.0',
+    date: '25. septembra 2026',
     title: 'Až 10 fotiek k inzerátu a výber viacerých naraz',
     items: [
       'K inzerátu môžeš mať najviac 10 fotiek (počítadlo hore ukazuje napríklad „FOTKY (3/10)").',

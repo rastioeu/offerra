@@ -24,7 +24,7 @@ import { Pressable, Share, StyleSheet, Text, View } from 'react-native';
 import { useOfferCountdownTick } from '@/hooks/use-offer-countdown-tick';
 import { useTheme } from '@/hooks/use-theme';
 import { useTranslation, type TFunc } from '@/i18n';
-import { coverPhotoIndex } from '@/lib/cover-photo';
+import { chosenCoverIndex } from '@/lib/cover-photo';
 import { formatAmount } from '@/lib/offers';
 import { offerCountdown } from '@/lib/offer-validity';
 import { offerCountLabel, priceDisplay } from '@/lib/price-display';
@@ -98,9 +98,9 @@ export function PropertyCard({
   const ownTick = useOfferCountdownTick([item.top_offer_valid_until], now == null);
   const liveNow = now ?? ownTick;
   const [menuOpen, setMenuOpen] = useState(false);
-  // Rotuje raz za spustenie appky, nie pri každom prekreslení — pozri
-  // `cover-photo.ts`.
-  const coverIdx = coverPhotoIndex(item.id, item.media.length);
+  // Vlastníkom vybraná titulná je vždy ona; inak rotuje raz za spustenie
+  // appky, nie pri každom prekreslení — pozri `cover-photo.ts`.
+  const coverIdx = chosenCoverIndex(item.id, item.media);
   const cover = item.media[coverIdx]?.url;
   // REGRESIA (Rastio, 14.8.2026): keď je `cover` neprázdny reťazec, ale
   // adresa sa nedá natiahnuť (napr. zlé dáta), appka doteraz ukázala len
