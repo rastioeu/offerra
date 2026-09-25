@@ -6344,6 +6344,11 @@ prvej — má tlačidlo. App aj web. Bez výberu žiadny odznak (katalóg rotuje
 **Nedokázané:** správanie na telefóne (🟡). Ak si Rastio tlačidlo aj pri
 druhej fotke stlačil a v DB stále nič nie je, treba text hlášky (log `[TITULNA]`).
 
+**Publikované OTA (33.7) — ✅ OVERENÉ RUNTIME (publikovanie), 🟡 doručenie a funkcia na telefóne:**
+commit `34dbd0a`, iOS runtime `24919867e1bcc84715b1b4d6998cb6b27886e5d9` = build #5,
+update group `25e58eea-270a-4f6d-82a9-5d3ea5d5bad3`, iOS update ID
+`01a0d7b1-996a-7453-84bf-82b696a42dfa`. (Rastio odpovedal „a" — prijaté ako „áno".)
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
