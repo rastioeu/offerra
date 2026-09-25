@@ -6318,6 +6318,16 @@ v úprave inzerátu s aspoň 2 fotkami ťukni pri druhej „Nastaviť titulnú".
 Opíš: (1) či sa presunula na začiatok s odznakom TITULNÁ, (2) či po
 zatvorení a otvorení appky (aj viackrát) katalóg ukazuje stále ju.
 
+### 33.6 Publikované OTA (titulná fotka) — ✅ OVERENÉ RUNTIME (publikovanie), 🟡 doručenie a funkcia na telefóne
+
+`eas update --branch production --environment production`, commit `e264a6f`.
+iOS runtime **`24919867e1bcc84715b1b4d6998cb6b27886e5d9`** = runtime buildu #5
+(Status finished) → balík sa na Rastiov build môže dostať. Update group
+`74a4176e-d535-4901-a29d-a0c672220270`, iOS update ID
+`01a0d769-f247-78a8-895f-bae4d53dd4d5`. `package.json` nedotknutý.
+**Nedokázané:** že telefón balík stiahol — appku zavrieť a otvoriť (aj dvakrát);
+v úprave inzerátu s ≥2 fotkami má byť pri druhej „Nastaviť titulnú".
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
