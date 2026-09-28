@@ -2808,12 +2808,10 @@ detail konkrétneho ACTIVE inzerátu (SK aj EN) → HTTP 200; HTML detailu
 obsahuje `cursor-zoom-in`/`showPhotoFullscreen`; živé JS balíky obsahujú
 `photoLightbox`; journal bez chýb.
 
-**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Nemám prehliadač — Rastio:
-na `offerra.sk` otvor detail inzerátu s fotkami, klikni na hlavnú fotku.
-Opíš: (1) či sa zväčší na celú obrazovku, (2) či šípky/klik na okraje
-listujú ďalej, (3) či Esc aj tlačidlo × zatvoria prehliadanie.
-
 **Poznámka (Rastio, 28.9.2026): „v iOS to máme"** — potvrdil, že appka
 fullscreen prehliadač fotiek už má (`photo-lightbox.tsx`, oprava gest
 17.8.2026). Táto úloha bola len pre WEB, ktorý ho nemal — appku som
 touto zmenou nemenil.
+
+**Status: ✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 28.9.2026, „funguje")** —
+fullscreen prehliadač fotiek v detaile inzerátu na `offerra.sk`.
