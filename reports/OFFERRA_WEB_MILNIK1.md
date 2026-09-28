@@ -2835,6 +2835,5 @@ rovnako, len sa to už nevypisuje ako samostatný riadok textu.
 detail ACTIVE inzerátu → HTTP 200; HTML detailu obsahuje `bg-black`; živý
 JS balík obsahuje `closePhoto`; journal bez chýb.
 
-**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Rastio: klikni na
-hlavnú fotku v detaile inzerátu a opíš, či nový vzhľad (čierne pozadie,
-tenké šípky, bodky dole) vyzerá lepšie než predošlý.
+**Status: ✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 28.9.2026, „funguje")** —
+nový „kino" vzhľad fullscreen prehliadača fotiek na `offerra.sk`.
