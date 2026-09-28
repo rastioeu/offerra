@@ -2812,3 +2812,8 @@ obsahuje `cursor-zoom-in`/`showPhotoFullscreen`; živé JS balíky obsahujú
 na `offerra.sk` otvor detail inzerátu s fotkami, klikni na hlavnú fotku.
 Opíš: (1) či sa zväčší na celú obrazovku, (2) či šípky/klik na okraje
 listujú ďalej, (3) či Esc aj tlačidlo × zatvoria prehliadanie.
+
+**Poznámka (Rastio, 28.9.2026): „v iOS to máme"** — potvrdil, že appka
+fullscreen prehliadač fotiek už má (`photo-lightbox.tsx`, oprava gest
+17.8.2026). Táto úloha bola len pre WEB, ktorý ho nemal — appku som
+touto zmenou nemenil.
