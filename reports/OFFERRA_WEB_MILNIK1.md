@@ -2778,3 +2778,37 @@ Rovnaká zmena ako v appke (register 33.5): DB funkcia `offerra.set_cover_photo`
 - **Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE** — Rastio: na `offerra.sk`
   v úprave vlastného inzerátu klikni pri druhej fotke „Nastaviť titulnú" a
   opíš, či sa presunie na prvé miesto s odznakom.
+
+## Fullscreen prehliadač fotiek — web (28.9.2026)
+
+**Zadanie (Rastio):** „ked su fotky na zobrazeni tak urob aby sa zväčšila a
+mohol ďalej listovať a cez Esc alebo tlačidlo sa zatvorí prehliadanie."
+
+**Predtým:** detail inzerátu mal len hlavnú fotku + pás náhľadov, žiadny
+fullscreen náhľad. Preklady `photoLightbox.*` boli v `i18n` pripravené
+(kópia appkovej štruktúry), ale nepoužité — appkové swipe hinty som
+nepoužil, web nemá dotykové gestá (rovnaká zásada ako appka CLAUDE.md §12a:
+text nesľubuje ovládanie, ktoré appka/web nemá).
+
+**Čo je v kóde:**
+- `src/components/photo-lightbox.tsx` — nový modal cez `createPortal` do
+  `document.body` (inak by fixed pozícia nesedela s celou obrazovkou).
+  Esc zavrie, šípky ←/→ listujú, tlačidlá ‹ › aj klikom, počítadlo
+  „n / total". Focus pri otvorení ide na zatváracie tlačidlo a pri zatvorení
+  sa vráti na pôvodný prvok (klávesnicová prístupnosť); scroll stránky pod
+  ním je počas otvorenia vypnutý.
+- `photo-gallery.tsx` — hlavná fotka je teraz tlačidlo, klik ju otvorí
+  v lightboxe na aktuálnom indexe; posun v lightboxe sa prejaví aj v páse
+  náhľadov pod ňou (zdieľaný `active` stav).
+- Preklady SK/EN/DE doplnené (`prevPhoto`, `nextPhoto`, `counter`,
+  `keyboardHint`) — nahradili nepoužité swipe hinty.
+
+**Dôkazy:** `tsc` + `next build` OK; po reštarte `offerra.sk/`, `/en`,
+detail konkrétneho ACTIVE inzerátu (SK aj EN) → HTTP 200; HTML detailu
+obsahuje `cursor-zoom-in`/`showPhotoFullscreen`; živé JS balíky obsahujú
+`photoLightbox`; journal bez chýb.
+
+**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Nemám prehliadač — Rastio:
+na `offerra.sk` otvor detail inzerátu s fotkami, klikni na hlavnú fotku.
+Opíš: (1) či sa zväčší na celú obrazovku, (2) či šípky/klik na okraje
+listujú ďalej, (3) či Esc aj tlačidlo × zatvoria prehliadanie.
