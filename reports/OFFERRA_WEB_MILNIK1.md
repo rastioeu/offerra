@@ -2815,3 +2815,26 @@ touto zmenou nemenil.
 
 **Status: ✅ POTVRDENÉ POUŽÍVATEĽOM (Rastio, 28.9.2026, „funguje")** —
 fullscreen prehliadač fotiek v detaile inzerátu na `offerra.sk`.
+
+## Fullscreen prehliadač fotiek — prerobený vzhľad (28.9.2026)
+
+**Zadanie (Rastio):** pôvodný vzhľad (svetlé pilulkové tlačidlá na
+poloprie­hľadnom podklade, textová nápoveda dole) „nie je pekné"; upresnil
+„na fullscreen daj".
+
+**Zmena (`photo-lightbox.tsx`):** čisté „kino" zobrazenie namiesto
+predošlého — čierne pozadie cez celú obrazovku, fotka bez rámu a bez
+odsadenia zhora/zdola, tenké SVG šípky na okrajoch (bez kruhových pozadí,
+zjavia sa jasnejšie pri nabehnutí myšou), bodkový indikátor dole v strede
+(číselné počítadlo len pri >8 fotkách, aby sa bodky netlačili), jemné ×
+vpravo hore. Klik na tmavé pozadie mimo fotky tiež zavrie. Textová
+nápoveda dole (predtým permanentný riadok) je preč — Esc a šípky fungujú
+rovnako, len sa to už nevypisuje ako samostatný riadok textu.
+
+**Dôkazy:** `tsc` + `next build` OK; po reštarte `offerra.sk/`, `/en`,
+detail ACTIVE inzerátu → HTTP 200; HTML detailu obsahuje `bg-black`; živý
+JS balík obsahuje `closePhoto`; journal bez chýb.
+
+**Status: 🟡 KÓD HOTOVÝ, ČAKÁ VIZUÁLNE OVERENIE.** Rastio: klikni na
+hlavnú fotku v detaile inzerátu a opíš, či nový vzhľad (čierne pozadie,
+tenké šípky, bodky dole) vyzerá lepšie než predošlý.
