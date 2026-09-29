@@ -1,0 +1,76 @@
+{
+  "configVersion": 0,
+  "apple": {
+    "version": "1.3.0",
+    "copyright": "2026 Rastislav Janek",
+    "release": {
+      "automaticRelease": true
+    },
+    "categories": [
+      "LIFESTYLE"
+    ],
+    "advisory": {
+      "ageRatingOverride": "NONE",
+      "alcoholTobaccoOrDrugUseOrReferences": "NONE",
+      "contests": "NONE",
+      "gambling": false,
+      "gamblingSimulated": "NONE",
+      "horrorOrFearThemes": "NONE",
+      "kidsAgeBand": null,
+      "koreaAgeRatingOverride": "NONE",
+      "lootBox": false,
+      "matureOrSuggestiveThemes": "NONE",
+      "medicalOrTreatmentInformation": "NONE",
+      "profanityOrCrudeHumor": "NONE",
+      "sexualContentGraphicAndNudity": "NONE",
+      "sexualContentOrNudity": "NONE",
+      "unrestrictedWebAccess": false,
+      "violenceCartoonOrFantasy": "NONE",
+      "violenceRealistic": "NONE",
+      "violenceRealisticProlongedGraphicOrSadistic": "NONE",
+      "advertising": false,
+      "ageAssurance": false,
+      "ageRatingOverrideV2": "NONE",
+      "developerAgeRatingInfoUrl": null,
+      "gunsOrOtherWeapons": "NONE",
+      "healthOrWellnessTopics": false,
+      "messagingAndChat": true,
+      "parentalControls": false,
+      "userGeneratedContent": true
+    },
+    "review": {
+      "firstName": "Rastislav",
+      "lastName": "Janek",
+      "email": "rastioeu@protonmail.com",
+      "phone": "+421944357671",
+      "demoUsername": "applereview@offerra.app",
+      "demoRequired": true,
+      "notes": "Offerra je realitný trh, kde predávajúci/prenajímateľ nemusí uviesť cenu — záujemcovia predkladajú vlastné ponuky. Prihlásenie je LEN cez Sign in with Apple alebo Google, appka nemá vlastné heslá pre bežných používateľov.\n\nDEMO ÚČET je vyplnený v poliach Demo Account vyššie (meno aj heslo). Ak by z akéhokoľvek dôvodu heslo nebolo vidieť, alternatívny prístup: na prihlasovacej obrazovke ťukni 5-krát rýchlo za sebou na logo Offerra hore — odomkne sa tlačidlo \"Prihlásiť sa ako recenzent\", jedno ťuknutie prihlási demo účet bez zadávania hesla, a zároveň sa predvyplní aj políčko s e-mailom pre ručné prihlásenie.\n\nDemo účet má vlastné aktívne aj rozpracované inzeráty, podané ponuky a správy, takže je vidno plnú funkčnosť appky — katalóg, podanie ponuky, žiadosť o obhliadku, chat, hodnotenia.\n\nAppka nepristupuje k polohe zariadenia (mapa ukazuje len obec z verejného číselníka). Push notifikácie sú voliteľné, appka funguje aj bez ich povolenia."
+    },
+    "info": {
+      "sk": {
+        "title": "Offerra",
+        "subtitle": "Obrátený trh s nehnuteľnosťami",
+        "description": "Offerra je obrátený trh s nehnuteľnosťami. Predávajúci nemusí uviesť cenu — záujemcovia predkladajú vlastné ponuky a každý vidí, ako sa vyvíjajú.\n\nAKO TO FUNGUJE\n\n• Cena je nepovinná — kto predáva alebo prenajíma, môže uviesť orientačnú sumu, alebo nechať pole prázdne a počkať, čo ľudia ponúknu.\n\n• Ponuky sú verejné, ľudia nie — sumu, prezývku aj dátum každej ponuky vidí ktokoľvek. Kto za prezývkou stojí, sa nedozvie nikto — dovtedy.\n\n• Kontakt až po dohode — keď predávajúci ponuku prijme, meno, telefón a e-mail sa odkryjú obom stranám naraz. To isté platí pri potvrdenej obhliadke.\n\n• Píšte si hneď — pri každom inzeráte je súkromný chat len medzi vami dvomi, pod prezývkou. Telefón ani e-mail sa cezeň poslať nedajú.\n\n• Len medzi ľuďmi — Offerra je pre fyzické osoby, nie pre realitné kancelárie. Inzerát, ponuku aj používateľa môžeš nahlásiť.\n\nČO V APPKE NÁJDEŠ\n\n– Katalóg inzerátov na predaj aj prenájom, s filtrami a vyhľadávaním v slovenčine\n– Podávanie a sledovanie ponúk s časovým odpočtom platnosti\n– Žiadosti o obhliadku\n– Súkromné správy k inzerátu\n– Hypotekárnu kalkulačku pri predaji\n– Hodnotenia po uzavretom obchode\n– Dopyty — ak nehľadáš konkrétny inzerát, napíš, čo hľadáš, a majitelia ťa môžu osloviť sami\n\nAppka je dostupná v slovenčine, angličtine a nemčine.",
+        "keywords": [
+          "nehnutelnosti",
+          "byty",
+          "domy",
+          "predaj",
+          "prenajom",
+          "realitka",
+          "ponuka",
+          "dopyt",
+          "byvanie",
+          "pozemok",
+          "reality"
+        ],
+        "releaseNotes": "Prvá verzia appky Offerra.",
+        "promoText": "Predávajúci nemusí uviesť cenu — ty ponúkneš svoju. Ponuky sú verejné pod prezývkou, kontakt sa odkryje až po dohode. Bez realitiek, len medzi ľuďmi.",
+        "marketingUrl": "https://offerra.sk",
+        "supportUrl": "https://rastioeu.github.io/offerra_web/support.html",
+        "privacyPolicyUrl": "https://rastioeu.github.io/offerra_web/privacy.html"
+      }
+    }
+  }
+}
