@@ -6410,6 +6410,18 @@ update group `6aaa210e-134d-4c0c-a3ff-f310a5ffaa2b`, iOS update ID
 Obrazovku menovite neuviedol → zapísané ako jeho slovné hlásenie, nie „✅ POTVRDENÉ
 POUŽÍVATEĽOM" pre konkrétnu obrazovku (§1). Stav ostáva 🟡.
 
+### 33.11 Verejný TestFlight odkaz — ✅ HOTOVÉ (Rastio, 29.9.2026)
+
+Externá skupina testerov prešla Apple Beta App Review (stav „Ready to
+Test"), Rastio zapol Public Link priamo v App Store Connect (krok, na
+ktorý nemám API prístup — urobil ho sám) a poslal výsledný odkaz:
+
+**https://testflight.apple.com/join/35NuYwZZ**
+
+Odkaz je verejný a neautentifikovaný — ktokoľvek s iPhonom si cezeň appku
+nainštaluje bez pozvánky na konkrétny e-mail. Doplniť do `reports/FAZA_0_SUBMIT.md`
+a prípadne na web (`offerra-web`), ak sa Rastio rozhodne ho tam ukázať.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
