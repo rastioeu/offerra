@@ -6422,6 +6422,37 @@ Odkaz je verejný a neautentifikovaný — ktokoľvek s iPhonom si cezeň appku
 nainštaluje bez pozvánky na konkrétny e-mail. Doplniť do `reports/FAZA_0_SUBMIT.md`
 a prípadne na web (`offerra-web`), ak sa Rastio rozhodne ho tam ukázať.
 
+### 33.12 App Store metadata cez EAS API — ✅ OVERENÉ RUNTIME (spätným čítaním z ASC), zvyšok 🔴 manuálne (API limit)
+
+Rastio (29.9.2026): nahrať texty pre App Store priamo cez
+`eas metadata:push` namiesto ručného kopírovania z `APP_STORE_LISTING.md`.
+Podrobný priebeh, presné dôkazy aj zoznam, čo API nevie: `reports/APP_STORE_METADATA_EAS_PUSH.md`.
+
+- `store.config.json` vytvorený podľa SKUTOČNEJ schémy nainštalovaného
+  `eas-cli` (nie naspamäť), strojovo overený (`ajv`) pred behom.
+- ✅ **`eas metadata:push` naozaj zapísal do App Store Connect** — dôkaz
+  je následný `metadata:pull`, ktorý vrátil presne to, čo som poslal
+  (title, subtitle, popis, kľúčové slová, promo text, URL, kategória
+  Lifestyle, Age Rating aj App Review notes s demo účtom) — nie len
+  úspešný návratový kód príkazu.
+- Heslo demo účtu (`/root/.offerra-secrets`) sa do `store.config.json`
+  vložilo LEN tesne pred behom a hneď po ňom sa vrátilo (`git checkout`)
+  na commitnutú bezheslovú verziu — v repe (verejnom!) nikdy nebolo.
+- 🔴 **App Privacy dotazník** a 🔴 **Cena/dostupné krajiny** — overené
+  priamo v schéme `eas-cli`, tieto polia v nej vôbec neexistujú, API ich
+  nevie nahrať. Návrh App Privacy odpovedí je v `APP_STORE_LISTING.md`.
+- 🔴 **„Čo je nové"** sa zámerne nenahralo — zdrojový kód `eas-cli`
+  (`reader.js:151`) ho pre ÚPLNE PRVÚ verziu appky v App Store nikdy
+  neposiela, Apple ho tam ani neprijíma. Nie je to chyba, nahrá sa pri
+  ďalšej aktualizácii.
+- Natívna verzia appky (`app.json`) sa **nemenila** — „zvýš verziu" som
+  vzal ako `store.config.json` `apple.version: "1.3.0"` (aby metadáta
+  smerovali na správnu verziu, nie na predvolené prázdne „1.0"), nie ako
+  bump natívnej verzie (to by podľa CLAUDE.md §9 odstrihlo OTA a
+  vyžadovalo nový build → §3 čaká na explicitné „OK build").
+- Zostáva na Rastia: App Privacy dotazník, Pricing and Availability,
+  screenshoty (jeho rozhodnutie), finálne Submit for Review.
+
 ---
 
 ## Rozsah appky — upresnenie (7.8.2026)
